@@ -13,7 +13,7 @@ not replace, [DETAILED_REQUIREMENTS.md](DETAILED_REQUIREMENTS.md) (`SBM-FUNC-*`,
 | --- | --- | --- |
 | 1 | [91 FR 14952](https://www.govinfo.gov/app/details/FR-2026-03-27/2026-05959), section V.A.7.a | `US_NPR_2_0` |
 | 1 | [Regulation (EU) 2024/1623](https://eur-lex.europa.eu/eli/reg/2024/1623/oj/eng), Arts. 325e–325az | `EU_CRR3` |
-| 2 | PRA UK CRR / PRA Rulebook (TBD) | `PRA_UK_CRR` |
+| 2 | [PRA PS1/26](https://www.bankofengland.co.uk/prudential-regulation/publication/2026/january/implementation-of-the-basel-3-1-final-rules-policy-statement) + [UK CRR Ch. 1a](https://www.legislation.gov.uk/eur/2013/575/part/THREE/title/IV/chapter/1a) | `PRA_UK_CRR` |
 | 3 | [NON_BASEL_PROFILE_DESIGN.md](NON_BASEL_PROFILE_DESIGN.md) | Sequencing and matrix |
 
 Proposed U.S. rule text is comparison material only. Every implemented
@@ -44,7 +44,7 @@ The matrix must assign exactly one status per cell from:
 
 ### SBM-NBP-002: Code–documentation parity
 
-`phase1_capital_supported_paths(profile_id)` in `validation.py` must match the
+`phase1_capital_supported_paths(profile_id)` in `validation/context.py` must match the
 matrix for every cell marked implemented. Tests in
 `tests/test_sbm_support_matrix.py` must fail if parity breaks.
 
@@ -52,8 +52,8 @@ matrix for every cell marked implemented. Tests in
 
 Each profile family used for implementation must have an entry in
 `packages/frtb-sbm/docs/regulatory_sources.yml` with `section_hint` granular
-enough for reviewers to locate bucket/weight tables. `PRA_UK_CRR` may remain
-absent until SBM-NBP-020 is satisfied.
+enough for reviewers to locate bucket/weight tables. `PRA_UK_CRR` requires
+`uk_crr_sbm_retained` and `uk_pra_ps1_26_sbm` entries per SBM-NBP-020.
 
 ### SBM-NBP-004: Basel sub-feature matrix
 
@@ -94,11 +94,12 @@ during rollout.
 Unknown `profile_id` strings must continue to raise `SbmInputError` with an
 enumerated allowed list (`ensure_sbm_profile_known`).
 
-### SBM-NBP-013: Blocked profile behaviour
+### SBM-NBP-013: Comparison profile behaviour
 
-`PRA_UK_CRR` must remain unsupported fail-closed at runtime until
-SBM-NBP-020 is complete. Documentation must mark all 21 cells **blocked**, not
-planned, until a PRA source mapping issue is closed.
+`PRA_UK_CRR` may be enabled as a **comparison slice under audit** once
+SBM-NBP-020 is complete. Documentation must distinguish runtime gates (21 / 21)
+from fixture-backed cells (currently 1 / 21 GIRR delta) and must not describe
+comparison-slice outputs as final UK regulatory capital.
 
 ---
 
@@ -106,14 +107,19 @@ planned, until a PRA source mapping issue is closed.
 
 ### SBM-NBP-020: PRA UK source mapping (prerequisite)
 
-Before any `PRA_UK_CRR` cell is implemented:
+Before any `PRA_UK_CRR` comparison slice is enabled:
 
-- Add `regulatory_sources.yml` entry with official PRA/UK CRR link and section
-  hints for SBM tables.
-- Record divergence from `EU_CRR3` where UK rules differ.
-- Close a dedicated mapping issue referenced from traceability.
+- Add `regulatory_sources.yml` entries with official PRA/UK CRR links and section
+  hints for SBM tables (`uk_crr_sbm_retained`, `uk_pra_ps1_26_sbm`).
+- Record divergence from `EU_CRR3` where UK rules differ in
+  [`docs/regulatory/profiles/pra-uk-crr-source-mapping-status.md`](../../regulatory/profiles/pra-uk-crr-source-mapping-status.md).
+- Reference parent mapping backlog [#501](https://github.com/tomanizer/frtb-capital/issues/501)
+  from traceability for follow-on PRA Rulebook paragraph work.
 
-Until then, all PRA cells remain blocked.
+**Satisfied for comparison-slice enablement** when the above artifacts exist and
+at least one deterministic `PRA_UK_CRR` fixture pack replays without Basel
+citation leakage. Per-cell fixtures for the remaining 20 cells and independent
+UK table transcription remain open under #501.
 
 ### SBM-NBP-021: U.S. NPR citation registry
 
@@ -271,12 +277,13 @@ must reflect the cited profile — not Basel shortcuts.
 
 | Requirement | Current evidence | Remaining target |
 | --- | --- | --- |
-| SBM-NBP-001 | Met (design + traceability link; `US_NPR_2_0` partial matrix) | Maintain in traceability |
-| SBM-NBP-002 | Met for Basel and `US_NPR_2_0` GIRR delta via `test_sbm_support_matrix.py` | Extend for each new cell |
-| SBM-NBP-010 | Enforced for the implemented NPR GIRR delta slice through profile-owned citations and fixture citation checks | Extend for each new cell |
-| SBM-NBP-013 | Met | Until PRA mapping issue |
-| SBM-NBP-030–032 | Met for `US_NPR_2_0` GIRR delta with `girr_delta_us_npr_v1` and row/batch/Arrow tests | Extend to later NPR cells |
-| SBM-NBP-040–042 | Met for unsupported NPR cells, EU, and PRA fail-closed tests | Preserve as coverage expands |
+| SBM-NBP-001 | Met (full comparison-slice matrix in traceability) | Maintain per-cell fixture updates |
+| SBM-NBP-002 | Met for Basel and all comparison profiles via `test_sbm_support_matrix.py` | Extend fixture parity per new cell |
+| SBM-NBP-010 | Enforced via profile-owned citations and no-`basel_` leakage tests | Preserve on expansion |
+| SBM-NBP-013 | Met (comparison slice under audit, not final UK capital) | Maintain honest status labels |
+| SBM-NBP-020 | Met for comparison-slice enablement (source register + mapping doc + `girr_delta_pra_uk_crr_v1`) | PRA Rulebook paragraph mapping under #501 |
+| SBM-NBP-030–032 | Met for GIRR delta on US/EU/PRA | Extend to later cells |
+| SBM-NBP-040–042 | Met for equity repo fail-closed and unknown profiles | Preserve as coverage expands |
 | SBM-NBP-060 | Required for implementation PRs | Run before push |
 
 ---
@@ -287,5 +294,6 @@ Use these titles when splitting implementation work:
 
 1. **SBM NPR GIRR vega/curvature** — extend NPR GIRR row (phase 2).
 2. **SBM NPR non-GIRR delta** — FX, equity, commodity, and CSR NPR mappings.
-3. **SBM EU CRR3 GIRR delta** — article mapping + first EU cell (blocked on legal mapping review).
-4. **SBM PRA UK CRR source mapping** — SBM-NBP-020 prerequisite.
+3. **SBM per-cell fixtures** — extend beyond GIRR delta for US/EU/PRA (#501).
+4. **SBM independent table transcription** — replace Basel mirrors where NPR/EU/UK diverge.
+5. **SBM PRA Rulebook paragraph mapping** — UK-specific non-fixture cells (#501).

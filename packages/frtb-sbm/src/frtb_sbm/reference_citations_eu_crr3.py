@@ -25,7 +25,10 @@ def _eu_citation_from_basel(basel_citation_id: str, eu_citation_id: str) -> SbmC
         source_id=_EU_CRR3_SOURCE_ID,
         location=_EU_CRR3_LOCATION,
         url=EU_CRR3_URL,
-        note=f"EU CRR3 comparison slice — {basel.note}",
+        note=(
+            "EU CRR3 comparison slice — Basel-mirrored numerics with profile-owned "
+            f"citation routing; {basel.note}"
+        ),
     )
 
 

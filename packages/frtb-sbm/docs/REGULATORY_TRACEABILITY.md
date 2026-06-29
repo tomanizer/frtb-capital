@@ -30,6 +30,7 @@ Use this document in two directions:
 | Implemented under audit | Tested code produces the cited behavior for supported inputs, but package validation remains synthetic/internal and `PACKAGE_METADATA.validation_status` is `PENDING`. |
 | Excluded | The behavior belongs outside `frtb-sbm`, usually in upstream systems or suite orchestration. |
 | Unsupported fail-closed | The package must raise an explicit unsupported-feature or input error until the profile or feature has cited rules and deterministic tests. |
+| Comparison slice under audit | All 21 runtime gates are open with Basel-mirrored numerics and profile-owned citation ids; at least one GIRR delta fixture exists per profile; remaining cells lack per-cell fixture evidence. Not final regulatory capital. |
 | Out of scope | Deliberately deferred beyond the current phase boundary. |
 
 ## Phase-1 support status (supported Basel slices)
@@ -94,14 +95,32 @@ and
 
 | Profile | Current runtime status | Planning status |
 | --- | --- | --- |
-| `US_NPR_2_0` | implemented under audit (21 / 21 cells) | Full seven-risk-class delta, vega, and curvature comparison slice with cited NPR reference data. Equity repo vega/curvature sub-features remain unsupported fail-closed. Proposed-rule material only. |
-| `EU_CRR3` | implemented under audit (21 / 21 cells) | Full seven-risk-class delta, vega, and curvature comparison slice with cited EU CRR3 reference data. Equity repo vega/curvature sub-features remain unsupported fail-closed. |
-| `PRA_UK_CRR` | implemented under audit (21 / 21 cells) | Full seven-risk-class delta, vega, and curvature comparison slice with cited UK CRR reference data. Equity repo vega/curvature sub-features remain unsupported fail-closed. |
+| `US_NPR_2_0` | comparison slice under audit (21 / 21 runtime gates; 1 / 21 fixture-backed) | Basel-mirrored numerics with profile-owned NPR citation ids across all seven risk classes. `girr_delta_us_npr_v1` is the only per-cell fixture. Proposed-rule material only. |
+| `EU_CRR3` | comparison slice under audit (21 / 21 runtime gates; 1 / 21 fixture-backed) | Basel-mirrored numerics with profile-owned EU CRR3 article citation ids. `girr_delta_eu_crr3_v1` is the only per-cell fixture. |
+| `PRA_UK_CRR` | comparison slice under audit (21 / 21 runtime gates; 1 / 21 fixture-backed) | Basel-mirrored numerics with profile-owned UK CRR article citation ids and PRA PS1/26 policy anchor. `girr_delta_pra_uk_crr_v1` is the only per-cell fixture. See [`docs/regulatory/profiles/pra-uk-crr-source-mapping-status.md`](../../../docs/regulatory/profiles/pra-uk-crr-source-mapping-status.md). |
 
-Except for `US_NPR_2_0` GIRR delta, every risk-class and measure combination for
-non-Basel profiles remains unsupported fail-closed. Basel MAR21 sub-features that
-are unsupported within `BASEL_MAR21` (for example equity repo vega/curvature)
-are documented in the BASEL matrix above, not as non-Basel backlog.
+Comparison profiles use `mirror_with_profile_citation()` to copy Basel table
+rows and relabel citation ids only. Numerics are **not** independently
+transcribed from NPR/EU/UK primary legal text except where a fixture pack
+replays capital under profile-owned ids. Equity repo vega/curvature
+sub-features remain unsupported fail-closed under every profile, matching the
+BASEL matrix above.
+
+### Non-Basel risk-class/measure matrix (comparison slice)
+
+All cells below share status **comparison slice under audit** (runtime gate
+open, Basel-mirrored numerics, profile-owned citations). Only GIRR delta has a
+per-profile fixture pack.
+
+| Risk class | Delta | Vega | Curvature | Fixture evidence |
+| --- | --- | --- | --- | --- |
+| GIRR | comparison slice under audit | comparison slice under audit | comparison slice under audit | `girr_delta_{us_npr,eu_crr3,pra_uk_crr}_v1` |
+| FX | comparison slice under audit | comparison slice under audit | comparison slice under audit | none |
+| Equity | comparison slice under audit | comparison slice under audit | comparison slice under audit | none |
+| Commodity | comparison slice under audit | comparison slice under audit | comparison slice under audit | none |
+| CSR non-securitisation | comparison slice under audit | comparison slice under audit | comparison slice under audit | none |
+| CSR securitisation non-CTP | comparison slice under audit | comparison slice under audit | comparison slice under audit | none |
+| CSR securitisation CTP | comparison slice under audit | comparison slice under audit | comparison slice under audit | none |
 
 ## Closed-issue audit
 
@@ -119,8 +138,9 @@ are documented in the BASEL matrix above, not as non-Basel backlog.
 | Source family | Primary references used by this package | Package status |
 | --- | --- | --- |
 | Basel Standardised Approach | Basel Framework MAR20 and MAR21. MAR20.4 places SBM in the SA stack. MAR21.1-MAR21.101 define risk classes, measures, weights, buckets, and aggregation. | Implemented for supported phase-1 Basel slices. |
-| U.S. NPR 2.0 | Federal Register 91 FR 14952, March 27, 2026. Section V.A.7.a defines the standardized non-default process. | Partial comparison profile: GIRR delta implemented under audit; proposed-rule material only. |
-| EU CRR3 | Regulation (EU) 2024/1623 Articles 325e-325az. | Planned comparison profile; current runtime support remains BASEL_MAR21 only. |
+| U.S. NPR 2.0 | Federal Register 91 FR 14952, March 27, 2026. Section V.A.7.a defines the standardized non-default process. | Comparison slice under audit: 21 runtime gates, Basel-mirrored numerics, `girr_delta_us_npr_v1` fixture; proposed-rule material only. |
+| EU CRR3 | Regulation (EU) 2024/1623 Articles 325e-325az. | Comparison slice under audit: 21 runtime gates, Basel-mirrored numerics, `girr_delta_eu_crr3_v1` fixture. |
+| PRA UK CRR | PRA PS1/26 (January 2026) and UK CRR Part Three Title IV Chapter 1a Articles 325r-325az. | Comparison slice under audit: 21 runtime gates, Basel-mirrored numerics (identical to EU in code), `girr_delta_pra_uk_crr_v1` fixture. Chapter 1a article text omitted on legislation.gov.uk since 2022-01-01. |
 | ISDA CRIF | CRIF field convention. | Adapter inspiration only; not a regulatory source. |
 
 Use `docs/regulatory_sources.yml` for topic-level links and review notes.
@@ -135,6 +155,10 @@ Use `docs/regulatory_sources.yml` for topic-level links and review notes.
   https://www.govinfo.gov/app/details/FR-2026-03-27/2026-05959
 - Regulation (EU) 2024/1623 (CRR3):
   https://eur-lex.europa.eu/eli/reg/2024/1623/oj/eng
+- PRA PS1/26 Basel 3.1 final rules:
+  https://www.bankofengland.co.uk/prudential-regulation/publication/2026/january/implementation-of-the-basel-3-1-final-rules-policy-statement
+- UK CRR Chapter 1a (SBM articles 325r-325az):
+  https://www.legislation.gov.uk/eur/2013/575/part/THREE/title/IV/chapter/1a
 
 ## Code to regulation
 
@@ -146,12 +170,12 @@ Use `docs/regulatory_sources.yml` for topic-level links and review notes.
 | `data_models.py` | Frozen sensitivity, context, weighted sensitivity, bucket, risk-class, and result dataclasses. | MAR21.1-MAR21.8. | Section V.A.7.a steps one through three. | Implemented (#153). |
 | `batch.py` | Package-owned NumPy-backed homogeneous sensitivity batch and row-equivalent input hashing. | MAR21.4-MAR21.7, MAR21 risk-class-specific weighting provisions. | Section V.A.7.a steps three through six. | Implemented under audit for supported BASEL_MAR21 delta, vega, and curvature paths. |
 | `validation.py` | Input invariants, duplicate identity checks, lineage checks, and explicit package input errors. | MAR21 risk-factor assignment context. | Section V.A.7.a steps one and two. | Implemented (#153). |
-| `regimes.py` | Rule-profile identity, support declarations, unsupported-profile guardrails, and deterministic profile hash. | MAR21 profile for Basel SBM mechanics. | Section V.A.7.a U.S. profile. | Implemented under audit for BASEL_MAR21 supported delta/vega/curvature slices and `US_NPR_2_0` GIRR delta; unsupported comparison-profile cells fail closed. |
-| `reference_data.py` | Risk-class bucket definitions, tenor sets, risk weights, correlations, scenario labels, and citation ids. | MAR21 risk-class tables, including MAR21.90-MAR21.95 vega and MAR21.96-MAR21.101 curvature weights and correlations. | Section V.A.7.a risk-weight and correlation steps. | Implemented for BASEL_MAR21 GIRR, FX, equity, commodity, and CSR delta/vega/curvature reference data plus profile-owned `US_NPR_2_0` GIRR delta data. |
+| `regimes.py` | Rule-profile identity, support declarations, unsupported-profile guardrails, and deterministic profile hash. | MAR21 profile for Basel SBM mechanics. | Section V.A.7.a U.S. profile; EU CRR3 and PRA PS1/26 comparison profiles. | Implemented under audit for BASEL_MAR21; comparison slice under audit for `US_NPR_2_0`, `EU_CRR3`, and `PRA_UK_CRR`. |
+| `reference_data.py` | Risk-class bucket definitions, tenor sets, risk weights, correlations, scenario labels, and citation ids. | MAR21 risk-class tables, including MAR21.90-MAR21.95 vega and MAR21.96-MAR21.101 curvature weights and correlations. | Section V.A.7.a risk-weight and correlation steps. | BASEL_MAR21 fully cited; comparison profiles use Basel-mirrored tables with profile-owned citation routing. |
 | `csr_nonsec_reference_data.py` | CSR non-sec buckets, weights, intra/inter correlations, and validation helpers. | MAR21.51-MAR21.57. | Section V.A.7.a CSR non-sec context. | Implemented (#164). |
 | `weighted_sensitivity.py` | Cited risk-weight lookup and weighted sensitivity records for supported measures. | MAR21 risk-weight provisions by class. | Section V.A.7.a step three. | Implemented for supported delta/vega row and batch weighting. Curvature branch weighting lives in `curvature.py`. |
 | `aggregation.py` | Shared intra-bucket and inter-bucket aggregation, scenario evaluation, and floors. | MAR21 aggregation formulas. | Section V.A.7.a steps four through six. | Implemented (#156, #157). |
-| `capital.py` | Public calculation entry point wiring validation, profiles, weighting, aggregation, and result assembly. | MAR21 end-to-end SBM mechanics. | Section V.A.7.a full process. | Implemented under audit for supported BASEL_MAR21 delta/vega/curvature row and batch entrypoints, `US_NPR_2_0` GIRR delta row/batch/Arrow entrypoints, and portfolio batch dispatch. |
+| `capital.py` | Public calculation entry point wiring validation, profiles, weighting, aggregation, and result assembly. | MAR21 end-to-end SBM mechanics. | Section V.A.7.a full process. | Implemented under audit for BASEL_MAR21; comparison profiles gated for all 21 cells with GIRR delta fixture replay per profile. |
 | `risk_classes/vega.py` | Non-GIRR vega aggregation for FX, equity, commodity, CSR non-sec, CSR sec CTP, and CSR sec non-CTP. | MAR21.90-MAR21.95. | Section V.A.7.a vega context. | Implemented with Table 13 liquidity horizons, MAR21.94 delta-rho-times-option-rho correlations, MAR21.95 delta gamma reuse, batch path support, and explicit equity repo vega fail-closed behavior. |
 | `arrow_batch.py` | Adapter boundary from normalized Arrow batch to package-owned SBM batches. | MAR21 risk-factor assignment and weighting context. | Section V.A.7.a tabular input context. | Implemented under audit for supported BASEL_MAR21 delta, vega, and curvature handoffs; no Arrow in kernels. Benchmark evidence records that migrated high-volume paths avoid accepted-row dataclasses. |
 | `curvature.py` | Curvature input contracts, up/down shock validation, CVR+/CVR- factor netting, FX MAR21.98 scalar marking, bucket branch selection, squared curvature correlations, and bucket branch audit records. | MAR21.5 and MAR21.96-MAR21.101 curvature provisions. | Section V.A.7.a footnote 328. | Implemented under audit for BASEL_MAR21 curvature capital across supported SBM risk classes, with row, batch, and Arrow batch entrypoints. |

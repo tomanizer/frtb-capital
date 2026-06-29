@@ -48,9 +48,9 @@ sources:
     jurisdiction: US
     title: "Federal Register 91 FR 14952, Regulatory Capital Rule market-risk proposal"
     url: "https://www.govinfo.gov/app/details/FR-2026-03-27/2026-05959"
-    section_hint: "Section V.A.7.a describes the standardized non-default capital requirement; the current implementation uses profile-owned GIRR delta bucket, weight, correlation, and scenario citation ids for the US_NPR_2_0 comparison slice."
+    section_hint: "Section V.A.7.a describes the standardized non-default capital requirement. All 21 US_NPR_2_0 cells use Basel-mirrored numerics with profile-owned citation ids; only GIRR delta has a fixture pack (girr_delta_us_npr_v1)."
     status: proposed_rule_reference
-    reuse_note: "GovInfo is the primary U.S. NPR source link for this package. Outputs are proposed-rule comparison material only."
+    reuse_note: "GovInfo is the primary U.S. NPR source link. Comparison-slice numerics are Basel-mirrored until NPR tables are independently transcribed. Outputs are proposed-rule comparison material only."
     module_paths:
       - src/frtb_sbm/regimes.py
       - src/frtb_sbm/reference_data.py
@@ -68,9 +68,9 @@ sources:
     jurisdiction: EU
     title: "Regulation (EU) 2024/1623 (CRR3) consolidated text"
     url: "https://eur-lex.europa.eu/eli/reg/2024/1623/oj/eng"
-    section_hint: "Articles 325e-325az; Article 325r delta, 325s vega, 325t curvature, and 325u correlation scenarios for the EU_CRR3 comparison slice."
+    section_hint: "Articles 325e-325az; Article 325r delta, 325s vega, 325t curvature, and 325u correlation scenarios. All 21 EU_CRR3 cells use Basel-mirrored numerics with profile-owned citation ids; only GIRR delta has a fixture pack (girr_delta_eu_crr3_v1)."
     status: comparison_reference
-    reuse_note: "EU CRR3 full 21-cell SBM comparison slice uses profile-owned citation ids; outputs are comparison material only."
+    reuse_note: "EU CRR3 comparison-slice numerics are Basel-mirrored until CRR3 tables are independently transcribed. Outputs are comparison material only."
     module_paths:
       - src/frtb_sbm/regimes.py
       - src/frtb_sbm/reference_citations_eu_crr3.py
@@ -82,11 +82,11 @@ sources:
   - id: uk_crr_sbm_retained
     family: PRA_UK_CRR
     jurisdiction: UK
-    title: "UK CRR sensitivities-based method (onshored)"
-    url: "https://www.legislation.gov.uk/eur/2013/575/part/8/crossheading/sensitivities-based-method"
-    section_hint: "Articles 325r-325az; Article 325r delta, 325s vega, 325t curvature, and 325u correlation scenarios for the PRA_UK_CRR comparison slice."
+    title: "UK CRR Part Three Title IV Chapter 1a (retained CRR3 SBM articles)"
+    url: "https://www.legislation.gov.uk/eur/2013/575/part/THREE/title/IV/chapter/1a"
+    section_hint: "Articles 325r delta, 325s vega, 325t curvature, and 325u correlation scenarios. Chapter 1a article text is omitted on legislation.gov.uk since 1 January 2022; live UK SBM text is in the PRA Rulebook cross-referenced by PS1/26."
     status: comparison_reference
-    reuse_note: "PRA UK CRR full 21-cell SBM comparison slice uses profile-owned citation ids; outputs are comparison material only."
+    reuse_note: "Article-level legislation.gov.uk links are used in profile citations. Comparison-slice numerics are Basel-mirrored and numerically identical to EU_CRR3 in this package until UK-specific table divergence is transcribed."
     module_paths:
       - src/frtb_sbm/regimes.py
       - src/frtb_sbm/reference_citations_pra_uk_crr.py
@@ -94,6 +94,21 @@ sources:
       - src/frtb_sbm/capital.py
     requirement_ids:
       - SBM-REF-001
+      - SBM-NBP-020
+
+  - id: uk_pra_ps1_26_sbm
+    family: PRA_UK_CRR
+    jurisdiction: UK
+    title: "PRA PS1/26 — Implementation of Basel 3.1 final rules"
+    url: "https://www.bankofengland.co.uk/prudential-regulation/publication/2026/january/implementation-of-the-basel-3-1-final-rules-policy-statement"
+    section_hint: "Chapter 3 market-risk policy anchor for PRA_UK_CRR SBM comparison profile; effective 1 January 2027 per docs/regulatory/regimes/uk-pra-basel-3-1.yml."
+    status: policy_statement_reference
+    reuse_note: "Policy-statement anchor cited alongside UK CRR article crosswalk; not a substitute for PRA Rulebook paragraph mapping."
+    module_paths:
+      - src/frtb_sbm/regimes.py
+      - src/frtb_sbm/reference_citations_pra_uk_crr.py
+    requirement_ids:
+      - SBM-NBP-020
 
   - id: isda_crif_convention
     family: IMPLEMENTATION_SUPPORT

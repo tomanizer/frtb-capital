@@ -13,7 +13,7 @@ from frtb_sbm.reference_citations_basel_risk_classes import BASEL_RISK_CLASS_CIT
 
 US_NPR_2_0_URL = "https://www.govinfo.gov/app/details/FR-2026-03-27/2026-05959"
 _US_NPR_SOURCE_ID = "us_npr_2_0_91_fr_14952"
-_US_NPR_LOCATION = "91 FR 15020, section V.A.7.a"
+_US_NPR_LOCATION = "91 FR 14952, section V.A.7.a"
 
 _BASEL_CITATIONS = {**BASEL_CORE_CITATIONS, **BASEL_RISK_CLASS_CITATIONS}
 
@@ -24,7 +24,10 @@ def _npr_citation_from_basel(basel_citation_id: str, npr_citation_id: str) -> Sb
         source_id=_US_NPR_SOURCE_ID,
         location=_US_NPR_LOCATION,
         url=US_NPR_2_0_URL,
-        note=f"U.S. NPR comparison slice — {basel.note}",
+        note=(
+            "U.S. NPR comparison slice — Basel-mirrored numerics with profile-owned "
+            f"citation routing; {basel.note}"
+        ),
     )
 
 

@@ -8,15 +8,14 @@ Detailed requirements: [NON_BASEL_PROFILE_REQUIREMENTS.md](NON_BASEL_PROFILE_REQ
 
 `frtb-sbm` implements cited **BASEL_MAR21** delta, vega, and curvature capital
 for all seven SBM risk classes (21 profile/risk-class/measure cells). The
-comparison profiles `US_NPR_2_0`, `EU_CRR3`, and `PRA_UK_CRR` are recognised at
-the type level. Issue #504 implements the first comparison-profile cell,
-`US_NPR_2_0` GIRR delta, with cited profile-owned reference data and fixture
-evidence. All other non-Basel cells still fail closed before capital
-calculation until cited reference data and deterministic fixtures exist.
+comparison profiles `US_NPR_2_0`, `EU_CRR3`, and `PRA_UK_CRR` now expose all 21
+runtime gates with Basel-mirrored numerics and profile-owned citation routing.
+Each profile has one GIRR delta fixture pack; remaining cells are gated without
+per-cell fixture evidence until independently transcribed.
 
-This design records research on the current boundary, defines a normative
-support matrix, and sequences implementation without changing public API
-semantics or Basel fixture hashes.
+This design records the current boundary, defines a normative support matrix,
+and sequences follow-on work without changing public API semantics or Basel
+fixture hashes.
 
 ## Research summary (current codebase)
 
@@ -25,53 +24,46 @@ semantics or Basel fixture hashes.
 | Layer | BASEL_MAR21 | Non-Basel profiles |
 | --- | --- | --- |
 | `SbmRegulatoryProfile` enum | `BASEL_MAR21` | `US_NPR_2_0`, `EU_CRR3`, `PRA_UK_CRR` |
-| `phase1_capital_supported_paths()` | 21 cells (7×3) | `US_NPR_2_0` GIRR delta; EU/PRA empty frozenset |
-| `resolve_sbm_profile()` / `get_sbm_rule_profile()` | Supported | `US_NPR_2_0` supported for GIRR delta; EU/PRA fail closed via `UNSUPPORTED_PROFILE_REASONS` |
-| `PROFILE_*` reference-data maps in `reference_data.py` | Populated | NPR GIRR delta populated; other non-Basel lookup paths fail closed |
-| Fixture packs under `tests/fixtures/` | 7 packs (`*_v1`) | `girr_delta_us_npr_v1` |
-| `REGULATORY_TRACEABILITY.md` | Full 7×3 matrix | `US_NPR_2_0` partial; EU/PRA unsupported fail-closed / blocked |
-| Enforcement tests | `test_sbm_support_matrix.py`, `test_sbm_unsupported_features.py` | NPR one-cell support + fail-closed tests for remaining cells |
+| `phase1_capital_supported_paths()` | 21 cells (7×3) | 21 cells each (comparison slice) |
+| `resolve_sbm_profile()` / `get_sbm_rule_profile()` | Supported | All three comparison profiles supported |
+| `PROFILE_*` reference-data maps | Populated | Basel-mirrored via `mirror_with_profile_citation()` |
+| Fixture packs under `tests/fixtures/` | 7 packs (`*_v1`) | `girr_delta_{us_npr,eu_crr3,pra_uk_crr}_v1` |
+| `REGULATORY_TRACEABILITY.md` | Full 7×3 matrix | Comparison slice matrix with honest fixture counts |
+| Enforcement tests | `test_sbm_support_matrix.py`, profile GIRR delta tests | Gate parity + no Basel citation leakage |
 
 Authoritative runtime gates:
 
-- `packages/frtb-sbm/src/frtb_sbm/validation.py` — `_PHASE1_SUPPORTED`
-- `packages/frtb-sbm/src/frtb_sbm/regimes.py` — `UNSUPPORTED_PROFILE_REASONS`, `PROFILE_SUPPORTED_MEASURES`
+- `packages/frtb-sbm/src/frtb_sbm/validation/context.py` — `_PHASE1_SUPPORTED`
+- `packages/frtb-sbm/src/frtb_sbm/regimes.py` — `PROFILE_SUPPORTED_MEASURES`
 - `packages/frtb-sbm/docs/REGULATORY_TRACEABILITY.md` — documentation source for tests
 
 ### Basel sub-features still unsupported (within BASEL_MAR21)
 
 These are **not** non-Basel gaps; they are explicit fail-closed cells inside the
-Basel profile and must remain documented separately so implementers do not
-conflate them with profile expansion:
+Basel profile and must remain documented separately:
 
 | Cell / feature | Status | Notes |
 | --- | --- | --- |
 | Equity `REPO` vega | Unsupported fail-closed | `weighted_sensitivity.py`, `test_sbm_non_girr_vega.py` |
 | Equity `REPO` curvature | Unsupported fail-closed | `test_curvature.py`, CRIF rejects |
-| Other unmapped qualifiers / risk factors | Unsupported fail-closed | Per risk-class validation |
 
 ### Sibling package precedent (`frtb-drc`)
 
-`frtb-drc` already implements a **partial multi-profile** model:
-
-- **US_NPR_2_0** — capital-producing for non-sec, sec non-CTP, CTP (proposed-rule citations, e.g. `US_NPR_210_B_1_IV`).
-- **BASEL_MAR22** — partial (non-sec row/batch).
-- **EU_CRR3**, **PRA_UK_CRR** — fail closed until cited tables exist.
-
-SBM should mirror this pattern: profile-owned reference data, deterministic
-profile hash, per-cell support flags, and no silent fallback to Basel tables when
-a non-Basel profile is selected.
+`frtb-drc` implements partial multi-profile support with profile-owned citations
+and fail-closed cells where mappings are incomplete. SBM comparison profiles
+follow the same isolation principle: no silent fallback to Basel tables when a
+non-Basel profile is selected.
 
 ### Regulatory source mapping (link-only in repo)
 
-| Profile | Primary source | Section hints already in `regulatory_sources.yml` |
+| Profile | Primary source | Package status |
 | --- | --- | --- |
-| `US_NPR_2_0` | [91 FR 14952](https://www.govinfo.gov/app/details/FR-2026-03-27/2026-05959) | Section V.A.7.a; pages ~91 FR 15037 (six-step SBM process) |
-| `EU_CRR3` | [Regulation (EU) 2024/1623](https://eur-lex.europa.eu/eli/reg/2024/1623/oj/eng) | Articles 325e–325az (market-risk / SA) |
-| `PRA_UK_CRR` | UK CRR as applied by PRA | **Blocked:** no PRA-specific SBM table mapping in repo yet; needs source register entry before implementation |
+| `US_NPR_2_0` | [91 FR 14952](https://www.govinfo.gov/app/details/FR-2026-03-27/2026-05959) Section V.A.7.a | Comparison slice; proposed-rule material only |
+| `EU_CRR3` | [Regulation (EU) 2024/1623](https://eur-lex.europa.eu/eli/reg/2024/1623/oj/eng) Articles 325e–325az | Comparison slice |
+| `PRA_UK_CRR` | [PRA PS1/26](https://www.bankofengland.co.uk/prudential-regulation/publication/2026/january/implementation-of-the-basel-3-1-final-rules-policy-statement) + [UK CRR Ch. 1a](https://www.legislation.gov.uk/eur/2013/575/part/THREE/title/IV/chapter/1a) | Comparison slice; see [`pra-uk-crr-source-mapping-status.md`](../../regulatory/profiles/pra-uk-crr-source-mapping-status.md) |
 
-U.S. NPR 2.0 material is **proposed-rule comparison only**; outputs must not be
-described as final regulatory capital.
+U.S. NPR 2.0 material is **proposed-rule comparison only**; comparison-slice
+outputs must not be described as final regulatory capital.
 
 ## Normative support matrix
 
@@ -79,183 +71,84 @@ Status labels match `REGULATORY_TRACEABILITY.md`:
 
 | Status | Meaning |
 | --- | --- |
-| **Implemented under audit** | Cited runtime path + synthetic fixture; `ValidationStatus.PENDING` |
-| **Unsupported fail-closed** | Explicit `UnsupportedRegulatoryFeatureError` or `SbmInputError` |
-| **Planned** | Issue-backed; source mapped; no capital yet |
+| **Implemented under audit** | Cited runtime path + synthetic fixture per cell; `ValidationStatus.PENDING` |
+| **Comparison slice under audit** | All 21 runtime gates open; Basel-mirrored numerics; ≥1 GIRR delta fixture; remaining cells lack per-cell fixtures |
+| **Unsupported fail-closed** | Explicit error before capital calculation |
 | **Blocked** | Cannot implement until regulatory source mapping is agreed |
-| **Out of scope** | Belongs outside `frtb-sbm` (e.g. SA composition in orchestration) |
+| **Out of scope** | Belongs outside `frtb-sbm` |
 
 ### Profile × risk-class × measure (21 cells per profile)
 
-| Profile | Cells | Runtime today |
-| --- | ---: | --- |
-| `BASEL_MAR21` | 21 / 21 | 21 implemented under audit |
-| `US_NPR_2_0` | 1 / 21 | GIRR delta implemented under audit; 20 unsupported fail-closed |
-| `EU_CRR3` | 0 / 21 | 21 unsupported fail-closed |
-| `PRA_UK_CRR` | 0 / 21 | 21 unsupported fail-closed |
+| Profile | Runtime gates | Fixture-backed cells | Numerics source |
+| --- | ---: | ---: | --- |
+| `BASEL_MAR21` | 21 / 21 | 7 risk-class packs | Basel MAR21 tables |
+| `US_NPR_2_0` | 21 / 21 | 1 / 21 (GIRR delta) | Basel mirror + NPR citation ids |
+| `EU_CRR3` | 21 / 21 | 1 / 21 (GIRR delta) | Basel mirror + EU article citation ids |
+| `PRA_UK_CRR` | 21 / 21 | 1 / 21 (GIRR delta) | Basel mirror + UK article citation ids |
 
-Per-class detail for non-Basel profiles (all measures share the same status until a cell lands):
+Per-class detail for non-Basel profiles (all measures share **comparison slice
+under audit** until a per-cell fixture lands):
 
 | Risk class | `US_NPR_2_0` | `EU_CRR3` | `PRA_UK_CRR` |
 | --- | --- | --- | --- |
-| GIRR | Delta implemented under audit; vega/curvature unsupported fail-closed | Planned | Blocked |
-| FX | Planned | Planned | Blocked |
-| Equity | Planned | Planned | Blocked |
-| Commodity | Planned | Planned | Blocked |
-| CSR non-sec | Planned | Planned | Blocked |
-| CSR sec non-CTP | Planned | Planned | Blocked |
-| CSR sec CTP | Planned | Planned | Blocked |
-
-### First implementation cell
-
-**`US_NPR_2_0` × GIRR × DELTA**
-
-| Criterion | Rationale |
-| --- | --- |
-| Reuse | Same aggregation engine as `girr_delta_v1`; only reference-data and citation ids change |
-| Suite alignment | DRC already uses U.S. NPR citation naming; SBM can adopt `US_NPR_V_A_7_a_*` (or harmonised `US_NPR_SBM_*`) ids |
-| Risk | Lowest-dimensional slice (delta only); vega/curvature add liquidity-horizon and shock contracts later |
-| Audit | New fixture pack `girr_delta_us_npr_v1` without touching `girr_delta_v1` hashes |
-
-**Explicit non-goals for the first slice:** Do not implement EU/PRA cells in the
-same PR; do not map NPR inputs to Basel buckets/weights; do not change
-`BASEL_MAR21` expected outputs.
+| GIRR | comparison slice under audit (`girr_delta_*_v1`) | comparison slice under audit | comparison slice under audit |
+| FX | comparison slice under audit | comparison slice under audit | comparison slice under audit |
+| Equity | comparison slice under audit | comparison slice under audit | comparison slice under audit |
+| Commodity | comparison slice under audit | comparison slice under audit | comparison slice under audit |
+| CSR non-sec | comparison slice under audit | comparison slice under audit | comparison slice under audit |
+| CSR sec non-CTP | comparison slice under audit | comparison slice under audit | comparison slice under audit |
+| CSR sec CTP | comparison slice under audit | comparison slice under audit | comparison slice under audit |
 
 ## Architecture design
 
 ### Design principles
 
-1. **Profile-owned parameters** — All weights, buckets, tenors, correlations,
-   and scenario multipliers are keyed by `SbmRegulatoryProfile`; kernels stay
-   profile-agnostic (existing `SBM-DEC-003`).
-2. **Fail closed** — Missing profile data or unmapped NPR/CRR articles raise
-   `UnsupportedRegulatoryFeatureError`; never default to Basel MAR21.
-3. **Citation granularity** — U.S. cells cite Federal Register section/page or
-   proposed paragraph ids; EU cells cite CRR3 articles; no framework-only labels.
+1. **Profile-owned parameters** — Weights, buckets, and citations keyed by
+   `SbmRegulatoryProfile`; kernels stay profile-agnostic.
+2. **Fail closed** — Missing profile data raises `UnsupportedRegulatoryFeatureError`;
+   never default to Basel MAR21 at runtime.
+3. **Honest comparison slice** — Basel-mirrored numerics are permitted for
+   cross-jurisdiction review when citation ids and docs state the limitation.
 4. **Deterministic evidence** — Each newly supported cell gets a versioned
-   fixture pack with SHA256 manifest hashes (existing fixture workflow).
-5. **Stable public API** — `calculate_sbm_capital`, context shape, and result
-   types unchanged; profile selection remains `SbmCalculationContext.profile_id`.
-6. **Package boundary** — No sibling imports; no orchestration of SA totals.
+   fixture pack; GIRR delta fixtures exist per comparison profile today.
+5. **Stable public API** — Profile selection remains `SbmCalculationContext.profile_id`.
 
-### Module changes (by delivery phase)
-
-```mermaid
-flowchart TD
-  subgraph inputs [Inputs]
-    CTX[SbmCalculationContext.profile_id]
-    SENS[SbmSensitivity rows]
-  end
-  subgraph gates [Gates]
-    VAL[validation.phase1_capital_supported_paths]
-    REG[regimes.resolve_sbm_profile]
-  end
-  subgraph data [Profile data]
-    REF[reference_data PROFILE_* maps]
-    CIT[PROFILE_CITATIONS]
-  end
-  subgraph calc [Unchanged kernels]
-    WS[weighted_sensitivity]
-    AGG[aggregation]
-    RC[risk_classes/*]
-  end
-  CTX --> VAL
-  CTX --> REG
-  REG --> REF
-  REF --> WS
-  SENS --> WS
-  WS --> AGG --> RC
-```
-
-| Module | Change |
-| --- | --- |
-| `reference_data.py` | Add `US_NPR_*` bucket/weight/correlation tables; extend `PROFILE_*` dicts |
-| `regimes.py` | Move `US_NPR_2_0` from `UNSUPPORTED_PROFILE_REASONS` to `SUPPORTED_PROFILE_METADATA` when first cell ships; extend `PROFILE_SUPPORTED_MEASURES` incrementally |
-| `validation.py` | Extend `_PHASE1_SUPPORTED[US_NPR_2_0]` one cell at a time |
-| `regulatory_sources.yml` | Add NPR table-level `section_hint` entries per implemented cell |
-| `REGULATORY_TRACEABILITY.md` | Expand non-Basel section from single profile row to 7×3 matrix |
-| `tests/fixtures/girr_delta_us_npr_v1/` | New fixture pack; leave `girr_delta_v1` untouched |
-| `tests/test_sbm_support_matrix.py` | Assert doc/code parity for each newly supported cell |
-
-### Citation id convention (proposed)
-
-Align with DRC’s `US_NPR_210_*` style but keep SBM-specific namespaces to avoid
-collisions:
+### Citation id convention
 
 | Pattern | Example | Use |
 | --- | --- | --- |
-| `US_NPR_SBM_<section>_<table>` | `US_NPR_SBM_V_A_7_a_GIRR_RW` | U.S. SBM risk weights |
+| `us_npr_91_fr_14952_va7a_*` | `us_npr_91_fr_14952_va7a_girr_delta_weights` | U.S. NPR comparison slice (`va7a` = internal Section V.A.7.a shorthand) |
+| `eu_crr3_art_325r_*` | `eu_crr3_art_325r_girr_delta_weights` | EU CRR3 article crosswalk |
+| `pra_uk_crr_art_325r_*` | `pra_uk_crr_art_325r_girr_delta_weights` | UK CRR article crosswalk |
 | `basel_mar21_*` | (existing) | Basel only |
-| `EU_CRR3_ART_325*` | `EU_CRR3_ART_325r` | EU bucket/weight articles |
-| `PRA_UK_CRR_*` | TBD | Blocked until PRA mapping issue |
 
-### Data flow for first slice
-
-1. Caller sets `profile_id=US_NPR_2_0`, `risk_class=GIRR`, `risk_measure=DELTA`.
-2. `ensure_sbm_capital_paths_supported` allows only registered cells.
-3. `resolve_sbm_profile` returns metadata + hash including NPR reference payload.
-4. GIRR delta weighting reads `PROFILE_GIRR_DELTA_RISK_WEIGHTS[US_NPR_2_0]`.
-5. Aggregation uses `PROFILE_CORRELATION_SCENARIOS[US_NPR_2_0]` (if NPR scenarios differ; otherwise cite identity to Basel and document delta).
-6. Result carries NPR citation ids in `SbmCapitalResult.citations`.
-
-If NPR GIRR delta tables are **numerically identical** to Basel MAR21 for the
-synthetic fixture, capital may match Basel **only when inputs and citations are
-NPR-labelled** — never by reusing Basel profile id or silent alias.
+Auto-generated comparison citations prefix Basel notes with
+"Basel-mirrored numerics with profile-owned citation routing".
 
 ## Phased delivery plan
 
-| Phase | Scope | Maturity impact |
+| Phase | Scope | Status |
 | --- | --- | --- |
-| **0 (this issue)** | Design + requirements + matrix in docs; tests reference matrix | Documentation only |
-| **1** | `US_NPR_2_0` GIRR delta: reference data, fixture, fail-closed tests for other NPR cells | First non-Basel cell; still `partial_runtime` unless governance promotes |
-| **2** | NPR GIRR vega + curvature | Expand matrix rows |
-| **3** | NPR FX / equity / commodity / CSR (delta → vega → curvature per class) | Comparison-profile coverage |
-| **4** | `EU_CRR3` — start with GIRR delta after article mapping | EU comparison |
-| **5** | `PRA_UK_CRR` — blocked until PRA source register + mapping issue | UK comparison |
-
-Each phase is **one package PR** unless an ADR documents a cross-cutting
-regulatory definition change.
-
-## ADR and governance triggers
-
-| Trigger | Action |
-| --- | --- |
-| NPR GIRR weights differ from Basel | ADR + changelog fragment; bump not in feature PR |
-| Shared citation type moves to `frtb-common` | ADR (cross-package) |
-| Material numerical change to existing Basel fixture | ADR + explicit hash update in PR |
-| PRA UK diverges from EU CRR3 | Separate profile; do not alias |
-
-## Test strategy
-
-| Test type | Purpose |
-| --- | --- |
-| `test_sbm_support_matrix.py` | Doc ↔ `phase1_capital_supported_paths()` parity |
-| `test_sbm_regimes.py` | Profile hash stability when NPR tables added |
-| `test_sbm_reference_data.py` | NPR lookup keys and citation ids |
-| Fixture workflow | `girr_delta_us_npr_v1` manifest hashes |
-| Fail-closed | NPR GIRR vega/curvature and all non-GIRR NPR cells still raise |
-| Batch/Arrow parity | Row vs batch vs Arrow for the new cell only |
-| Regression | `girr_delta_v1` SHA256 unchanged |
-
-## Documentation deliverables (phase 0)
-
-- [NON_BASEL_PROFILE_REQUIREMENTS.md](NON_BASEL_PROFILE_REQUIREMENTS.md) — normative `SBM-NBP-*` requirements
-- Update [README.md](README.md) planning links
-- Implementation PRs must update `packages/frtb-sbm/docs/REGULATORY_TRACEABILITY.md` non-Basel section to 7×3 detail
+| **1** | `US_NPR_2_0` GIRR delta fixture | Delivered (`girr_delta_us_npr_v1`) |
+| **2** | Full comparison-slice gates for US/EU/PRA | Delivered (21/21 runtime gates) |
+| **3** | Per-cell fixtures for remaining 20 cells per profile | Planned under #501 |
+| **4** | Independent NPR/EU/UK table transcription where numerics diverge | Planned; requires legal review |
+| **5** | PRA Rulebook paragraph mapping for UK-specific divergences | Planned follow-on |
 
 ## Open questions / follow-up issues
 
-1. **PRA UK CRR** — Create mapping issue for PRA-consolidated SBM articles vs EU CRR3 divergence.
-2. **NPR table transcription** — Confirm GIRR bucket/weight tables at 91 FR ~15037–15050 against legal review; synthetic fixtures until external vectors exist.
-3. **CRIF profile column** — Whether NPR runs require adapter profile hints in CRIF metadata (adapter-only; not kernel).
-4. **Equity repo under NPR** — Whether U.S. proposal treats repo delta/vega/curvature like Basel; until cited, remain fail-closed under NPR.
+1. **NPR table transcription** — Confirm GIRR bucket/weight tables at 91 FR
+   Section V.A.7.a against legal review; update mirrors where NPR diverges.
+2. **PRA Rulebook mapping** — Replace article-stub links with PRA Rulebook
+   paragraph ids when UK-specific tables diverge from EU.
+3. **Equity repo under NPR** — Until cited, remain fail-closed under all profiles.
 
 ## Acceptance mapping (AUDIT-IMP-003)
 
-| Criterion | Phase 0 (design) | Phase 1+ (implementation) |
-| --- | --- | --- |
-| Support matrix in docs | This doc + requirements + traceability cross-link | Per-cell updates |
-| ≥1 non-Basel cell implemented or blocked | First cell implemented with `girr_delta_us_npr_v1` fixture evidence | Continue with remaining NPR cells or blocked issue |
-| Unsupported cells fail closed | Documented | Tested (existing + extended) |
-| Basel hashes unchanged | N/A (docs only) | Enforced in CI |
-| `make quality-control` + SBM tests | Docs-only PR: QC unchanged | Required on implementation PR |
+| Criterion | Status |
+| --- | --- |
+| Support matrix in docs | Delivered in traceability + this doc |
+| ≥1 non-Basel cell per profile | GIRR delta fixtures for US/EU/PRA |
+| Unsupported cells fail closed | Equity repo + unknown profiles tested |
+| Basel hashes unchanged | Enforced in CI |
+| No silent Basel fallback | Profile-owned maps + leakage tests |

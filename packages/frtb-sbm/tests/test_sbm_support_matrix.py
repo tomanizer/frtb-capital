@@ -96,9 +96,20 @@ def test_traceability_support_matrix_lists_every_basel_path() -> None:
         row = f"| {label} | {implemented} | {implemented} | {implemented} |"
         assert row in traceability
 
-    assert "| `US_NPR_2_0` | implemented under audit (21 / 21 cells) |" in traceability
-    assert "| `EU_CRR3` | implemented under audit (21 / 21 cells) |" in traceability
-    assert "| `PRA_UK_CRR` | implemented under audit (21 / 21 cells) |" in traceability
+    comparison_slice = "comparison slice under audit"
+    assert (
+        f"| `US_NPR_2_0` | {comparison_slice} (21 / 21 runtime gates; 1 / 21 fixture-backed) |"
+        in traceability
+    )
+    assert (
+        f"| `EU_CRR3` | {comparison_slice} (21 / 21 runtime gates; 1 / 21 fixture-backed) |"
+        in traceability
+    )
+    assert (
+        f"| `PRA_UK_CRR` | {comparison_slice} (21 / 21 runtime gates; 1 / 21 fixture-backed) |"
+        in traceability
+    )
+    assert "pra-uk-crr-source-mapping-status.md" in traceability
 
     for issue_number in ("#160", "#161", "#166", "#169", "#226", "#244"):
         assert issue_number in traceability

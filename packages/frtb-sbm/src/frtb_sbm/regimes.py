@@ -51,9 +51,9 @@ SUPPORTED_PROFILE_METADATA: dict[SbmRegulatoryProfile, dict[str, object]] = {
     },
     SbmRegulatoryProfile.PRA_UK_CRR: {
         "regulator": "PRA / UK CRR",
-        "version": "UK CRR sensitivities-based method (onshored)",
+        "version": "PRA PS1/26 Basel 3.1; UK CRR Articles 325r-325az (comparison slice)",
         "publication_date": date(2026, 1, 20),
-        "status": "supported_pra_uk_crr_full_comparison_slice",
+        "status": "supported_pra_uk_crr_comparison_slice",
         "effective_date": date(2027, 1, 1),
     },
 }
