@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+from dataclasses import replace
 
 import pytest
 from frtb_common import UnsupportedRegulatoryFeatureError
@@ -160,7 +161,10 @@ def test_m_cva_multiplier_must_be_finite_and_positive() -> None:
         calculate_sa_cva_capital((sensitivity,), m_cva=float("nan"))
     with pytest.raises(CvaInputError, match="positive"):
         calculate_sa_cva_capital((sensitivity,), m_cva=0.0)
+    with pytest.raises(CvaInputError, match=r"at least 1\.0"):
+        calculate_sa_cva_capital((sensitivity,), m_cva=0.5)
     assert validate_m_cva_multiplier(1.0) == pytest.approx(1.0)
+    assert validate_m_cva_multiplier(1.25) == pytest.approx(1.25)
 
 
 def test_invalid_netting_set_sign_convention_fails(sovereign_counterparty, sample_lineage) -> None:
@@ -367,6 +371,31 @@ def test_validate_calculation_context_errors() -> None:
                 sa_cva_sensitivity_scope_evidence_id=" ",
             )
         )
+
+
+def test_validate_netting_set_effective_maturity_cap(sovereign_counterparty) -> None:
+    ns_max_maturity = CvaNettingSet(
+        netting_set_id="ns-max-mat",
+        counterparty_id=sovereign_counterparty.counterparty_id,
+        ead=1.0,
+        effective_maturity=5.0,
+        discount_factor=1.0,
+        currency="USD",
+        sign_convention="non_negative",
+        uses_imm_ead=True,
+        source_row_id="row-ns",
+    )
+    assert validate_cva_netting_sets(
+        (ns_max_maturity,), counterparties=(sovereign_counterparty,)
+    ) == (ns_max_maturity,)
+
+    ns_high_maturity = replace(
+        ns_max_maturity,
+        netting_set_id="ns-high-mat",
+        effective_maturity=5.001,
+    )
+    with pytest.raises(CvaInputError, match=r"must not exceed 5 years"):
+        validate_cva_netting_sets((ns_high_maturity,), counterparties=(sovereign_counterparty,))
 
 
 def test_validate_netting_set_errors(sovereign_counterparty) -> None:
