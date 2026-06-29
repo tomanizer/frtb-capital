@@ -31,6 +31,8 @@ Suite-level release coordination is recorded in the root `CHANGELOG.md`.
 - Added RFET evidence contracts for source/vendor/feed/venue lineage,
   data-pooling/vendor-audit evidence, timestamp normalisation,
   representativeness methodologies, and policy-governed new-issuance prorating.
+- Added structured RFET qualitative-criterion evidence and raw duplicate
+  feed-quality counts to RFET assessment audit output.
 - Added production-style `CapitalRunInputManifest` and `InputArtifactLineage`
   contracts for source-system lineage, checksums, sign conventions, counts, and
   validation status controls.
@@ -79,6 +81,9 @@ Suite-level release coordination is recorded in the root `CHANGELOG.md`.
   provided.
 - RFET evidence assessments now expose immutable source/vendor, exclusion,
   bucket, and representativeness-methodology summary counts for audit output.
+- RFET scalar counting now excludes unverifiable observations, deduplicates
+  source/vendor lineage, and requires a caller-supplied business calendar for
+  policy-aware RFET classification.
 - `CapitalRunResult`, desk audit records, and capital-run audit logs can now
   require and serialize compact input-lineage manifest summaries.
 

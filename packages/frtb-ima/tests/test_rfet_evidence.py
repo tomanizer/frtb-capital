@@ -10,6 +10,7 @@ from frtb_ima.data_contracts import (
     RFETDataPoolEvidence,
     RFETEvidence,
     RFETNewIssuanceEvidence,
+    RFETQualitativeCriterionEvidence,
     RFETRepresentativenessEvidence,
     RiskFactorBucket,
     RiskFactorDefinition,
@@ -290,6 +291,43 @@ def test_rfet_qualitative_stage_isolates_representativeness_controls() -> None:
     assert [item.methodology for item in qualitative.representativeness] == ["curve-node-proximity"]
 
 
+def test_assess_rfet_evidence_serialises_qualitative_criteria() -> None:
+    policy = get_policy(RegulatoryRegime.FED_NPR_2_0)
+    evidence = RFETEvidence(
+        risk_factor_name="USD_SWAP_5Y",
+        as_of_date=AS_OF,
+        observations=_observations(24),
+        qualitative_pass=True,
+        bucket_id="USD_RATES",
+        qualitative_criteria=(
+            RFETQualitativeCriterionEvidence(
+                criterion_id="MAR31.15",
+                criterion_description="Price-source independence and observability governance",
+                passed=True,
+                rationale="Independent market-data governance control approved the evidence set.",
+                assessed_by="market-risk-control",
+                metadata={"control_id": "RFET-QA-2026"},
+            ),
+        ),
+    )
+
+    qualitative = _rfet_qualitative_stage(_risk_factor(), evidence)
+    result = assess_rfet_evidence(_risk_factor(), evidence, policy)
+
+    assert qualitative.qualitative_criteria == evidence.qualitative_criteria
+    assert result.qualitative_criteria == evidence.qualitative_criteria
+    assert result.as_dict()["qualitative_criteria"] == [
+        {
+            "criterion_id": "MAR31.15",
+            "criterion_description": "Price-source independence and observability governance",
+            "passed": True,
+            "rationale": "Independent market-data governance control approved the evidence set.",
+            "assessed_by": "market-risk-control",
+            "metadata": {"control_id": "RFET-QA-2026"},
+        }
+    ]
+
+
 def test_rfet_qualitative_stage_keeps_compatibility_import() -> None:
     assert _rfet_qualitative_stage is _validation_rfet_qualitative_stage
 
@@ -351,6 +389,35 @@ def test_assess_rfet_evidence_requires_representative_bucket() -> None:
     assert {exclusion.reason for exclusion in result.exclusions} == {
         RFETExclusionReason.NON_REPRESENTATIVE_BUCKET
     }
+    assert result.raw_duplicate_date_count == 0
+    assert result.raw_duplicate_lineage_count == 0
+
+
+def test_assess_rfet_evidence_preserves_duplicate_signals_when_bucket_fails() -> None:
+    policy = get_policy(RegulatoryRegime.FED_NPR_2_0)
+    duplicate_date = AS_OF - timedelta(days=1)
+    duplicate_lineage_date = AS_OF - timedelta(days=2)
+    observations = (
+        RealPriceObservation("USD_SWAP_5Y", duplicate_date, source="VENDOR_A"),
+        RealPriceObservation("USD_SWAP_5Y", duplicate_date, source="VENDOR_B"),
+        RealPriceObservation("USD_SWAP_5Y", duplicate_lineage_date, source="TRADE_STORE"),
+        RealPriceObservation("USD_SWAP_5Y", duplicate_lineage_date, source="TRADE_STORE"),
+    )
+
+    result = assess_rfet_evidence(
+        _risk_factor(),
+        _evidence(observations, bucket_id="WRONG_BUCKET"),
+        policy,
+    )
+
+    assert result.eligible_observation_count == 0
+    assert {exclusion.reason for exclusion in result.exclusions} == {
+        RFETExclusionReason.NON_REPRESENTATIVE_BUCKET
+    }
+    assert result.raw_duplicate_date_count == 1
+    assert result.raw_duplicate_lineage_count == 1
+    assert result.as_dict()["raw_duplicate_date_count"] == 1
+    assert result.as_dict()["raw_duplicate_lineage_count"] == 1
 
 
 def test_assess_rfet_evidence_uses_explicit_representativeness_evidence() -> None:

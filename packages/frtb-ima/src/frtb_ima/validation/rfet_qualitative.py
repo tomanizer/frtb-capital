@@ -7,6 +7,7 @@ from dataclasses import dataclass
 
 from frtb_ima.data_contracts import (
     RFETEvidence,
+    RFETQualitativeCriterionEvidence,
     RFETRepresentativenessEvidence,
     RiskFactorDefinition,
 )
@@ -17,6 +18,7 @@ class _RFETQualitativeStage:
     qualitative_pass: bool
     bucket_representative: bool
     representativeness: tuple[RFETRepresentativenessEvidence, ...]
+    qualitative_criteria: tuple[RFETQualitativeCriterionEvidence, ...]
 
 
 def _representativeness_result(
@@ -59,4 +61,5 @@ def _rfet_qualitative_stage(
         qualitative_pass=evidence.qualitative_pass,
         bucket_representative=bucket_representative,
         representativeness=representativeness,
+        qualitative_criteria=evidence.qualitative_criteria,
     )

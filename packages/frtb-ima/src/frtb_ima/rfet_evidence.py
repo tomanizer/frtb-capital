@@ -81,6 +81,13 @@ def assess_rfet_evidence(
     - at most one observation counts per calendar date;
     - evidence must match the risk factor's bucket or explicit representativeness checks;
     - source lineage is required by default.
+
+    ``RFETEvidence.qualitative_pass`` is an externally determined governance
+    result. Callers are responsible for evaluating Basel MAR31.15-MAR31.18 and
+    NPR 2.0 Sec. __.212 qualitative criteria; structured
+    ``qualitative_criteria`` records are carried through the audit trail when
+    supplied.
+
     Parameters
     ----------
     risk_factor : RiskFactorDefinition
@@ -177,6 +184,9 @@ def assess_rfet_evidence(
         representative_methodology_counts=_count_pairs(
             representative.methodology for representative in qualitative.representativeness
         ),
+        qualitative_criteria=qualitative.qualitative_criteria,
+        raw_duplicate_date_count=quantitative.raw_duplicate_date_count,
+        raw_duplicate_lineage_count=quantitative.raw_duplicate_lineage_count,
         data_pool_count=len(evidence.data_pools),
         vendor_audit_evidence_count=len(
             {

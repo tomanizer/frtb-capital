@@ -91,7 +91,7 @@ requirements:
       - tests/test_calendar.py
       - tests/test_rfet.py
       - tests/test_regimes.py
-    notes: "Implements 24 short-LH and 16 long-LH unique-date count thresholds. Supports caller-supplied exact 12-month business-calendar windows and policy-approved shifted windows; the legacy 365-day count path remains available for compatibility."
+    notes: "Implements 24 short-LH and 16 long-LH unique-date count thresholds. Policy-aware scalar classification requires a caller-supplied BusinessCalendar for the exact prior-12-month window required by Basel MAR31.12 / proposed Sec. __.212; the low-level 365-day count path remains available only as a warning-emitting compatibility proxy."
 
   - id: NPR-MR-RFET-002
     title: "RFET evidence lineage, source de-duplication, and representativeness"
@@ -107,7 +107,7 @@ requirements:
     tests:
       - tests/test_calendar.py
       - tests/test_rfet_evidence.py
-    notes: "Evidence packages now record source/vendor/feed/venue lineage, timestamp normalisation evidence, verifiability flags, vendor audit/data-pooling evidence, explicit representativeness methodologies, one-count-per-date and source/vendor de-duplication, business-calendar basis, official-holiday exclusions, and non-business-date exclusions. External vendor APIs and supervisory approval workflows remain out of scope."
+    notes: "Evidence packages now record source/vendor/feed/venue lineage, timestamp normalisation evidence, verifiability flags, vendor audit/data-pooling evidence, explicit representativeness methodologies, structured qualitative-criterion evidence when supplied, one-count-per-date and source/vendor de-duplication, raw duplicate feed-quality counts visible even when representativeness fails, business-calendar basis, official-holiday exclusions, and non-business-date exclusions. The scalar count helper also excludes unverifiable observations and deduplicates lineage keys. External qualitative governance under Basel MAR31.15-MAR31.18 / proposed Sec. __.212, vendor APIs, and supervisory approval workflows remain out of scope."
 
   - id: NPR-MR-RFET-003
     title: "New-issuance RFET prorating"

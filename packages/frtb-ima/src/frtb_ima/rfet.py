@@ -17,18 +17,18 @@ Classification logic:
     - qualitative fail                    -> TYPE_B_NMRF
 
 Known unsupported evidence controls:
-    - Vendor/source deduplication across observation feeds.
     - Time-zone normalisation for cross-market risk factors.
     - New-issuance pro-rating stub.
 
 Regulatory traceability:
-    Basel MAR31 RFET; U.S. NPR 2.0 Type A / Type B NMRF proposed taxonomy;
-    EU CRR Article 325be and Delegated Regulation (EU) 2022/2060. See
-    docs/REGULATORY_TRACEABILITY.md.
+    Basel MAR31.12-MAR31.18 RFET; U.S. NPR 2.0 proposed Sec. __.212 Type A /
+    Type B NMRF taxonomy; EU CRR Article 325be and Delegated Regulation (EU)
+    2022/2060. See docs/REGULATORY_TRACEABILITY.md.
 """
 
 from __future__ import annotations
 
+import warnings
 from collections.abc import Sequence
 from datetime import date, timedelta
 
@@ -41,12 +41,27 @@ from frtb_ima.data_models import (
 )
 from frtb_ima.regimes import RegulatoryPolicy
 
-# Quantitative thresholds keyed on whether LH is short (<= 20) or long (> 20)
+# Quantitative thresholds keyed on whether LH is short (<= 20) or long (> 20).
 _THRESHOLD_SHORT_LH = 24  # for LH 10 or 20
 _THRESHOLD_LONG_LH = 16  # for LH 40, 60, or 120
 _SHORT_LH_MAX_DAYS = 20
 
-_LOOKBACK_DAYS = 365  # Legacy compatibility path; prefer BusinessCalendar for exact windows.
+_LOOKBACK_DAYS = 365  # Non-compliant compatibility proxy; MAR31.12 requires 12 months.
+_LOOKBACK_PROXY_WARNING = (
+    "lookback_days path is a 365-day approximation, not an exact 12-month window "
+    "(Basel MAR31.12). Supply a BusinessCalendar for regulatory compliance."
+)
+
+
+def _lineage_key(observation: RealPriceObservation) -> tuple[object, ...]:
+    return (
+        observation.observation_date,
+        observation.source,
+        observation.vendor_id,
+        observation.venue,
+        observation.feed,
+        observation.data_pool_id,
+    )
 
 
 def _quantitative_threshold(
@@ -68,37 +83,46 @@ def count_eligible_observations(
     shifted_end_date: date | None = None,
     shift_reason: str = "",
 ) -> int:
-    """Count unique-date real-price observations for a risk factor in prior 12 months.
+    """Count eligible unique-date observations for a risk factor.
 
-    One-count-per-date rule: at most one observation counts per calendar date,
-    consistent with the Basel MAR31 RFET observation-counting concept.
+    Basel MAR31.12 counts real-price observations over the prior 12 months.
+    Basel MAR31.13-MAR31.14 require real prices to be verifiable and prevent
+    multiple counts from the same source/vendor lineage. This helper excludes
+    ``verifiable=False`` observations, deduplicates identical lineage keys, and
+    then applies the one-count-per-calendar-date rule.
+
+    When ``calendar`` is omitted, ``lookback_days`` remains a compatibility
+    proxy and is not an exact MAR31.12 prior-12-month window.
+
     Parameters
     ----------
     observations : Sequence[RealPriceObservation]
-        Observations.
+        Real-price observations to filter.
     risk_factor_name : str
-        Risk factor name.
+        Risk factor to count.
     as_of_date : date
-        As of date.
+        Inclusive window end date.
     lookback_days : int, optional
-        Lookback days.
+        Compatibility lookback-day proxy used only when ``calendar`` is omitted.
     calendar : BusinessCalendar | None, optional
-        Calendar.
+        Caller-supplied calendar for the exact prior-12-month business window.
     shifted_start_date : date | None, optional
-        Shifted start date.
+        Optional policy-approved shifted window start.
     shifted_end_date : date | None, optional
-        Shifted end date.
+        Optional policy-approved shifted window end.
     shift_reason : str, optional
-        Shift reason.
+        Policy rationale for a shifted calendar window.
 
     Returns
     -------
     int
-        Result of the operation.
+        Number of unique calendar dates with at least one eligible real-price
+        observation within the lookback window.
     """
     if calendar is None:
         if lookback_days <= 0:
             raise ValueError(f"lookback_days must be positive, got {lookback_days}")
+        warnings.warn(_LOOKBACK_PROXY_WARNING, DeprecationWarning, stacklevel=2)
         window_start = as_of_date - timedelta(days=lookback_days)
         window_end = as_of_date
         business_dates: set[date] | None = None
@@ -114,6 +138,7 @@ def count_eligible_observations(
         business_dates = set(window.business_dates)
 
     eligible_dates: set[date] = set()
+    seen_lineage_keys: set[tuple[object, ...]] = set()
     for obs in observations:
         if obs.risk_factor_name != risk_factor_name:
             continue
@@ -121,6 +146,14 @@ def count_eligible_observations(
             continue
         if business_dates is not None and obs.observation_date not in business_dates:
             continue
+        if not obs.verifiable:
+            continue
+        lineage_key = _lineage_key(obs)
+        if lineage_key in seen_lineage_keys:
+            continue
+        if obs.observation_date in eligible_dates:
+            continue
+        seen_lineage_keys.add(lineage_key)
         eligible_dates.add(obs.observation_date)
 
     return len(eligible_dates)
@@ -140,10 +173,11 @@ def passes_quantitative_test(
     shift_reason: str = "",
 ) -> bool:
     """Return True if the risk factor meets the quantitative real-price threshold.
+
     Parameters
     ----------
     observations : Sequence[RealPriceObservation]
-        Observations.
+        Real-price observations to filter.
     risk_factor : RiskFactor
         Risk factor.
     as_of_date : date
@@ -155,9 +189,9 @@ def passes_quantitative_test(
     short_lh_max_days : int, optional
         Short lh max days.
     lookback_days : int, optional
-        Lookback days.
+        Compatibility lookback-day proxy used only when ``calendar`` is omitted.
     calendar : BusinessCalendar | None, optional
-        Calendar.
+        Caller-supplied calendar for the exact prior-12-month business window.
     shifted_start_date : date | None, optional
         Shifted start date.
     shifted_end_date : date | None, optional
@@ -168,7 +202,8 @@ def passes_quantitative_test(
     Returns
     -------
     bool
-        Result of the operation.
+        ``True`` if the eligible observation count meets or exceeds the
+        regulatory threshold for the risk factor's liquidity horizon.
     """
     count = count_eligible_observations(
         observations,
@@ -205,23 +240,14 @@ def classify_risk_factor(
 ) -> ModellabilityStatus:
     """Classify a risk factor as MODELLABLE, TYPE_A_NMRF, or TYPE_B_NMRF.
 
-    Args:
-        risk_factor:     The risk factor to classify.
-        observations:    All available real-price observations (any factor).
-        qualitative_pass: Whether this factor passes the qualitative test
-                         (governance / expert judgement — external input).
-        as_of_date:      Classification reference date.
-
-    Returns:
-        ModellabilityStatus enum value.
     Parameters
     ----------
     risk_factor : RiskFactor
-        Risk factor.
+        Risk factor to classify.
     observations : Sequence[RealPriceObservation]
-        Observations.
+        All available real-price observations.
     qualitative_pass : bool
-        Qualitative pass.
+        Externally determined qualitative governance result.
     as_of_date : date
         As of date.
     short_lh_threshold : int, optional
@@ -231,9 +257,9 @@ def classify_risk_factor(
     short_lh_max_days : int, optional
         Short lh max days.
     lookback_days : int, optional
-        Lookback days.
+        Compatibility lookback-day proxy used only when ``calendar`` is omitted.
     calendar : BusinessCalendar | None, optional
-        Calendar.
+        Caller-supplied calendar for the exact prior-12-month business window.
     shifted_start_date : date | None, optional
         Shifted start date.
     shifted_end_date : date | None, optional
@@ -244,7 +270,8 @@ def classify_risk_factor(
     Returns
     -------
     ModellabilityStatus
-        Result of the operation.
+        Modellability classification: ``MODELLABLE``, ``TYPE_A_NMRF``, or
+        ``TYPE_B_NMRF``.
     """
     if not qualitative_pass:
         return ModellabilityStatus.TYPE_B_NMRF
@@ -284,6 +311,10 @@ def classify_risk_factor_for_policy(
     This wrapper is intentionally limited to policies that support the U.S.
     Type A / Type B NMRF taxonomy. EU and UK profiles currently raise an
     explicit unsupported-feature error rather than returning misleading labels.
+    A ``BusinessCalendar`` is required for regulatory compliance because
+    Basel MAR31.12 and NPR 2.0 Sec. __.212 require an exact prior-12-month
+    observation window.
+
     Parameters
     ----------
     risk_factor : RiskFactor
@@ -297,7 +328,7 @@ def classify_risk_factor_for_policy(
     policy : RegulatoryPolicy
         Policy.
     calendar : BusinessCalendar | None, optional
-        Calendar.
+        Required caller-supplied calendar for the exact prior-12-month window.
     shifted_start_date : date | None, optional
         Shifted start date.
     shifted_end_date : date | None, optional
@@ -308,9 +339,15 @@ def classify_risk_factor_for_policy(
     Returns
     -------
     ModellabilityStatus
-        Result of the operation.
+        Modellability classification under the supplied regulatory policy.
     """
     policy.require_type_a_type_b_taxonomy()
+    if calendar is None:
+        raise ValueError(
+            "calendar is required for classify_risk_factor_for_policy; "
+            "Basel MAR31.12 and NPR 2.0 Sec. __.212 require an exact prior "
+            "12-month RFET observation window"
+        )
     return classify_risk_factor(
         risk_factor,
         observations,

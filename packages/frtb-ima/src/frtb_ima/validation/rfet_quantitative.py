@@ -64,6 +64,8 @@ class _RFETQuantitativeStage:
     eligible_sources: frozenset[str]
     eligible_vendors: tuple[str, ...]
     exclusions: tuple[RFETObservationExclusion, ...]
+    raw_duplicate_date_count: int
+    raw_duplicate_lineage_count: int
 
 
 class _RFETObservationWindowLike(Protocol):
@@ -116,6 +118,72 @@ def _requires_date_normalization_evidence(observation: RealPriceObservation) -> 
     )
 
 
+def _pre_representativeness_exclusion_reason(
+    observation: RealPriceObservation,
+    evidence: RFETEvidence,
+    window: _RFETObservationWindowLike,
+    *,
+    require_source: bool,
+) -> RFETExclusionReason | None:
+    if observation.observation_date > evidence.as_of_date:
+        return RFETExclusionReason.FUTURE_OBSERVATION
+    if (
+        observation.observation_date < window.lookback_start
+        or observation.observation_date > window.lookback_end
+    ):
+        return RFETExclusionReason.OUTSIDE_LOOKBACK
+    if observation.observation_date in window.official_holidays:
+        return RFETExclusionReason.OFFICIAL_HOLIDAY
+    if (
+        window.business_dates is not None
+        and observation.observation_date not in window.business_dates
+    ):
+        return RFETExclusionReason.NON_BUSINESS_DATE
+    if require_source and not observation.source:
+        return RFETExclusionReason.MISSING_SOURCE
+    if not observation.verifiable:
+        return RFETExclusionReason.UNVERIFIABLE_PRICE
+    if _requires_date_normalization_evidence(observation):
+        return RFETExclusionReason.MISSING_DATE_NORMALIZATION_EVIDENCE
+    if not _has_vendor_audit_evidence(observation, evidence):
+        return RFETExclusionReason.MISSING_VENDOR_AUDIT_EVIDENCE
+    return None
+
+
+def _raw_duplicate_counts(
+    observations: tuple[RealPriceObservation, ...],
+    evidence: RFETEvidence,
+    window: _RFETObservationWindowLike,
+    *,
+    require_source: bool,
+) -> tuple[int, int]:
+    seen_dates: set[date] = set()
+    seen_lineage_keys: set[tuple[object, ...]] = set()
+    duplicate_dates = 0
+    duplicate_lineage = 0
+
+    for observation in observations:
+        if (
+            _pre_representativeness_exclusion_reason(
+                observation,
+                evidence,
+                window,
+                require_source=require_source,
+            )
+            is not None
+        ):
+            continue
+        lineage_key = _lineage_key(observation)
+        if lineage_key in seen_lineage_keys:
+            duplicate_lineage += 1
+        elif observation.observation_date in seen_dates:
+            duplicate_dates += 1
+        seen_lineage_keys.add(lineage_key)
+        seen_dates.add(observation.observation_date)
+
+    return duplicate_dates, duplicate_lineage
+
+
 def _rfet_quantitative_stage(
     evidence: RFETEvidence,
     window: _RFETObservationWindowLike,
@@ -129,41 +197,31 @@ def _rfet_quantitative_stage(
     eligible_sources: set[str] = set()
     eligible_vendors: list[str] = []
     exclusions: list[RFETObservationExclusion] = []
+    sorted_observations = tuple(sorted(evidence.observations, key=lambda obs: obs.observation_date))
+    raw_duplicate_date_count, raw_duplicate_lineage_count = _raw_duplicate_counts(
+        sorted_observations,
+        evidence,
+        window,
+        require_source=require_source,
+    )
 
-    for observation in sorted(evidence.observations, key=lambda obs: obs.observation_date):
-        reason: RFETExclusionReason | None = None
+    for observation in sorted_observations:
         lineage_key = _lineage_key(observation)
-        if observation.observation_date > evidence.as_of_date:
-            reason = RFETExclusionReason.FUTURE_OBSERVATION
-        elif (
-            observation.observation_date < window.lookback_start
-            or observation.observation_date > window.lookback_end
-        ):
-            reason = RFETExclusionReason.OUTSIDE_LOOKBACK
-        elif observation.observation_date in window.official_holidays:
-            reason = RFETExclusionReason.OFFICIAL_HOLIDAY
-        elif (
-            window.business_dates is not None
-            and observation.observation_date not in window.business_dates
-        ):
-            reason = RFETExclusionReason.NON_BUSINESS_DATE
-        elif require_source and not observation.source:
-            reason = RFETExclusionReason.MISSING_SOURCE
-        elif not observation.verifiable:
-            reason = RFETExclusionReason.UNVERIFIABLE_PRICE
-        elif _requires_date_normalization_evidence(observation):
-            reason = RFETExclusionReason.MISSING_DATE_NORMALIZATION_EVIDENCE
-        elif not _has_vendor_audit_evidence(observation, evidence):
-            reason = RFETExclusionReason.MISSING_VENDOR_AUDIT_EVIDENCE
-        elif not qualitative.bucket_representative:
+        reason = _pre_representativeness_exclusion_reason(
+            observation,
+            evidence,
+            window,
+            require_source=require_source,
+        )
+        if reason is None and not qualitative.bucket_representative:
             reason = (
                 RFETExclusionReason.NON_REPRESENTATIVE_EVIDENCE
                 if qualitative.representativeness
                 else RFETExclusionReason.NON_REPRESENTATIVE_BUCKET
             )
-        elif lineage_key in seen_lineage_keys:
+        elif reason is None and lineage_key in seen_lineage_keys:
             reason = RFETExclusionReason.DUPLICATE_SOURCE_VENDOR
-        elif observation.observation_date in seen_dates:
+        elif reason is None and observation.observation_date in seen_dates:
             reason = RFETExclusionReason.DUPLICATE_DATE
 
         if reason is not None:
@@ -183,4 +241,6 @@ def _rfet_quantitative_stage(
         eligible_sources=frozenset(eligible_sources),
         eligible_vendors=tuple(eligible_vendors),
         exclusions=tuple(exclusions),
+        raw_duplicate_date_count=raw_duplicate_date_count,
+        raw_duplicate_lineage_count=raw_duplicate_lineage_count,
     )
