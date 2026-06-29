@@ -2,6 +2,8 @@
 
 from datetime import date, timedelta
 
+import pytest
+
 from frtb_ima.calendar import BusinessCalendar
 from frtb_ima.data_models import (
     LiquidityHorizon,
@@ -63,6 +65,55 @@ def test_count_eligible_observations_deduplicates_dates() -> None:
     ]
     count = count_eligible_observations(obs, "RF_A", AS_OF)
     assert count == 1
+
+
+def test_count_eligible_observations_excludes_unverifiable_prices() -> None:
+    d = AS_OF - timedelta(days=5)
+    obs = [
+        RealPriceObservation("RF_A", d, source="VENDOR_A", verifiable=False),
+        RealPriceObservation("RF_A", d, source="VENDOR_B", verifiable=True),
+    ]
+
+    with pytest.warns(DeprecationWarning, match="365-day approximation"):
+        count = count_eligible_observations(obs, "RF_A", AS_OF)
+
+    assert count == 1
+
+
+def test_count_eligible_observations_deduplicates_same_lineage_key() -> None:
+    d = AS_OF - timedelta(days=5)
+    obs = [
+        RealPriceObservation(
+            "RF_A",
+            d,
+            source="TRADE_STORE",
+            vendor_id="INTERNAL",
+            venue="SEF_A",
+            feed="EXECUTIONS",
+            data_pool_id="POOL_A",
+        ),
+        RealPriceObservation(
+            "RF_A",
+            d,
+            source="TRADE_STORE",
+            vendor_id="INTERNAL",
+            venue="SEF_A",
+            feed="EXECUTIONS",
+            data_pool_id="POOL_A",
+        ),
+    ]
+
+    with pytest.warns(DeprecationWarning, match="365-day approximation"):
+        count = count_eligible_observations(obs, "RF_A", AS_OF)
+
+    assert count == 1
+
+
+def test_count_eligible_observations_warns_for_lookback_day_proxy() -> None:
+    obs = _make_obs("RF_A", n=1)
+
+    with pytest.warns(DeprecationWarning, match="not an exact 12-month window"):
+        assert count_eligible_observations(obs, "RF_A", AS_OF) == 1
 
 
 def test_count_eligible_observations_uses_exact_calendar_window() -> None:

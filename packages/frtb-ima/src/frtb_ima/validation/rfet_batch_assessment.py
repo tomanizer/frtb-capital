@@ -34,6 +34,7 @@ from frtb_ima.validation.rfet_batch import (
 )
 from frtb_ima.validation.rfet_batch_filters import (
     _batch_exclusion_reason,
+    _batch_pre_representativeness_exclusion_reason,
     _batch_vendor_audit_evidence_count,
     _lineage_key_from_batch,
 )
@@ -49,6 +50,8 @@ class _RFETBatchQuantitativeStage:
     eligible_sources: frozenset[str]
     eligible_vendors: tuple[str, ...]
     exclusions: tuple[RFETObservationExclusion, ...]
+    raw_duplicate_date_count: int
+    raw_duplicate_lineage_count: int
 
 
 def assess_rfet_observation_batch(
@@ -162,6 +165,16 @@ def _rfet_batch_quantitative_stage(
     eligible_sources: set[str] = set()
     eligible_vendors: list[str] = []
     exclusions: list[RFETObservationExclusion] = []
+    raw_duplicate_date_count, raw_duplicate_lineage_count = _raw_batch_duplicate_counts(
+        observations,
+        ordered_indices,
+        window,
+        as_of64=as_of64,
+        lookback_start64=lookback_start64,
+        lookback_end64=lookback_end64,
+        require_source=require_source,
+        data_pools=data_pools,
+    )
 
     for index_value in ordered_indices:
         index = int(index_value)
@@ -203,6 +216,8 @@ def _rfet_batch_quantitative_stage(
         eligible_sources=frozenset(eligible_sources),
         eligible_vendors=tuple(eligible_vendors),
         exclusions=tuple(exclusions),
+        raw_duplicate_date_count=raw_duplicate_date_count,
+        raw_duplicate_lineage_count=raw_duplicate_lineage_count,
     )
 
 
@@ -214,6 +229,51 @@ def _ordered_batch_indices(
     if not indices.size:
         return indices
     return indices[np.argsort(observations.observation_dates[indices], kind="stable")]
+
+
+def _raw_batch_duplicate_counts(
+    observations: RFETObservationBatch,
+    ordered_indices: npt.NDArray[np.int_],
+    window: _RFETBatchObservationWindow,
+    *,
+    as_of64: np.datetime64,
+    lookback_start64: np.datetime64,
+    lookback_end64: np.datetime64,
+    require_source: bool,
+    data_pools: Sequence[RFETDataPoolEvidence],
+) -> tuple[int, int]:
+    seen_dates: set[np.datetime64] = set()
+    seen_lineage_keys: set[tuple[object, ...]] = set()
+    duplicate_dates = 0
+    duplicate_lineage = 0
+
+    for index_value in ordered_indices:
+        index = int(index_value)
+        observation_date = observations.observation_dates[index]
+        if (
+            _batch_pre_representativeness_exclusion_reason(
+                observations,
+                index,
+                observation_date=observation_date,
+                as_of64=as_of64,
+                lookback_start64=lookback_start64,
+                lookback_end64=lookback_end64,
+                window=window,
+                require_source=require_source,
+                data_pools=data_pools,
+            )
+            is not None
+        ):
+            continue
+        lineage_key = _lineage_key_from_batch(observations, index)
+        if lineage_key in seen_lineage_keys:
+            duplicate_lineage += 1
+        elif observation_date in seen_dates:
+            duplicate_dates += 1
+        seen_lineage_keys.add(lineage_key)
+        seen_dates.add(observation_date)
+
+    return duplicate_dates, duplicate_lineage
 
 
 def _record_eligible_batch_observation(
@@ -293,6 +353,8 @@ def _build_rfet_batch_assessment(
         representative_methodology_counts=_count_pairs(
             representative.methodology for representative in representative_items
         ),
+        raw_duplicate_date_count=quantitative.raw_duplicate_date_count,
+        raw_duplicate_lineage_count=quantitative.raw_duplicate_lineage_count,
         data_pool_count=len(data_pools),
         vendor_audit_evidence_count=_batch_vendor_audit_evidence_count(
             observations,

@@ -2,11 +2,18 @@
 
 from __future__ import annotations
 
+import warnings
 from dataclasses import dataclass
 from datetime import date, timedelta
 
 from frtb_ima.calendar import BusinessCalendar, ObservationWindowBasis
 from frtb_ima.regimes import RegulatoryPolicy
+
+_LOOKBACK_PROXY_WARNING = (
+    "RFET observation-window fallback uses the policy lookback-day proxy, not "
+    "an exact 12-month window (Basel MAR31.12). Supply a BusinessCalendar for "
+    "regulatory compliance."
+)
 
 
 @dataclass(frozen=True)
@@ -32,6 +39,7 @@ def _rfet_observation_window(
     shift_reason: str = "",
 ) -> _RFETObservationWindow:
     if calendar is None:
+        warnings.warn(_LOOKBACK_PROXY_WARNING, DeprecationWarning, stacklevel=2)
         return _RFETObservationWindow(
             lookback_start=as_of_date - timedelta(days=policy.rfet_lookback_days),
             lookback_end=as_of_date,

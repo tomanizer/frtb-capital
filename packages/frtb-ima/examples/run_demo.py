@@ -12,6 +12,7 @@ from datetime import date, timedelta
 import numpy as np
 
 from frtb_ima.backtesting import trading_desk_backtest_for_policy
+from frtb_ima.calendar import BusinessCalendar
 from frtb_ima.capital import models_based_capital, supervisory_multiplier_for_policy
 from frtb_ima.data_models import ModellabilityStatus, RiskClass
 from frtb_ima.demo_data import (
@@ -63,6 +64,26 @@ def section(title: str) -> None:
     print(f"\n{SEP}")
     print(f"  {title}")
     print(SEP)
+
+
+def synthetic_business_calendar(as_of_date: date) -> BusinessCalendar:
+    """Return a synthetic all-dates calendar for fabricated demo observations."""
+    try:
+        prior_anniversary = date(as_of_date.year - 1, as_of_date.month, as_of_date.day)
+    except ValueError:
+        prior_anniversary = date(as_of_date.year - 1, as_of_date.month, 28)
+    start = prior_anniversary + timedelta(days=1)
+    dates: list[date] = []
+    current = start
+    while current <= as_of_date:
+        dates.append(current)
+        current += timedelta(days=1)
+    return BusinessCalendar(
+        business_dates=tuple(dates),
+        source="synthetic-demo-calendar",
+        version="2026.1",
+        weekend_weekdays=(),
+    )
 
 
 def synthetic_nmrf_artifact_for_spec(spec: NMRFValuationSpec) -> NMRFStressArtifact:
@@ -167,6 +188,7 @@ def main() -> None:
         well_observed,
         poorly_observed,
     )
+    rfet_calendar = synthetic_business_calendar(context.as_of_date)
 
     # Qualitative pass for all except the exotic factor. HY_CREDIT_SPD therefore
     # becomes a synthetic Type A NMRF; EXOTIC_RF becomes a synthetic Type B NMRF.
@@ -180,6 +202,7 @@ def main() -> None:
             qualitative_pass=qualitative_decisions[rf.name],
             as_of_date=context.as_of_date,
             policy=context.policy,
+            calendar=rfet_calendar,
         )
         classifications[rf.name] = status
         print(f"  {rf.name:<20} LH={rf.liquidity_horizon.value:>3}d  {status.value}")

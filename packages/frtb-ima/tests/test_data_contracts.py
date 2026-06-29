@@ -12,6 +12,7 @@ from frtb_ima.data_contracts import (
     DeskRun,
     Position,
     RFETEvidence,
+    RFETQualitativeCriterionEvidence,
     RiskFactorBucket,
     RiskFactorDefinition,
     ScenarioCube,
@@ -196,6 +197,41 @@ def test_rfet_evidence_requires_matching_observations() -> None:
             as_of_date="2025-06-30",  # type: ignore[arg-type]
             observations=(),
             qualitative_pass=True,
+        )
+
+
+def test_rfet_qualitative_criterion_evidence_is_serialisable_and_frozen() -> None:
+    criterion = RFETQualitativeCriterionEvidence(
+        criterion_id="MAR31.15",
+        criterion_description="Independent price-source governance",
+        passed=True,
+        rationale="Market-data control approved the criterion.",
+        assessed_by="market-risk-control",
+        metadata={"control_id": "RFET-QA-2026"},
+    )
+
+    assert isinstance(criterion.metadata, MappingProxyType)
+    assert criterion.as_dict() == {
+        "criterion_id": "MAR31.15",
+        "criterion_description": "Independent price-source governance",
+        "passed": True,
+        "rationale": "Market-data control approved the criterion.",
+        "assessed_by": "market-risk-control",
+        "metadata": {"control_id": "RFET-QA-2026"},
+    }
+    with pytest.raises(ValueError, match="criterion_id"):
+        RFETQualitativeCriterionEvidence(
+            criterion_id="",
+            criterion_description="Independent price-source governance",
+            passed=True,
+            rationale="Approved.",
+        )
+    with pytest.raises(TypeError, match="passed"):
+        RFETQualitativeCriterionEvidence(
+            criterion_id="MAR31.15",
+            criterion_description="Independent price-source governance",
+            passed="yes",  # type: ignore[arg-type]
+            rationale="Approved.",
         )
 
 

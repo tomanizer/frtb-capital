@@ -9,6 +9,7 @@ import pytest
 
 import frtb_ima
 from frtb_ima.backtesting import backtest, backtest_for_policy
+from frtb_ima.calendar import BusinessCalendar
 from frtb_ima.capital import supervisory_multiplier, supervisory_multiplier_for_policy
 from frtb_ima.data_models import (
     LiquidityHorizon,
@@ -47,6 +48,16 @@ def _flat_vec(value: float, n: int = 100) -> list[float]:
 
 def _observations(name: str, n: int) -> list[RealPriceObservation]:
     return [RealPriceObservation(name, AS_OF - timedelta(days=i * 14)) for i in range(n)]
+
+
+def _weekdays(start: date, end: date) -> tuple[date, ...]:
+    days: list[date] = []
+    current = start
+    while current <= end:
+        if current.weekday() < 5:
+            days.append(current)
+        current += timedelta(days=1)
+    return tuple(days)
 
 
 def test_get_policy_returns_deterministic_immutable_profiles() -> None:
@@ -205,6 +216,11 @@ def test_type_a_type_b_taxonomy_is_fed_only_until_explicitly_supported() -> None
     ecb = get_policy(RegulatoryRegime.ECB_CRR3)
     rf = RiskFactor("RF_A", RiskClass.GIRR, LiquidityHorizon.LH10)
     obs = _observations("RF_A", 10)
+    calendar = BusinessCalendar(
+        business_dates=_weekdays(date(2024, 7, 1), AS_OF),
+        source="FED",
+        version="2026.1",
+    )
 
     assert fed.nmrf_taxonomy_mode == NMRFTaxonomyMode.TYPE_A_TYPE_B
     assert ecb.nmrf_taxonomy_mode == NMRFTaxonomyMode.BASEL_EU_NMRF
@@ -215,9 +231,18 @@ def test_type_a_type_b_taxonomy_is_fed_only_until_explicitly_supported() -> None
             qualitative_pass=True,
             as_of_date=AS_OF,
             policy=fed,
+            calendar=calendar,
         )
         == ModellabilityStatus.TYPE_A_NMRF
     )
+    with pytest.raises(ValueError, match="calendar is required"):
+        classify_risk_factor_for_policy(
+            rf,
+            obs,
+            qualitative_pass=True,
+            as_of_date=AS_OF,
+            policy=fed,
+        )
     assert (
         classify_risk_factor(
             rf,

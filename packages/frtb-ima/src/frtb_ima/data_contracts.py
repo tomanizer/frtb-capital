@@ -150,6 +150,47 @@ class RFETNewIssuanceEvidence:
 
 
 @dataclass(frozen=True)
+class RFETQualitativeCriterionEvidence:
+    """External qualitative RFET criterion assessment for audit trails."""
+
+    criterion_id: str
+    criterion_description: str
+    passed: bool
+    rationale: str
+    assessed_by: str = ""
+    metadata: Mapping[str, str] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        if not self.criterion_id:
+            raise ValueError("criterion_id must be non-empty")
+        if not self.criterion_description:
+            raise ValueError("criterion_description must be non-empty")
+        if not isinstance(self.passed, bool):
+            raise TypeError("passed must be a bool")
+        if not self.rationale:
+            raise ValueError("rationale must be non-empty")
+        object.__setattr__(self, "metadata", _freeze_mapping(self.metadata))
+
+    def as_dict(self) -> dict[str, object]:
+        """Return a serialisable qualitative-criterion audit record.
+
+        Returns
+        -------
+        dict[str, object]
+            Criterion identifier, description, pass/fail result, rationale,
+            assessor, and metadata.
+        """
+        return {
+            "criterion_id": self.criterion_id,
+            "criterion_description": self.criterion_description,
+            "passed": self.passed,
+            "rationale": self.rationale,
+            "assessed_by": self.assessed_by,
+            "metadata": dict(self.metadata),
+        }
+
+
+@dataclass(frozen=True)
 class Position:
     """A market-risk covered position as seen by the ex-post capital layer."""
 
@@ -183,7 +224,14 @@ class Position:
 
 @dataclass(frozen=True)
 class RFETEvidence:
-    """Evidence package used by RFET classification logic."""
+    """Evidence package used by RFET classification logic.
+
+    ``qualitative_pass`` is an externally determined governance result. The
+    caller is responsible for evaluating Basel MAR31.15-MAR31.18 and NPR 2.0
+    Sec. __.212 qualitative criteria, including price-source independence,
+    observability, and distribution of observations. ``qualitative_criteria``
+    can carry the structured audit trail for that external determination.
+    """
 
     risk_factor_name: str
     as_of_date: date
@@ -191,6 +239,7 @@ class RFETEvidence:
     qualitative_pass: bool
     bucket_id: str = ""
     representativeness: tuple[RFETRepresentativenessEvidence, ...] = ()
+    qualitative_criteria: tuple[RFETQualitativeCriterionEvidence, ...] = ()
     data_pools: tuple[RFETDataPoolEvidence, ...] = ()
     new_issuance: RFETNewIssuanceEvidence | None = None
     metadata: Mapping[str, str] = field(default_factory=dict)
@@ -208,6 +257,7 @@ class RFETEvidence:
             raise ValueError("data_pools contains duplicate pool_id values")
         object.__setattr__(self, "observations", tuple(self.observations))
         object.__setattr__(self, "representativeness", tuple(self.representativeness))
+        object.__setattr__(self, "qualitative_criteria", tuple(self.qualitative_criteria))
         object.__setattr__(self, "data_pools", data_pools)
         object.__setattr__(self, "metadata", _freeze_mapping(self.metadata))
 

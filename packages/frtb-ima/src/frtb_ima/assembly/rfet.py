@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from datetime import date
 
 from frtb_ima.calendar import ObservationWindowBasis
-from frtb_ima.data_contracts import RFETNewIssuanceEvidence
+from frtb_ima.data_contracts import RFETNewIssuanceEvidence, RFETQualitativeCriterionEvidence
 from frtb_ima.data_models import ModellabilityStatus
 from frtb_ima.validation.rfet_quantitative import RFETObservationExclusion
 
@@ -41,6 +41,9 @@ class RFETEvidenceAssessment:
     exclusion_counts: tuple[tuple[str, int], ...] = ()
     bucket_counts: tuple[tuple[str, int], ...] = ()
     representative_methodology_counts: tuple[tuple[str, int], ...] = ()
+    qualitative_criteria: tuple[RFETQualitativeCriterionEvidence, ...] = ()
+    raw_duplicate_date_count: int = 0
+    raw_duplicate_lineage_count: int = 0
     data_pool_count: int = 0
     vendor_audit_evidence_count: int = 0
     new_issuance_policy_basis: str = ""
@@ -80,6 +83,9 @@ class RFETEvidenceAssessment:
             "exclusion_counts": dict(self.exclusion_counts),
             "bucket_counts": dict(self.bucket_counts),
             "representative_methodology_counts": dict(self.representative_methodology_counts),
+            "qualitative_criteria": [item.as_dict() for item in self.qualitative_criteria],
+            "raw_duplicate_date_count": self.raw_duplicate_date_count,
+            "raw_duplicate_lineage_count": self.raw_duplicate_lineage_count,
             "data_pool_count": self.data_pool_count,
             "vendor_audit_evidence_count": self.vendor_audit_evidence_count,
             "new_issuance_policy_basis": self.new_issuance_policy_basis,

@@ -28,7 +28,43 @@ def _batch_exclusion_reason(
     seen_dates: set[np.datetime64],
     data_pools: Sequence[RFETDataPoolEvidence],
 ) -> RFETExclusionReason | None:
+    reason = _batch_pre_representativeness_exclusion_reason(
+        observations,
+        index,
+        observation_date=observation_date,
+        as_of64=as_of64,
+        lookback_start64=lookback_start64,
+        lookback_end64=lookback_end64,
+        window=window,
+        require_source=require_source,
+        data_pools=data_pools,
+    )
+    if reason is not None:
+        return reason
+    if not bucket_representative:
+        if representative_items:
+            return RFETExclusionReason.NON_REPRESENTATIVE_EVIDENCE
+        return RFETExclusionReason.NON_REPRESENTATIVE_BUCKET
     lineage_key = _lineage_key_from_batch(observations, index)
+    if lineage_key in seen_lineage_keys:
+        return RFETExclusionReason.DUPLICATE_SOURCE_VENDOR
+    if observation_date in seen_dates:
+        return RFETExclusionReason.DUPLICATE_DATE
+    return None
+
+
+def _batch_pre_representativeness_exclusion_reason(
+    observations: RFETObservationBatch,
+    index: int,
+    *,
+    observation_date: np.datetime64,
+    as_of64: np.datetime64,
+    lookback_start64: np.datetime64,
+    lookback_end64: np.datetime64,
+    window: _RFETBatchObservationWindow,
+    require_source: bool,
+    data_pools: Sequence[RFETDataPoolEvidence],
+) -> RFETExclusionReason | None:
     if observation_date > as_of64:
         return RFETExclusionReason.FUTURE_OBSERVATION
     if observation_date < lookback_start64 or observation_date > lookback_end64:
@@ -45,14 +81,6 @@ def _batch_exclusion_reason(
         return RFETExclusionReason.MISSING_DATE_NORMALIZATION_EVIDENCE
     if not _has_vendor_audit_evidence_batch(observations, index, data_pools):
         return RFETExclusionReason.MISSING_VENDOR_AUDIT_EVIDENCE
-    if not bucket_representative:
-        if representative_items:
-            return RFETExclusionReason.NON_REPRESENTATIVE_EVIDENCE
-        return RFETExclusionReason.NON_REPRESENTATIVE_BUCKET
-    if lineage_key in seen_lineage_keys:
-        return RFETExclusionReason.DUPLICATE_SOURCE_VENDOR
-    if observation_date in seen_dates:
-        return RFETExclusionReason.DUPLICATE_DATE
     return None
 
 

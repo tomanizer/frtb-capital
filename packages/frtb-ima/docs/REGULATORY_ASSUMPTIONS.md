@@ -64,6 +64,32 @@ uses the following documented modelling basis:
     recorded with source/version metadata and official-holiday counts in
     backtesting audit output.
 
+### RFET compliance boundary
+
+Basel MAR31.12 and the proposed U.S. NPR 2.0 Sec. __.212 RFET text require
+observation counts over the prior 12-month period. Policy-aware scalar RFET
+classification therefore requires a caller-supplied `BusinessCalendar` so the
+assessment uses the exact 12-month business-calendar window. The lower-level
+`count_eligible_observations`, `passes_quantitative_test`, and
+`classify_risk_factor` helpers retain the legacy `lookback_days=365` path only
+as a compatibility proxy; that path emits a `DeprecationWarning` and is not the
+regulatory-compliance path for MAR31.12 / proposed Sec. __.212 assessments.
+
+Basel MAR31.13-MAR31.14 and proposed Sec. __.212 require real prices to be
+verifiable and prevent multiple counts from the same source/vendor lineage. Both
+the scalar count helper and the audit evidence path now exclude
+`verifiable=False` observations, deduplicate identical
+`(date, source, vendor_id, venue, feed, data_pool_id)` lineage keys, and apply
+the one-count-per-calendar-date rule.
+
+Basel MAR31.15-MAR31.18 and proposed Sec. __.212 qualitative criteria remain an
+external governance determination. The package records the caller-supplied
+`qualitative_pass` gate and can carry `RFETQualitativeCriterionEvidence` records
+for criterion identifiers, pass/fail results, rationale, assessor, and metadata.
+When those records are absent, the caller remains responsible for retaining the
+source independence, observability, and observation-distribution evidence outside
+the package audit artifact.
+
 ### Expected shortfall estimator
 
 The regulation defines expected shortfall as a tail risk measure but does not
@@ -202,10 +228,12 @@ Remaining deliberate boundaries:
   upstream risk-engine responsibility. The prototype specifies required
   valuation runs, reconciles, validates, and consumes the resulting artifacts,
   but does not embed institutional pricing models.
-- RFET qualitative criteria remain external inputs. The package records and
-  validates source/vendor lineage, data-pooling evidence, representativeness
-  methodologies, date-normalisation evidence, and new-issuance policy evidence;
-  upstream systems still own raw market-data collection, vendor contracts, and
+- RFET qualitative criteria remain external inputs under Basel
+  MAR31.15-MAR31.18 and proposed Sec. __.212. The package records and validates
+  source/vendor lineage, data-pooling evidence, representativeness
+  methodologies, structured qualitative-criterion evidence when supplied,
+  date-normalisation evidence, and new-issuance policy evidence; upstream
+  systems still own raw market-data collection, vendor contracts, and
   supervisory approvals.
 - Raw market-data sourcing, formal stress-period approval governance,
   reduced-set governance, proprietary trade/vendor-to-LH-category evidence,
