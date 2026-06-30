@@ -150,3 +150,37 @@ For the FRTB suite UI, prioritize:
 - reproducible filters and profile metadata in URL or run manifest.
 
 This aligns with existing attribution and governance expectations while matching the “workbench” patterns seen in Bloomberg and S&P and the control-plane depth from TickSmith.
+
+## CAS allocation implications (casRisk.pdf)
+
+`casRisk.pdf` (October 2016) introduces Constrained Aumann-Shapley (CAS) allocation.
+
+Key findings to carry into the FRTB SA frontend:
+
+- Attribution should be hierarchy-aware by design (desk/desk-book/trade path), not purely trade-level.
+- Additivity and associativity are user-facing requirements, not just math checks:
+  - re-grouping the same business nodes must preserve allocated totals,
+  - stable outputs under legitimate re-bookings reduce gaming risk.
+- CAS improves incentive behavior by constraining admissible permutations to organizational units, which maps well to FRTB reporting trees.
+- The method is presented as fairer and more stable than pure Euler/Aumann-Shapley in common stress and rebalance scenarios.
+- Reorganization sensitivity should be visible in the UI as dedicated diagnostics, not hidden in backend logs.
+
+Practical UI adjustments this suggests:
+
+- Add a governance flag for attribution regime:
+  - `Euler/Aumann` vs `CAS-like constrained` method,
+  - with explicit caveat on invariance and incentive assumptions.
+- Add a `hierarchy integrity` pane showing:
+  - whether selected rows respect a constrained-permutation model,
+  - whether grouping/splitting by tree level is mathematically consistent.
+- Add `invariance checks` on drill-down:
+  - top-down vs bottom-up rollup consistency,
+  - per-node residuals and exception buckets when consistency is broken.
+- Add timeline or period-drift overlays for allocations/changes by desk/desk-group to surface stability,
+  consistent with CAS arguments about smoother attribution behavior.
+- Treat unsupported/edge cases explicitly when methods are not hierarchy-compatible.
+
+Regulatory mapping relevance:
+
+- For FRTB, this reinforces that attribution and presentation logic should reflect stable portfolio structure (risk class, bucket, desk/book hierarchy).
+- It supports keeping a visible hierarchy-first capital workbench for governance decisions, with visual decomposition as an overlay rather than the primary source of truth.
