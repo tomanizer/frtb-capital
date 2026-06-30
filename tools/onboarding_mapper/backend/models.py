@@ -106,3 +106,15 @@ class ExportMappingResponse(BaseModel):
     format: str
     filename: str
     content: str
+
+
+class ImportMappingRequest(BaseModel):
+    content: str
+    format: Literal["yaml", "toml", "json"] | None = None
+
+
+class ImportMappingResult(BaseModel):
+    target_package: str
+    target_table_id: str
+    mapping: dict[str, str | None]
+    unknown_columns: list[str] = Field(default_factory=list)

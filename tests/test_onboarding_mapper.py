@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import io
+import json
 
 import pyarrow as pa  # type: ignore[import-untyped]
 import pyarrow.csv as pa_csv  # type: ignore[import-untyped]
@@ -11,11 +12,14 @@ from fastapi.testclient import TestClient
 
 from tools.onboarding_mapper.backend.app import app
 from tools.onboarding_mapper.backend.catalog import resolve_catalog_entry
+from tools.onboarding_mapper.backend.config import Settings
 from tools.onboarding_mapper.backend.mapping import (
     build_mapping_document,
+    parse_mapping_document,
     serialize_mapping_document,
     suggest_column_mapping,
 )
+from tools.onboarding_mapper.backend.sessions import SessionStore
 
 
 @pytest.fixture
@@ -162,3 +166,107 @@ def test_mapping_document_serializers() -> None:
     assert "version" in serialize_mapping_document(document, "json")
     assert "column_mapping:" in serialize_mapping_document(document, "yaml")
     assert "[target]" in serialize_mapping_document(document, "toml")
+
+
+@pytest.mark.parametrize("fmt", ["yaml", "toml", "json"])
+def test_mapping_document_round_trips_through_parser(fmt: str) -> None:
+    entry = resolve_catalog_entry("frtb_rrao", "positions")
+    document = build_mapping_document(
+        entry=entry,
+        mapping={"position_id": "POS", "desk_id": "DESK"},
+        source_connector="file",
+        source_format="csv",
+        source_path="/tmp/demo.csv",
+        duckdb_database=None,
+        duckdb_query=None,
+        lineage_source_system="demo",
+        lineage_source_file="demo.csv",
+    )
+    content = serialize_mapping_document(document, fmt)
+    parsed = parse_mapping_document(content, fmt)
+    assert parsed["target"]["package"] == "frtb_rrao"
+    assert parsed["target"]["input_table"] == "positions"
+    assert parsed["column_mapping"]["position_id"] == "POS"
+    # Format auto-detection succeeds without an explicit format hint.
+    assert parse_mapping_document(content)["column_mapping"]["desk_id"] == "DESK"
+
+
+def test_import_endpoint_filters_unknown_columns(client: TestClient) -> None:
+    artifact = {
+        "version": "1",
+        "target": {"package": "frtb_rrao", "input_table": "positions"},
+        "column_mapping": {"position_id": "POS", "not_a_real_field": "X"},
+    }
+    response = client.post(
+        "/api/mapping/import",
+        json={"content": json.dumps(artifact), "format": "json"},
+    )
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["target_package"] == "frtb_rrao"
+    assert payload["mapping"]["position_id"] == "POS"
+    assert payload["unknown_columns"] == ["not_a_real_field"]
+
+
+def test_import_endpoint_rejects_malformed_artifact(client: TestClient) -> None:
+    response = client.post(
+        "/api/mapping/import",
+        json={"content": "not a mapping document", "format": "json"},
+    )
+    assert response.status_code == 400
+
+
+def test_path_source_rejects_paths_outside_data_roots(client: TestClient) -> None:
+    response = client.post("/api/source/path", json={"path": "/etc/passwd"})
+    assert response.status_code == 403
+    assert "permitted data roots" in response.json()["detail"]
+
+
+def test_upload_rejects_oversized_body(client: TestClient, monkeypatch) -> None:
+    from tools.onboarding_mapper.backend import app as app_module
+
+    tiny = Settings(
+        allowed_origins=app_module.SETTINGS.allowed_origins,
+        data_roots=app_module.SETTINGS.data_roots,
+        max_upload_bytes=4,
+        max_sessions=app_module.SETTINGS.max_sessions,
+        session_ttl_seconds=app_module.SETTINGS.session_ttl_seconds,
+    )
+    monkeypatch.setattr(app_module, "SETTINGS", tiny)
+    response = client.post(
+        "/api/source/upload?filename=demo.csv",
+        content=b"abcdefghij",
+        headers={"Content-Type": "application/octet-stream"},
+    )
+    assert response.status_code == 413
+
+
+def test_session_store_evicts_lru_and_expired() -> None:
+    table = pa.table({"a": [1]})
+    settings = Settings(
+        allowed_origins=("http://localhost",),
+        data_roots=(),
+        max_upload_bytes=1024,
+        max_sessions=2,
+        session_ttl_seconds=3600.0,
+    )
+    store = SessionStore(settings)
+    first = store.create(table, source_name="a", source_kind="upload")
+    store.create(table, source_name="b", source_kind="upload")
+    store.create(table, source_name="c", source_kind="upload")
+    # Oldest session evicted once the cap is exceeded.
+    assert len(store) == 2
+    with pytest.raises(KeyError):
+        store.get(first)
+
+    expiring = Settings(
+        allowed_origins=("http://localhost",),
+        data_roots=(),
+        max_upload_bytes=1024,
+        max_sessions=8,
+        session_ttl_seconds=-1.0,
+    )
+    expiring_store = SessionStore(expiring)
+    stale = expiring_store.create(table, source_name="d", source_kind="upload")
+    with pytest.raises(KeyError):
+        expiring_store.get(stale)

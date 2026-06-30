@@ -68,4 +68,11 @@ export type ExportMappingResponse = {
   content: string;
 };
 
+export type ImportMappingResult = {
+  target_package: string;
+  target_table_id: string;
+  mapping: Record<string, string | null>;
+  unknown_columns: string[];
+};
+
 export type WizardStep = "dataset" | "source" | "mapping" | "validate";

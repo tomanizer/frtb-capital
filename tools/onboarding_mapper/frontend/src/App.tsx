@@ -23,6 +23,7 @@ import {
 import {
   exportMapping,
   getTable,
+  importMapping,
   listTables,
   loadSourceDuckDb,
   loadSourcePath,
@@ -229,6 +230,22 @@ export default function App() {
 
   const validationHasErrors = validation?.diagnostics.some((diagnostic) => diagnostic.severity === "error") ?? false;
 
+  // A step is navigable only once its inputs exist, so the sidebar cannot jump
+  // the operator into an empty mapping or validation view.
+  const stepReachable = useMemo<Record<WizardStep, boolean>>(() => {
+    const hasSource = Boolean(sourcePreview && selectedTable);
+    return {
+      dataset: true,
+      source: Boolean(selectedTable),
+      mapping: hasSource && Boolean(tableDetail),
+      validate: hasSource,
+    };
+  }, [selectedTable, sourcePreview, tableDetail]);
+
+  function goToStep(target: WizardStep) {
+    if (stepReachable[target]) setStep(target);
+  }
+
   function resetDerivedArtifacts() {
     setValidation(null);
     setExportContent("");
@@ -239,6 +256,52 @@ export default function App() {
     setSelectedTable(table);
     setMapping({});
     resetDerivedArtifacts();
+  }
+
+  function startOver() {
+    setSelectedTable(null);
+    setTableDetail(null);
+    setSourcePreview(null);
+    setMapping({});
+    resetDerivedArtifacts();
+    setError(null);
+    setDatasetSearch("");
+    setMappingSearch("");
+    setMappingFilter("all");
+    setStep("dataset");
+  }
+
+  async function handleImportMapping(content: string) {
+    if (!content.trim()) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const result = await importMapping({ content });
+      // InputTableDetail is a superset of InputTableSummary, so it can seed both
+      // the selection and the detail without round-tripping through the list.
+      const detail = await getTable(result.target_package, result.target_table_id);
+      setSelectedTable(detail);
+      setTableDetail(detail);
+      setMapping(result.mapping);
+      resetDerivedArtifacts();
+      if (result.unknown_columns.length) {
+        setError(
+          `Imported mapping ignored fields not in the target contract: ${result.unknown_columns.join(", ")}`,
+        );
+      }
+      setStep(sourcePreview ? "mapping" : "source");
+    } catch (exc) {
+      setError(String(exc));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function handleImportFile(file: File) {
+    const reader = new FileReader();
+    reader.onload = () => void handleImportMapping(String(reader.result ?? ""));
+    reader.onerror = () => setError("Could not read the mapping file");
+    reader.readAsText(file);
   }
 
   async function handleUpload(file: File) {
@@ -432,20 +495,27 @@ export default function App() {
         </div>
 
         <nav className="step-list" aria-label="Workflow">
-          {STEPS.map((item, index) => (
-            <button
-              key={item.id}
-              type="button"
-              className={`step-item ${step === item.id ? "active" : ""} ${index < stepIndex ? "done" : ""}`}
-              onClick={() => setStep(item.id)}
-            >
-              <span className="step-index">{index + 1}</span>
-              <span className="step-copy">
-                <strong>{item.title}</strong>
-                <span>{item.subtitle}</span>
-              </span>
-            </button>
-          ))}
+          {STEPS.map((item, index) => {
+            const reachable = stepReachable[item.id];
+            const isActive = step === item.id;
+            return (
+              <button
+                key={item.id}
+                type="button"
+                className={`step-item ${isActive ? "active" : ""} ${index < stepIndex ? "done" : ""}`}
+                onClick={() => goToStep(item.id)}
+                disabled={!reachable}
+                aria-current={isActive ? "step" : undefined}
+                aria-disabled={!reachable}
+              >
+                <span className="step-index">{index + 1}</span>
+                <span className="step-copy">
+                  <strong>{item.title}</strong>
+                  <span>{item.subtitle}</span>
+                </span>
+              </button>
+            );
+          })}
         </nav>
 
         <div className="sidebar-summary">
@@ -466,10 +536,19 @@ export default function App() {
               </dd>
             </div>
           </dl>
+          <button type="button" className="btn btn-secondary btn-small start-over" onClick={startOver}>
+            Start over
+          </button>
         </div>
       </aside>
 
-      <main className="main">
+      <main className="main" aria-busy={busy}>
+        {busy ? (
+          <div className="busy-overlay" role="status" aria-live="polite">
+            <span className="spinner" aria-hidden="true" />
+            <span>Working…</span>
+          </div>
+        ) : null}
         <header className="page-header">
           <div>
             <span className="eyebrow">FRTB client onboarding</span>
@@ -500,7 +579,11 @@ export default function App() {
           </div>
         </header>
 
-        {error ? <div className="alert error">{error}</div> : null}
+        {error ? (
+          <div className="alert error" role="alert" aria-live="assertive">
+            {error}
+          </div>
+        ) : null}
 
         {step === "dataset" ? (
           <section className="panel">
@@ -509,17 +592,32 @@ export default function App() {
                 <strong>Select canonical input table</strong>
                 <span>{filteredTables.length} of {tables.length} contracts shown</span>
               </div>
-              <div className="search-control">
-                <label htmlFor="dataset-search">Search</label>
-                <div className="input-with-icon">
-                  <Search aria-hidden="true" className="icon" />
-                  <input
-                    id="dataset-search"
-                    value={datasetSearch}
-                    onChange={(event) => setDatasetSearch(event.target.value)}
-                    placeholder="Component, package, table, risk class"
-                  />
+              <div className="header-controls">
+                <div className="search-control">
+                  <label htmlFor="dataset-search">Search</label>
+                  <div className="input-with-icon">
+                    <Search aria-hidden="true" className="icon" />
+                    <input
+                      id="dataset-search"
+                      value={datasetSearch}
+                      onChange={(event) => setDatasetSearch(event.target.value)}
+                      placeholder="Component, package, table, risk class"
+                    />
+                  </div>
                 </div>
+                <label className="btn btn-secondary btn-small import-control">
+                  Import mapping
+                  <input
+                    type="file"
+                    hidden
+                    accept=".yaml,.yml,.toml,.json"
+                    onChange={(event) => {
+                      const file = event.target.files?.[0];
+                      if (file) handleImportFile(file);
+                      event.target.value = "";
+                    }}
+                  />
+                </label>
               </div>
             </div>
             <div className="panel-body">
@@ -655,7 +753,15 @@ export default function App() {
                 </div>
 
                 {sourceTab === "upload" ? (
-                  <label className="dropzone">
+                  <label
+                    className="dropzone"
+                    onDragOver={(event) => event.preventDefault()}
+                    onDrop={(event) => {
+                      event.preventDefault();
+                      const file = event.dataTransfer.files?.[0];
+                      if (file) void handleUpload(file);
+                    }}
+                  >
                     <input
                       type="file"
                       hidden
@@ -666,7 +772,8 @@ export default function App() {
                       }}
                     />
                     <UploadCloud aria-hidden="true" className="dropzone-icon" />
-                    <strong>Choose CSV, Parquet, or Arrow IPC</strong>
+                    <strong>Drop or choose CSV, Parquet, or Arrow IPC</strong>
+                    <span>Loaded locally for this browser session.</span>
                   </label>
                 ) : null}
 

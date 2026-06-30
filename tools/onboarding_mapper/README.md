@@ -71,6 +71,31 @@ lineage:
 The `column_mapping` block is canonical-name → client-column. The `lineage.source_column_map`
 pairs follow the suite lineage convention (client source, canonical target).
 
+Reusing a saved mapping: load a previously exported `mapping.yaml` / `.toml` /
+`.json` from the **Import mapping** control on the target-dataset step. The tool
+parses the artifact, re-selects the target contract, and restores the
+`column_mapping` (warning about any fields no longer in the contract) so you can
+re-validate it against a fresh client extract.
+
+## Security and configuration
+
+This is a **local, single-operator tool** that reads server-side files and runs
+DuckDB SQL. Bind it to loopback (the default `--host 127.0.0.1`) and do not
+expose it on a shared network. Behaviour is constrained by environment variables
+(all optional):
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `FRTB_ONBOARDING_ALLOW_ORIGINS` | dev + self-served origins | Comma-separated CORS allowlist (`*` to disable the check — not recommended). |
+| `FRTB_ONBOARDING_DATA_ROOTS` | repository root | `os.pathsep`-separated directories the `path` and DuckDB `attach` connectors may read. Requests outside these roots return HTTP 403. |
+| `FRTB_ONBOARDING_MAX_UPLOAD_MB` | `1024` | Upload size cap; larger bodies return HTTP 413. |
+| `FRTB_ONBOARDING_MAX_SESSIONS` | `24` | Retained client sessions (LRU eviction beyond this). |
+| `FRTB_ONBOARDING_SESSION_TTL_SECONDS` | `3600` | Idle session lifetime before eviction. |
+
+CORS defaults to the dev server and self-served origins only, so a stray web page
+cannot drive the file/DuckDB connectors. The DuckDB connector still executes
+arbitrary SQL within the data roots; only expose it in trusted local use.
+
 ## Scope
 
 This tool is onboarding and contract-mapping assistance only. Validation uses public
@@ -83,9 +108,10 @@ final regulatory capital.
 | --- | --- |
 | `GET /api/tables` | List canonical input tables |
 | `GET /api/tables/{package}/{id}` | Column spec detail |
-| `POST /api/source/upload` | Upload client file |
-| `POST /api/source/path` | Load server-side file path |
-| `POST /api/source/duckdb` | Execute DuckDB query |
+| `POST /api/source/upload` | Upload client file (size-capped) |
+| `POST /api/source/path` | Load server-side file path (sandboxed to data roots) |
+| `POST /api/source/duckdb` | Execute DuckDB query (attach targets sandboxed) |
 | `POST /api/mapping/suggest` | Auto-suggest column mapping |
 | `POST /api/mapping/validate` | Normalize mapped table |
 | `POST /api/mapping/export` | Generate mapping artifact |
+| `POST /api/mapping/import` | Parse a saved mapping artifact back into state |

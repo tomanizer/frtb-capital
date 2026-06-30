@@ -1,19 +1,33 @@
 import type {
   ColumnMappingState,
   ExportMappingResponse,
+  ImportMappingResult,
   InputTableDetail,
   InputTableSummary,
   SourcePreview,
   ValidationResult,
 } from "./types";
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(path, init);
-  if (!response.ok) {
-    const detail = await response.text();
-    throw new Error(detail || `Request failed: ${response.status}`);
+const DEFAULT_TIMEOUT_MS = 60_000;
+
+async function request<T>(path: string, init?: RequestInit, timeoutMs = DEFAULT_TIMEOUT_MS): Promise<T> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch(path, { ...init, signal: controller.signal });
+    if (!response.ok) {
+      const detail = await response.text();
+      throw new Error(detail || `Request failed: ${response.status}`);
+    }
+    return (await response.json()) as T;
+  } catch (exc) {
+    if (exc instanceof DOMException && exc.name === "AbortError") {
+      throw new Error(`Request timed out after ${Math.round(timeoutMs / 1000)}s: ${path}`);
+    }
+    throw exc;
+  } finally {
+    clearTimeout(timer);
   }
-  return (await response.json()) as T;
 }
 
 export function listTables(component?: string): Promise<InputTableSummary[]> {
@@ -54,12 +68,22 @@ export function loadSourceDuckDb(payload: {
   });
 }
 
-export function suggestMapping(payload: {
-  session_id: string;
-  target_package: string;
-  target_table_id: string;
-}): Promise<ColumnMappingState> {
+export function suggestMapping(
+  payload: Pick<ColumnMappingState, "session_id" | "target_package" | "target_table_id">,
+): Promise<ColumnMappingState> {
+  const { session_id, target_package, target_table_id } = payload;
   return request("/api/mapping/suggest", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ session_id, target_package, target_table_id }),
+  });
+}
+
+export function importMapping(payload: {
+  content: string;
+  format?: "yaml" | "toml" | "json" | null;
+}): Promise<ImportMappingResult> {
+  return request("/api/mapping/import", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),

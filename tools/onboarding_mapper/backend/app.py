@@ -10,6 +10,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from tools.onboarding_mapper.backend.catalog import resolve_catalog_entry, table_catalog
+from tools.onboarding_mapper.backend.config import get_settings
 from tools.onboarding_mapper.backend.loader import (
     column_preview,
     load_table_from_bytes,
@@ -22,6 +23,7 @@ from tools.onboarding_mapper.backend.mapping import (
     build_mapping_document,
     mapping_filename,
     normalized_preview_hash,
+    parse_mapping_document,
     serialize_mapping_document,
     suggest_column_mapping,
     validate_mapped_table,
@@ -32,6 +34,8 @@ from tools.onboarding_mapper.backend.models import (
     DuckDbSourceRequest,
     ExportMappingRequest,
     ExportMappingResponse,
+    ImportMappingRequest,
+    ImportMappingResult,
     InputTableDetail,
     InputTableSummary,
     MappingDiagnostic,
@@ -45,15 +49,20 @@ from tools.onboarding_mapper.backend.sessions import SESSIONS
 
 FRONTEND_DIST = Path(__file__).resolve().parents[1] / "frontend" / "dist"
 
+SETTINGS = get_settings()
+
 app = FastAPI(
     title="FRTB Onboarding Mapper",
     description="Map client datasets to canonical FRTB Arrow input table contracts.",
     version="0.1.0",
 )
 
+# Restrict CORS to the configured local origins. A wildcard would let any web
+# page the operator visits drive the file/DuckDB connectors below; the default
+# allowlist covers only the dev server and the self-served bundle.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=list(SETTINGS.allowed_origins),
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -117,7 +126,19 @@ def get_table(package: str, table_id: str) -> InputTableDetail:
 
 @app.post("/api/source/upload", response_model=SourcePreview)
 async def upload_source(request: Request, filename: str = Query(...)) -> SourcePreview:
+    declared_length = request.headers.get("content-length")
+    if declared_length is not None and declared_length.isdigit():
+        if int(declared_length) > SETTINGS.max_upload_bytes:
+            raise HTTPException(
+                status_code=413,
+                detail=f"Upload exceeds the {SETTINGS.max_upload_bytes}-byte limit",
+            )
     payload = await request.body()
+    if len(payload) > SETTINGS.max_upload_bytes:
+        raise HTTPException(
+            status_code=413,
+            detail=f"Upload exceeds the {SETTINGS.max_upload_bytes}-byte limit",
+        )
     if not payload:
         raise HTTPException(status_code=400, detail="Uploaded file body is empty")
     try:
@@ -135,7 +156,10 @@ async def upload_source(request: Request, filename: str = Query(...)) -> SourceP
 
 @app.post("/api/source/path", response_model=SourcePreview)
 def load_source_path(request: PathSourceRequest) -> SourcePreview:
-    path = Path(request.path).expanduser().resolve()
+    try:
+        path = SETTINGS.resolve_within_roots(request.path)
+    except PermissionError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
     if not path.exists():
         raise HTTPException(status_code=404, detail=f"Path not found: {path}")
     try:
@@ -156,11 +180,22 @@ def load_source_path(request: PathSourceRequest) -> SourcePreview:
 
 @app.post("/api/source/duckdb", response_model=SourcePreview)
 def load_source_duckdb(request: DuckDbSourceRequest) -> SourcePreview:
+    # Confine the attach targets (and any on-disk database) to the data roots so
+    # the DuckDB connector cannot register arbitrary host files as views.
+    try:
+        attach_files = {
+            alias: str(SETTINGS.resolve_within_roots(file_path))
+            for alias, file_path in request.attach_files.items()
+        }
+        if request.database_path != ":memory:":
+            SETTINGS.resolve_within_roots(request.database_path)
+    except PermissionError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
     try:
         table = load_table_from_duckdb(
             request.query,
             database_path=request.database_path,
-            attach_files=request.attach_files,
+            attach_files=attach_files,
         )
     except Exception as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
@@ -246,6 +281,39 @@ def export_mapping(request: ExportMappingRequest) -> ExportMappingResponse:
         format=request.format,
         filename=mapping_filename(entry, request.format),
         content=content,
+    )
+
+
+@app.post("/api/mapping/import", response_model=ImportMappingResult)
+def import_mapping(request: ImportMappingRequest) -> ImportMappingResult:
+    try:
+        document = parse_mapping_document(request.content, request.format)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    target = document["target"]
+    package = str(target["package"])
+    table_id = str(target["input_table"])
+    try:
+        entry = resolve_catalog_entry(package, table_id)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+    known_columns = {spec.name for spec in entry.column_specs}
+    column_mapping = document["column_mapping"]
+    mapping: dict[str, str | None] = {}
+    unknown_columns: list[str] = []
+    for canonical_name, source_name in column_mapping.items():
+        if canonical_name in known_columns:
+            mapping[str(canonical_name)] = source_name if source_name else None
+        else:
+            unknown_columns.append(str(canonical_name))
+
+    return ImportMappingResult(
+        target_package=entry.package,
+        target_table_id=entry.table_id,
+        mapping=mapping,
+        unknown_columns=sorted(unknown_columns),
     )
 
 

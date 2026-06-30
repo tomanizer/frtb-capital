@@ -219,8 +219,63 @@ textarea:focus-visible {
 }
 
 .main {
+  position: relative;
   min-width: 0;
   padding: 26px 30px 40px;
+}
+
+.busy-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: var(--muted);
+  font-weight: 600;
+  background: rgba(238, 243, 248, 0.62);
+  backdrop-filter: blur(1px);
+}
+
+.spinner {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 3px solid rgba(21, 94, 239, 0.25);
+  border-top-color: var(--blue);
+  animation: spinner-rotate 0.8s linear infinite;
+}
+
+@keyframes spinner-rotate {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation-duration: 2.4s;
+  }
+}
+
+.header-controls {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.import-control {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.sidebar-summary .start-over {
+  margin-top: 14px;
+  width: 100%;
+  color: #c7d2e2;
+  border-color: rgba(199, 210, 226, 0.28);
 }
 
 .page-header {

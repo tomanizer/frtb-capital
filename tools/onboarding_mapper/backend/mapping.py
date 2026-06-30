@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import tomllib
 from collections.abc import Mapping, Sequence
 from typing import Any
 
@@ -224,6 +225,70 @@ def serialize_mapping_document(document: Mapping[str, Any], fmt: str) -> str:
 def mapping_filename(entry: TableCatalogEntry, fmt: str) -> str:
     extension = {"yaml": "yaml", "toml": "toml", "json": "json"}[fmt]
     return f"{entry.package}.{entry.table_id}.mapping.{extension}"
+
+
+def parse_mapping_document(content: str, fmt: str | None = None) -> dict[str, Any]:
+    """Parse a previously exported mapping artifact back into a document.
+
+    Supports the YAML, TOML, and JSON forms emitted by
+    :func:`serialize_mapping_document`. When ``fmt`` is ``None`` the parsers are
+    tried in turn so a pasted artifact round-trips without the caller needing to
+    declare its format. The returned document mirrors the export structure, in
+    particular ``target.package`` / ``target.input_table`` and the
+    canonical-name -> source-column ``column_mapping`` block.
+
+    Raises
+    ------
+    ValueError
+        If the content cannot be parsed by the requested (or any) format, or if
+        it lacks the required ``target`` and ``column_mapping`` sections.
+    """
+
+    parsers: dict[str, Any] = {
+        "json": _parse_json,
+        "toml": _parse_toml,
+        "yaml": _parse_yaml,
+    }
+    if fmt is not None:
+        if fmt not in parsers:
+            raise ValueError(f"Unsupported import format: {fmt}")
+        document = parsers[fmt](content)
+    else:
+        document = _parse_any(content, parsers)
+
+    if not isinstance(document, dict):
+        raise ValueError("Mapping artifact must be a mapping document")
+    target = document.get("target")
+    column_mapping = document.get("column_mapping")
+    if not isinstance(target, dict) or "package" not in target or "input_table" not in target:
+        raise ValueError("Mapping artifact is missing target.package/input_table")
+    if not isinstance(column_mapping, dict) or not column_mapping:
+        raise ValueError("Mapping artifact is missing a non-empty column_mapping block")
+    return document
+
+
+def _parse_any(content: str, parsers: Mapping[str, Any]) -> Any:
+    errors: list[str] = []
+    for name, parser in parsers.items():
+        try:
+            return parser(content)
+        except Exception as exc:
+            errors.append(f"{name}: {exc}")
+    raise ValueError("Could not parse mapping artifact (" + "; ".join(errors) + ")")
+
+
+def _parse_json(content: str) -> Any:
+    return json.loads(content)
+
+
+def _parse_toml(content: str) -> Any:
+    return tomllib.loads(content)
+
+
+def _parse_yaml(content: str) -> Any:
+    import yaml  # type: ignore[import-untyped]  # optional dependency, parse path only
+
+    return yaml.safe_load(content)
 
 
 def _dump_yaml(value: Any, indent: int = 0) -> str:
