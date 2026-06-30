@@ -62,7 +62,7 @@ def suggest_column_mapping(
     3. **normalized** — same name ignoring case *and* separator/casing style, so
        ``position_id`` matches ``positionId``, ``Position-Id``, or
        ``POSITION ID``;
-    4. **token set** — identical unordered token multiset, catching reordered
+    4. **token set** — identical unordered set of tokens, catching reordered
        components such as ``id_position`` for ``position_id``.
 
     Each source column is consumed by at most one canonical column. The matcher

@@ -304,10 +304,15 @@ def import_mapping(request: ImportMappingRequest) -> ImportMappingResult:
     mapping: dict[str, str | None] = {}
     unknown_columns: list[str] = []
     for canonical_name, source_name in column_mapping.items():
-        if canonical_name in known_columns:
-            mapping[str(canonical_name)] = source_name if source_name else None
-        else:
+        if str(canonical_name) not in known_columns:
             unknown_columns.append(str(canonical_name))
+            continue
+        # Coerce defensively: a hand-edited artifact may carry non-string values;
+        # treat anything that is not a non-empty string as unmapped rather than
+        # letting it surface as a 500 from response validation.
+        mapping[str(canonical_name)] = (
+            source_name if isinstance(source_name, str) and source_name else None
+        )
 
     return ImportMappingResult(
         target_package=entry.package,

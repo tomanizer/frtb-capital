@@ -256,6 +256,23 @@ def test_import_endpoint_rejects_malformed_artifact(client: TestClient) -> None:
     assert response.status_code == 400
 
 
+def test_import_endpoint_coerces_non_string_mapping_values(client: TestClient) -> None:
+    # A hand-edited artifact with a non-string mapping value must not 500; the
+    # offending field is treated as unmapped.
+    artifact = {
+        "target": {"package": "frtb_rrao", "input_table": "positions"},
+        "column_mapping": {"position_id": "POS", "desk_id": ["unexpected", "list"]},
+    }
+    response = client.post(
+        "/api/mapping/import",
+        json={"content": json.dumps(artifact), "format": "json"},
+    )
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["mapping"]["position_id"] == "POS"
+    assert payload["mapping"]["desk_id"] is None
+
+
 def test_path_source_rejects_paths_outside_data_roots(client: TestClient) -> None:
     response = client.post("/api/source/path", json={"path": "/etc/passwd"})
     assert response.status_code == 403

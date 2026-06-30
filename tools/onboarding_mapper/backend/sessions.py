@@ -8,6 +8,7 @@ configured cap and discarding sessions that have been idle past a TTL.
 
 from __future__ import annotations
 
+import threading
 import time
 import uuid
 from collections import OrderedDict
@@ -32,13 +33,16 @@ class ClientSession:
 class SessionStore:
     """Bounded, TTL-evicting store keyed by opaque session id.
 
-    The store is not thread-safe by design; the onboarding service runs
-    single-process and FastAPI's default event loop serialises access to it.
+    Access is guarded by a lock: FastAPI dispatches the synchronous source and
+    mapping endpoints to a worker threadpool, so concurrent requests can mutate
+    the ordering structure from different threads. The lock keeps the eviction
+    bookkeeping (``move_to_end`` / ``popitem``) consistent.
     """
 
     def __init__(self, settings: Settings | None = None) -> None:
         self._settings = settings or get_settings()
         self._sessions: OrderedDict[str, ClientSession] = OrderedDict()
+        self._lock = threading.Lock()
 
     def create(
         self,
@@ -49,34 +53,38 @@ class SessionStore:
         source_meta: dict[str, Any] | None = None,
         raw_bytes: bytes | None = None,
     ) -> str:
-        self._evict_expired()
         session_id = uuid.uuid4().hex
-        self._sessions[session_id] = ClientSession(
-            table=table,
-            source_name=source_name,
-            source_kind=source_kind,
-            source_meta=source_meta or {},
-            raw_bytes=raw_bytes,
-        )
-        self._sessions.move_to_end(session_id)
-        self._evict_overflow()
+        with self._lock:
+            self._evict_expired()
+            self._sessions[session_id] = ClientSession(
+                table=table,
+                source_name=source_name,
+                source_kind=source_kind,
+                source_meta=source_meta or {},
+                raw_bytes=raw_bytes,
+            )
+            self._sessions.move_to_end(session_id)
+            self._evict_overflow()
         return session_id
 
     def get(self, session_id: str) -> ClientSession:
-        self._evict_expired()
-        try:
-            session = self._sessions[session_id]
-        except KeyError as exc:
-            raise KeyError(f"Unknown or expired session {session_id}") from exc
-        session.last_access = time.monotonic()
-        self._sessions.move_to_end(session_id)
-        return session
+        with self._lock:
+            self._evict_expired()
+            try:
+                session = self._sessions[session_id]
+            except KeyError as exc:
+                raise KeyError(f"Unknown or expired session {session_id}") from exc
+            session.last_access = time.monotonic()
+            self._sessions.move_to_end(session_id)
+            return session
 
     def delete(self, session_id: str) -> None:
-        self._sessions.pop(session_id, None)
+        with self._lock:
+            self._sessions.pop(session_id, None)
 
     def __len__(self) -> int:
-        return len(self._sessions)
+        with self._lock:
+            return len(self._sessions)
 
     def _evict_expired(self) -> None:
         ttl = self._settings.session_ttl_seconds
