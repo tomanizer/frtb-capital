@@ -2,11 +2,11 @@
 
 ## Source PDFs reviewed
 
-- `/Users/thomas/Downloads/FRTB-Standard-Approach-for-Market-Risk-Brochure-_-Oct-20191.pdf` (Bloomberg)
-- `/Users/thomas/Downloads/FRTB-SA-Solution-Brochure.pdf` (S&P)
-- `/Users/thomas/Downloads/TickSmith_FRTB_White_Paper_Final.pdf` (TickSmith)
+- `FRTB-Standard-Approach-for-Market-Risk-Brochure-_-Oct-20191.pdf` (Bloomberg)
+- `FRTB-SA-Solution-Brochure.pdf` (S&P)
+- `TickSmith_FRTB_White_Paper_Final.pdf` (TickSmith)
 
-For comparison, screenshots were extracted from all PDFs into `/private/tmp/frtb_pdf_pages` and inspected.
+For comparison, screenshots were extracted from all PDFs and inspected.
 
 ## Purpose of this review
 
@@ -150,7 +150,6 @@ For the FRTB suite UI, prioritize:
 - reproducible filters and profile metadata in URL or run manifest.
 
 This aligns with existing attribution and governance expectations while matching the “workbench” patterns seen in Bloomberg and S&P and the control-plane depth from TickSmith.
-
 ## CAS allocation implications (casRisk.pdf)
 
 `casRisk.pdf` (October 2016) introduces Constrained Aumann-Shapley (CAS) allocation.
