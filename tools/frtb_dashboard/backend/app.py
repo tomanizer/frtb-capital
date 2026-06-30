@@ -36,6 +36,7 @@ app = FastAPI(
     version="0.1.0",
 )
 
+
 def _cors_origins() -> list[str]:
     """Resolve allowed CORS origins.
 
