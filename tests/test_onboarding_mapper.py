@@ -9,6 +9,7 @@ import pyarrow as pa  # type: ignore[import-untyped]
 import pyarrow.csv as pa_csv  # type: ignore[import-untyped]
 import pytest
 from fastapi.testclient import TestClient
+from frtb_common import ColumnSpec, TabularLogicalType
 
 from tools.onboarding_mapper.backend.app import app
 from tools.onboarding_mapper.backend.catalog import resolve_catalog_entry
@@ -40,6 +41,45 @@ def test_suggest_mapping_uses_aliases() -> None:
     mapping = suggest_column_mapping(entry.column_specs, ["positionId", "deskId", "AmountUSD"])
     assert mapping["position_id"] == "positionId"
     assert mapping["desk_id"] == "deskId"
+
+
+def test_suggest_mapping_normalizes_separators_and_case() -> None:
+    specs = [
+        ColumnSpec("position_id", aliases=(), logical_type=TabularLogicalType.STRING),
+        ColumnSpec("desk_id", aliases=(), logical_type=TabularLogicalType.STRING),
+        ColumnSpec("legal_entity", aliases=(), logical_type=TabularLogicalType.STRING),
+    ]
+    # Separator/case-style differences resolve even without declared aliases.
+    mapping = suggest_column_mapping(specs, ["POSITION-ID", "Desk Id", "legalEntity"])
+    assert mapping["position_id"] == "POSITION-ID"
+    assert mapping["desk_id"] == "Desk Id"
+    assert mapping["legal_entity"] == "legalEntity"
+
+
+def test_suggest_mapping_matches_reordered_tokens() -> None:
+    specs = [ColumnSpec("position_id", aliases=(), logical_type=TabularLogicalType.STRING)]
+    mapping = suggest_column_mapping(specs, ["id_position"])
+    assert mapping["position_id"] == "id_position"
+
+
+def test_suggest_mapping_does_not_expand_abbreviations() -> None:
+    # POS is a defensible no-match against ``position``; the matcher stays
+    # conservative rather than guessing.
+    specs = [ColumnSpec("position_id", aliases=(), logical_type=TabularLogicalType.STRING)]
+    mapping = suggest_column_mapping(specs, ["POS_ID"])
+    assert mapping["position_id"] is None
+
+
+def test_suggest_mapping_consumes_each_source_once() -> None:
+    specs = [
+        ColumnSpec("position_id", aliases=(), logical_type=TabularLogicalType.STRING),
+        ColumnSpec("desk_id", aliases=("position_id",), logical_type=TabularLogicalType.STRING),
+    ]
+    mapping = suggest_column_mapping(specs, ["position_id"])
+    assert mapping["position_id"] == "position_id"
+    # The single source column is already consumed, so the alias collision on the
+    # second spec finds nothing left.
+    assert mapping["desk_id"] is None
 
 
 def test_upload_csv_and_export_mapping(client: TestClient) -> None:

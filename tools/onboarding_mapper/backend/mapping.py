@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import json
+import re
 import tomllib
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from typing import Any
 
 import pyarrow as pa  # type: ignore[import-untyped]
@@ -17,27 +18,91 @@ from frtb_common import (
 
 from tools.onboarding_mapper.backend.catalog import TableCatalogEntry
 
+# Camel/Pascal-case boundary tokenizer: greedy acronym, capitalized word, lower
+# run, or digit run. Applied after splitting on non-alphanumeric separators so
+# ``grossEffectiveNotional`` and ``GROSS_EFFECTIVE_NOTIONAL`` tokenize alike.
+_TOKEN_RE = re.compile(r"[A-Z]+(?=[A-Z][a-z])|[A-Z]?[a-z]+|[A-Z]+|\d+")
+
+
+def _name_tokens(name: str) -> list[str]:
+    """Split a column name into lowercase tokens across separators and case.
+
+    Handles ``snake_case``, ``camelCase``, ``PascalCase``, ``kebab-case``,
+    spaced, and dotted names uniformly so the same identifier written in any of
+    those styles produces the same token sequence.
+    """
+
+    tokens: list[str] = []
+    for chunk in re.split(r"[^0-9A-Za-z]+", name):
+        if not chunk:
+            continue
+        parts = _TOKEN_RE.findall(chunk) or [chunk]
+        tokens.extend(part.lower() for part in parts)
+    return tokens
+
+
+def _collapsed_name(name: str) -> str:
+    """Return a separator/case-insensitive key, e.g. ``POS_ID`` -> ``posid``."""
+
+    return "".join(_name_tokens(name))
+
 
 def suggest_column_mapping(
     specs: Sequence[ColumnSpec],
     source_columns: Sequence[str],
 ) -> dict[str, str | None]:
-    """Suggest canonical-to-source mappings using names and declared aliases."""
+    """Suggest canonical-to-source mappings using names, aliases, and tokens.
 
-    exact_lookup = {name: name for name in source_columns}
-    lower_lookup = {name.lower(): name for name in source_columns}
+    Candidates for each canonical column are its name plus declared aliases.
+    Matching proceeds in decreasing-confidence tiers, and a higher-confidence
+    match on any candidate beats a lower-confidence match on the primary name:
+
+    1. **exact** — identical source column name;
+    2. **case-insensitive** — same name ignoring case;
+    3. **normalized** — same name ignoring case *and* separator/casing style, so
+       ``position_id`` matches ``positionId``, ``Position-Id``, or
+       ``POSITION ID``;
+    4. **token set** — identical unordered token multiset, catching reordered
+       components such as ``id_position`` for ``position_id``.
+
+    Each source column is consumed by at most one canonical column. The matcher
+    is deliberately conservative: it does not expand abbreviations (``POS`` does
+    not match ``position``) or do fuzzy edit-distance matching, so a suggestion
+    reflects a defensible structural correspondence rather than a guess.
+    """
+
+    source_list = list(source_columns)
+    # First occurrence wins for each key so suggestions are deterministic in the
+    # source column order.
+    exact_lookup: dict[str, str] = {}
+    lower_lookup: dict[str, str] = {}
+    collapsed_lookup: dict[str, str] = {}
+    token_lookup: dict[frozenset[str], str] = {}
+    for name in source_list:
+        exact_lookup.setdefault(name, name)
+        lower_lookup.setdefault(name.lower(), name)
+        collapsed_lookup.setdefault(_collapsed_name(name), name)
+        token_lookup.setdefault(frozenset(_name_tokens(name)), name)
+
+    tiers: tuple[tuple[Mapping[Any, str], Callable[[str], Any]], ...] = (
+        (exact_lookup, lambda candidate: candidate),
+        (lower_lookup, lambda candidate: candidate.lower()),
+        (collapsed_lookup, _collapsed_name),
+        (token_lookup, lambda candidate: frozenset(_name_tokens(candidate))),
+    )
+
     used_sources: set[str] = set()
     mapping: dict[str, str | None] = {}
-
     for spec in specs:
+        candidates = (spec.name, *spec.aliases)
         match: str | None = None
-        for candidate in (spec.name, *spec.aliases):
-            if candidate in exact_lookup and candidate not in used_sources:
-                match = candidate
-                break
-            lowered = candidate.lower()
-            if lowered in lower_lookup and lower_lookup[lowered] not in used_sources:
-                match = lower_lookup[lowered]
+        for lookup, key_of in tiers:
+            for candidate in candidates:
+                source = lookup.get(key_of(candidate))
+                if source is not None and source not in used_sources:
+                    match = source
+                    break
+            if match is not None:
                 break
         if match is not None:
             used_sources.add(match)

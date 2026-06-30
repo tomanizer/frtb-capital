@@ -34,7 +34,12 @@ cd ../../.. && uv run --with uvicorn python tools/onboarding_mapper/run.py --por
 
 1. **Target dataset** — choose a canonical input table from DRC, SBM, RRAO, CVA, or IMA.
 2. **Client source** — upload or load the client table (CSV / Parquet / Arrow IPC / DuckDB SQL).
-3. **Column mapping** — map each canonical column to a client column; use auto-suggest for names and aliases.
+3. **Column mapping** — map each canonical column to a client column. Auto-suggest
+   matches names in decreasing-confidence tiers — exact, case-insensitive,
+   normalized (separator/casing style, so `position_id` ↔ `positionId` ↔
+   `POSITION-ID`), then identical token set — and stays conservative: it does not
+   expand abbreviations or guess by edit distance, so anything it cannot match
+   structurally is left for you to set manually.
 4. **Validate & export** — run the package normalizer, preview accepted rows, download mapping config.
 
 ## Mapping artifact
