@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import date
+from functools import lru_cache
 from typing import Any
 
 import frtb_drc
@@ -65,10 +66,10 @@ class DashboardRun:
 
 
 def list_demo_runs() -> list[RunSummary]:
-    run = build_demo_run()
-    return [run.summary]
+    return [build_demo_run().summary]
 
 
+@lru_cache(maxsize=1)
 def build_demo_run() -> DashboardRun:
     fixture = load_capital_run_v1_fixture()
     workflow = run_capital_run_fixture_workflow(fixture)
@@ -100,6 +101,8 @@ def build_demo_run() -> DashboardRun:
             "window_size": workflow["pla"]["window_size"]
             if isinstance(workflow.get("pla"), dict)
             else None,
+            # Zone is assessed but the capital add-on itself is not modelled here.
+            "add_on_status": "NOT_MODELLED",
         },
         backtesting=workflow["backtesting"]
         if isinstance(workflow.get("backtesting"), dict)
@@ -428,6 +431,9 @@ def _build_capital_tree(
             component="IMA",
             amount=pla_total,
             currency=currency,
+            # The PLA capital add-on is not derived in this demo; the zone is
+            # assessed but the resulting charge is an indicative placeholder.
+            provisional=True,
         ),
         CapitalNodeView(
             node_id="sa",

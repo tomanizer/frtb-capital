@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from functools import lru_cache
+import os
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
@@ -36,23 +36,32 @@ app = FastAPI(
     version="0.1.0",
 )
 
+def _cors_origins() -> list[str]:
+    """Resolve allowed CORS origins.
+
+    Defaults to the local Vite dev server so the prototype works out of the
+    box; ``FRTB_DASHBOARD_CORS_ORIGINS`` (comma-separated) overrides this for
+    any shared deployment. Avoids the unrestricted ``*`` wildcard.
+    """
+
+    raw = os.environ.get("FRTB_DASHBOARD_CORS_ORIGINS")
+    if raw:
+        return [origin.strip() for origin in raw.split(",") if origin.strip()]
+    return ["http://127.0.0.1:5174", "http://localhost:5174"]
+
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
+    allow_origins=_cors_origins(),
+    allow_methods=["GET"],
     allow_headers=["*"],
 )
-
-
-@lru_cache(maxsize=1)
-def _demo_run() -> DashboardRun:
-    return build_demo_run()
 
 
 def _resolve_run(run_id: str) -> DashboardRun:
     if run_id != DEMO_RUN_ID:
         raise HTTPException(status_code=404, detail=f"Unknown run {run_id}")
-    return _demo_run()
+    return build_demo_run()
 
 
 @app.get("/api/health")
@@ -102,6 +111,10 @@ if FRONTEND_DIST.exists():
 
     @app.get("/{full_path:path}")
     def spa_fallback(full_path: str) -> FileResponse:
+        # API routes must surface a JSON 404 rather than silently returning the
+        # SPA shell, otherwise the frontend tries to JSON.parse index.html.
+        if full_path == "api" or full_path.startswith("api/"):
+            raise HTTPException(status_code=404, detail=f"Unknown API route /{full_path}")
         candidate = (FRONTEND_DIST / full_path).resolve()
         if (
             str(candidate).startswith(str(FRONTEND_DIST))

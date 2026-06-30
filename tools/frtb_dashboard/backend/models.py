@@ -28,6 +28,10 @@ class CapitalNodeView(BaseModel):
     amount: float | None
     currency: str
     child_ids: list[str] = Field(default_factory=list)
+    # True when ``amount`` is an indicative placeholder rather than a modelled
+    # figure (e.g. PLA add-on is not derived in the demo). The UI must surface
+    # this rather than presenting a fail-closed zero as a real result.
+    provisional: bool = False
 
 
 class AttributionRowView(BaseModel):

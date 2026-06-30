@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from fastapi.testclient import TestClient
 
-from tools.frtb_dashboard.backend.app import app
+from tools.frtb_dashboard.backend.app import _cors_origins, app
 from tools.frtb_dashboard.backend.demo_runs import build_demo_run, ima_desk_view, run_overview
 
 
@@ -60,3 +60,38 @@ def test_api_drc_node_detail_has_attribution() -> None:
     payload = response.json()
     assert payload["node"]["component"] == "DRC"
     assert payload["attributions"]
+
+
+def test_api_unknown_route_returns_json_404() -> None:
+    # The SPA fallback must not swallow unmatched API routes with the HTML shell.
+    client = TestClient(app)
+    response = client.get("/api/does-not-exist")
+    assert response.status_code == 404
+    assert response.headers["content-type"].startswith("application/json")
+
+
+def test_api_unknown_run_returns_404() -> None:
+    client = TestClient(app)
+    response = client.get("/api/runs/not-a-real-run")
+    assert response.status_code == 404
+
+
+def test_pla_node_is_provisional() -> None:
+    # The PLA add-on amount is an indicative placeholder, not a modelled figure.
+    client = TestClient(app)
+    payload = client.get("/api/runs/demo-suite-001").json()
+    pla = next(node for node in payload["nodes"] if node["node_id"] == "ima-pla")
+    assert pla["provisional"] is True
+
+
+def test_pla_desk_panel_flags_add_on_not_modelled() -> None:
+    run = build_demo_run()
+    desk = ima_desk_view(run, run.desk_record.desk_id)
+    assert desk.pla.get("add_on_status") == "NOT_MODELLED"
+
+
+def test_cors_origins_default_and_override(monkeypatch) -> None:
+    monkeypatch.delenv("FRTB_DASHBOARD_CORS_ORIGINS", raising=False)
+    assert "http://127.0.0.1:5174" in _cors_origins()
+    monkeypatch.setenv("FRTB_DASHBOARD_CORS_ORIGINS", "https://a.example, https://b.example")
+    assert _cors_origins() == ["https://a.example", "https://b.example"]

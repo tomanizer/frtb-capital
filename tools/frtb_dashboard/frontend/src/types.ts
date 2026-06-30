@@ -19,6 +19,7 @@ export type CapitalNode = {
   amount: number | null;
   currency: string;
   child_ids: string[];
+  provisional?: boolean;
 };
 
 export type RunOverview = {
