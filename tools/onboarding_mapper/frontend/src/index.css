@@ -762,6 +762,12 @@ textarea {
   background: var(--blue-soft);
 }
 
+.dropzone:focus-visible {
+  outline: 3px solid rgba(21, 94, 239, 0.22);
+  outline-offset: 2px;
+  border-color: var(--blue);
+}
+
 .dropzone strong,
 .dropzone span {
   display: block;

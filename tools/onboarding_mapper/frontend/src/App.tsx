@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowLeft,
   ArrowRight,
@@ -86,10 +86,16 @@ export default function App() {
   const [exportFilename, setExportFilename] = useState<string>("mapping.yaml");
   const [exportFormat, setExportFormat] = useState<"yaml" | "toml" | "json">("yaml");
   const [error, setError] = useState<string | null>(null);
+  // Non-blocking, success-with-caveat messages (e.g. an import that dropped
+  // unknown fields), kept distinct from the red error channel.
+  const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   const [datasetSearch, setDatasetSearch] = useState("");
   const [sourceTab, setSourceTab] = useState<"upload" | "path" | "duckdb">("upload");
+  // The connector that actually produced the loaded session, recorded so export
+  // lineage reflects the real source rather than the currently-selected tab.
+  const [loadedConnector, setLoadedConnector] = useState<"file" | "path" | "duckdb" | null>(null);
   const [pathValue, setPathValue] = useState("");
   const [duckQuery, setDuckQuery] = useState("SELECT * FROM client_table LIMIT 5000");
   const [duckDatabase, setDuckDatabase] = useState(":memory:");
@@ -99,6 +105,9 @@ export default function App() {
   const [mappingFilter, setMappingFilter] = useState<MappingFilter>("all");
   const [lineageSystem, setLineageSystem] = useState("client_etl");
   const [copied, setCopied] = useState(false);
+
+  const uploadInputRef = useRef<HTMLInputElement>(null);
+  const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const component = componentFilter === "All" ? undefined : componentFilter;
@@ -122,6 +131,12 @@ export default function App() {
       })
       .catch((exc) => setError(String(exc)));
   }, [selectedTable]);
+
+  useEffect(() => {
+    return () => {
+      if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
+    };
+  }, []);
 
   const stepIndex = STEPS.findIndex((item) => item.id === step);
 
@@ -252,6 +267,18 @@ export default function App() {
     setCopied(false);
   }
 
+  // Apply a freshly loaded client table. Clearing the mapping is essential: a
+  // mapping built against a previous source would reference columns that may not
+  // exist in the new table and fail at validation.
+  function applyLoadedSource(preview: SourcePreview, connector: "file" | "path" | "duckdb") {
+    setSourcePreview(preview);
+    setLoadedConnector(connector);
+    setMapping({});
+    resetDerivedArtifacts();
+    setPreviewMode("columns");
+    setNotice(null);
+  }
+
   function selectTable(table: InputTableSummary) {
     setSelectedTable(table);
     setMapping({});
@@ -262,9 +289,11 @@ export default function App() {
     setSelectedTable(null);
     setTableDetail(null);
     setSourcePreview(null);
+    setLoadedConnector(null);
     setMapping({});
     resetDerivedArtifacts();
     setError(null);
+    setNotice(null);
     setDatasetSearch("");
     setMappingSearch("");
     setMappingFilter("all");
@@ -275,6 +304,7 @@ export default function App() {
     if (!content.trim()) return;
     setBusy(true);
     setError(null);
+    setNotice(null);
     try {
       const result = await importMapping({ content });
       // InputTableDetail is a superset of InputTableSummary, so it can seed both
@@ -285,8 +315,9 @@ export default function App() {
       setMapping(result.mapping);
       resetDerivedArtifacts();
       if (result.unknown_columns.length) {
-        setError(
-          `Imported mapping ignored fields not in the target contract: ${result.unknown_columns.join(", ")}`,
+        // Successful import with a caveat — a warning, not an error.
+        setNotice(
+          `Imported mapping; ignored fields not in the target contract: ${result.unknown_columns.join(", ")}`,
         );
       }
       setStep(sourcePreview ? "mapping" : "source");
@@ -309,9 +340,7 @@ export default function App() {
     setError(null);
     try {
       const preview = await uploadSource(file);
-      setSourcePreview(preview);
-      resetDerivedArtifacts();
-      setPreviewMode("columns");
+      applyLoadedSource(preview, "file");
       setStep("source");
     } catch (exc) {
       setError(String(exc));
@@ -325,9 +354,7 @@ export default function App() {
     setError(null);
     try {
       const preview = await loadSourcePath(pathValue);
-      setSourcePreview(preview);
-      resetDerivedArtifacts();
-      setPreviewMode("columns");
+      applyLoadedSource(preview, "path");
     } catch (exc) {
       setError(String(exc));
     } finally {
@@ -345,9 +372,7 @@ export default function App() {
         query: duckQuery,
         attach_files,
       });
-      setSourcePreview(preview);
-      resetDerivedArtifacts();
-      setPreviewMode("columns");
+      applyLoadedSource(preview, "duckdb");
     } catch (exc) {
       setError(String(exc));
     } finally {
@@ -397,7 +422,7 @@ export default function App() {
       const response = await exportMapping({
         ...mappingState,
         format: exportFormat,
-        source_connector: sourceTab === "duckdb" ? "duckdb" : sourceTab === "path" ? "path" : "file",
+        source_connector: loadedConnector ?? "file",
         lineage_source_system: lineageSystem,
       });
       setExportContent(response.content);
@@ -425,6 +450,8 @@ export default function App() {
     if (!exportContent) return;
     await navigator.clipboard.writeText(exportContent);
     setCopied(true);
+    if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
+    copyTimerRef.current = setTimeout(() => setCopied(false), 2000);
   }
 
   function renderPreviewRows(columns: string[], rows: Record<string, unknown>[]) {
@@ -582,6 +609,12 @@ export default function App() {
         {error ? (
           <div className="alert error" role="alert" aria-live="assertive">
             {error}
+          </div>
+        ) : null}
+
+        {notice ? (
+          <div className="alert warning" role="status" aria-live="polite">
+            {notice}
           </div>
         ) : null}
 
@@ -755,6 +788,15 @@ export default function App() {
                 {sourceTab === "upload" ? (
                   <label
                     className="dropzone"
+                    role="button"
+                    tabIndex={0}
+                    aria-label="Upload client file: CSV, Parquet, or Arrow IPC"
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        uploadInputRef.current?.click();
+                      }
+                    }}
                     onDragOver={(event) => event.preventDefault()}
                     onDrop={(event) => {
                       event.preventDefault();
@@ -763,6 +805,7 @@ export default function App() {
                     }}
                   >
                     <input
+                      ref={uploadInputRef}
                       type="file"
                       hidden
                       accept=".csv,.parquet,.pq,.arrow,.ipc"
