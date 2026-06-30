@@ -73,6 +73,61 @@ function diagnosticColumnKey(columnName: string | null | undefined): string {
   return lower(columnName).replace(/[^a-z0-9]/g, "");
 }
 
+function isNumericLike(value: unknown): boolean {
+  if (typeof value === "number") return Number.isFinite(value);
+  if (typeof value === "string") {
+    const text = value.trim();
+    return text !== "" && Number.isFinite(Number(text));
+  }
+  return false;
+}
+
+function isIntegerLike(value: unknown): boolean {
+  if (typeof value === "number") return Number.isInteger(value);
+  if (typeof value === "string") {
+    const text = value.trim();
+    return text !== "" && Number.isInteger(Number(text));
+  }
+  return false;
+}
+
+const BOOLEAN_TOKENS = new Set(["true", "false", "t", "f", "yes", "no", "y", "n", "0", "1"]);
+
+function isBooleanLike(value: unknown): boolean {
+  if (typeof value === "boolean") return true;
+  if (typeof value === "number") return value === 0 || value === 1;
+  if (typeof value === "string") return BOOLEAN_TOKENS.has(value.trim().toLowerCase());
+  return false;
+}
+
+function isDateLike(value: unknown): boolean {
+  if (typeof value !== "string" && typeof value !== "number") return false;
+  return !Number.isNaN(new Date(value).getTime());
+}
+
+const TYPE_CHECKERS: Record<string, (value: unknown) => boolean> = {
+  integer: isIntegerLike,
+  dictionary_code: isIntegerLike,
+  decimal: isNumericLike,
+  float: isNumericLike,
+  boolean: isBooleanLike,
+  date: isDateLike,
+  timestamp: isDateLike,
+};
+
+// Value-based compatibility hint. The normalizer casts strings to the target
+// type, so a structural type-name comparison would flag legitimate numeric
+// strings; instead we check whether the sampled values plausibly parse as the
+// canonical logical type. Returns "check" only when a non-null sample clearly
+// does not fit; string/dictionary/unknown targets impose no constraint.
+function assessTypeCompat(logicalType: string, samples: unknown[]): "ok" | "check" {
+  const checker = TYPE_CHECKERS[logicalType];
+  if (!checker) return "ok";
+  const observed = samples.filter((value) => value !== null && value !== undefined && value !== "");
+  if (!observed.length) return "ok";
+  return observed.every(checker) ? "ok" : "check";
+}
+
 export default function App() {
   const [step, setStep] = useState<WizardStep>("dataset");
   const [componentFilter, setComponentFilter] = useState<string>("All");
@@ -205,6 +260,18 @@ export default function App() {
     return grouped;
   }, [validation]);
 
+  const typeStatusByColumn = useMemo(() => {
+    const statuses = new Map<string, "ok" | "check">();
+    tableDetail?.columns.forEach((column) => {
+      const sourceName = mapping[column.name];
+      if (!sourceName) return;
+      const sourceColumn = sourceColumnsByName.get(sourceName);
+      if (!sourceColumn) return;
+      statuses.set(column.name, assessTypeCompat(column.logical_type, sourceColumn.sample_values));
+    });
+    return statuses;
+  }, [mapping, sourceColumnsByName, tableDetail]);
+
   const visibleMappingColumns = useMemo(() => {
     if (!tableDetail) return [];
     const query = lower(mappingSearch);
@@ -213,7 +280,8 @@ export default function App() {
       const sourceColumn = sourceColumnsByName.get(sourceName);
       const hasIssue =
         diagnosticsByColumn.has(diagnosticColumnKey(column.name)) ||
-        duplicateSources.includes(sourceName);
+        duplicateSources.includes(sourceName) ||
+        typeStatusByColumn.get(column.name) === "check";
       const matchesQuery =
         !query ||
         [
@@ -235,13 +303,17 @@ export default function App() {
         (mappingFilter === "issues" && hasIssue);
       return matchesQuery && matchesFilter;
     });
-  }, [diagnosticsByColumn, duplicateSources, mapping, mappingFilter, mappingSearch, sourceColumnsByName, tableDetail]);
+  }, [diagnosticsByColumn, duplicateSources, mapping, mappingFilter, mappingSearch, sourceColumnsByName, tableDetail, typeStatusByColumn]);
+
+  const usedSourceNames = useMemo(
+    () => new Set(Object.values(mapping).filter(Boolean) as string[]),
+    [mapping],
+  );
 
   const unmappedSourceColumns = useMemo(() => {
     if (!sourcePreview) return [];
-    const used = new Set(Object.values(mapping).filter(Boolean));
-    return sourcePreview.columns.filter((column) => !used.has(column.name));
-  }, [mapping, sourcePreview]);
+    return sourcePreview.columns.filter((column) => !usedSourceNames.has(column.name));
+  }, [sourcePreview, usedSourceNames]);
 
   const validationHasErrors = validation?.diagnostics.some((diagnostic) => diagnostic.severity === "error") ?? false;
 
@@ -380,13 +452,28 @@ export default function App() {
     }
   }
 
-  async function handleSuggestMapping() {
+  async function handleSuggestMapping(mode: "replace" | "fill" = "replace") {
     if (!mappingState) return;
     setBusy(true);
     setError(null);
     try {
       const suggested = await suggestMapping(mappingState);
-      setMapping(suggested.mapping);
+      if (mode === "replace") {
+        setMapping(suggested.mapping);
+      } else {
+        // Fill only currently-unmapped fields, preserving manual edits and not
+        // reusing a source column already assigned by hand.
+        setMapping((current) => {
+          const used = new Set(Object.values(current).filter(Boolean) as string[]);
+          const merged = { ...current };
+          for (const [canonical, source] of Object.entries(suggested.mapping)) {
+            if (merged[canonical] || !source || used.has(source)) continue;
+            merged[canonical] = source;
+            used.add(source);
+          }
+          return merged;
+        });
+      }
       resetDerivedArtifacts();
       setMappingFilter("all");
       setStep("mapping");
@@ -936,9 +1023,25 @@ export default function App() {
                 <span>{tableDetail.label}</span>
               </div>
               <div className="toolbar">
-                <button type="button" className="btn btn-secondary btn-small" disabled={busy} onClick={() => void handleSuggestMapping()}>
+                <button
+                  type="button"
+                  className="btn btn-secondary btn-small"
+                  title="Suggest sources for unmapped fields, keeping manual edits"
+                  disabled={busy}
+                  onClick={() => void handleSuggestMapping("fill")}
+                >
+                  <WandSparkles aria-hidden="true" className="icon" />
+                  Fill unmapped
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-secondary btn-small"
+                  title="Replace every field with a fresh suggestion"
+                  disabled={busy}
+                  onClick={() => void handleSuggestMapping("replace")}
+                >
                   <RefreshCw aria-hidden="true" className="icon" />
-                  Re-suggest
+                  Re-suggest all
                 </button>
                 <button type="button" className="btn btn-secondary btn-small" title="Clear all mappings" onClick={() => setMapping({})}>
                   <Trash2 aria-hidden="true" className="icon" />
@@ -1021,6 +1124,8 @@ export default function App() {
                         const sourceColumn = sourceColumnsByName.get(sourceName);
                         const columnDiagnostics = diagnosticsByColumn.get(diagnosticColumnKey(column.name)) ?? [];
                         const isDuplicate = duplicateSources.includes(sourceName);
+                        const typeStatus = typeStatusByColumn.get(column.name);
+                        const cleanRow = !isDuplicate && !columnDiagnostics.length && typeStatus !== "check";
                         return (
                           <tr key={column.name}>
                             <td>
@@ -1047,17 +1152,28 @@ export default function App() {
                                 }}
                               >
                                 <option value="">Unmapped</option>
-                                {sourcePreview.columns.map((sourceColumnOption) => (
-                                  <option key={sourceColumnOption.name} value={sourceColumnOption.name}>
-                                    {sourceColumnOption.name}
-                                  </option>
-                                ))}
+                                {sourcePreview.columns.map((sourceColumnOption) => {
+                                  const inUseElsewhere =
+                                    sourceColumnOption.name !== sourceName &&
+                                    usedSourceNames.has(sourceColumnOption.name);
+                                  return (
+                                    <option key={sourceColumnOption.name} value={sourceColumnOption.name}>
+                                      {sourceColumnOption.name} · {sourceColumnOption.arrow_type}
+                                      {inUseElsewhere ? " — in use" : ""}
+                                    </option>
+                                  );
+                                })}
                               </select>
                             </td>
                             <td>
                               {sourceColumn ? (
                                 <>
-                                  <div className="cell-title">{sourceColumn.arrow_type}</div>
+                                  <div className="cell-title cell-title-with-badge">
+                                    {sourceColumn.arrow_type}
+                                    <span className={`badge ${typeStatus === "check" ? "warning" : "success"} type-badge`}>
+                                      {typeStatus === "check" ? "check type" : "type ok"}
+                                    </span>
+                                  </div>
                                   <div className="cell-note">
                                     {sourceColumn.null_count.toLocaleString()} nulls
                                     {sourceColumn.distinct_count !== null && sourceColumn.distinct_count !== undefined
@@ -1072,8 +1188,13 @@ export default function App() {
                             </td>
                             <td>
                               {isDuplicate ? <div className="issue-note">Source used more than once.</div> : null}
+                              {typeStatus === "check" ? (
+                                <div className="issue-note">
+                                  Sample values may not parse as {column.logical_type}.
+                                </div>
+                              ) : null}
                               {columnDiagnostics.length ? columnDiagnostics.map((message) => <div key={message} className="issue-note">{message}</div>) : null}
-                              {!isDuplicate && !columnDiagnostics.length ? <span className="muted">-</span> : null}
+                              {cleanRow ? <span className="muted">-</span> : null}
                             </td>
                           </tr>
                         );

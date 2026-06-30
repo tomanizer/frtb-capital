@@ -657,6 +657,19 @@ textarea {
   line-height: 1.35;
 }
 
+.cell-title-with-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.type-badge {
+  font-size: 0.68rem;
+  padding: 1px 6px;
+  min-height: unset;
+}
+
 .cell-note {
   margin-top: 3px;
   max-width: 70ch;
