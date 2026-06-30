@@ -47,7 +47,7 @@ def bounded_rejected_group_offsets(
     Returns
     -------
     tuple[RejectedOffset, ...]
-        Result of the operation.
+        Rejected offset records bounded by deterministic representative group pairs.
     """
 
     rejected: list[RejectedOffset] = []
@@ -112,7 +112,7 @@ def risk_weights_for_net_jtd(
     Returns
     -------
     set[float]
-        Result of the operation.
+        Set of risk weights attached to the positions in one net JTD record.
     """
 
     weights: set[float] = set()

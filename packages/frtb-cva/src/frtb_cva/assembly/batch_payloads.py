@@ -16,6 +16,9 @@ from frtb_cva.data_models import (
     SaCvaRiskMeasure,
 )
 
+INPUT_HASH_ALGORITHM_ARROW_COLUMNAR_V2 = "arrow-columnar-v2"
+INPUT_HASH_ALGORITHM_JSON_ROW_V1 = "json-row-v1"
+
 
 def input_hash_for_cva_batches(
     context: CvaCalculationContext,
@@ -74,4 +77,8 @@ _SUPPORTED_SA_CVA_PATHS: frozenset[tuple[SaCvaRiskClass, SaCvaRiskMeasure]] = fr
 )
 
 
-__all__ = ["input_hash_for_cva_batches"]
+__all__ = [
+    "INPUT_HASH_ALGORITHM_ARROW_COLUMNAR_V2",
+    "INPUT_HASH_ALGORITHM_JSON_ROW_V1",
+    "input_hash_for_cva_batches",
+]

@@ -37,6 +37,7 @@ from frtb_cva import (
     build_sa_cva_sensitivity_batch_from_arrow,
     build_sa_cva_sensitivity_batch_from_columns,
     calculate_cva_capital,
+    calculate_cva_capital_from_arrow,
     calculate_cva_capital_from_batches,
     normalize_cva_counterparty_arrow_table,
     normalize_cva_netting_set_arrow_table,
@@ -124,12 +125,11 @@ def run_benchmark(config: CvaBenchmarkConfig) -> dict[str, object]:
             build_cva_netting_set_batch_from_arrow(netting_set_arrow_table),
         )
     )
-    arrow_counterparties, arrow_netting_sets = arrow_ba_build.value
     arrow_ba = _measure(
-        lambda: calculate_cva_capital_from_batches(
+        lambda: calculate_cva_capital_from_arrow(
             ba_context,
-            arrow_counterparties,
-            arrow_netting_sets,
+            counterparty_arrow_table,
+            netting_set_arrow_table,
         )
     )
 
@@ -161,9 +161,9 @@ def run_benchmark(config: CvaBenchmarkConfig) -> dict[str, object]:
         lambda: build_sa_cva_sensitivity_batch_from_arrow(sensitivity_arrow_table.value)
     )
     arrow_sa = _measure(
-        lambda: calculate_cva_capital_from_batches(
+        lambda: calculate_cva_capital_from_arrow(
             sa_context,
-            sensitivities=arrow_sa_build.value,
+            sensitivities=sensitivity_arrow_table.value,
         )
     )
     ba_arrow_parse_seconds = ba_arrow_table.seconds
@@ -275,12 +275,14 @@ def run_benchmark(config: CvaBenchmarkConfig) -> dict[str, object]:
             "ba_row_payload_hash": _payload_hash(row_ba.value),
             "ba_column_payload_hash": _payload_hash(column_ba.value.result),
             "ba_arrow_payload_hash": _payload_hash(arrow_ba.value.result),
+            "ba_arrow_input_hash_algorithm": arrow_ba.value.result.input_hash_algorithm,
             "ba_column_capital_delta": ba_column_delta,
             "ba_arrow_capital_delta": ba_arrow_delta,
             "sa_total_cva_capital": row_sa.value.total_cva_capital,
             "sa_row_payload_hash": _payload_hash(row_sa.value),
             "sa_column_payload_hash": _payload_hash(column_sa.value.result),
             "sa_arrow_payload_hash": _payload_hash(arrow_sa.value.result),
+            "sa_arrow_input_hash_algorithm": arrow_sa.value.result.input_hash_algorithm,
             "sa_column_capital_delta": sa_column_delta,
             "sa_arrow_capital_delta": sa_arrow_delta,
         },

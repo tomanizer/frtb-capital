@@ -20,7 +20,7 @@ def require_text(value: object | None, field_name: str) -> str:
     Returns
     -------
     str
-        Result of the operation.
+        Non-empty text value after validation.
     """
 
     text = optional_text(value)
@@ -39,7 +39,7 @@ def optional_text(value: object | None) -> str | None:
     Returns
     -------
     str | None
-        Result of the operation.
+        Non-empty text value, or None when the input is absent.
     """
 
     if value is None:
@@ -60,7 +60,7 @@ def require_finite_non_negative(value: object, field_name: str) -> float:
     Returns
     -------
     float
-        Result of the operation.
+        Finite non-negative numeric value after validation.
     """
 
     try:

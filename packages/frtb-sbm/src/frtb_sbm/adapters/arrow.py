@@ -29,7 +29,9 @@ from frtb_common import (
     unique_non_null_text_values,
 )
 
+from frtb_sbm._arrow_hash_adapter import sbm_arrow_columnar_input_hash
 from frtb_sbm.adapters.sensitivities import build_sbm_batch_from_columns
+from frtb_sbm.assembly.hashes import INPUT_HASH_ALGORITHM_ARROW_COLUMNAR_V2
 from frtb_sbm.batch import SbmSensitivityBatch
 from frtb_sbm.capital import (
     calculate_sbm_capital_from_batch,
@@ -482,6 +484,7 @@ def _build_sbm_batch_from_arrow(
         error=_sbm_error,
         null_defaults=_SBM_NULL_DEFAULTS,
     )
+    input_hash = sbm_arrow_columnar_input_hash(table, column_specs)
     kwargs: dict[str, Any] = dict(builder_kwargs or {})
     kwargs.update(_sbm_batch_column_kwargs(columns, row_count=table.num_rows))
     kwargs.update(
@@ -489,6 +492,8 @@ def _build_sbm_batch_from_arrow(
             "source_hash": handoff.source_hash,
             "handoff_hash": normalized_arrow_table_hash(handoff),
             "diagnostics": _diagnostics(handoff),
+            "input_hash": input_hash,
+            "input_hash_algorithm": INPUT_HASH_ALGORITHM_ARROW_COLUMNAR_V2,
             "copy_arrays": False,
         }
     )

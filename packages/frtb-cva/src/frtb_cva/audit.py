@@ -126,6 +126,7 @@ def serialize_cva_result(result: CvaCapitalResult) -> dict[str, object]:
         "profile_id": result.profile_id,
         "profile_hash": result.profile_hash,
         "input_hash": result.input_hash,
+        "input_hash_algorithm": result.input_hash_algorithm,
         "method": result.method.value,
         "total_cva_capital": result.total_cva_capital,
         "citations": list(result.citations),

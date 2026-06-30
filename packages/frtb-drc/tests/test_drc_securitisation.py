@@ -62,6 +62,61 @@ def test_securitisation_non_ctp_unhedged_book_uses_market_value_and_context_weig
     validate_reconciliation(result)
 
 
+def test_securitisation_non_ctp_short_maturity_is_not_nonsec_scaled() -> None:
+    position = _sec_position(
+        "short-maturity-sec",
+        DefaultDirection.LONG,
+        market_value=125.0,
+        maturity_years=0.5,
+    )
+
+    result = calculate_drc_capital(
+        (position,),
+        context=_context(securitisation_non_ctp_risk_weights={position.position_id: 0.2}),
+    )
+
+    assert result.maturity_scaled_jtds[0].maturity_weight == 1.0
+    assert result.maturity_scaled_jtds[0].scaled_jtd == pytest.approx(125.0)
+    assert result.total_drc == pytest.approx(25.0)
+    assert "US_NPR_210_C_1" in result.maturity_scaled_jtds[0].citations
+    validate_reconciliation(result)
+
+
+def test_securitisation_non_ctp_zero_net_group_keeps_audit_record() -> None:
+    long_position = _sec_position(
+        "zero-long",
+        DefaultDirection.LONG,
+        market_value=100.0,
+        issuer_id="pool-a",
+        tranche_id="mezz",
+    )
+    short_position = _sec_position(
+        "zero-short",
+        DefaultDirection.SHORT,
+        market_value=100.0,
+        issuer_id="pool-a",
+        tranche_id="mezz",
+    )
+
+    result = calculate_drc_capital(
+        (long_position, short_position),
+        context=_context(
+            securitisation_non_ctp_risk_weights={
+                "zero-long": 0.2,
+                "zero-short": 0.2,
+            },
+        ),
+    )
+
+    assert len(result.net_jtds) == 1
+    net_jtd = result.net_jtds[0]
+    assert net_jtd.net_amount == 0.0
+    assert net_jtd.position_ids == ("zero-long", "zero-short")
+    assert "fully offset to zero net JTD" in net_jtd.branch_metadata[0].reason
+    assert result.total_drc == 0.0
+    validate_reconciliation(result)
+
+
 def test_securitisation_non_ctp_applies_eligible_fair_value_cap() -> None:
     position = _sec_position("capped-sec", DefaultDirection.LONG, market_value=125.0)
     cap_evidence = _fair_value_cap_evidence(position, fair_value_cap_amount=80.0)
@@ -565,8 +620,8 @@ def test_securitisation_non_ctp_exact_pool_and_tranche_offsets_across_maturity()
 
     assert len(result.net_jtds) == 1
     assert result.net_jtds[0].net_direction is DefaultDirection.LONG
-    assert result.net_jtds[0].net_amount == pytest.approx(80.0)
-    assert result.total_drc == pytest.approx(16.0)
+    assert result.net_jtds[0].net_amount == pytest.approx(60.0)
+    assert result.total_drc == pytest.approx(12.0)
 
 
 def test_securitisation_non_ctp_different_tranche_offset_is_audited() -> None:

@@ -47,6 +47,7 @@ def serialize_sbm_result(result: SbmCapitalResult) -> dict[str, object]:
         "profile_id": result.profile_id,
         "profile_hash": result.profile_hash,
         "input_hash": result.input_hash,
+        "input_hash_algorithm": result.input_hash_algorithm,
         "warnings": list(result.warnings),
         "unsupported_flags": list(result.unsupported_flags),
         "risk_classes": [_risk_class_payload(risk_class) for risk_class in result.risk_classes],

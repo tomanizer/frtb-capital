@@ -8,6 +8,7 @@ Regulatory traceability:
 
 from __future__ import annotations
 
+import hashlib
 from collections.abc import Iterable, Mapping
 from datetime import date
 from typing import TYPE_CHECKING, cast
@@ -29,6 +30,10 @@ if TYPE_CHECKING:
     from frtb_sbm.batch import SbmSensitivityBatch
 
 ObjectArray = npt.NDArray[np.object_]
+
+INPUT_HASH_ALGORITHM_ARROW_COLUMNAR_V2 = "arrow-columnar-v2"
+INPUT_HASH_ALGORITHM_ARROW_PORTFOLIO_V2 = "arrow-columnar-v2-portfolio"
+INPUT_HASH_ALGORITHM_JSON_ROW_V1 = "json-row-v1"
 
 
 def input_hash_for_validated_sensitivities(
@@ -68,24 +73,67 @@ def input_hash_for_sbm_batch(batch: SbmSensitivityBatch) -> str:
 
 
 def input_hash_for_sbm_batches(batches: Iterable[SbmSensitivityBatch]) -> str:
-    """Return the row-equivalent deterministic input hash for batch portfolios.
+    """Return the deterministic input hash for a batch portfolio.
 
     Parameters
     ----------
-    batches
-        Validated SBM sensitivity batches.
+    batches : Iterable[SbmSensitivityBatch]
+        Validated package-owned SBM batches.
 
     Returns
     -------
     str
+        Row JSON digest for row/column batches, or an Arrow portfolio digest
+        when every batch carries ``arrow-columnar-v2``.
     """
+
+    batch_tuple = tuple(batches)
+    if _all_arrow_columnar_batches(batch_tuple):
+        digest = hashlib.sha256()
+        digest.update(INPUT_HASH_ALGORITHM_ARROW_PORTFOLIO_V2.encode("utf-8"))
+        digest.update(b"\0")
+        for batch in sorted(
+            batch_tuple,
+            key=lambda item: (item.risk_class.value, item.risk_measure.value, item.input_hash),
+        ):
+            digest.update(batch.input_hash.encode("utf-8"))
+        return digest.hexdigest()
 
     return stable_json_hash(
         {
             "sensitivities": [
-                payload for batch in batches for payload in sensitivity_payloads_from_batch(batch)
+                payload
+                for batch in batch_tuple
+                for payload in sensitivity_payloads_from_batch(batch)
             ]
         }
+    )
+
+
+def input_hash_algorithm_for_sbm_batches(batches: Iterable[SbmSensitivityBatch]) -> str:
+    """Return the result-level input hash algorithm for a batch portfolio.
+
+    Parameters
+    ----------
+    batches : Iterable[SbmSensitivityBatch]
+        Validated package-owned SBM batches.
+
+    Returns
+    -------
+    str
+        ``arrow-columnar-v2-portfolio`` when all batches are Arrow-columnar,
+        otherwise ``json-row-v1``.
+    """
+
+    batch_tuple = tuple(batches)
+    if _all_arrow_columnar_batches(batch_tuple):
+        return INPUT_HASH_ALGORITHM_ARROW_PORTFOLIO_V2
+    return INPUT_HASH_ALGORITHM_JSON_ROW_V1
+
+
+def _all_arrow_columnar_batches(batches: tuple[SbmSensitivityBatch, ...]) -> bool:
+    return bool(batches) and all(
+        batch.input_hash_algorithm == INPUT_HASH_ALGORITHM_ARROW_COLUMNAR_V2 for batch in batches
     )
 
 
@@ -294,6 +342,10 @@ def _str_at(values: ObjectArray, row_index: int) -> str:
 
 
 __all__ = [
+    "INPUT_HASH_ALGORITHM_ARROW_COLUMNAR_V2",
+    "INPUT_HASH_ALGORITHM_ARROW_PORTFOLIO_V2",
+    "INPUT_HASH_ALGORITHM_JSON_ROW_V1",
+    "input_hash_algorithm_for_sbm_batches",
     "input_hash_for_sbm_batch",
     "input_hash_for_sbm_batches",
     "input_hash_for_validated_sensitivities",

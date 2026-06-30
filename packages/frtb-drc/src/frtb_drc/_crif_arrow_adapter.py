@@ -36,7 +36,7 @@ def drc_crif_result_to_arrow_tables(
     Returns
     -------
     Mapping[DrcRiskClass, NormalizedArrowTable]
-        Result of the operation.
+        Mapping[DrcRiskClass, NormalizedArrowTable] produced by drc_crif_result_to_arrow_tables.
     """
 
     by_class: dict[DrcRiskClass, list[DrcPosition]] = {}

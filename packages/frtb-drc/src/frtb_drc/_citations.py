@@ -12,7 +12,7 @@ def merge_citations(*citation_groups: tuple[str, ...]) -> tuple[str, ...]:
     Returns
     -------
     tuple[str, ...]
-        Result of the operation.
+        Citation ids merged without duplicates while preserving first-seen order.
     """
 
     merged: list[str] = []
