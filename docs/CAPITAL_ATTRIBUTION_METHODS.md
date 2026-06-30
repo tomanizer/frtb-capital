@@ -185,3 +185,29 @@ top-of-house capital.
 - [ADR 0031: DRC attribution method contract](decisions/0031-drc-attribution-method-contract.md)
 - [ADR 0037: Analytical Euler decomposition framework](decisions/0037-analytical-euler-decomposition-framework.md)
 - [ADR 0038: Suite-wide attribution and impact contract](decisions/0038-suite-wide-attribution-impact-contract.md)
+
+## Constrained hierarchy-aware attribution (CAS)
+
+`casRisk.pdf` raises a practical gap for our current workflow:
+
+- The suite does not currently include a constrained, hierarchy-aware attribution method equivalent to Constrained Aumann-Shapley (CAS).
+- Current method selection is branch-based and assumes stable, differentiable Euler paths or additive standalone/reconciled fallbacks.
+- We do not currently claim invariance guarantees against tree rebooking or regrouping, and our unsupported-path handling should stay explicit.
+
+When grouping is a controlled axis of behavior (desk/desk-book/desk hierarchy), we should treat this as a roadmap requirement:
+
+- Keep attribution method metadata explicit per record (`ANALYTICAL_EULER` / `STANDALONE` / `RESIDUAL` / `UNSUPPORTED`) and include a `method_label` for any constrained variant when introduced.
+- Add a hierarchy-integrity policy that enforces that attribution outputs are consistent under top-down and bottom-up rollups for the same organizational tree.
+- Surface additivity/associativity checks where feasible, especially for rollups (e.g., desk to business unit to portfolio) that managers may rebook.
+- Track method-support boundaries when constrained attribution is unavailable so users do not read Euler residualized values as rebooking-invariant.
+- Document explicit invariance assumptions:
+  - whether grouping restrictions are respected,
+  - whether regrouping by desk/portfolio level is expected to preserve totals,
+  - what unsupported/edge cases are quarantined into residual or unsupported records.
+- Distinguish “method comparison” experiments from production output, so internal research use (e.g., constrained vs Euler deltas) cannot be mistaken for normative attribution.
+
+If we choose to implement CAS-style attribution later, it should be introduced as a separate method label and kept in the same fallback lattice:
+
+1. Use constrained-permutation attribution where branch continuity, supported tree constraints, and audit evidence exist.
+2. Persist branch-invariance diagnostics as first-class unsupported/residual metadata.
+3. Keep method-specific uncertainty visible in report summaries and UI drillthrough.
