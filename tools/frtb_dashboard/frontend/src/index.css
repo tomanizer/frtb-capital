@@ -528,11 +528,6 @@ input:focus-visible {
   gap: 10px;
 }
 
-.sa-grid {
-  display: grid;
-  gap: 14px;
-}
-
 .kv-grid {
   display: grid;
   overflow: hidden;
