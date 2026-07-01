@@ -102,6 +102,11 @@ def test_supporting_views_and_json_payloads() -> None:
     payload = jsonable_payload({"node_id": node.node.node_id, "measure_count": len(node.measures)})
 
     assert runs[0].run_id == run.summary.run_id
+    assert run.summary.run_id == run.desk_record.run_id
+    assert run.sbm_result.run_context is not None
+    assert run.summary.run_id == run.sbm_result.run_context.run_id
+    assert run.summary.run_id == run.rrao_result.run_id
+    assert run.summary.run_id == run.sa_result.run_id
     assert node.node.node_id == "sa"
     assert node.measures
     assert sa.total_capital > 0
@@ -146,6 +151,9 @@ def test_api_supporting_endpoints() -> None:
     health = client.get("/api/health")
     assert health.status_code == 200
     assert health.json()["status"] == "ok"
+
+    bare_api = client.get("/api")
+    assert bare_api.status_code == 404
 
     runs = client.get("/api/runs")
     assert runs.status_code == 200

@@ -239,7 +239,7 @@ def build_demo_run() -> DashboardRun:
     fixture = load_capital_run_v1_fixture()
     workflow = run_capital_run_fixture_workflow(fixture)
     params = fixture.params
-    run_id = str(params["run_id"])
+    run_id = DEMO_RUN_ID
     desk_id = str(params["desk_id"])
     as_of = date.fromisoformat(str(params["as_of_date"]))
     regime = str(params["regime"])

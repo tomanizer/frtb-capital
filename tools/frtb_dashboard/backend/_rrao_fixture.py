@@ -16,6 +16,8 @@ def _load_rrao_fixture_module() -> ModuleType:
         / "examples"
         / "rrao_fixture.py"
     )
+    if not fixture_path.exists():
+        raise ImportError(f"RRAO fixture module not found at {fixture_path}")
     spec = importlib.util.spec_from_file_location("rrao_fixture", fixture_path)
     if spec is None or spec.loader is None:
         raise ImportError(f"Unable to load RRAO fixture module from {fixture_path}")
