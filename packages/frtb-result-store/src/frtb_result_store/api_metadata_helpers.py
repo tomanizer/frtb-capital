@@ -17,7 +17,14 @@ def metadata_refs_payload(
     partition_keys: Sequence[str],
     to_jsonable: _Jsonable,
 ) -> dict[str, object]:
-    """Return references, catalog rows, and status counts for a metadata artifact list."""
+    """Return references, catalog rows, and status counts for a metadata artifact list.
+
+    Returns
+    -------
+    dict[str, object]
+        JSON-ready payload containing the route-specific reference list, catalog rows,
+        and availability status counts.
+    """
     return {
         payload_key: to_jsonable(refs),
         "catalog": artifact_metadata_catalog(refs, partition_keys),
@@ -83,7 +90,13 @@ def filtered_artifact_page(
     http_exception_type: type[Exception],
     to_jsonable: _Jsonable,
 ) -> dict[str, object]:
-    """Return one filtered artifact page using route-local serialization."""
+    """Return one filtered artifact page using route-local serialization.
+
+    Returns
+    -------
+    dict[str, object]
+        JSON-ready artifact page with rows, paging metadata, and artifact identity.
+    """
     return artifact_page_payload(
         result_store,
         ref,
@@ -125,7 +138,13 @@ def artifact_metadata_catalog(
 
 
 def artifact_ref_status_counts(refs: Sequence[ArtifactRef]) -> dict[str, int]:
-    """Return artifact availability counts expected by the navigator UI."""
+    """Return artifact availability counts expected by the navigator UI.
+
+    Returns
+    -------
+    dict[str, int]
+        Counts keyed by artifact availability status.
+    """
     counts = {"AVAILABLE": 0, "NO_DATA": 0, "UNSUPPORTED": 0}
     for ref in refs:
         status = str(ref.metadata.get("artifact_status", "AVAILABLE"))

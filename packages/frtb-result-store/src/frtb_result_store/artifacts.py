@@ -427,8 +427,17 @@ _METADATA_PARTITIONED_ARTIFACT_TYPES = frozenset(
     }
 )
 
+
 def validate_artifact_ref_partitions(artifacts: Sequence[ArtifactRef]) -> None:
-    """Reject duplicate semantic artifact partitions within one committed run."""
+    """Reject duplicate semantic artifact partitions within one committed run.
+
+    Parameters
+    ----------
+    artifacts : Sequence[ArtifactRef]
+        Artifact references declared for the committed run. Only metadata
+        artifact types with semantic partition values participate in the
+        duplicate check.
+    """
 
     seen: dict[tuple[str, tuple[tuple[str, str], ...]], str] = {}
     for artifact in artifacts:

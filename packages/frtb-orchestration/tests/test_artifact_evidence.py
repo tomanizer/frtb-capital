@@ -5,7 +5,6 @@ from __future__ import annotations
 from datetime import date
 
 import pytest
-
 from frtb_common import StandardisedComponent
 from frtb_orchestration import (
     ArtifactEvidenceKind,
@@ -20,7 +19,6 @@ from frtb_orchestration import (
     SuiteEvidenceComponent,
     build_suite_artifact_evidence_view,
 )
-
 
 AS_OF = date(2026, 6, 30)
 
