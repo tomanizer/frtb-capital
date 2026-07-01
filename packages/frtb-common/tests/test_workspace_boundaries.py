@@ -101,12 +101,10 @@ def test_enterprise_hierarchy_read_model_stays_outside_component_packages() -> N
         "frtb-rrao",
         "frtb-sbm",
     )
-    forbidden_module_names = {
+    result_store_src = REPO_ROOT / "packages" / "frtb-result-store" / "src" / "frtb_result_store"
+    forbidden_module_names = {path.name for path in result_store_src.glob("org_hierarchy*.py")} | {
         "hierarchy.py",
-        "org_hierarchy.py",
-        "org_hierarchy_aggregation.py",
-        "org_hierarchy_queries.py",
-        "org_hierarchy_validation.py",
+        "store_hierarchy_rows.py",
     }
     offenders: list[str] = []
 

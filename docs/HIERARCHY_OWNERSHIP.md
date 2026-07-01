@@ -12,7 +12,7 @@ query stored hierarchy metadata.
 | `frtb-common` | Stable organisation identifier aliases and `CalculationScope` metadata primitives. | Store parent-child hierarchy edges, resolve hierarchy versions, or aggregate capital rows. |
 | Capital component packages | Preserve supplied scope IDs on inputs, results, audit records, and lineage payloads. | Import `frtb_result_store`, traverse enterprise hierarchy, or infer missing organisation metadata. |
 | `frtb-result-store` | Canonical synthetic hierarchy nodes, edges, effective-dated versions, source-row mappings, aggregate rows, detail-row read models, and API/query contracts. | Calculate capital formulae or reinterpret component regulatory semantics. |
-| `frtb-orchestration` | Compose cross-framework capital and output-floor views over already resolved component totals for a selected scope. | Fetch result-store hierarchy payloads, own hierarchy metadata, or perform enterprise traversal inside component kernels. |
+| `frtb-orchestration` | Compose cross-framework capital and output-floor views over already resolved component totals for a selected scope. | Fetch result-store hierarchy payloads directly, own hierarchy metadata, or traverse enterprise hierarchy graphs. |
 | Dashboard/API consumers | Call result-store or backend hierarchy contracts and render explicit `OK`, `NO_DATA`, or `UNSUPPORTED` states. | Invent hierarchy data client-side, silently zero missing rows, or recalculate capital. |
 
 ## Implementation Rules
