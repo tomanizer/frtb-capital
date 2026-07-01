@@ -139,13 +139,9 @@ def test_cva_time_series_and_surface_provenance_survives_payloads(
         sensitivities=build_sa_cva_sensitivity_batch_from_sensitivities((sensitivity,)),
     )
 
-    assert row_payload["netting_sets"][0]["exposure_time_series_id"] == (
-        "ts-cva-exposure-ns-1"
-    )
+    assert row_payload["netting_sets"][0]["exposure_time_series_id"] == ("ts-cva-exposure-ns-1")
     assert row_payload["sensitivities"][0]["volatility_surface_point_id"] == (
         "surface-usd-swaption:5y:atm"
     )
-    assert batch_payload["netting_sets"][0]["exposure_time_series_id"] == (
-        "ts-cva-exposure-ns-1"
-    )
+    assert batch_payload["netting_sets"][0]["exposure_time_series_id"] == ("ts-cva-exposure-ns-1")
     assert batch_payload["sensitivities"][0]["shock_id"] == "shock-girr-vega-up"

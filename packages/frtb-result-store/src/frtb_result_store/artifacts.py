@@ -261,6 +261,7 @@ def _required_columns(fields: tuple[tuple[str, pa.DataType, bool], ...]) -> tupl
 def _nullable_columns(fields: tuple[tuple[str, pa.DataType, bool], ...]) -> tuple[str, ...]:
     return tuple(name for name, _, nullable in fields if nullable)
 
+
 ARTIFACT_SCHEMA_REGISTRY: Mapping[str, ArtifactSchemaEntry] = MappingProxyType(
     {
         IMA_PNL_VECTOR_SCHEMA_ID: ArtifactSchemaEntry(
@@ -415,7 +416,6 @@ def validate_artifact_ref_targets(artifacts: Sequence[ArtifactRef]) -> None:
                     f"artifact ref points to missing local file: {artifact.artifact_id}",
                     field="uri",
                 )
-
 
 
 _METADATA_PARTITIONED_ARTIFACT_TYPES = frozenset(

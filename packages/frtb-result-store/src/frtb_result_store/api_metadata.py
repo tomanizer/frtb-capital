@@ -39,7 +39,23 @@ def register_artifact_metadata_routes(
     require_run: _RunGuard,
     to_jsonable: _Jsonable,
 ) -> None:
-    """Register typed artifact metadata routes on a read-only result-store app."""
+    """Register typed artifact metadata routes on a read-only result-store app.
+
+    Parameters
+    ----------
+    app : _RouteRegistrar
+        Route registrar compatible with FastAPI ``get`` decorators.
+    result_store : DuckDbParquetResultStore
+        Store used to resolve committed runs and artifact refs.
+    http_exception_type : type[Exception]
+        HTTP exception class used by the concrete web framework.
+    query : Any
+        Query parameter factory supplied by the concrete web framework.
+    require_run : _RunGuard
+        Guard that fails when the requested run is not committed.
+    to_jsonable : _Jsonable
+        Serializer for result-store dataclasses and enums.
+    """
     _register_time_series_metadata_routes(
         app, result_store, http_exception_type, query, require_run, to_jsonable
     )

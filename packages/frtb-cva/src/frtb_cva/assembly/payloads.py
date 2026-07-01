@@ -494,9 +494,7 @@ def batch_sensitivity_payload(batch: Any, index: int) -> dict[str, object]:
     volatility_surface_id = _optional_batch_text(batch.volatility_surface_ids, index)
     if volatility_surface_id:
         payload["volatility_surface_id"] = volatility_surface_id
-    volatility_surface_point_id = _optional_batch_text(
-        batch.volatility_surface_point_ids, index
-    )
+    volatility_surface_point_id = _optional_batch_text(batch.volatility_surface_point_ids, index)
     if volatility_surface_point_id:
         payload["volatility_surface_point_id"] = volatility_surface_point_id
     shock_id = _optional_batch_text(batch.shock_ids, index)

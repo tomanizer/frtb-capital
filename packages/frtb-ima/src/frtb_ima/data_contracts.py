@@ -342,9 +342,7 @@ class ScenarioCube:
         scenario_vector_ids = tuple(self.scenario_vector_ids)
         if scenario_vector_ids:
             if len(scenario_vector_ids) != scenario_count:
-                raise ValueError(
-                    "scenario_vector_ids length must match ScenarioCube scenario axis"
-                )
+                raise ValueError("scenario_vector_ids length must match ScenarioCube scenario axis")
             if any(not scenario_vector_id for scenario_vector_id in scenario_vector_ids):
                 raise ValueError("scenario_vector_ids cannot contain empty values")
             if len(scenario_vector_ids) != len(set(scenario_vector_ids)):

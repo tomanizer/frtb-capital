@@ -147,6 +147,7 @@ def test_result_store_api_cors_is_opt_in_for_static_navigator(tmp_path: Path) ->
     assert response.status_code == 200
     assert response.headers["access-control-allow-origin"] == "http://127.0.0.1:5177"
 
+
 def test_result_store_api_serves_org_hierarchy_queries_with_slash_run_id(
     tmp_path: Path,
 ) -> None:

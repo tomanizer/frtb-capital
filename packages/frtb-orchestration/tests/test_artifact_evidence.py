@@ -150,9 +150,7 @@ def test_suite_artifact_evidence_groups_refs_in_suite_component_order() -> None:
         "SBM",
         "CVA",
     ]
-    assert view.component(SuiteEvidenceComponent.SBM).refs[0].artifact_id == (
-        "shock-sbm-curv-up"
-    )
+    assert view.component(SuiteEvidenceComponent.SBM).refs[0].artifact_id == ("shock-sbm-curv-up")
     assert payload["components"][1]["refs"][0]["partition_values"] == {"risk_class": "GIRR"}
     assert payload["status_counts"] == {"AVAILABLE": 3, "NO_DATA": 1, "UNSUPPORTED": 1}
     assert payload["components"][0]["status_counts"] == {

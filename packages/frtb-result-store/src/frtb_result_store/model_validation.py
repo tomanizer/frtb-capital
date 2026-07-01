@@ -255,10 +255,9 @@ def _validate_bundle_artifact_sources(
     bundle: ResultBundle,
     known_artifacts: set[str],
 ) -> None:
-    known_input_snapshots = (
-        {manifest.input_snapshot_id for manifest in bundle.input_manifests}
-        | {bundle.run.input_snapshot_id}
-    )
+    known_input_snapshots = {manifest.input_snapshot_id for manifest in bundle.input_manifests} | {
+        bundle.run.input_snapshot_id
+    }
     for attribution in bundle.attributions:
         if attribution.artifact_id is not None and attribution.artifact_id not in known_artifacts:
             raise ResultStoreContractError(

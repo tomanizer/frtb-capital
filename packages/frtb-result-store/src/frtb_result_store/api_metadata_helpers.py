@@ -19,6 +19,17 @@ def metadata_refs_payload(
 ) -> dict[str, object]:
     """Return references, catalog rows, and status counts for a metadata artifact list.
 
+    Parameters
+    ----------
+    payload_key : str
+        Top-level payload key for the route-specific artifact reference list.
+    refs : Sequence[ArtifactRef]
+        Artifact references to serialize.
+    partition_keys : Sequence[str]
+        Semantic partition keys to expose in catalog rows.
+    to_jsonable : _Jsonable
+        Serializer for artifact references.
+
     Returns
     -------
     dict[str, object]
@@ -40,7 +51,28 @@ def artifact_ref_for_partition_value(
     partition_value: str,
     http_exception_type: type[Exception],
 ) -> ArtifactRef:
-    """Return the artifact ref matching one semantic partition value."""
+    """Return the artifact ref matching one semantic partition value.
+
+    Parameters
+    ----------
+    result_store : DuckDbParquetResultStore
+        Store queried for committed artifact references.
+    run_id : str
+        Committed run identifier.
+    artifact_type : ArtifactType
+        Artifact family to search.
+    partition_key : str
+        Semantic partition key, for example ``time_series_id``.
+    partition_value : str
+        Requested semantic partition value.
+    http_exception_type : type[Exception]
+        HTTP exception class used when no ref matches.
+
+    Returns
+    -------
+    ArtifactRef
+        Matching artifact reference.
+    """
     refs = result_store.artifact_refs(run_id, artifact_type=artifact_type)
     saw_partition_key = False
     for ref in refs:
@@ -66,7 +98,26 @@ def artifact_ref_for_partition_values(
     partition_values: Mapping[str, str],
     http_exception_type: type[Exception],
 ) -> ArtifactRef:
-    """Return the artifact ref matching all requested semantic partition values."""
+    """Return the artifact ref matching all requested semantic partition values.
+
+    Parameters
+    ----------
+    result_store : DuckDbParquetResultStore
+        Store queried for committed artifact references.
+    run_id : str
+        Committed run identifier.
+    artifact_type : ArtifactType
+        Artifact family to search.
+    partition_values : Mapping[str, str]
+        Required semantic partition key/value pairs.
+    http_exception_type : type[Exception]
+        HTTP exception class used when no ref matches.
+
+    Returns
+    -------
+    ArtifactRef
+        Matching artifact reference.
+    """
     refs = result_store.artifact_refs(run_id, artifact_type=artifact_type)
     for ref in refs:
         partitions = ref.metadata.get("partition_values")
@@ -92,6 +143,23 @@ def filtered_artifact_page(
 ) -> dict[str, object]:
     """Return one filtered artifact page using route-local serialization.
 
+    Parameters
+    ----------
+    result_store : DuckDbParquetResultStore
+        Store used to locate and read the artifact payload.
+    ref : ArtifactRef
+        Artifact reference selected by the metadata route.
+    filters : Sequence[str]
+        Equality filters encoded as ``column=value`` strings.
+    limit : int
+        Maximum number of rows to return.
+    offset : int
+        Zero-based row offset for paging.
+    http_exception_type : type[Exception]
+        HTTP exception class used for invalid artifacts or filters.
+    to_jsonable : _Jsonable
+        Serializer for artifact references and row values.
+
     Returns
     -------
     dict[str, object]
@@ -113,7 +181,20 @@ def artifact_metadata_catalog(
     refs: Sequence[ArtifactRef],
     partition_keys: Sequence[str],
 ) -> list[dict[str, object]]:
-    """Return lightweight catalog rows from artifact refs and semantic partitions."""
+    """Return lightweight catalog rows from artifact refs and semantic partitions.
+
+    Parameters
+    ----------
+    refs : Sequence[ArtifactRef]
+        Artifact references to summarize.
+    partition_keys : Sequence[str]
+        Semantic partition keys to include in each catalog row.
+
+    Returns
+    -------
+    list[dict[str, object]]
+        Catalog rows for UI routing and metadata selection.
+    """
     catalog: list[dict[str, object]] = []
     for ref in refs:
         partitions = ref.metadata.get("partition_values")
@@ -128,9 +209,7 @@ def artifact_metadata_catalog(
                 "navigator_role": ref.metadata.get("navigator_role", ""),
                 "row_count": ref.row_count,
                 "partition_values": {
-                    key: partition_values[key]
-                    for key in partition_keys
-                    if key in partition_values
+                    key: partition_values[key] for key in partition_keys if key in partition_values
                 },
             }
         )
@@ -139,6 +218,11 @@ def artifact_metadata_catalog(
 
 def artifact_ref_status_counts(refs: Sequence[ArtifactRef]) -> dict[str, int]:
     """Return artifact availability counts expected by the navigator UI.
+
+    Parameters
+    ----------
+    refs : Sequence[ArtifactRef]
+        Artifact references whose availability status should be counted.
 
     Returns
     -------

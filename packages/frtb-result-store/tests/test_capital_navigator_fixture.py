@@ -263,9 +263,7 @@ def _assert_metadata_catalog_routes(client: TestClient, run_id: str) -> None:
         row["partition_values"].get("time_series_id"): row for row in time_series.json()["catalog"]
     }
     assert time_series_catalog["ts-rfet-usd-5y"]["artifact_status"] == "AVAILABLE"
-    assert time_series_catalog["ts-rfet-usd-5y"]["row_count"] == len(
-        RFET_OBSERVATION_TIMELINE_ROWS
-    )
+    assert time_series_catalog["ts-rfet-usd-5y"]["row_count"] == len(RFET_OBSERVATION_TIMELINE_ROWS)
     assert time_series_catalog["ts-plat-upl"]["artifact_status"] == "NO_DATA"
     assert time_series_catalog["ts-plat-upl"]["navigator_role"] == "plat_upl"
 
@@ -439,9 +437,7 @@ def _assert_metadata_artifact_pages(client: TestClient, run_id: str) -> None:
         "rfet-row-001",
         "rfet-row-002",
     ]
-    assert {row["mapping_version"] for row in timeline_payload["rows"]} == {
-        "risk-factor-map-v1"
-    }
+    assert {row["mapping_version"] for row in timeline_payload["rows"]} == {"risk-factor-map-v1"}
 
     shock = client.get(f"/runs/{run_id}/shocks/shock-sbm-curvature-up")
     assert shock.status_code == 200, shock.text
@@ -477,9 +473,7 @@ def _assert_metadata_artifact_pages(client: TestClient, run_id: str) -> None:
         "RTPL day 1",
         "RTPL day 2",
     ]
-    assert {row["mapping_version"] for row in scenario_payload["rows"]} == {
-        "scenario-map-v1"
-    }
+    assert {row["mapping_version"] for row in scenario_payload["rows"]} == {"scenario-map-v1"}
 
     surface = client.get(
         f"/runs/{run_id}/surfaces/surface-usd-swaption-vol/slice",
@@ -534,9 +528,7 @@ def _assert_unavailable_artifacts_listed(client: TestClient, run_id: str) -> Non
     assert download.json()["mode"] == "artifact_unavailable"
     assert download.json()["artifact_status"] == "UNSUPPORTED"
 
-    unsupported_surface = client.get(
-        f"/runs/{run_id}/surfaces/surface-cva-full-vol-cube/slice"
-    )
+    unsupported_surface = client.get(f"/runs/{run_id}/surfaces/surface-cva-full-vol-cube/slice")
     assert unsupported_surface.status_code == 200, unsupported_surface.text
     assert unsupported_surface.json()["mode"] == "artifact_unavailable"
     assert unsupported_surface.json()["artifact_status"] == "UNSUPPORTED"

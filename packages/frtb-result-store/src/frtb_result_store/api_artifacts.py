@@ -102,7 +102,18 @@ def artifact_page_payload(
 
 
 def artifact_unavailable_payload(ref: ArtifactRef) -> dict[str, object] | None:
-    """Return explicit unavailable status payload for no-data/unsupported refs."""
+    """Return explicit unavailable status payload for no-data/unsupported refs.
+
+    Parameters
+    ----------
+    ref : ArtifactRef
+        Artifact reference whose availability metadata should be exposed.
+
+    Returns
+    -------
+    dict[str, object] or None
+        Status payload for unavailable artifacts, or ``None`` for available refs.
+    """
 
     return _unavailable_payload(ref)
 

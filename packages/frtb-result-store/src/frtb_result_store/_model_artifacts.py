@@ -103,9 +103,7 @@ def _validate_artifact_availability(
     uri: str,
     format: str,
 ) -> None:
-    raw_status = str(
-        metadata.get("artifact_status", ArtifactAvailabilityStatus.AVAILABLE.value)
-    )
+    raw_status = str(metadata.get("artifact_status", ArtifactAvailabilityStatus.AVAILABLE.value))
     try:
         status = ArtifactAvailabilityStatus(raw_status)
     except ValueError as exc:
