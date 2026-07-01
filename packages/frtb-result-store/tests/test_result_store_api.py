@@ -175,6 +175,17 @@ def test_result_store_pivot_query_api(tmp_path: Path) -> None:
     )
     assert invalid_response.status_code == 400
 
+    # Pivot with column dimensions
+    col_response = client.get(
+        f"/runs/{run.run_id}/pivot",
+        params={"rows": "component", "cols": "desk_id"},
+    )
+    assert col_response.status_code == 200
+    col_payload = col_response.json()
+    assert col_payload["total_count"] > 0
+    # For "ima" node: component="IMA", desk_id="rates", amount=17.0. The pivoted key will be "capital_rates"
+    assert col_payload["pivot_rows"][0]["measures"]["capital_rates"] == 17.0
+
 
 def test_result_store_api_cors_is_opt_in_for_static_navigator(tmp_path: Path) -> None:
     run = _run("US_NPR_2_0", None, None)

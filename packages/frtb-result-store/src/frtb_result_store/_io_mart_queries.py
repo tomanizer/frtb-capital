@@ -567,7 +567,7 @@ class StoreMartQueryMixin:
                 }
 
             if cols:
-                col_suffix = "_".join(str(cv) for cv in col_vals if cv is not None)
+                col_suffix = "_".join(str(cv) if cv is not None else "" for cv in col_vals)
                 measure_key = f"{measure_name}_{col_suffix}" if col_suffix else measure_name
             else:
                 measure_key = measure_name
