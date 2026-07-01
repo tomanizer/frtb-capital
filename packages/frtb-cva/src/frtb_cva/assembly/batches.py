@@ -101,6 +101,7 @@ def calculate_cva_capital_from_batches(
         warnings=_profile_warnings(rule_profile.profile.value, scope.method),
         unsupported_flags=scope.unsupported_flags,
         audit_metadata=scope.audit_metadata,
+        calculation_scope=validated_context.calculation_scope,
     )
     validate_cva_result_reconciliation(result)
     return CvaBatchCapitalCalculation(result=result)

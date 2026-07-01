@@ -25,6 +25,7 @@ from frtb_cva.data_models import (
     SaCvaSensitivity,
 )
 from frtb_cva.numeric import is_reconciled
+from frtb_cva.org_scope import scope_payload
 from frtb_cva.sa_cva import sa_cva_aggregation_config
 from frtb_cva.validation import (
     CvaInputError,
@@ -119,7 +120,7 @@ def serialize_cva_result(result: CvaCapitalResult) -> dict[str, object]:
         JSON-serializable audit payload for this capital result.
     """
 
-    return {
+    payload: dict[str, object] = {
         "run_id": result.run_id,
         "calculation_date": result.calculation_date.isoformat(),
         "base_currency": result.base_currency,
@@ -155,6 +156,10 @@ def serialize_cva_result(result: CvaCapitalResult) -> dict[str, object]:
             for risk_class_capital in result.sa_cva_risk_class_capitals
         ],
     }
+    calculation_scope = scope_payload(result.calculation_scope)
+    if calculation_scope is not None:
+        payload["calculation_scope"] = calculation_scope
+    return payload
 
 
 def validate_cva_result_reconciliation(result: CvaCapitalResult) -> None:
@@ -404,7 +409,7 @@ def _reduced_portfolio_payload(
 
 
 def _counterparty_capital_payload(counterparty: BaCvaCounterpartyCapital) -> dict[str, object]:
-    return {
+    payload: dict[str, object] = {
         "counterparty_id": counterparty.counterparty_id,
         "sector": counterparty.sector.value,
         "credit_quality": counterparty.credit_quality.value,
@@ -413,10 +418,14 @@ def _counterparty_capital_payload(counterparty: BaCvaCounterpartyCapital) -> dic
         "region": counterparty.region,
         "citations": list(counterparty.citations),
     }
+    org_scope = scope_payload(counterparty.org_scope)
+    if org_scope is not None:
+        payload["org_scope"] = org_scope
+    return payload
 
 
 def _netting_set_line_payload(line: BaCvaStandAloneLine) -> dict[str, object]:
-    return {
+    payload: dict[str, object] = {
         "netting_set_id": line.netting_set_id,
         "counterparty_id": line.counterparty_id,
         "sector": line.sector.value,
@@ -433,6 +442,10 @@ def _netting_set_line_payload(line: BaCvaStandAloneLine) -> dict[str, object]:
         "uses_imm_ead": line.uses_imm_ead,
         "discount_factor_supplied": line.discount_factor_supplied,
     }
+    org_scope = scope_payload(line.org_scope)
+    if org_scope is not None:
+        payload["org_scope"] = org_scope
+    return payload
 
 
 def _risk_class_capital_payload(

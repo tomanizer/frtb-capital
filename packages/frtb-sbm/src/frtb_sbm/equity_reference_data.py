@@ -8,12 +8,13 @@ Regulatory traceability:
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 from frtb_common import UnsupportedRegulatoryFeatureError
 
 from frtb_sbm._text import require_text as _require_text
 from frtb_sbm.data_models import SbmRegulatoryProfile
+from frtb_sbm.reference_citations_eu_crr3 import eu_crr3_citation_id_for_basel
 from frtb_sbm.validation import SbmInputError, ensure_sbm_profile_known
 
 BASEL_MAR21_URL = "https://www.bis.org/basel_framework/chapter/MAR/21.htm"
@@ -88,44 +89,52 @@ _BASEL_EQUITY_RISK_WEIGHTS: tuple[SbmEquityRiskWeightRule, ...] = (
     SbmEquityRiskWeightRule("13", 0.25, 0.0025, _EQUITY_WEIGHT_CITATION),
 )
 
-_US_NPR_EQUITY_BUCKETS: tuple[SbmEquityBucketDefinition, ...] = tuple(
-    SbmEquityBucketDefinition(bucket.bucket_id, bucket.label, _US_NPR_EQUITY_BUCKET_CITATION)
+_EU_CRR3_EQUITY_BUCKETS: tuple[SbmEquityBucketDefinition, ...] = tuple(
+    replace(bucket, citation_id=eu_crr3_citation_id_for_basel(bucket.citation_id))
     for bucket in _BASEL_EQUITY_BUCKETS
 )
 
-_US_NPR_EQUITY_RISK_WEIGHTS: tuple[SbmEquityRiskWeightRule, ...] = tuple(
-    SbmEquityRiskWeightRule(
-        rule.bucket_id,
-        rule.spot_risk_weight,
-        rule.repo_risk_weight,
-        _US_NPR_EQUITY_WEIGHT_CITATION,
-    )
+_US_NPR_EQUITY_BUCKETS: tuple[SbmEquityBucketDefinition, ...] = tuple(
+    replace(bucket, citation_id=_US_NPR_EQUITY_BUCKET_CITATION) for bucket in _BASEL_EQUITY_BUCKETS
+)
+
+_EU_CRR3_EQUITY_RISK_WEIGHTS: tuple[SbmEquityRiskWeightRule, ...] = tuple(
+    replace(rule, citation_id=eu_crr3_citation_id_for_basel(rule.citation_id))
     for rule in _BASEL_EQUITY_RISK_WEIGHTS
+)
+
+_US_NPR_EQUITY_RISK_WEIGHTS: tuple[SbmEquityRiskWeightRule, ...] = tuple(
+    replace(rule, citation_id=_US_NPR_EQUITY_WEIGHT_CITATION) for rule in _BASEL_EQUITY_RISK_WEIGHTS
 )
 
 _PROFILE_EQUITY_BUCKETS: dict[SbmRegulatoryProfile, tuple[SbmEquityBucketDefinition, ...]] = {
     SbmRegulatoryProfile.BASEL_MAR21: _BASEL_EQUITY_BUCKETS,
     SbmRegulatoryProfile.US_NPR_2_0: _US_NPR_EQUITY_BUCKETS,
+    SbmRegulatoryProfile.EU_CRR3: _EU_CRR3_EQUITY_BUCKETS,
 }
 
 _PROFILE_EQUITY_RISK_WEIGHTS: dict[SbmRegulatoryProfile, tuple[SbmEquityRiskWeightRule, ...]] = {
     SbmRegulatoryProfile.BASEL_MAR21: _BASEL_EQUITY_RISK_WEIGHTS,
     SbmRegulatoryProfile.US_NPR_2_0: _US_NPR_EQUITY_RISK_WEIGHTS,
+    SbmRegulatoryProfile.EU_CRR3: _EU_CRR3_EQUITY_RISK_WEIGHTS,
 }
 
-_PROFILE_EQUITY_INTRA_CITATION_IDS: dict[SbmRegulatoryProfile, tuple[str, ...]] = {
-    SbmRegulatoryProfile.BASEL_MAR21: (_EQUITY_INTRA_CITATION,),
-    SbmRegulatoryProfile.US_NPR_2_0: (_US_NPR_EQUITY_INTRA_CITATION,),
+_PROFILE_EQUITY_INTRA_CITATIONS: dict[SbmRegulatoryProfile, str] = {
+    SbmRegulatoryProfile.BASEL_MAR21: _EQUITY_INTRA_CITATION,
+    SbmRegulatoryProfile.US_NPR_2_0: _US_NPR_EQUITY_INTRA_CITATION,
+    SbmRegulatoryProfile.EU_CRR3: eu_crr3_citation_id_for_basel(_EQUITY_INTRA_CITATION),
 }
 
-_PROFILE_EQUITY_OTHER_SECTOR_CITATION_IDS: dict[SbmRegulatoryProfile, tuple[str, ...]] = {
-    SbmRegulatoryProfile.BASEL_MAR21: (_EQUITY_OTHER_SECTOR_CITATION,),
-    SbmRegulatoryProfile.US_NPR_2_0: (_US_NPR_EQUITY_OTHER_SECTOR_CITATION,),
+_PROFILE_EQUITY_OTHER_SECTOR_CITATIONS: dict[SbmRegulatoryProfile, str] = {
+    SbmRegulatoryProfile.BASEL_MAR21: _EQUITY_OTHER_SECTOR_CITATION,
+    SbmRegulatoryProfile.US_NPR_2_0: _US_NPR_EQUITY_OTHER_SECTOR_CITATION,
+    SbmRegulatoryProfile.EU_CRR3: eu_crr3_citation_id_for_basel(_EQUITY_OTHER_SECTOR_CITATION),
 }
 
-_PROFILE_EQUITY_INTER_CITATION_IDS: dict[SbmRegulatoryProfile, tuple[str, ...]] = {
-    SbmRegulatoryProfile.BASEL_MAR21: (_EQUITY_INTER_CITATION,),
-    SbmRegulatoryProfile.US_NPR_2_0: (_US_NPR_EQUITY_INTER_CITATION,),
+_PROFILE_EQUITY_INTER_CITATIONS: dict[SbmRegulatoryProfile, str] = {
+    SbmRegulatoryProfile.BASEL_MAR21: _EQUITY_INTER_CITATION,
+    SbmRegulatoryProfile.US_NPR_2_0: _US_NPR_EQUITY_INTER_CITATION,
+    SbmRegulatoryProfile.EU_CRR3: eu_crr3_citation_id_for_basel(_EQUITY_INTER_CITATION),
 }
 
 _EQUITY_SPOT_SPOT_CORRELATIONS: dict[str, float] = {
@@ -251,10 +260,8 @@ def equity_delta_intra_bucket_correlation(
     """
 
     _ensure_equity_delta_supported(profile)
-    resolved = ensure_sbm_profile_known(profile if isinstance(profile, str) else profile.value)
     normalised_bucket = _require_text(bucket_id, "bucket_id")
     equity_bucket_definition(profile, normalised_bucket)
-    citation_ids = _PROFILE_EQUITY_INTRA_CITATION_IDS[resolved]
     if normalised_bucket == EQUITY_OTHER_SECTOR_BUCKET:
         raise UnsupportedRegulatoryFeatureError(
             "equity bucket 11 uses absolute-weight aggregation; pairwise correlations do not apply"
@@ -267,35 +274,14 @@ def equity_delta_intra_bucket_correlation(
 
     if factor_a == factor_b:
         if issuer_a_norm == issuer_b_norm:
-            return 1.0, citation_ids
-        return _EQUITY_SPOT_SPOT_CORRELATIONS[normalised_bucket], citation_ids
+            return 1.0, (_equity_intra_citation(profile),)
+        return _EQUITY_SPOT_SPOT_CORRELATIONS[normalised_bucket], (_equity_intra_citation(profile),)
 
     if issuer_a_norm == issuer_b_norm:
-        return EQUITY_SAME_ISSUER_SPOT_REPO_CORRELATION, citation_ids
+        return EQUITY_SAME_ISSUER_SPOT_REPO_CORRELATION, (_equity_intra_citation(profile),)
 
     base = _EQUITY_SPOT_SPOT_CORRELATIONS[normalised_bucket]
-    return base * EQUITY_CROSS_ISSUER_SPOT_REPO_FACTOR, citation_ids
-
-
-def equity_delta_intra_bucket_citation_ids(
-    profile: SbmRegulatoryProfile | str,
-) -> tuple[str, ...]:
-    """Return profile-owned equity delta intra-bucket correlation citation ids.
-
-    Parameters
-    ----------
-    profile : SbmRegulatoryProfile | str
-        Regulatory profile that owns the equity delta intra-bucket correlation rule.
-
-    Returns
-    -------
-    tuple[str, ...]
-        Citation identifiers for equity delta intra-bucket correlations.
-    """
-
-    _ensure_equity_delta_supported(profile)
-    resolved = ensure_sbm_profile_known(profile if isinstance(profile, str) else profile.value)
-    return _PROFILE_EQUITY_INTRA_CITATION_IDS[resolved]
+    return base * EQUITY_CROSS_ISSUER_SPOT_REPO_FACTOR, (_equity_intra_citation(profile),)
 
 
 def equity_inter_bucket_correlation(
@@ -320,21 +306,39 @@ def equity_inter_bucket_correlation(
     """
 
     _ensure_equity_delta_supported(profile)
-    resolved = ensure_sbm_profile_known(profile if isinstance(profile, str) else profile.value)
     b1 = _require_equity_bucket_number(bucket1)
     b2 = _require_equity_bucket_number(bucket2)
     equity_bucket_definition(profile, str(b1))
     equity_bucket_definition(profile, str(b2))
-    citation_ids = _PROFILE_EQUITY_INTER_CITATION_IDS[resolved]
     if b1 == b2:
-        return 1.0, citation_ids
+        return 1.0, (_equity_inter_citation(profile),)
     if b1 == 11 or b2 == 11:
-        return 0.0, citation_ids
+        return 0.0, (_equity_inter_citation(profile),)
     if {b1, b2} == {12, 13}:
-        return 0.75, citation_ids
+        return 0.75, (_equity_inter_citation(profile),)
     if b1 <= 10 and b2 <= 10:
-        return 0.15, citation_ids
-    return 0.45, citation_ids
+        return 0.15, (_equity_inter_citation(profile),)
+    return 0.45, (_equity_inter_citation(profile),)
+
+
+def equity_delta_intra_bucket_citation_ids(
+    profile: SbmRegulatoryProfile | str,
+) -> tuple[str, ...]:
+    """Return profile-owned equity delta intra-bucket correlation citation ids.
+
+    Parameters
+    ----------
+    profile : SbmRegulatoryProfile | str
+        Regulatory profile that owns the equity delta correlation rule.
+
+    Returns
+    -------
+    tuple[str, ...]
+        Citation identifiers for equity delta intra-bucket correlation.
+    """
+
+    _ensure_equity_delta_supported(profile)
+    return (_equity_intra_citation(profile),)
 
 
 def equity_inter_bucket_citation_ids(profile: SbmRegulatoryProfile | str) -> tuple[str, ...]:
@@ -343,17 +347,16 @@ def equity_inter_bucket_citation_ids(profile: SbmRegulatoryProfile | str) -> tup
     Parameters
     ----------
     profile : SbmRegulatoryProfile | str
-        Regulatory profile that owns the equity delta inter-bucket correlation rule.
+        Regulatory profile that owns the equity delta correlation rule.
 
     Returns
     -------
     tuple[str, ...]
-        Citation identifiers for equity delta inter-bucket correlations.
+        Citation identifiers for equity delta inter-bucket correlation.
     """
 
     _ensure_equity_delta_supported(profile)
-    resolved = ensure_sbm_profile_known(profile if isinstance(profile, str) else profile.value)
-    return _PROFILE_EQUITY_INTER_CITATION_IDS[resolved]
+    return (_equity_inter_citation(profile),)
 
 
 def equity_other_sector_citation_ids(profile: SbmRegulatoryProfile | str) -> tuple[str, ...]:
@@ -362,17 +365,16 @@ def equity_other_sector_citation_ids(profile: SbmRegulatoryProfile | str) -> tup
     Parameters
     ----------
     profile : SbmRegulatoryProfile | str
-        Regulatory profile that owns the equity other-sector aggregation rule.
+        Regulatory profile that owns the equity bucket 11 absolute-weight rule.
 
     Returns
     -------
     tuple[str, ...]
-        Citation identifiers for the bucket 11 absolute-weight aggregation branch.
+        Citation identifiers for the equity other-sector bucket treatment.
     """
 
     _ensure_equity_delta_supported(profile)
-    resolved = ensure_sbm_profile_known(profile if isinstance(profile, str) else profile.value)
-    return _PROFILE_EQUITY_OTHER_SECTOR_CITATION_IDS[resolved]
+    return (_equity_other_sector_citation(profile),)
 
 
 def equity_reference_payload(profile: SbmRegulatoryProfile | str) -> dict[str, object]:
@@ -408,7 +410,7 @@ def equity_reference_payload(profile: SbmRegulatoryProfile | str) -> dict[str, o
             for rule in _PROFILE_EQUITY_RISK_WEIGHTS[resolved]
         ],
         "equity_other_sector_bucket": EQUITY_OTHER_SECTOR_BUCKET,
-        "equity_other_sector_citation_id": _PROFILE_EQUITY_OTHER_SECTOR_CITATION_IDS[resolved][0],
+        "equity_other_sector_citation_id": _equity_other_sector_citation(profile),
     }
 
 
@@ -418,6 +420,36 @@ def _ensure_equity_delta_supported(profile: SbmRegulatoryProfile | str) -> None:
         raise UnsupportedRegulatoryFeatureError(
             f"equity delta reference data is unsupported for profile {resolved.value}"
         )
+
+
+def _equity_intra_citation(profile: SbmRegulatoryProfile | str) -> str:
+    resolved = ensure_sbm_profile_known(profile if isinstance(profile, str) else profile.value)
+    citation = _PROFILE_EQUITY_INTRA_CITATIONS.get(resolved)
+    if citation is None:
+        raise UnsupportedRegulatoryFeatureError(
+            f"Profile {resolved.value} is not supported for equity intra citations."
+        )
+    return citation
+
+
+def _equity_other_sector_citation(profile: SbmRegulatoryProfile | str) -> str:
+    resolved = ensure_sbm_profile_known(profile if isinstance(profile, str) else profile.value)
+    citation = _PROFILE_EQUITY_OTHER_SECTOR_CITATIONS.get(resolved)
+    if citation is None:
+        raise UnsupportedRegulatoryFeatureError(
+            f"Profile {resolved.value} is not supported for equity other sector citations."
+        )
+    return citation
+
+
+def _equity_inter_citation(profile: SbmRegulatoryProfile | str) -> str:
+    resolved = ensure_sbm_profile_known(profile if isinstance(profile, str) else profile.value)
+    citation = _PROFILE_EQUITY_INTER_CITATIONS.get(resolved)
+    if citation is None:
+        raise UnsupportedRegulatoryFeatureError(
+            f"Profile {resolved.value} is not supported for equity inter citations."
+        )
+    return citation
 
 
 def _normalise_equity_risk_factor(risk_factor: str) -> str:

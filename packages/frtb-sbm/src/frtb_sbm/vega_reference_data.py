@@ -19,6 +19,8 @@ from frtb_sbm.girr_reference_data import (
     BASEL_GIRR_TENORS,
     girr_tenor_definition,
 )
+from frtb_sbm.girr_reference_tables import EU_CRR3_GIRR_TENORS
+from frtb_sbm.reference_citations_eu_crr3 import eu_crr3_citation_id_for_basel
 from frtb_sbm.reference_profiles import _coerce_risk_class, _resolve_supported_profile
 from frtb_sbm.reference_types import SbmGirrTenorDefinition
 from frtb_sbm.validation import SbmInputError, require_positive_int
@@ -30,6 +32,7 @@ GIRR_VEGA_RISK_WEIGHT_CAP = 1.0
 PROFILE_GIRR_VEGA_LIQUIDITY_HORIZON_DAYS: dict[SbmRegulatoryProfile, int] = {
     SbmRegulatoryProfile.BASEL_MAR21: 60,
     SbmRegulatoryProfile.US_NPR_2_0: 60,
+    SbmRegulatoryProfile.EU_CRR3: 60,
 }
 
 PROFILE_VEGA_LIQUIDITY_HORIZON_DAYS: dict[
@@ -45,6 +48,10 @@ PROFILE_VEGA_LIQUIDITY_HORIZON_DAYS: dict[
         SbmRiskClass.FX: 40,
     },
     SbmRegulatoryProfile.US_NPR_2_0: {
+        SbmRiskClass.GIRR: 60,
+        SbmRiskClass.FX: 40,
+    },
+    SbmRegulatoryProfile.EU_CRR3: {
         SbmRiskClass.GIRR: 60,
         SbmRiskClass.FX: 40,
     },
@@ -70,16 +77,19 @@ PROFILE_GIRR_VEGA_OPTION_TENORS: dict[
         )
         for tenor in BASEL_GIRR_TENORS
     ),
+    SbmRegulatoryProfile.EU_CRR3: EU_CRR3_GIRR_TENORS,
 }
 
 PROFILE_GIRR_VEGA_LIQUIDITY_HORIZON_CITATION_IDS: dict[SbmRegulatoryProfile, str] = {
     SbmRegulatoryProfile.BASEL_MAR21: "basel_mar21_92",
     SbmRegulatoryProfile.US_NPR_2_0: "us_npr_91_fr_14952_va7a_girr_vega_lh_rw",
+    SbmRegulatoryProfile.EU_CRR3: eu_crr3_citation_id_for_basel("basel_mar21_92"),
 }
 
 PROFILE_GIRR_VEGA_INTRA_BUCKET_CITATION_IDS: dict[SbmRegulatoryProfile, str] = {
     SbmRegulatoryProfile.BASEL_MAR21: "basel_mar21_93",
     SbmRegulatoryProfile.US_NPR_2_0: "us_npr_91_fr_14952_va7a_girr_vega_intra",
+    SbmRegulatoryProfile.EU_CRR3: eu_crr3_citation_id_for_basel("basel_mar21_93"),
 }
 
 PROFILE_VEGA_RISK_WEIGHT_CITATION_IDS: dict[
@@ -102,6 +112,10 @@ PROFILE_VEGA_RISK_WEIGHT_CITATION_IDS: dict[
         SbmRiskClass.GIRR: "us_npr_91_fr_14952_va7a_girr_vega_lh_rw",
         SbmRiskClass.FX: "us_npr_91_fr_14952_va7a_fx_vega_lh_rw",
     },
+    SbmRegulatoryProfile.EU_CRR3: {
+        risk_class: eu_crr3_citation_id_for_basel("basel_mar21_92")
+        for risk_class in (SbmRiskClass.GIRR, SbmRiskClass.FX)
+    },
 }
 
 PROFILE_VEGA_OPTION_TENOR_CITATION_IDS: dict[
@@ -123,6 +137,10 @@ PROFILE_VEGA_OPTION_TENOR_CITATION_IDS: dict[
     SbmRegulatoryProfile.US_NPR_2_0: {
         SbmRiskClass.GIRR: "us_npr_91_fr_14952_va7a_girr_vega_intra",
         SbmRiskClass.FX: "us_npr_91_fr_14952_va7a_fx_vega_option_tenors",
+    },
+    SbmRegulatoryProfile.EU_CRR3: {
+        risk_class: eu_crr3_citation_id_for_basel("basel_mar21_93")
+        for risk_class in (SbmRiskClass.GIRR, SbmRiskClass.FX)
     },
 }
 
@@ -169,6 +187,12 @@ PROFILE_VEGA_INTRA_BUCKET_CITATION_IDS: dict[
             "us_npr_91_fr_14952_va7a_fx_delta_intra",
         ),
     },
+    SbmRegulatoryProfile.EU_CRR3: {
+        SbmRiskClass.FX: tuple(
+            eu_crr3_citation_id_for_basel(citation_id)
+            for citation_id in ("basel_mar21_4_intra_bucket", "basel_mar21_94", "basel_mar21_86")
+        ),
+    },
 }
 
 PROFILE_VEGA_INTER_BUCKET_CITATION_IDS: dict[
@@ -206,6 +230,12 @@ PROFILE_VEGA_INTER_BUCKET_CITATION_IDS: dict[
             "us_npr_91_fr_14952_va7a_fx_delta_inter",
         ),
     },
+    SbmRegulatoryProfile.EU_CRR3: {
+        SbmRiskClass.FX: tuple(
+            eu_crr3_citation_id_for_basel(citation_id)
+            for citation_id in ("basel_mar21_4_inter_bucket", "basel_mar21_95", "basel_mar21_89")
+        ),
+    },
 }
 
 PROFILE_VEGA_SCENARIO_CITATION_IDS: dict[SbmRegulatoryProfile, tuple[str, ...]] = {
@@ -214,6 +244,13 @@ PROFILE_VEGA_SCENARIO_CITATION_IDS: dict[SbmRegulatoryProfile, tuple[str, ...]] 
         "basel_mar21_7_scenario_selection",
     ),
     SbmRegulatoryProfile.US_NPR_2_0: ("us_npr_91_fr_14952_va7a_correlation_scenarios",),
+    SbmRegulatoryProfile.EU_CRR3: tuple(
+        eu_crr3_citation_id_for_basel(citation_id)
+        for citation_id in (
+            "basel_mar21_6_correlation_scenarios",
+            "basel_mar21_7_scenario_selection",
+        )
+    ),
 }
 
 

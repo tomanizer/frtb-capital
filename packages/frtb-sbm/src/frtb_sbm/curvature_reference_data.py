@@ -23,10 +23,21 @@ from frtb_sbm.girr_reference_tables import (
     PROFILE_GIRR_CURVATURE_CITATION_IDS,
     PROFILE_GIRR_CURVATURE_RISK_WEIGHT_CITATION_IDS,
 )
+from frtb_sbm.reference_citations_eu_crr3 import translate_basel_citation_ids_to_eu
 from frtb_sbm.reference_profiles import (
     _coerce_risk_class,
     _resolve_supported_profile,
     citations_for_profile,
+)
+
+_BASEL_CURVATURE_REQUIRED_CITATIONS = (
+    "basel_mar21_curvature",
+    "basel_mar21_96",
+    "basel_mar21_97",
+    "basel_mar21_98",
+    "basel_mar21_99",
+    "basel_mar21_100",
+    "basel_mar21_101",
 )
 
 _BASEL_CURVATURE_RISK_CLASSES = (
@@ -44,7 +55,7 @@ PROFILE_CURVATURE_CITATION_IDS: dict[
     dict[SbmRiskClass, tuple[str, ...]],
 ] = {
     SbmRegulatoryProfile.BASEL_MAR21: {
-        risk_class: PROFILE_GIRR_CURVATURE_CITATION_IDS[SbmRegulatoryProfile.BASEL_MAR21]
+        risk_class: _BASEL_CURVATURE_REQUIRED_CITATIONS
         for risk_class in _BASEL_CURVATURE_RISK_CLASSES
     },
     SbmRegulatoryProfile.US_NPR_2_0: {
@@ -55,6 +66,25 @@ PROFILE_CURVATURE_CITATION_IDS: dict[
             "us_npr_91_fr_14952_va7a_fx_curvature_intra",
             "us_npr_91_fr_14952_va7a_fx_curvature_inter",
             "us_npr_91_fr_14952_va7a_fx_curvature_scenarios",
+        ),
+    },
+    SbmRegulatoryProfile.EU_CRR3: {
+        risk_class: translate_basel_citation_ids_to_eu(_BASEL_CURVATURE_REQUIRED_CITATIONS)
+        for risk_class in (
+            SbmRiskClass.GIRR,
+            SbmRiskClass.FX,
+            SbmRiskClass.EQUITY,
+            SbmRiskClass.COMMODITY,
+        )
+    },
+    SbmRegulatoryProfile.PRA_UK_CRR: {
+        SbmRiskClass.GIRR: (
+            "pra_uk_crr_325e_components",
+            "pra_uk_crr_325g_curvature_aggregation",
+            "pra_uk_crr_325h_correlation_scenarios",
+            "pra_uk_crr_325l_girr_risk_factors",
+            "pra_uk_crr_325ax_curvature_risk_weights",
+            "pra_uk_crr_325ay_curvature_correlations",
         ),
     },
 }
@@ -79,6 +109,15 @@ PROFILE_CURVATURE_RISK_WEIGHT_CITATION_IDS: dict[
             SbmRegulatoryProfile.US_NPR_2_0
         ],
         SbmRiskClass.FX: "us_npr_91_fr_14952_va7a_fx_curvature_shocks",
+    },
+    SbmRegulatoryProfile.EU_CRR3: {
+        SbmRiskClass.GIRR: translate_basel_citation_ids_to_eu(("basel_mar21_99",))[0],
+        SbmRiskClass.FX: translate_basel_citation_ids_to_eu(("basel_mar21_98",))[0],
+        SbmRiskClass.EQUITY: translate_basel_citation_ids_to_eu(("basel_mar21_98",))[0],
+        SbmRiskClass.COMMODITY: translate_basel_citation_ids_to_eu(("basel_mar21_99",))[0],
+    },
+    SbmRegulatoryProfile.PRA_UK_CRR: {
+        SbmRiskClass.GIRR: "pra_uk_crr_325ax_curvature_risk_weights",
     },
 }
 
@@ -110,7 +149,8 @@ def curvature_citation_ids(
     missing = [citation_id for citation_id in required if citation_id not in citations]
     if missing:
         raise UnsupportedRegulatoryFeatureError(
-            f"curvature citations are unavailable for profile={profile!r}"
+            "curvature citations are unavailable for "
+            f"profile={profile!r} risk_class={resolved_class.value}"
         )
     return required
 
@@ -143,10 +183,8 @@ def curvature_risk_weight(
             PROFILE_GIRR_DELTA_RISK_WEIGHTS[resolved],
             key=lambda item: item.risk_weight,
         )
-        return rule.risk_weight, (
-            PROFILE_GIRR_CURVATURE_RISK_WEIGHT_CITATION_IDS[resolved],
-            rule.citation_id,
-        )
+        citation_id = _curvature_risk_weight_citation_id(profile, resolved_class)
+        return rule.risk_weight, (citation_id, rule.citation_id)
     if resolved_class is SbmRiskClass.FX:
         weight, citations = fx_delta_risk_weight(
             profile,
@@ -154,8 +192,7 @@ def curvature_risk_weight(
             reporting_currency=reporting_currency,
         )
         return weight, _merge_citation_ids(
-            (_curvature_risk_weight_citation_id(profile, resolved_class),),
-            citations,
+            (_curvature_risk_weight_citation_id(profile, resolved_class),), citations
         )
     if resolved_class is SbmRiskClass.EQUITY:
         from frtb_sbm.equity_reference_data import EQUITY_SPOT_RISK_FACTOR
@@ -170,10 +207,14 @@ def curvature_risk_weight(
             bucket_id=bucket_id,
             risk_factor=EQUITY_SPOT_RISK_FACTOR,
         )
-        return weight, _merge_citation_ids(("basel_mar21_98",), citations)
+        return weight, _merge_citation_ids(
+            (_curvature_risk_weight_citation_id(profile, resolved_class),), citations
+        )
     if resolved_class is SbmRiskClass.COMMODITY:
         weight, citations = commodity_delta_risk_weight(profile, bucket_id=bucket_id)
-        return weight, _merge_citation_ids(("basel_mar21_99",), citations)
+        return weight, _merge_citation_ids(
+            (_curvature_risk_weight_citation_id(profile, resolved_class),), citations
+        )
     if resolved_class is SbmRiskClass.CSR_NONSEC:
         weight, citations = csr_nonsec_delta_risk_weight(profile, bucket_id=bucket_id)
         return weight, _merge_citation_ids(("basel_mar21_99",), citations)

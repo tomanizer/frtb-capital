@@ -35,12 +35,11 @@ from frtb_sbm.data_models import (
 from frtb_sbm.equity_reference_data import (
     EQUITY_OTHER_SECTOR_BUCKET,
     _require_equity_bucket_number,
-    equity_delta_intra_bucket_citation_ids,
     equity_delta_intra_bucket_correlation,
-    equity_inter_bucket_citation_ids,
     equity_inter_bucket_correlation,
     equity_other_sector_citation_ids,
 )
+from frtb_sbm.reference_citations_eu_crr3 import translate_basel_citation_ids_to_eu
 from frtb_sbm.risk_classes.equity_weighting import weight_equity_delta_sensitivity_batch
 
 _EQUITY_SCENARIO_CITATION_IDS: dict[str, tuple[str, ...]] = {
@@ -49,6 +48,26 @@ _EQUITY_SCENARIO_CITATION_IDS: dict[str, tuple[str, ...]] = {
         "basel_mar21_7_scenario_selection",
     ),
     SbmRegulatoryProfile.US_NPR_2_0.value: ("us_npr_91_fr_14952_va7a_correlation_scenarios",),
+    SbmRegulatoryProfile.EU_CRR3.value: translate_basel_citation_ids_to_eu(
+        (
+            "basel_mar21_6_correlation_scenarios",
+            "basel_mar21_7_scenario_selection",
+        )
+    ),
+}
+_EQUITY_INTRA_BRANCH_CITATION_IDS: dict[str, tuple[str, ...]] = {
+    SbmRegulatoryProfile.BASEL_MAR21.value: ("basel_mar21_4_intra_bucket",),
+    SbmRegulatoryProfile.US_NPR_2_0.value: ("us_npr_91_fr_14952_va7a_equity_delta_intra",),
+    SbmRegulatoryProfile.EU_CRR3.value: translate_basel_citation_ids_to_eu(
+        ("basel_mar21_4_intra_bucket",)
+    ),
+}
+_EQUITY_INTER_BRANCH_CITATION_IDS: dict[str, tuple[str, ...]] = {
+    SbmRegulatoryProfile.BASEL_MAR21.value: ("basel_mar21_4_inter_bucket",),
+    SbmRegulatoryProfile.US_NPR_2_0.value: ("us_npr_91_fr_14952_va7a_equity_delta_inter",),
+    SbmRegulatoryProfile.EU_CRR3.value: translate_basel_citation_ids_to_eu(
+        ("basel_mar21_4_inter_bucket",)
+    ),
 }
 
 
@@ -166,8 +185,8 @@ def aggregate_equity_delta_measure_capital(
         risk_class=SbmRiskClass.EQUITY,
         risk_measure=SbmRiskMeasure.DELTA,
         citation_ids=equity_scenario_citation_ids(profile_id),
-        intra_bucket_citation_ids=equity_delta_intra_bucket_citation_ids(profile_id),
-        inter_bucket_citation_ids=equity_inter_bucket_citation_ids(profile_id),
+        intra_bucket_citation_ids=equity_intra_branch_citation_ids(profile_id),
+        inter_bucket_citation_ids=equity_inter_branch_citation_ids(profile_id),
         pairwise_evidence_mode=pairwise_evidence_mode,
         pairwise_evidence_limit=pairwise_evidence_limit,
     )
@@ -190,6 +209,46 @@ def equity_scenario_citation_ids(profile_id: str) -> tuple[str, ...]:
     return _EQUITY_SCENARIO_CITATION_IDS.get(
         profile_id,
         _EQUITY_SCENARIO_CITATION_IDS["BASEL_MAR21"],
+    )
+
+
+def equity_intra_branch_citation_ids(profile_id: str) -> tuple[str, ...]:
+    """Return risk-class branch intra-bucket citation ids for equity delta.
+
+    Parameters
+    ----------
+    profile_id : str
+        Regulatory profile identifier.
+
+    Returns
+    -------
+    tuple[str, ...]
+        Citation identifiers attached to the equity delta risk-class branch.
+    """
+
+    return _EQUITY_INTRA_BRANCH_CITATION_IDS.get(
+        profile_id,
+        _EQUITY_INTRA_BRANCH_CITATION_IDS["BASEL_MAR21"],
+    )
+
+
+def equity_inter_branch_citation_ids(profile_id: str) -> tuple[str, ...]:
+    """Return risk-class branch inter-bucket citation ids for equity delta.
+
+    Parameters
+    ----------
+    profile_id : str
+        Regulatory profile identifier.
+
+    Returns
+    -------
+    tuple[str, ...]
+        Citation identifiers attached to the equity delta risk-class branch.
+    """
+
+    return _EQUITY_INTER_BRANCH_CITATION_IDS.get(
+        profile_id,
+        _EQUITY_INTER_BRANCH_CITATION_IDS["BASEL_MAR21"],
     )
 
 
@@ -271,5 +330,7 @@ __all__ = [
     "build_equity_inter_bucket_correlation_map",
     "calculate_equity_delta_risk_class_capital",
     "calculate_equity_delta_risk_class_capital_from_batch",
+    "equity_inter_branch_citation_ids",
+    "equity_intra_branch_citation_ids",
     "equity_scenario_citation_ids",
 ]

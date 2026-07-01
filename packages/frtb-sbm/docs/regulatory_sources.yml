@@ -68,10 +68,13 @@ sources:
     jurisdiction: EU
     title: "Regulation (EU) 2024/1623 (CRR3) consolidated text"
     url: "https://eur-lex.europa.eu/eli/reg/2024/1623/oj/eng"
-    section_hint: "Articles 325e-325az and related market-risk provisions for EU comparison profile work."
+    section_hint: "Articles 325e-325az and related market-risk provisions for EU comparison profile work. Delivered cells map profile-owned ids for GIRR, FX, equity delta, and commodity delta support; CSR planning maps Articles 325n-325p, 325ah-325am, and 325ax before runtime."
     status: comparison_reference
-    reuse_note: "EU profile support is planned after the supported BASEL_MAR21 delta/vega/curvature matrix; current EU runtime requests fail closed."
-    module_paths: []
+    reuse_note: "EU_CRR3 is partial runtime support: GIRR delta/vega/curvature, FX delta/vega/curvature, equity delta, and commodity delta are implemented under audit; CSR and non-delivered cells fail closed."
+    module_paths:
+      - src/frtb_sbm/reference_citations_eu_crr3.py
+      - src/frtb_sbm/regimes.py
+      - src/frtb_sbm/validation/context.py
     requirement_ids:
       - SBM-REF-001
 
@@ -82,13 +85,8 @@ sources:
     url: "https://www.bankofengland.co.uk/-/media/boe/files/prudential-regulation/policy-statement/2026/january/ps126app1.pdf"
     section_hint: "Final PRA Rulebook CRR Firms Instrument 2026, Annex I, Market Risk: Advanced Standardised Approach (CRR) Part. Articles 325c-325h cover ASA/SBM structure, delta/vega/curvature aggregation, and correlation scenarios; Articles 325l-325u cover SBM risk-factor and sensitivity definitions; Articles 325ae-325ay cover GIRR, CSR, equity, commodity, FX, vega, and curvature weights/correlations."
     status: final_rule_reference
-    reuse_note: "Final UK PRA source map. Articles 325c, 325h, and 325ae-325ag now support the PRA_UK_CRR GIRR delta runtime slice with profile-owned citations and girr_delta_pra_uk_crr_v1 fixtures; remaining runtime cells still need profile-owned citation ids, reference data, fixtures, and support-matrix updates."
-    module_paths:
-      - src/frtb_sbm/reference_citations_pra_uk_crr.py
-      - src/frtb_sbm/girr_reference_tables.py
-      - src/frtb_sbm/reference_profiles.py
-      - src/frtb_sbm/regimes.py
-      - src/frtb_sbm/validation/context.py
+    reuse_note: "Final UK PRA source map for SBM planning. PRA_UK_CRR GIRR delta is capital-producing under audit with profile-owned citation ids, reference data, fixtures, and support-matrix updates; additional PRA cells still need the same evidence before runtime gates open."
+    module_paths: []
     requirement_ids:
       - SBM-REF-001
 

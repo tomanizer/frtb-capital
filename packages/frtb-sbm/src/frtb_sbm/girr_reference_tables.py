@@ -1,15 +1,17 @@
 """GIRR reference-data tables for SBM.
 
 Regulatory traceability:
-    Basel MAR21.38-MAR21.50, matching U.S. NPR 2.0 comparison-profile citations,
-    and PRA PS1/26 Appendix 1 / PRA2026/1 Articles 325ae-325ag.
+    Basel MAR21.38-MAR21.50, matching U.S. NPR 2.0 comparison-profile
+    citations, and PRA PS1/26 Appendix 1 / PRA2026/1 Articles 325ae-325ag.
 """
 
 from __future__ import annotations
 
 import math
+from dataclasses import replace
 
 from frtb_sbm.data_models import SbmRegulatoryProfile
+from frtb_sbm.reference_citations_eu_crr3 import eu_crr3_citation_id_for_basel
 from frtb_sbm.reference_types import (
     SbmGirrBucketDefinition,
     SbmGirrRiskWeightRule,
@@ -141,6 +143,26 @@ US_NPR_GIRR_SPECIAL_RISK_FACTORS: tuple[SbmGirrSpecialRiskFactorRule, ...] = (
     ),
 )
 
+EU_CRR3_GIRR_BUCKETS: tuple[SbmGirrBucketDefinition, ...] = tuple(
+    replace(bucket, citation_id=eu_crr3_citation_id_for_basel(bucket.citation_id))
+    for bucket in BASEL_GIRR_BUCKETS
+)
+
+EU_CRR3_GIRR_TENORS: tuple[SbmGirrTenorDefinition, ...] = tuple(
+    replace(tenor, citation_id=eu_crr3_citation_id_for_basel(tenor.citation_id))
+    for tenor in BASEL_GIRR_TENORS
+)
+
+EU_CRR3_GIRR_DELTA_RISK_WEIGHTS: tuple[SbmGirrRiskWeightRule, ...] = tuple(
+    replace(rule, citation_id=eu_crr3_citation_id_for_basel(rule.citation_id))
+    for rule in BASEL_GIRR_DELTA_RISK_WEIGHTS
+)
+
+EU_CRR3_GIRR_SPECIAL_RISK_FACTORS: tuple[SbmGirrSpecialRiskFactorRule, ...] = tuple(
+    replace(rule, citation_id=eu_crr3_citation_id_for_basel(rule.citation_id))
+    for rule in BASEL_GIRR_SPECIAL_RISK_FACTORS
+)
+
 PRA_UK_CRR_GIRR_BUCKETS: tuple[SbmGirrBucketDefinition, ...] = (
     SbmGirrBucketDefinition("1", "EUR", "pra_uk_crr_325ae_girr_buckets"),
     SbmGirrBucketDefinition("2", "USD", "pra_uk_crr_325ae_girr_buckets"),
@@ -195,18 +217,21 @@ PRA_UK_CRR_GIRR_SPECIAL_RISK_FACTORS: tuple[SbmGirrSpecialRiskFactorRule, ...] =
 PROFILE_GIRR_DELTA_SQRT2_CITATION_IDS: dict[SbmRegulatoryProfile, str] = {
     SbmRegulatoryProfile.BASEL_MAR21: "basel_mar21_44",
     SbmRegulatoryProfile.US_NPR_2_0: "us_npr_91_fr_14952_va7a_girr_sqrt2",
+    SbmRegulatoryProfile.EU_CRR3: eu_crr3_citation_id_for_basel("basel_mar21_44"),
     SbmRegulatoryProfile.PRA_UK_CRR: "pra_uk_crr_325ae_girr_sqrt2",
 }
 
 PROFILE_GIRR_DELTA_INTRA_BUCKET_CITATION_IDS: dict[SbmRegulatoryProfile, str] = {
     SbmRegulatoryProfile.BASEL_MAR21: "basel_mar21_45_49",
     SbmRegulatoryProfile.US_NPR_2_0: "us_npr_91_fr_14952_va7a_girr_intra",
+    SbmRegulatoryProfile.EU_CRR3: eu_crr3_citation_id_for_basel("basel_mar21_45_49"),
     SbmRegulatoryProfile.PRA_UK_CRR: "pra_uk_crr_325af_girr_intra",
 }
 
 PROFILE_GIRR_DELTA_INTER_BUCKET_CITATION_IDS: dict[SbmRegulatoryProfile, str] = {
     SbmRegulatoryProfile.BASEL_MAR21: "basel_mar21_50",
     SbmRegulatoryProfile.US_NPR_2_0: "us_npr_91_fr_14952_va7a_girr_inter",
+    SbmRegulatoryProfile.EU_CRR3: eu_crr3_citation_id_for_basel("basel_mar21_50"),
     SbmRegulatoryProfile.PRA_UK_CRR: "pra_uk_crr_325ag_girr_inter",
 }
 
@@ -267,17 +292,23 @@ PROFILE_GIRR_CURVATURE_SCENARIO_CITATION_IDS: dict[SbmRegulatoryProfile, tuple[s
         "basel_mar21_7_scenario_selection",
     ),
     SbmRegulatoryProfile.US_NPR_2_0: ("us_npr_91_fr_14952_va7a_girr_curvature_scenarios",),
+    SbmRegulatoryProfile.EU_CRR3: (
+        eu_crr3_citation_id_for_basel("basel_mar21_6_correlation_scenarios"),
+        eu_crr3_citation_id_for_basel("basel_mar21_7_scenario_selection"),
+    ),
 }
 
 PROFILE_GIRR_BUCKETS: dict[SbmRegulatoryProfile, tuple[SbmGirrBucketDefinition, ...]] = {
     SbmRegulatoryProfile.BASEL_MAR21: BASEL_GIRR_BUCKETS,
     SbmRegulatoryProfile.US_NPR_2_0: US_NPR_GIRR_BUCKETS,
+    SbmRegulatoryProfile.EU_CRR3: EU_CRR3_GIRR_BUCKETS,
     SbmRegulatoryProfile.PRA_UK_CRR: PRA_UK_CRR_GIRR_BUCKETS,
 }
 
 PROFILE_GIRR_TENORS: dict[SbmRegulatoryProfile, tuple[SbmGirrTenorDefinition, ...]] = {
     SbmRegulatoryProfile.BASEL_MAR21: BASEL_GIRR_TENORS,
     SbmRegulatoryProfile.US_NPR_2_0: US_NPR_GIRR_TENORS,
+    SbmRegulatoryProfile.EU_CRR3: EU_CRR3_GIRR_TENORS,
     SbmRegulatoryProfile.PRA_UK_CRR: PRA_UK_CRR_GIRR_TENORS,
 }
 
@@ -287,6 +318,7 @@ PROFILE_GIRR_DELTA_RISK_WEIGHTS: dict[
 ] = {
     SbmRegulatoryProfile.BASEL_MAR21: BASEL_GIRR_DELTA_RISK_WEIGHTS,
     SbmRegulatoryProfile.US_NPR_2_0: US_NPR_GIRR_DELTA_RISK_WEIGHTS,
+    SbmRegulatoryProfile.EU_CRR3: EU_CRR3_GIRR_DELTA_RISK_WEIGHTS,
     SbmRegulatoryProfile.PRA_UK_CRR: PRA_UK_CRR_GIRR_DELTA_RISK_WEIGHTS,
 }
 
@@ -296,6 +328,7 @@ PROFILE_GIRR_SPECIAL_RISK_FACTORS: dict[
 ] = {
     SbmRegulatoryProfile.BASEL_MAR21: BASEL_GIRR_SPECIAL_RISK_FACTORS,
     SbmRegulatoryProfile.US_NPR_2_0: US_NPR_GIRR_SPECIAL_RISK_FACTORS,
+    SbmRegulatoryProfile.EU_CRR3: EU_CRR3_GIRR_SPECIAL_RISK_FACTORS,
     SbmRegulatoryProfile.PRA_UK_CRR: PRA_UK_CRR_GIRR_SPECIAL_RISK_FACTORS,
 }
 
@@ -305,6 +338,10 @@ __all__ = [
     "BASEL_GIRR_DELTA_RISK_WEIGHTS",
     "BASEL_GIRR_SPECIAL_RISK_FACTORS",
     "BASEL_GIRR_TENORS",
+    "EU_CRR3_GIRR_BUCKETS",
+    "EU_CRR3_GIRR_DELTA_RISK_WEIGHTS",
+    "EU_CRR3_GIRR_SPECIAL_RISK_FACTORS",
+    "EU_CRR3_GIRR_TENORS",
     "GIRR_DELTA_INTRA_BUCKET_CONSTANT",
     "GIRR_DIFFERENT_CURVE_CORRELATION",
     "GIRR_INFLATION_DIFFERENT_TENOR_CORRELATION",

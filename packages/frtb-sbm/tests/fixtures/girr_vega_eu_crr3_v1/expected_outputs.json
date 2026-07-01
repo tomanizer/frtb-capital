@@ -1,0 +1,407 @@
+{
+  "total_capital": 547722.5575051662,
+  "profile_id": "EU_CRR3",
+  "profile_hash": "9c95e893aed59b42b2da1d04504068aafcf7acdd81836d7318aef5378856f736",
+  "input_hash": "d0d1c42bb08cc72206ab784bf69eb2f97451b0aef76a750045001a2ed981deac",
+  "input_hash_algorithm": "json-row-v1",
+  "warnings": [],
+  "unsupported_flags": [],
+  "risk_classes": [
+    {
+      "risk_class": "GIRR",
+      "selected_capital": 547722.5575051662,
+      "citation_ids": [
+        "eu_crr3_6_correlation_scenarios",
+        "eu_crr3_7_scenario_selection",
+        "eu_crr3_4_intra_bucket",
+        "eu_crr3_93",
+        "eu_crr3_4_inter_bucket",
+        "eu_crr3_95",
+        "eu_crr3_50"
+      ],
+      "buckets": [
+        {
+          "bucket_id": "1",
+          "risk_class": "GIRR",
+          "risk_measure": "VEGA",
+          "kb": 400000.0,
+          "citation_ids": [
+            "eu_crr3_4_intra_bucket",
+            "eu_crr3_93"
+          ],
+          "weighted_sensitivities": [
+            {
+              "sensitivity_id": "girr-vega-eu-crr3-v1-001",
+              "risk_class": "GIRR",
+              "risk_measure": "VEGA",
+              "bucket": "1",
+              "raw_amount": 250000.0,
+              "risk_weight": 1.0,
+              "scaled_amount": 250000.0,
+              "citation_ids": [
+                "eu_crr3_92"
+              ],
+              "qualifier": "1y"
+            },
+            {
+              "sensitivity_id": "girr-vega-eu-crr3-v1-002",
+              "risk_class": "GIRR",
+              "risk_measure": "VEGA",
+              "bucket": "1",
+              "raw_amount": 150000.0,
+              "risk_weight": 1.0,
+              "scaled_amount": 150000.0,
+              "citation_ids": [
+                "eu_crr3_92"
+              ],
+              "qualifier": "5y"
+            }
+          ],
+          "floor_applied": false,
+          "sb": 400000.0,
+          "scenario": "HIGH"
+        },
+        {
+          "bucket_id": "2",
+          "risk_class": "GIRR",
+          "risk_measure": "VEGA",
+          "kb": 200000.0,
+          "citation_ids": [
+            "eu_crr3_4_intra_bucket",
+            "eu_crr3_93"
+          ],
+          "weighted_sensitivities": [
+            {
+              "sensitivity_id": "girr-vega-eu-crr3-v1-003",
+              "risk_class": "GIRR",
+              "risk_measure": "VEGA",
+              "bucket": "2",
+              "raw_amount": 200000.0,
+              "risk_weight": 1.0,
+              "scaled_amount": 200000.0,
+              "citation_ids": [
+                "eu_crr3_92"
+              ],
+              "qualifier": "5y"
+            }
+          ],
+          "floor_applied": false,
+          "sb": 200000.0,
+          "scenario": "HIGH"
+        }
+      ],
+      "risk_measure": "VEGA",
+      "scenario_totals": {
+        "HIGH": 547722.5575051662,
+        "LOW": 498465.09602779144,
+        "MEDIUM": 523673.30080785835
+      },
+      "selected_scenario": "HIGH",
+      "scenario_details": [
+        {
+          "scenario": "LOW",
+          "capital": 498465.09602779144,
+          "alternative_sb_used": false,
+          "inter_bucket_correlations": [
+            {
+              "bucket_a": "1",
+              "bucket_b": "2",
+              "correlation": 0.375
+            }
+          ],
+          "intra_buckets": [
+            {
+              "bucket_id": "1",
+              "kb": 385314.74401843926,
+              "sb": 400000.0,
+              "floor_applied": false,
+              "citation_ids": [
+                "eu_crr3_4_intra_bucket",
+                "eu_crr3_93"
+              ],
+              "pairwise_correlations": [
+                {
+                  "sensitivity_a": "girr-vega-eu-crr3-v1-001",
+                  "sensitivity_b": "girr-vega-eu-crr3-v1-001",
+                  "correlation": 1.0
+                },
+                {
+                  "sensitivity_a": "girr-vega-eu-crr3-v1-001",
+                  "sensitivity_b": "girr-vega-eu-crr3-v1-002",
+                  "correlation": 0.8462326927732715
+                },
+                {
+                  "sensitivity_a": "girr-vega-eu-crr3-v1-002",
+                  "sensitivity_b": "girr-vega-eu-crr3-v1-002",
+                  "correlation": 1.0
+                }
+              ],
+              "pairwise_correlation_summary": {
+                "evidence_mode": "AUTO",
+                "total_count": 3,
+                "materialized_count": 3,
+                "omitted_count": 0,
+                "factor_ids": [
+                  "girr-vega-eu-crr3-v1-001",
+                  "girr-vega-eu-crr3-v1-002"
+                ]
+              }
+            },
+            {
+              "bucket_id": "2",
+              "kb": 200000.0,
+              "sb": 200000.0,
+              "floor_applied": false,
+              "citation_ids": [
+                "eu_crr3_4_intra_bucket",
+                "eu_crr3_93"
+              ],
+              "pairwise_correlations": [
+                {
+                  "sensitivity_a": "girr-vega-eu-crr3-v1-003",
+                  "sensitivity_b": "girr-vega-eu-crr3-v1-003",
+                  "correlation": 1.0
+                }
+              ],
+              "pairwise_correlation_summary": {
+                "evidence_mode": "AUTO",
+                "total_count": 1,
+                "materialized_count": 1,
+                "omitted_count": 0,
+                "factor_ids": [
+                  "girr-vega-eu-crr3-v1-003"
+                ]
+              }
+            }
+          ],
+          "citation_ids": [
+            "eu_crr3_6_correlation_scenarios",
+            "eu_crr3_7_scenario_selection"
+          ]
+        },
+        {
+          "scenario": "MEDIUM",
+          "capital": 523673.30080785835,
+          "alternative_sb_used": false,
+          "inter_bucket_correlations": [
+            {
+              "bucket_a": "1",
+              "bucket_b": "2",
+              "correlation": 0.5
+            }
+          ],
+          "intra_buckets": [
+            {
+              "bucket_id": "1",
+              "kb": 392726.0189737849,
+              "sb": 400000.0,
+              "floor_applied": false,
+              "citation_ids": [
+                "eu_crr3_4_intra_bucket",
+                "eu_crr3_93"
+              ],
+              "pairwise_correlations": [
+                {
+                  "sensitivity_a": "girr-vega-eu-crr3-v1-001",
+                  "sensitivity_b": "girr-vega-eu-crr3-v1-001",
+                  "correlation": 1.0
+                },
+                {
+                  "sensitivity_a": "girr-vega-eu-crr3-v1-001",
+                  "sensitivity_b": "girr-vega-eu-crr3-v1-002",
+                  "correlation": 0.9231163463866358
+                },
+                {
+                  "sensitivity_a": "girr-vega-eu-crr3-v1-002",
+                  "sensitivity_b": "girr-vega-eu-crr3-v1-002",
+                  "correlation": 1.0
+                }
+              ],
+              "pairwise_correlation_summary": {
+                "evidence_mode": "AUTO",
+                "total_count": 3,
+                "materialized_count": 3,
+                "omitted_count": 0,
+                "factor_ids": [
+                  "girr-vega-eu-crr3-v1-001",
+                  "girr-vega-eu-crr3-v1-002"
+                ]
+              }
+            },
+            {
+              "bucket_id": "2",
+              "kb": 200000.0,
+              "sb": 200000.0,
+              "floor_applied": false,
+              "citation_ids": [
+                "eu_crr3_4_intra_bucket",
+                "eu_crr3_93"
+              ],
+              "pairwise_correlations": [
+                {
+                  "sensitivity_a": "girr-vega-eu-crr3-v1-003",
+                  "sensitivity_b": "girr-vega-eu-crr3-v1-003",
+                  "correlation": 1.0
+                }
+              ],
+              "pairwise_correlation_summary": {
+                "evidence_mode": "AUTO",
+                "total_count": 1,
+                "materialized_count": 1,
+                "omitted_count": 0,
+                "factor_ids": [
+                  "girr-vega-eu-crr3-v1-003"
+                ]
+              }
+            }
+          ],
+          "citation_ids": [
+            "eu_crr3_6_correlation_scenarios",
+            "eu_crr3_7_scenario_selection"
+          ]
+        },
+        {
+          "scenario": "HIGH",
+          "capital": 547722.5575051662,
+          "alternative_sb_used": false,
+          "inter_bucket_correlations": [
+            {
+              "bucket_a": "1",
+              "bucket_b": "2",
+              "correlation": 0.625
+            }
+          ],
+          "intra_buckets": [
+            {
+              "bucket_id": "1",
+              "kb": 400000.0,
+              "sb": 400000.0,
+              "floor_applied": false,
+              "citation_ids": [
+                "eu_crr3_4_intra_bucket",
+                "eu_crr3_93"
+              ],
+              "pairwise_correlations": [
+                {
+                  "sensitivity_a": "girr-vega-eu-crr3-v1-001",
+                  "sensitivity_b": "girr-vega-eu-crr3-v1-001",
+                  "correlation": 1.0
+                },
+                {
+                  "sensitivity_a": "girr-vega-eu-crr3-v1-001",
+                  "sensitivity_b": "girr-vega-eu-crr3-v1-002",
+                  "correlation": 1.0
+                },
+                {
+                  "sensitivity_a": "girr-vega-eu-crr3-v1-002",
+                  "sensitivity_b": "girr-vega-eu-crr3-v1-002",
+                  "correlation": 1.0
+                }
+              ],
+              "pairwise_correlation_summary": {
+                "evidence_mode": "AUTO",
+                "total_count": 3,
+                "materialized_count": 3,
+                "omitted_count": 0,
+                "factor_ids": [
+                  "girr-vega-eu-crr3-v1-001",
+                  "girr-vega-eu-crr3-v1-002"
+                ]
+              }
+            },
+            {
+              "bucket_id": "2",
+              "kb": 200000.0,
+              "sb": 200000.0,
+              "floor_applied": false,
+              "citation_ids": [
+                "eu_crr3_4_intra_bucket",
+                "eu_crr3_93"
+              ],
+              "pairwise_correlations": [
+                {
+                  "sensitivity_a": "girr-vega-eu-crr3-v1-003",
+                  "sensitivity_b": "girr-vega-eu-crr3-v1-003",
+                  "correlation": 1.0
+                }
+              ],
+              "pairwise_correlation_summary": {
+                "evidence_mode": "AUTO",
+                "total_count": 1,
+                "materialized_count": 1,
+                "omitted_count": 0,
+                "factor_ids": [
+                  "girr-vega-eu-crr3-v1-003"
+                ]
+              }
+            }
+          ],
+          "citation_ids": [
+            "eu_crr3_6_correlation_scenarios",
+            "eu_crr3_7_scenario_selection"
+          ]
+        }
+      ],
+      "scenario_selection": {
+        "branch_id": "girr_vega_scenario_selection",
+        "branch_type": "SCENARIO_SELECTION",
+        "source_id": "mar21_7_2",
+        "selected": true,
+        "reason": "selected HIGH scenario with capital 547722.5575051662 as the maximum across correlation scenarios",
+        "citation_ids": [
+          "eu_crr3_6_correlation_scenarios",
+          "eu_crr3_7_scenario_selection"
+        ]
+      }
+    }
+  ],
+  "reconciliation": {
+    "input_count": 3,
+    "rejected_input_count": 0,
+    "requirement_ids": [
+      "SBM-WS-001",
+      "SBM-AGG-001",
+      "SBM-AGG-002",
+      "SBM-AUDIT-001",
+      "SBM-FUNC-017",
+      "SBM-FUNC-018",
+      "SBM-FUNC-019",
+      "SBM-FUNC-014",
+      "SBM-FUNC-015",
+      "SBM-FUNC-016",
+      "SBM-CURV-001"
+    ],
+    "citation_ids": [
+      "eu_crr3_6_correlation_scenarios",
+      "eu_crr3_7_scenario_selection",
+      "eu_crr3_4_intra_bucket",
+      "eu_crr3_93",
+      "eu_crr3_4_inter_bucket",
+      "eu_crr3_95",
+      "eu_crr3_50",
+      "eu_crr3_92"
+    ]
+  },
+  "run_context": {
+    "run_id": "sbm-girr_vega_eu_crr3_v1",
+    "calculation_date": "2026-07-01",
+    "base_currency": "USD",
+    "reporting_currency": "USD"
+  },
+  "portfolio_scenario_totals": {
+    "HIGH": 547722.5575051662,
+    "LOW": 498465.09602779144,
+    "MEDIUM": 523673.30080785835
+  },
+  "selected_portfolio_scenario": "HIGH",
+  "portfolio_scenario_selection": {
+    "branch_id": "portfolio_scenario_selection",
+    "branch_type": "SCENARIO_SELECTION",
+    "source_id": "mar21_7_2",
+    "selected": true,
+    "reason": "selected HIGH scenario with capital 547722.5575051662 as the maximum across correlation scenarios",
+    "citation_ids": [
+      "eu_crr3_7_scenario_selection"
+    ]
+  }
+}

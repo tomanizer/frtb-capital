@@ -234,7 +234,7 @@ def girr_delta_risk_weight(
 
 def _ensure_girr_supported(profile: SbmRegulatoryProfile | str) -> None:
     resolved = _resolve_supported_profile(profile)
-    if resolved is not SbmRegulatoryProfile.BASEL_MAR21:
+    if resolved not in PROFILE_GIRR_BUCKETS:
         raise UnsupportedRegulatoryFeatureError(
             f"GIRR reference data is unsupported for profile {resolved.value}"
         )

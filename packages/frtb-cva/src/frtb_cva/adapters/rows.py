@@ -97,6 +97,7 @@ def build_cva_counterparty_batch_from_counterparties(
         source_hash=source_hash,
         handoff_hash=handoff_hash,
         diagnostics=diagnostics,
+        org_scopes=[item.org_scope for item in validated],
     )
 
 
@@ -164,6 +165,7 @@ def build_cva_netting_set_batch_from_netting_sets(
         source_hash=source_hash,
         handoff_hash=handoff_hash,
         diagnostics=diagnostics,
+        org_scopes=[item.org_scope for item in validated],
     )
 
 

@@ -784,6 +784,8 @@ def _curvature_floor_citation_ids(
     risk_class: SbmRiskClass,
 ) -> tuple[str, ...]:
     if risk_class is SbmRiskClass.GIRR:
+        if _resolve_supported_profile(profile_id) is not SbmRegulatoryProfile.US_NPR_2_0:
+            return ()
         return curvature_citation_ids(profile_id, risk_class)
     if (
         _resolve_supported_profile(profile_id) is SbmRegulatoryProfile.US_NPR_2_0

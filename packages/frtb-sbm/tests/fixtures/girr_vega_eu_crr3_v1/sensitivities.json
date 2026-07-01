@@ -1,0 +1,56 @@
+{
+  "context": {
+    "run_id": "sbm-girr_vega_eu_crr3_v1",
+    "calculation_date": "2026-07-01",
+    "base_currency": "USD",
+    "reporting_currency": "USD",
+    "profile_id": "EU_CRR3"
+  },
+  "sensitivities": [
+    {
+      "sensitivity_id": "girr-vega-eu-crr3-v1-001",
+      "source_row_id": "row-001",
+      "desk_id": "eu-comparison-desk",
+      "legal_entity": "EU-LE-001",
+      "risk_class": "GIRR",
+      "risk_measure": "VEGA",
+      "bucket": "1",
+      "risk_factor": "EUR",
+      "amount": 250000.0,
+      "amount_currency": "USD",
+      "tenor": "1y",
+      "option_tenor": "1y",
+      "sign_convention": "RECEIVE"
+    },
+    {
+      "sensitivity_id": "girr-vega-eu-crr3-v1-002",
+      "source_row_id": "row-002",
+      "desk_id": "eu-comparison-desk",
+      "legal_entity": "EU-LE-001",
+      "risk_class": "GIRR",
+      "risk_measure": "VEGA",
+      "bucket": "1",
+      "risk_factor": "EUR",
+      "amount": 150000.0,
+      "amount_currency": "USD",
+      "tenor": "5y",
+      "option_tenor": "5y",
+      "sign_convention": "RECEIVE"
+    },
+    {
+      "sensitivity_id": "girr-vega-eu-crr3-v1-003",
+      "source_row_id": "row-003",
+      "desk_id": "eu-comparison-desk",
+      "legal_entity": "EU-LE-001",
+      "risk_class": "GIRR",
+      "risk_measure": "VEGA",
+      "bucket": "2",
+      "risk_factor": "USD",
+      "amount": 200000.0,
+      "amount_currency": "USD",
+      "tenor": "5y",
+      "option_tenor": "5y",
+      "sign_convention": "RECEIVE"
+    }
+  ]
+}

@@ -2,11 +2,9 @@
 
 ## Risk-Class Scope Matrix
 
-`BASEL_MAR21` is the canonical capital-producing profile. `US_NPR_2_0` has
-GIRR delta, GIRR vega, GIRR curvature, reporting-currency FX delta, FX vega,
-FX curvature, equity delta, and commodity delta comparison cells.
-`PRA_UK_CRR` has GIRR delta only. `EU_CRR3` remains runtime fail-closed, and
-every PRA cell outside GIRR delta remains fail-closed.
+`BASEL_MAR21` is the canonical capital-producing profile. `US_NPR_2_0`,
+`EU_CRR3`, and `PRA_UK_CRR` are comparison profiles with only the cells listed
+in `REGULATORY_TRACEABILITY.md` capital-producing under audit.
 
 | Risk class | Delta | Vega | Curvature | Notes |
 | --- | --- | --- | --- | --- |
@@ -23,12 +21,13 @@ every PRA cell outside GIRR delta remains fail-closed.
 Unsupported paths raise `UnsupportedRegulatoryFeatureError` or `SbmInputError`
 before capital is emitted:
 
-- `US_NPR_2_0` runtime profile cells outside GIRR delta, GIRR vega, GIRR curvature, FX delta, FX vega, FX curvature, equity delta, and commodity delta;
-- `US_NPR_2_0` FX base-currency treatment, which remains unsupported until
-  prior-supervisory-approval and translation-risk evidence are represented
-  explicitly in runtime controls and fixtures;
-- `EU_CRR3` runtime profile cells;
-- `PRA_UK_CRR` runtime profile cells outside GIRR delta;
+- `US_NPR_2_0` runtime profile cells outside GIRR delta/vega/curvature,
+  reporting-currency FX delta/vega/curvature, equity delta, and commodity
+  delta;
+- `EU_CRR3` runtime profile cells outside GIRR delta/vega/curvature, FX
+  delta/vega/curvature, equity delta, and commodity delta;
+- `PRA_UK_CRR` runtime profile cells outside GIRR delta, despite source mapping
+  to PS1/26 Appendix 1 / PRA2026/1;
 - risk-class/measure combinations outside the supported matrix;
 - missing curvature up/down shock inputs;
 - missing FX curvature scalar evidence where MAR21.98 requires it;

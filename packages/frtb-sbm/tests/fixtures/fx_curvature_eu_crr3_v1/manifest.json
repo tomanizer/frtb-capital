@@ -1,0 +1,20 @@
+{
+  "calculation_date": "2026-07-01",
+  "files": {
+    "expected_outputs.json": {
+      "sha256": "6d9c4a0647db7c9f82437b7d1c13b76117838af142791786365a9c4be619fd92"
+    },
+    "invalid_cases.json": {
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+    },
+    "sensitivities.json": {
+      "sha256": "a191b5a1769cc056788f32507373e9bf4110bf2bbf9e5d2c71c0b001bd4e4214"
+    }
+  },
+  "profile": "EU_CRR3",
+  "risk_class": "FX",
+  "risk_measure": "CURVATURE",
+  "schema_version": "fx_curvature_eu_crr3_v1_fixture_v1",
+  "sensitivity_count": 1,
+  "total_capital": 100.0
+}

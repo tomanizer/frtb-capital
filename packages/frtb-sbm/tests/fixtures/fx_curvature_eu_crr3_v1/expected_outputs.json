@@ -1,0 +1,369 @@
+{
+  "total_capital": 100.0,
+  "profile_id": "EU_CRR3",
+  "profile_hash": "9c95e893aed59b42b2da1d04504068aafcf7acdd81836d7318aef5378856f736",
+  "input_hash": "2bd0cf3da7693d56cacf48c39175328ed6c4b32819e64b8f9a97c278358cfd0c",
+  "input_hash_algorithm": "json-row-v1",
+  "warnings": [],
+  "unsupported_flags": [],
+  "risk_classes": [
+    {
+      "risk_class": "FX",
+      "selected_capital": 100.0,
+      "citation_ids": [
+        "eu_crr3_6_correlation_scenarios",
+        "eu_crr3_7_scenario_selection",
+        "eu_crr3_curvature",
+        "eu_crr3_100",
+        "eu_crr3_86",
+        "eu_crr3_101",
+        "eu_crr3_89"
+      ],
+      "buckets": [
+        {
+          "bucket_id": "EUR",
+          "risk_class": "FX",
+          "risk_measure": "CURVATURE",
+          "kb": 100.0,
+          "citation_ids": [
+            "eu_crr3_curvature",
+            "eu_crr3_100",
+            "eu_crr3_86"
+          ],
+          "weighted_sensitivities": [
+            {
+              "sensitivity_id": "EUR|EUR",
+              "risk_class": "FX",
+              "risk_measure": "CURVATURE",
+              "bucket": "EUR",
+              "raw_amount": 100.0,
+              "risk_weight": 1.0,
+              "scaled_amount": 100.0,
+              "citation_ids": [
+                "eu_crr3_curvature",
+                "eu_crr3_96",
+                "eu_crr3_97",
+                "eu_crr3_98",
+                "eu_crr3_99",
+                "eu_crr3_100",
+                "eu_crr3_101",
+                "eu_crr3_14",
+                "eu_crr3_96",
+                "eu_crr3_97",
+                "eu_crr3_98",
+                "eu_crr3_87",
+                "eu_crr3_88"
+              ],
+              "qualifier": "EUR:EUR:up:HIGH",
+              "factor_key": [
+                "EUR",
+                "EUR"
+              ],
+              "contributing_sensitivity_ids": [
+                "fx-curvature-eu-crr3-v1-001"
+              ],
+              "contributing_source_row_ids": [
+                "row-001"
+              ]
+            }
+          ],
+          "floor_applied": false,
+          "sb": 100.0,
+          "scenario": "HIGH"
+        }
+      ],
+      "risk_measure": "CURVATURE",
+      "scenario_totals": {
+        "HIGH": 100.0,
+        "LOW": 100.0,
+        "MEDIUM": 100.0
+      },
+      "selected_scenario": "HIGH",
+      "scenario_details": [
+        {
+          "scenario": "LOW",
+          "capital": 100.0,
+          "alternative_sb_used": false,
+          "inter_bucket_correlations": [],
+          "intra_buckets": [
+            {
+              "bucket_id": "EUR",
+              "kb": 100.0,
+              "sb": 100.0,
+              "floor_applied": false,
+              "citation_ids": [
+                "eu_crr3_curvature",
+                "eu_crr3_100",
+                "eu_crr3_86"
+              ],
+              "pairwise_correlations": [
+                {
+                  "sensitivity_a": "EUR|EUR",
+                  "sensitivity_b": "EUR|EUR",
+                  "correlation": 1.0
+                }
+              ],
+              "pairwise_correlation_summary": {
+                "evidence_mode": "AUTO",
+                "total_count": 1,
+                "materialized_count": 1,
+                "omitted_count": 0,
+                "factor_ids": [
+                  "EUR|EUR"
+                ]
+              }
+            }
+          ],
+          "citation_ids": [
+            "eu_crr3_6_correlation_scenarios",
+            "eu_crr3_7_scenario_selection",
+            "eu_crr3_curvature",
+            "eu_crr3_100",
+            "eu_crr3_86",
+            "eu_crr3_101",
+            "eu_crr3_89"
+          ]
+        },
+        {
+          "scenario": "MEDIUM",
+          "capital": 100.0,
+          "alternative_sb_used": false,
+          "inter_bucket_correlations": [],
+          "intra_buckets": [
+            {
+              "bucket_id": "EUR",
+              "kb": 100.0,
+              "sb": 100.0,
+              "floor_applied": false,
+              "citation_ids": [
+                "eu_crr3_curvature",
+                "eu_crr3_100",
+                "eu_crr3_86"
+              ],
+              "pairwise_correlations": [
+                {
+                  "sensitivity_a": "EUR|EUR",
+                  "sensitivity_b": "EUR|EUR",
+                  "correlation": 1.0
+                }
+              ],
+              "pairwise_correlation_summary": {
+                "evidence_mode": "AUTO",
+                "total_count": 1,
+                "materialized_count": 1,
+                "omitted_count": 0,
+                "factor_ids": [
+                  "EUR|EUR"
+                ]
+              }
+            }
+          ],
+          "citation_ids": [
+            "eu_crr3_6_correlation_scenarios",
+            "eu_crr3_7_scenario_selection",
+            "eu_crr3_curvature",
+            "eu_crr3_100",
+            "eu_crr3_86",
+            "eu_crr3_101",
+            "eu_crr3_89"
+          ]
+        },
+        {
+          "scenario": "HIGH",
+          "capital": 100.0,
+          "alternative_sb_used": false,
+          "inter_bucket_correlations": [],
+          "intra_buckets": [
+            {
+              "bucket_id": "EUR",
+              "kb": 100.0,
+              "sb": 100.0,
+              "floor_applied": false,
+              "citation_ids": [
+                "eu_crr3_curvature",
+                "eu_crr3_100",
+                "eu_crr3_86"
+              ],
+              "pairwise_correlations": [
+                {
+                  "sensitivity_a": "EUR|EUR",
+                  "sensitivity_b": "EUR|EUR",
+                  "correlation": 1.0
+                }
+              ],
+              "pairwise_correlation_summary": {
+                "evidence_mode": "AUTO",
+                "total_count": 1,
+                "materialized_count": 1,
+                "omitted_count": 0,
+                "factor_ids": [
+                  "EUR|EUR"
+                ]
+              }
+            }
+          ],
+          "citation_ids": [
+            "eu_crr3_6_correlation_scenarios",
+            "eu_crr3_7_scenario_selection",
+            "eu_crr3_curvature",
+            "eu_crr3_100",
+            "eu_crr3_86",
+            "eu_crr3_101",
+            "eu_crr3_89"
+          ]
+        }
+      ],
+      "scenario_selection": {
+        "branch_id": "fx_curvature_scenario_selection",
+        "branch_type": "SCENARIO_SELECTION",
+        "source_id": "mar21_7_2",
+        "selected": true,
+        "reason": "selected HIGH scenario with capital 100.0 as the maximum across correlation scenarios",
+        "citation_ids": [
+          "eu_crr3_6_correlation_scenarios",
+          "eu_crr3_7_scenario_selection"
+        ]
+      },
+      "curvature_branches": [
+        {
+          "sensitivity_id": "fx-curvature-eu-crr3-v1-001",
+          "selected_branch": "down",
+          "up_shock_amount": 100.0,
+          "down_shock_amount": 40.0,
+          "citation_ids": [
+            "eu_crr3_curvature",
+            "eu_crr3_96",
+            "eu_crr3_97",
+            "eu_crr3_98",
+            "eu_crr3_99",
+            "eu_crr3_100",
+            "eu_crr3_101"
+          ]
+        }
+      ],
+      "curvature_bucket_branches": [
+        {
+          "bucket_id": "EUR",
+          "scenario": "LOW",
+          "selected_branch": "up",
+          "rejected_branch": "down",
+          "selected_bucket_capital": 100.0,
+          "rejected_bucket_capital": 40.0,
+          "up_bucket_capital": 100.0,
+          "down_bucket_capital": 40.0,
+          "selected_sum": 100.0,
+          "up_sum": 100.0,
+          "down_sum": 40.0,
+          "selected_psi_zero_count": 0,
+          "up_psi_zero_count": 0,
+          "down_psi_zero_count": 0,
+          "floor_applied": false,
+          "citation_ids": [
+            "eu_crr3_curvature",
+            "eu_crr3_100",
+            "eu_crr3_86"
+          ]
+        },
+        {
+          "bucket_id": "EUR",
+          "scenario": "MEDIUM",
+          "selected_branch": "up",
+          "rejected_branch": "down",
+          "selected_bucket_capital": 100.0,
+          "rejected_bucket_capital": 40.0,
+          "up_bucket_capital": 100.0,
+          "down_bucket_capital": 40.0,
+          "selected_sum": 100.0,
+          "up_sum": 100.0,
+          "down_sum": 40.0,
+          "selected_psi_zero_count": 0,
+          "up_psi_zero_count": 0,
+          "down_psi_zero_count": 0,
+          "floor_applied": false,
+          "citation_ids": [
+            "eu_crr3_curvature",
+            "eu_crr3_100",
+            "eu_crr3_86"
+          ]
+        },
+        {
+          "bucket_id": "EUR",
+          "scenario": "HIGH",
+          "selected_branch": "up",
+          "rejected_branch": "down",
+          "selected_bucket_capital": 100.0,
+          "rejected_bucket_capital": 40.0,
+          "up_bucket_capital": 100.0,
+          "down_bucket_capital": 40.0,
+          "selected_sum": 100.0,
+          "up_sum": 100.0,
+          "down_sum": 40.0,
+          "selected_psi_zero_count": 0,
+          "up_psi_zero_count": 0,
+          "down_psi_zero_count": 0,
+          "floor_applied": false,
+          "citation_ids": [
+            "eu_crr3_curvature",
+            "eu_crr3_100",
+            "eu_crr3_86"
+          ]
+        }
+      ]
+    }
+  ],
+  "reconciliation": {
+    "input_count": 1,
+    "rejected_input_count": 0,
+    "requirement_ids": [
+      "SBM-WS-001",
+      "SBM-AGG-001",
+      "SBM-AGG-002",
+      "SBM-AUDIT-001",
+      "SBM-FUNC-017",
+      "SBM-FUNC-018",
+      "SBM-FUNC-019",
+      "SBM-FUNC-014",
+      "SBM-FUNC-015",
+      "SBM-FUNC-016",
+      "SBM-CURV-001"
+    ],
+    "citation_ids": [
+      "eu_crr3_6_correlation_scenarios",
+      "eu_crr3_7_scenario_selection",
+      "eu_crr3_curvature",
+      "eu_crr3_100",
+      "eu_crr3_86",
+      "eu_crr3_101",
+      "eu_crr3_89",
+      "eu_crr3_96",
+      "eu_crr3_97",
+      "eu_crr3_98",
+      "eu_crr3_99",
+      "eu_crr3_14",
+      "eu_crr3_87",
+      "eu_crr3_88"
+    ]
+  },
+  "run_context": {
+    "run_id": "sbm-fx_curvature_eu_crr3_v1",
+    "calculation_date": "2026-07-01",
+    "base_currency": "USD",
+    "reporting_currency": "USD"
+  },
+  "portfolio_scenario_totals": {
+    "HIGH": 100.0,
+    "LOW": 100.0,
+    "MEDIUM": 100.0
+  },
+  "selected_portfolio_scenario": "HIGH",
+  "portfolio_scenario_selection": {
+    "branch_id": "portfolio_scenario_selection",
+    "branch_type": "SCENARIO_SELECTION",
+    "source_id": "mar21_7_2",
+    "selected": true,
+    "reason": "selected HIGH scenario with capital 100.0 as the maximum across correlation scenarios",
+    "citation_ids": [
+      "eu_crr3_7_scenario_selection"
+    ]
+  }
+}

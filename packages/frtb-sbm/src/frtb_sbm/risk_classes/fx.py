@@ -32,6 +32,7 @@ from frtb_sbm.data_models import (
     SbmSensitivity,
     WeightedSensitivity,
 )
+from frtb_sbm.reference_citations_eu_crr3 import translate_basel_citation_ids_to_eu
 from frtb_sbm.reference_data import (
     fx_delta_intra_bucket_correlation,
     fx_inter_bucket_correlation,
@@ -44,6 +45,12 @@ _PROFILE_FX_DELTA_SCENARIO_CITATIONS = {
         "basel_mar21_7_scenario_selection",
     ),
     SbmRegulatoryProfile.US_NPR_2_0.value: ("us_npr_91_fr_14952_va7a_correlation_scenarios",),
+    SbmRegulatoryProfile.EU_CRR3.value: translate_basel_citation_ids_to_eu(
+        (
+            "basel_mar21_6_correlation_scenarios",
+            "basel_mar21_7_scenario_selection",
+        )
+    ),
 }
 _PROFILE_FX_DELTA_INTRA_CITATIONS = {
     SbmRegulatoryProfile.BASEL_MAR21.value: ("basel_mar21_4_intra_bucket", "basel_mar21_86"),
@@ -51,12 +58,18 @@ _PROFILE_FX_DELTA_INTRA_CITATIONS = {
         "us_npr_91_fr_14952_va7a_sbm_scope",
         "us_npr_91_fr_14952_va7a_fx_delta_intra",
     ),
+    SbmRegulatoryProfile.EU_CRR3.value: translate_basel_citation_ids_to_eu(
+        ("basel_mar21_4_intra_bucket", "basel_mar21_86")
+    ),
 }
 _PROFILE_FX_DELTA_INTER_CITATIONS = {
     SbmRegulatoryProfile.BASEL_MAR21.value: ("basel_mar21_4_inter_bucket", "basel_mar21_89"),
     SbmRegulatoryProfile.US_NPR_2_0.value: (
         "us_npr_91_fr_14952_va7a_sbm_scope",
         "us_npr_91_fr_14952_va7a_fx_delta_inter",
+    ),
+    SbmRegulatoryProfile.EU_CRR3.value: translate_basel_citation_ids_to_eu(
+        ("basel_mar21_4_inter_bucket", "basel_mar21_89")
     ),
 }
 
