@@ -154,6 +154,39 @@ the method categorisation established in ADR 0037.
 | Baseline-vs-candidate capital delta between two reconciled runs | `CapitalImpact` with `method = FINITE_DIFFERENCE`; never presented as marginal contribution |
 | No attribution method is available; partial silent allocation would be misleading | `UNSUPPORTED` at the record level; residual carries the full unattributed amount |
 
+### 4.1. Alternative method rationale
+
+The FRTB IMCC literature also describes constrained Aumann-Shapley style
+allocations (for example in ArXiv:1801.07358v2). Those methods preserve
+attribution axioms and can reduce instability for some portfolio geometries,
+but they remain permutation-based and materially more expensive than standard
+Euler for large attribution sets.
+
+A useful complementary result is in Christoph Frei, "A New Approach to Risk
+Attribution and Its Application in Credit Risk Analysis" (2020, *Risks*): for
+nonlinear loss structures, a time-grid linearization of risk-factor shifts can be
+combined with Euler allocation, and the approximation converges as the number of
+time steps grows. The paper also reports that Shapley-style methods become
+computationally expensive as factor count grows, and that simple approximations
+can miss the exact sum in strongly nonlinear settings.
+
+For this suite:
+
+- `ANALYTICAL_EULER` remains the default production method where the branch is
+  differentiable and stable.
+- Constrained Aumann-Shapley style methods are not default in the contract
+  layer and may be introduced only as optional, bounded diagnostics when input
+  scale is small and audit value is high.
+- Frei-style time-grid linearized Euler diagnostics are also non-default and may be
+  used only for explicit research or debug workflows when a controlled
+  approximation error is acceptable and reconciliation residuals are explicitly
+  retained.
+- `FINITE_DIFFERENCE` remains an impact method only, and must not be presented
+  as marginal attribution.
+- Explicit `UNSUPPORTED` and `RESIDUAL` reporting is preferred over hidden
+  approximations where branches switch, denominators collapse, or non-linear
+  floors/caps dominate.
+
 **Mandatory reconciliation invariant:** for any set of contribution records
 covering one aggregation level, the following must hold within `ε = 1e-6`:
 
@@ -223,3 +256,8 @@ After this ADR is accepted, the following implementation issues are required:
 - [ADR 0031](0031-drc-attribution-method-contract.md): DRC attribution method contract.
 - [ADR 0037](0037-analytical-euler-decomposition-framework.md): Analytical Euler decomposition framework.
 - [Issue #503](https://github.com/tomanizer/frtb-capital/issues/503): AUDIT-IMP-002 Define suite-wide attribution and impact contract.
+- ArXiv:1801.07358v2 (Luting Li and Hao Xing): constrained Aumann-Shapley and
+  FRTB IMCC allocation derivations under risk-factor/liquidity-bucket constraints.
+- [Risks 8(2):65](https://doi.org/10.3390/risks8020065): Christoph Frei,
+  "A New Approach to Risk Attribution and Its Application in Credit Risk
+  Analysis" (2020).
