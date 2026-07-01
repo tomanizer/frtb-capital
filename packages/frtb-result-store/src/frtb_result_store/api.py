@@ -121,7 +121,7 @@ def create_result_store_app(
     routes = cast(_RouteRegistrar, app)
     _register_run_routes(routes, result_store, HTTPException)
     _register_org_hierarchy_routes(routes, result_store, HTTPException, Query)
-    _register_capital_tree_routes(routes, result_store, HTTPException)
+    _register_capital_tree_routes(routes, result_store, HTTPException, Query)
     _register_risk_factor_routes(routes, result_store, HTTPException, Query)
     _register_attribution_projection_routes(routes, result_store, HTTPException)
     _register_artifact_routes(routes, result_store, HTTPException, Query, FileResponse)
@@ -436,6 +436,7 @@ def _register_capital_tree_routes(
     app: _RouteRegistrar,
     result_store: DuckDbParquetResultStore,
     http_exception_type: type[Exception],
+    query: Any,
 ) -> None:
     @app.get(
         "/runs/{run_id:path}/capital-tree",
@@ -461,6 +462,16 @@ def _register_capital_tree_routes(
             )
         return cast(dict[str, object], _to_jsonable(node))
 
+
+    _register_node_detail_routes(app, result_store, http_exception_type, query)
+
+
+def _register_node_detail_routes(
+    app: _RouteRegistrar,
+    result_store: DuckDbParquetResultStore,
+    http_exception_type: type[Exception],
+    query: Any,
+) -> None:
     @app.get(
         "/runs/{run_id:path}/nodes/{node_id}/children",
         tags=["Capital Tree"],
@@ -501,6 +512,37 @@ def _register_capital_tree_routes(
     def lineage_for_node(run_id: str, node_id: str) -> dict[str, object]:
         _require_run(result_store, run_id, http_exception_type)
         return {"lineage": _to_jsonable(result_store.lineage_for_result(run_id, node_id))}
+
+    @app.get(
+        "/runs/{run_id:path}/pivot",
+        tags=["Pivot Analysis"],
+        summary="Return a pivoted aggregate result set",
+    )
+    def pivot_query(
+        run_id: str,
+        rows: list[str] = query(default=...),
+        cols: list[str] = query(default=[]),
+        measures: list[str] = query(default=["capital"]),
+        filters: list[str] = query(default=[]),
+        limit: int = query(default=100, ge=1, le=1000),
+        offset: int = query(default=0, ge=0),
+    ) -> dict[str, object]:
+        _require_run(result_store, run_id, http_exception_type)
+        try:
+            return result_store.pivot_query(
+                run_id,
+                rows=rows,
+                cols=cols,
+                measures=measures,
+                filters=filters,
+                limit=limit,
+                offset=offset,
+            )
+        except ResultStoreContractError as exc:
+            raise http_exception_type(  # type: ignore[call-arg]
+                status_code=400,
+                detail=f"Invalid pivot query: {str(exc)}",
+            )
 
 
 def _register_org_hierarchy_routes(

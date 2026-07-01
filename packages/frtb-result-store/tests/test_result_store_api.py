@@ -125,6 +125,57 @@ def test_result_store_api_serves_committed_runs_without_catalog_access(
     }
 
 
+def test_result_store_pivot_query_api(tmp_path: Path) -> None:
+    group_payload = canonical_run_group_identity_payload(
+        as_of_date=date(2026, 6, 3),
+        calculation_scope="FIRM",
+        input_snapshot_id="snapshot-001",
+        calculation_policy_group_id="global-policy",
+        engine_version="engine-v1",
+        code_version="code-v1",
+        group_purpose="regime-comparison",
+    )
+    group_id = generate_run_group_id(group_payload)
+    run = _run("US_NPR_2_0", group_id, group_payload)
+    store = DuckDbParquetResultStore(tmp_path / "result-store")
+    store.write_bundle(_bundle(run))
+    client = TestClient(create_result_store_app(store))
+
+    # Basic pivot by component and desk_id
+    response = client.get(
+        f"/runs/{run.run_id}/pivot",
+        params={"rows": "component,desk_id", "measures": "capital"},
+    )
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["total_count"] > 0
+
+    first_row = payload["pivot_rows"][0]
+    # For "ima" node: component="IMA", desk_id="rates"
+    assert first_row["dimensions"]["component"] == "IMA"
+    assert first_row["dimensions"]["desk_id"] == "rates"
+    assert first_row["subtotal_type"] == "additive_official"
+    assert first_row["node_id"] == "ima"
+    assert "capital" in first_row["measures"]
+    assert first_row["measures"]["capital"] == 17.0
+
+    # Pivot with filters
+    filtered_response = client.get(
+        f"/runs/{run.run_id}/pivot",
+        params={"rows": "component,desk_id", "filters": "component=IMA"},
+    )
+    assert filtered_response.status_code == 200
+    filtered_payload = filtered_response.json()
+    assert all(row["dimensions"]["component"] == "IMA" for row in filtered_payload["pivot_rows"])
+
+    # Invalid dimension should fail
+    invalid_response = client.get(
+        f"/runs/{run.run_id}/pivot",
+        params={"rows": "not-a-dimension"},
+    )
+    assert invalid_response.status_code == 400
+
+
 def test_result_store_api_cors_is_opt_in_for_static_navigator(tmp_path: Path) -> None:
     run = _run("US_NPR_2_0", None, None)
     store = DuckDbParquetResultStore(tmp_path / "result-store")
