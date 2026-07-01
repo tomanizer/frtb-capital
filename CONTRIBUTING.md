@@ -4,6 +4,22 @@ This is a regulated-bank-software prototype suite. Contributions are reviewed
 against the standards in [`CLAUDE.md`](CLAUDE.md), the package-specific agent
 guidance, and the ADR log in [`docs/decisions/`](docs/decisions/).
 
+This repository is part of the **OpenReg** initiative — open-source, benchmark-grade
+reference implementations of banking and financial regulation
+(https://github.com/openreg-finance).
+
+## License and sign-off (DCO)
+
+This project is licensed under the **Apache License, Version 2.0** (see
+[`LICENSE`](LICENSE) and [`NOTICE`](NOTICE)). By contributing, you agree that your
+contributions are licensed under the same terms.
+
+All contributions must be made under the **Developer Certificate of Origin (DCO)**.
+Sign off every commit with `git commit -s`, which adds a `Signed-off-by` line
+certifying you have the right to submit the code. See [`DCO.md`](DCO.md) for the
+full text and rationale. Pull requests whose commits are not signed off may be
+rejected by an automated DCO check.
+
 ## Setup
 
 ```bash

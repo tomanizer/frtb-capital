@@ -8,7 +8,7 @@ version = "0.1.1"
 description = "Shared primitives for the frtb-capital package suite"
 readme = "README.md"
 requires-python = ">=3.11"
-license = "MIT"
+license = "Apache-2.0"
 dependencies = [
     "numpy>=1.26,<2.5",
     "pyarrow>=23.0.1,<24",
