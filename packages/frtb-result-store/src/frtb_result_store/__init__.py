@@ -50,6 +50,12 @@ from frtb_result_store.model import (
     MovementResult,
     MovementSummaryRow,
     NodeType,
+    OrgAggregateRow,
+    OrgCapitalResultRow,
+    OrgHierarchy,
+    OrgHierarchyLevel,
+    OrgHierarchyNode,
+    OrgSliceKeys,
     ResultBundle,
     ResultEvent,
     ResultEventSeverity,
@@ -64,6 +70,15 @@ from frtb_result_store.model import (
     canonical_run_identity_payload,
     generate_run_group_id,
     generate_run_id,
+)
+from frtb_result_store.org_hierarchy import (
+    aggregate_by_org_hierarchy,
+    generate_org_aggregate_row_id,
+    resolve_org_hierarchy_version,
+    sample_org_capital_rows,
+    sample_org_hierarchy,
+    source_rows_for_org_aggregate,
+    validate_org_hierarchy,
 )
 
 if TYPE_CHECKING:
@@ -111,6 +126,12 @@ __all__ = [
     "MovementResult",
     "MovementSummaryRow",
     "NodeType",
+    "OrgAggregateRow",
+    "OrgCapitalResultRow",
+    "OrgHierarchy",
+    "OrgHierarchyLevel",
+    "OrgHierarchyNode",
+    "OrgSliceKeys",
     "RequiredArtifactExpectation",
     "ResultBundle",
     "ResultEvent",
@@ -126,6 +147,7 @@ __all__ = [
     "StorageBackend",
     "TelemetryPhase",
     "__version__",
+    "aggregate_by_org_hierarchy",
     "artifact_schema_fingerprint",
     "artifact_schema_for",
     "build_hierarchy_nodes",
@@ -139,8 +161,14 @@ __all__ = [
     "default_hierarchy_definition",
     "generate_capital_node_id",
     "generate_hierarchy_node_id",
+    "generate_org_aggregate_row_id",
     "generate_run_group_id",
     "generate_run_id",
+    "resolve_org_hierarchy_version",
+    "sample_org_capital_rows",
+    "sample_org_hierarchy",
+    "source_rows_for_org_aggregate",
+    "validate_org_hierarchy",
 ]
 
 _BACKEND_EXPORTS = frozenset(
