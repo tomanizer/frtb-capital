@@ -43,6 +43,33 @@ Rules:
   display-only states where the user would otherwise infer a false zero or
   official subtotal.
 
+## Product Mode to NavigatorState Mapping
+
+Wireframe section names are product labels, not additional route keys. The
+canonical route/state contract remains `NavigatorState` in
+[`NAVIGATOR_STATE_AND_ROUTING.md`](NAVIGATOR_STATE_AND_ROUTING.md).
+
+| Product surface | Canonical `analysisMode` | Required state pattern |
+| --- | --- | --- |
+| Top-of-house capital | `capital` | `hierarchyNodeId=toh`, `capitalView=binding`, `gridMode=capital_stack`; framework chips may set `framework=SA|IMA|CVA` for focused rows. |
+| Legal entity and business capital | `hierarchy` | Selected `hierarchyNodeId`, `capitalView=binding|framework`, `gridMode=capital_stack` or `drivers`; inline expansion is display state unless it changes selected scope. |
+| Desk and book capital | `desk` | Desk/book `hierarchyNodeId`, `deskId` where available, `framework=SA|IMA|CVA`, `gridMode=capital_stack|drivers|evidence|source_rows`. |
+| Standardised Approach capital | `capital` | `capitalView=framework`, `framework=SA`, `scenario=Binding|Base|High|Low`, `gridMode=capital_stack|drivers|evidence|source_rows`. |
+| IMA capital and model evidence | `capital` or `desk` | `framework=IMA`; use `analysisMode=capital` for scope-level IMA rows and `analysisMode=desk` when desk/book selection is primary; evidence detail uses `gridMode=evidence`. |
+| CVA capital | `capital` | `capitalView=framework`, `framework=CVA`, `gridMode=capital_stack|evidence|source_rows`; no-data and unsupported states are row/view state, not separate routes. |
+| Desk eligibility and PLA | `pla` | Force `framework=IMA`, `scenario=Binding`, `gridMode=eligibility`, and set `deskId` when a desk is selected. |
+| RFET, NMRF, and SES | `rfet_nmrf` | Force `framework=IMA`, `scenario=Binding`, `gridMode=rfet_register|evidence`, and preserve `riskFactorId` when selected. |
+| Risk-factor and time-series drivers | `risk_factor` | `framework=SA|IMA`, `gridMode=drivers|time_series`, selected `riskFactorId`, and active `timeWindow`. |
+| Interactive pivot and hierarchy analysis | `pivot` | `gridMode=pivot`, `pivotRows`, `pivotColumns`, `filters`, `sort`, and selected subtotal row. |
+| AI explanation overlay | current mode retained | Not a distinct `analysisMode`; set `inspectorTab=explanation` and `explanationId` on the current run/scope/mode snapshot. |
+
+Inspector labels in the wireframes are display labels. They must map back to
+the canonical `inspectorTab` values:
+`summary | attribution | source | model | diagnostics | lineage | explanation`.
+Mode-specific labels such as `Component mix`, `Usage map`, `SES bridge`,
+`Hedge evidence`, or `Time series` are sub-panels under those canonical tabs,
+not new `inspectorTab` enum values.
+
 ## Stable Shell
 
 Expanded hierarchy rail:
@@ -107,7 +134,7 @@ Shared regions:
 | Grid controls | mode, framework/scenario where relevant, filters, search, explain action | Controls fit one row where possible. |
 | Primary grid | one task-specific table or matrix | Row selection drives inspector. |
 | Inspector | summary, attribution/capital, source, model, diagnostics, lineage | Tabs are mode-aware but predictable. |
-| AI drawer | generated commentary, evidence chips, limitations, next actions | Opens beside inspector or as inspector tab on compact screens. |
+| AI drawer | generated commentary, evidence chips, limitations, next actions | Opens beside inspector or as `inspectorTab=explanation` on compact screens. |
 
 ## Shared Responsive Behaviour
 
@@ -404,7 +431,7 @@ Capital strip: top RF mover | top capital driver | top SES driver | RFET change
 - Responsive behaviour: the lower time-series panel becomes an inspector tab;
   one selected series is shown at a time.
 
-## Mode: Interactive Pivot Drawer
+## Mode: Interactive Pivot and Hierarchy Analysis
 
 ```text
 Header breadcrumb and capital strip remain unchanged
@@ -429,11 +456,11 @@ Header breadcrumb and capital strip remain unchanged
   level, reset pivot, copy pivot link.
 - Hidden/deferred controls: advanced measures, more than the first supported
   row dimensions, arbitrary calculated fields, spreadsheet-like editing.
-- Responsive behaviour: drawer opens from the bottom on compact screens; active
-  pivot chips stay above the grid; official/display-only status remains visible
-  on every subtotal row.
+- Responsive behaviour: the pivot drawer opens from the bottom on compact
+  screens; active pivot chips stay above the grid; official/display-only status
+  remains visible on every subtotal row.
 
-## Mode: AI Explanation Drawer
+## AI Explanation Overlay
 
 ```text
 Grid and inspector stay visible
@@ -451,7 +478,8 @@ Grid and inspector stay visible
   timestamp, key limitation if any, and top finding.
 - Primary grid columns: unchanged from the active analytical mode.
 - Inspector tabs: unchanged from the active analytical mode; Explanation may be
-  highlighted but evidence tabs remain available.
+  highlighted through canonical `inspectorTab=explanation`, but evidence tabs
+  remain available.
 - Primary actions: explain this view, explain selected row, choose style/depth,
   cancel generation, copy explanation with run/scope/baseline metadata.
 - Hidden/deferred controls: free-form prompt expansion, regenerate reason,
@@ -467,14 +495,17 @@ AI drawer requirements:
 - Evidence chips select or reveal the referenced row/object without changing
   the run, scope, or baseline.
 - The drawer closes without clearing selected grid row or inspector state.
+- Opening or closing the overlay must not change `analysisMode`, `framework`,
+  `gridMode`, selected row, selected desk, selected risk factor, or selected
+  hierarchy scope.
 
 ## Acceptance Checklist
 
 - Stable shell shows header, breadcrumb/scope, capital strip, primary grid,
   inspector, and optional AI drawer.
 - Top-of-house, legal-entity/business, desk/book, SA, IMA, CVA, PLA,
-  RFET/NMRF/SES, risk-factor/time-series, pivot, and AI modes each have a
-  buildable low-fidelity wireframe.
+  RFET/NMRF/SES, risk-factor/time-series, pivot, and AI overlay surfaces each
+  have a buildable low-fidelity wireframe.
 - Every mode includes first-read summary, grid columns, inspector tabs, primary
   actions, hidden/deferred controls, and responsive behaviour.
 - The left hierarchy rail can be expanded, compact, or hidden without losing the

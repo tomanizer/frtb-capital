@@ -11,6 +11,10 @@ Target Navigator contracts:
   [`MODE_WIREFRAMES.md`](MODE_WIREFRAMES.md)
 - State and routing:
   [`NAVIGATOR_STATE_AND_ROUTING.md`](NAVIGATOR_STATE_AND_ROUTING.md)
+- Capital and movement semantics:
+  [`CAPITAL_AND_MOVEMENT_SEMANTICS.md`](CAPITAL_AND_MOVEMENT_SEMANTICS.md)
+- Result-store data contract:
+  [`RESULT_STORE_DATA_CONTRACT.md`](RESULT_STORE_DATA_CONTRACT.md)
 
 ## Design law
 
