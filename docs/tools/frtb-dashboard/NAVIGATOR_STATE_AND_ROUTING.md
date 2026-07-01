@@ -19,8 +19,10 @@ capital strip, grid, inspector, artifact pages, and AI explanation drawer update
 from that state without showing stale evidence.
 
 This document defines the frontend state machine, URL contract, cache-key rules,
-and state-to-query mapping. It does not define result-store response schemas;
-those belong in `RESULT_STORE_DATA_CONTRACT.md`.
+and state-to-query mapping. It does not define result-store response schemas.
+Use the existing `frtb-result-store` public API and storage-contract documents
+for persisted evidence contracts; the dashboard adapter must expose stable view
+models that are compatible with this state contract.
 
 ## 2. Current State
 
@@ -57,6 +59,7 @@ NavigatorState
   capitalView: binding | framework
   scenario: Binding | Base | High | Low
   timeWindow: current | prior_run | prior_business_day | month_end | quarter_end | year_on_year | custom
+  customWindow: CustomWindowSpec | null
   gridMode: capital_stack | drivers | evidence | source_rows | eligibility | rfet_register | time_series | pivot
   rowId: string | null
   deskId: string | null
@@ -92,6 +95,18 @@ PageSpec
   offset: number
   columns: string[]
   filters: FilterSpec[]
+
+CustomWindowSpec
+  start: ISO date | run alias | run id
+  end: ISO date | run alias | run id
+  basis: business_date | run_id
+
+DrilldownTarget
+  bindingSource: SA | IMA | CVA | output_floor | null
+  framework: SA | IMA | CVA | null
+  rowId: string | null
+  component: string | null
+  artifactId: string | null
 ```
 
 ## 4. State Ownership
@@ -100,26 +115,28 @@ PageSpec
 | --- | --- | --- | --- | --- |
 | `runId` | yes | yes | no | no |
 | `baselineRunId` | yes | yes | no | no |
-| `hierarchyNodeId` | yes | yes | last-used optional | no |
-| `analysisMode` | yes | yes | last-used optional | no |
-| `framework` | yes | yes | last-used optional | no |
-| `capitalView` | yes | yes | last-used optional | no |
+| `hierarchyNodeId` | yes | yes | no | no |
+| `analysisMode` | yes | yes | no | no |
+| `framework` | yes | yes | no | no |
+| `capitalView` | yes | yes | no | no |
 | `scenario` | yes | yes | no | no |
-| `timeWindow` | yes | yes | last-used optional | no |
-| `gridMode` | yes | yes | last-used optional | no |
+| `timeWindow` | yes | yes | no | no |
+| `customWindow` | yes when `timeWindow=custom` | yes when `timeWindow=custom` | no | no |
+| `gridMode` | yes | yes | no | no |
 | `rowId` | yes | yes for inspector | no | no |
 | `deskId` | yes | yes | no | no |
 | `riskFactorId` | yes | yes | no | no |
 | `artifactId` | yes | yes | no | no |
+| `artifactPage` | yes when artifact/source tab is open | yes | no | no |
 | `inspectorTab` | yes | no | no | no |
 | `explanationId` | yes, if snapshot-valid | yes | no | no |
-| `pivotRows` | yes | yes | last-used optional | no |
-| `pivotColumns` | yes | yes | last-used optional | no |
+| `pivotRows` | yes | yes | no | no |
+| `pivotColumns` | yes | yes | no | no |
 | `filters` | yes | yes | no | no |
 | `hierarchySearch` | no | no | no | yes |
 | `gridSearch` | yes when server-side, no when local-only | yes when server-side | no | no |
-| `sort` | yes | yes | last-used optional | no |
-| `columnPreset` | yes | yes | yes | no |
+| `sort` | yes | yes | no | no |
+| `columnPreset` | yes | yes | no | no |
 | hierarchy rail collapsed/width | no | no | yes | no |
 | loading/error/abort controllers | no | no | no | yes |
 
@@ -129,12 +146,16 @@ Rules:
 - Local storage may improve ergonomics, but it must not change query semantics
   silently.
 - Ephemeral state must never be required to reproduce a finding.
-- State precedence is strict:
+- State precedence for analytical state is strict:
   1. explicit URL state;
   2. route defaults, such as `runId` from `/navigator/:runId`;
-  3. safe local preferences for fields absent from the URL;
-  4. product defaults.
-- Local preferences must never override an explicit URL parameter.
+  3. product defaults.
+- Local preferences must never set analytical state on `/navigator/:runId`.
+  They may set only ergonomic display state, such as rail width, collapsed state,
+  density, and pinned scopes.
+- A non-shareable landing route, such as `/navigator`, may use local preferences
+  to choose a recent run or scope before redirecting to a URL that explicitly
+  serializes the selected run, scope, mode, and other analytical state.
 - Search ownership must be explicit per grid mode. Client-side search is a local
   convenience and is excluded from share links, exports, and explanation
   snapshots. Server-side search changes the result set and must be represented
@@ -159,30 +180,70 @@ Core query parameters:
 | `framework` | `framework` | `SA` |
 | `scenario` | `scenario` | `High` |
 | `window` | `timeWindow` | `month_end` |
+| `from` | `customWindow.start`, when `window=custom` | `2026-06-01` |
+| `to` | `customWindow.end`, when `window=custom` | `2026-06-30` |
+| `windowBasis` | `customWindow.basis`, when `window=custom` | `business_date` |
 | `grid` | `gridMode` | `drivers` |
 | `row` | `rowId` | `sa-drc-corporate` |
 | `desk` | `deskId` | `rates-credit-demo` |
 | `riskFactor` | `riskFactorId` | `rf-girr-usd-5y` |
 | `artifact` | `artifactId` | `artifact-id` |
+| `artifactLimit` | `artifactPage.limit` | `100` |
+| `artifactOffset` | `artifactPage.offset` | `200` |
+| `artifactCols` | `artifactPage.columns` | `trade_id,amount` |
+| `artifactFilter` | `artifactPage.filters`, repeated | `book:eq:rates` |
 | `tab` | `inspectorTab` | `source` |
 | `explanation` | `explanationId` | `exp-123` |
 | `rows` | `pivotRows` | `hierarchy,component` |
 | `cols` | `pivotColumns` | `scenario` |
 | `filter` | repeated filter specs | `component:eq:SBM` |
 | `sort` | sort specs | `movement:desc` |
+| `search` | `gridSearch`, only for server-side search | `issuer123` |
 | `columns` | `columnPreset` | `movement` |
 
-Filter syntax in URLs should stay simple and consistent:
+Filter and sort syntax in URLs should stay simple and consistent. Query
+parameters are percent-decoded once before parsing; literal `:` and `,` inside
+values must be percent-encoded by the serializer. Range bounds cannot contain
+the reserved `..` separator.
 
 ```text
 filter=<field>:<op>:<value>
+artifactFilter=<field>:<op>:<value>
+sort=<field>:<direction>
 ```
 
-For example:
+Grammar:
+
+```text
+field      = ALPHA / DIGIT / "_" / "-" / "." repeated
+op         = "eq" | "in" | "contains" | "range" | "state"
+direction  = "asc" | "desc"
+eq         = filter=component:eq:SBM
+in         = filter=eligibility:in:amber,red
+range      = filter=amount:range:100..250
+multi-sort = sort=movement:desc&sort=capital:desc
+```
+
+Rules:
+
+- Repeated `filter` parameters are combined with `AND`.
+- Repeated `artifactFilter` parameters use the same grammar and apply only to
+  the active artifact/source page, after the inherited analytical scope.
+- `in` values are comma-separated after URL decoding; literal commas in values
+  must be encoded as `%2C`.
+- `range` values use `lower..upper`; open bounds are allowed as `..250` or
+  `100..`.
+- Multi-column sort uses repeated `sort` parameters in priority order.
+- The canonical serializer sorts filters by field, operator, and value, but
+  preserves sort priority order.
+
+Syntax examples:
 
 ```text
 filter=component:eq:SBM
 filter=eligibility:in:amber,red
+filter=amount:range:100..250
+sort=movement:desc&sort=capital:desc
 ```
 
 Examples:
@@ -215,6 +276,12 @@ Pivot:
 
 ```text
 /navigator/demo-suite-001?scope=le-demo&mode=pivot&rows=hierarchy,component&cols=scenario&filter=status:eq:warning&sort=movement:desc
+```
+
+Custom window:
+
+```text
+/navigator/demo-suite-001?scope=toh&mode=capital&window=custom&from=2026-06-01&to=2026-06-30&windowBasis=business_date
 ```
 
 AI explanation:
@@ -257,8 +324,17 @@ Normalization rules:
 - If `framework` is not `SA`, force `scenario=Binding`.
 - If `capitalView=framework`, the selected framework controls the capital strip
   emphasis and grid data family.
-- If `capitalView=binding`, the app may query multiple framework summaries, but
-  framework-specific drilldowns still use `framework`.
+- If `capitalView=binding`, top-level rows must carry a resolved
+  `bindingSource` and `DrilldownTarget`. Do not use the ambient `framework`
+  alone to open a binding row, because binding capital may be IMA, SA, CVA, or
+  output-floor driven.
+- The ambient `framework` in binding view is only a framework filter/default for
+  framework-specific rows that do not carry their own `DrilldownTarget`.
+- If `timeWindow=custom`, `customWindow` is required and must include `start`,
+  `end`, and `basis`. If any part is invalid, normalize to `current`, clear
+  `customWindow`, and emit `link_restore_warning`.
+- If `timeWindow` is not `custom`, `customWindow` must be `null` and omitted
+  from serialized URLs.
 
 ## 7. Default State
 
@@ -273,6 +349,7 @@ framework: SA
 capitalView: binding
 scenario: Binding
 timeWindow: current
+customWindow: null
 gridMode: capital_stack
 rowId: first valid grid row
 deskId: null
@@ -323,7 +400,7 @@ limitations if an explanation is generated from the restored view.
 | `capitalView` | run, baseline, scope, mode, framework | row if no longer present, explanation | Changes top-level capital emphasis. |
 | `framework` | run, baseline, scope, mode | row, artifact, inspector tab, explanation | Set `scenario=Binding` when framework is not `SA`. |
 | `scenario` | row if still present | artifact, explanation | Applies to SBM/SA scenario-sensitive rows. |
-| `timeWindow` | selected object if still present | explanation | Recompute movement/outlier/time-series panels. |
+| `timeWindow` / `customWindow` | selected object if still present | explanation | Recompute movement/outlier/time-series panels; `customWindow` is valid only with `timeWindow=custom`. |
 | `gridMode` | scope/mode/framework | row, artifact, inspector tab, explanation | Select first valid row in new grid. |
 | `rowId` | run/scope/mode | inspector tab, artifact page, explanation | Selects inspector primary object. |
 | `deskId` | run/scope/mode | row/risk factor if incompatible, explanation | Desk detail may set `hierarchyNodeId` to desk node. |
@@ -354,6 +431,7 @@ analysisMode
 framework
 capitalView
 timeWindow
+customWindow if timeWindow=custom
 ```
 
 Grid:
@@ -367,6 +445,7 @@ framework
 capitalView
 scenario
 timeWindow
+customWindow if timeWindow=custom
 gridMode
 pivotRows
 pivotColumns
@@ -388,6 +467,7 @@ framework
 capitalView
 scenario
 timeWindow
+customWindow if timeWindow=custom
 rowId | deskId | riskFactorId | artifactId
 inspectorTab
 ```
@@ -396,12 +476,32 @@ Artifact page:
 
 ```text
 runId
+baselineRunId
+hierarchyNodeId
+analysisMode
+framework
+capitalView
+scenario
+timeWindow
+customWindow if timeWindow=custom
+gridMode
+rowId | deskId | riskFactorId
 artifactId
-columns
-filters
-limit
-offset
+artifactPage.columns
+state filters
+artifactPage.filters
+gridSearch if server-side
+artifactPage.limit
+artifactPage.offset
 ```
+
+Artifact and source-row pages must inherit the analytical scope that produced
+the selected row. An `artifactId` alone is not enough unless the adapter
+contract explicitly declares the artifact immutable and already scoped to the
+selected run, hierarchy node, framework, scenario, mode, filters, and selected
+object. If that declaration is absent, the adapter must pass the full
+state-derived scope above and return a no-data or mismatch diagnostic instead
+of showing rows from a broader artifact.
 
 Explanation snapshot:
 
@@ -414,6 +514,7 @@ framework
 capitalView
 scenario
 timeWindow
+customWindow if timeWindow=custom
 gridMode
 rowId | deskId | riskFactorId | artifactId
 pivotRows
@@ -444,10 +545,10 @@ Resource families:
 | --- | --- |
 | `runs` | environment, entitlement context |
 | `metadata` | environment, entitlement context, `runId` |
-| `overview` | environment, entitlement context, `runId`, `baselineRunId`, `hierarchyNodeId`, `analysisMode`, `capitalView`, `framework`, `timeWindow` |
-| `grid` | environment, entitlement context, `runId`, `baselineRunId`, `hierarchyNodeId`, `analysisMode`, `capitalView`, `framework`, `scenario`, `timeWindow`, `gridMode`, `pivotRows`, `pivotColumns`, `filters`, server-side `gridSearch`, `sort`, `columnPreset`, page |
-| `inspector` | environment, entitlement context, `runId`, `baselineRunId`, `hierarchyNodeId`, `analysisMode`, `capitalView`, `framework`, `scenario`, `timeWindow`, selected object, `inspectorTab` |
-| `artifactPage` | environment, entitlement context, `runId`, `artifactId`, `columns`, `filters`, `limit`, `offset` |
+| `overview` | environment, entitlement context, `runId`, `baselineRunId`, `hierarchyNodeId`, `analysisMode`, `capitalView`, `framework`, `timeWindow`, `customWindow` when custom |
+| `grid` | environment, entitlement context, `runId`, `baselineRunId`, `hierarchyNodeId`, `analysisMode`, `capitalView`, `framework`, `scenario`, `timeWindow`, `customWindow` when custom, `gridMode`, `pivotRows`, `pivotColumns`, `filters`, server-side `gridSearch`, `sort`, `columnPreset`, page |
+| `inspector` | environment, entitlement context, `runId`, `baselineRunId`, `hierarchyNodeId`, `analysisMode`, `capitalView`, `framework`, `scenario`, `timeWindow`, `customWindow` when custom, selected object, selected row `DrilldownTarget` when present, `inspectorTab` |
+| `artifactPage` | environment, entitlement context, `runId`, `baselineRunId`, `hierarchyNodeId`, `analysisMode`, `capitalView`, `framework`, `scenario`, `timeWindow`, `customWindow` when custom, `gridMode`, selected object, `artifactId`, `columns`, page filters, state filters, server-side `gridSearch`, `limit`, `offset` |
 | `explanationSnapshot` | environment, entitlement context, all snapshot query fields plus visible row IDs |
 | `explanationResult` | environment, entitlement context, `explanationId`, `inputSnapshotHash` |
 
@@ -458,6 +559,7 @@ Do not reuse a cache entry if:
 - hierarchy scope changed;
 - capital view changed;
 - scenario changed for scenario-sensitive data;
+- custom-window start, end, or basis changed;
 - selected row/object changed;
 - filters or pivots changed;
 - server-side search changed;
@@ -496,12 +598,9 @@ Rules:
 Local storage may store:
 
 - hierarchy rail collapsed/expanded state and width;
-- last selected `analysisMode`;
-- last selected `framework`;
-- last selected `capitalView`;
-- last selected `timeWindow`;
-- column presets;
 - density preference;
+- display-only column sizing/visibility preferences that do not change server
+  projection or aggregate content;
 - pinned/favourite hierarchy scopes.
 
 Local storage must not store:
@@ -523,11 +622,14 @@ If preference parsing fails, discard preferences and continue with defaults.
 
 Preference application order:
 
-- Apply product defaults first.
-- Apply safe local preferences only for state fields absent from the URL.
-- Apply route and URL state last.
-- Normalize the merged state and emit `link_restore_warning` diagnostics for
-  discarded or normalized URL values. Do not warn for ignored local preferences.
+- Build analytical state from product defaults, then route and URL state.
+- Normalize analytical state without consulting local preferences.
+- Apply local preferences only to ergonomic display state after data-query state
+  is resolved.
+- Emit `link_restore_warning` diagnostics for discarded or normalized URL
+  values.
+- Never emit warnings for ignored local preferences, because local preferences
+  must not be allowed to change analytical state.
 
 ## 13. Result-Store Adapter Notes
 
@@ -540,9 +642,10 @@ Current demo endpoints use:
 /api/runs/{run_id}/inspector
 ```
 
-Target production data should come from `frtb-result-store` surfaces described
-in `RESULT_STORE_DATA_CONTRACT.md`. Until then, the dashboard adapter should
-present stable view models that are compatible with this state contract.
+Target production data should come from `frtb-result-store` surfaces documented
+in `docs/modules/frtb-result-store/PUBLIC_API.md` and
+`docs/modules/frtb-result-store/STORAGE_CONTRACT.md`. The dashboard adapter
+should present stable view models that are compatible with this state contract.
 
 Adapter requirements:
 
@@ -561,12 +664,21 @@ When implementing this state contract, tests should cover:
 - URL parsing and serialization round trips.
 - Default state creation.
 - State normalization and compatibility matrix cases.
+- Binding-view row selection through resolved `DrilldownTarget`, including
+  output-floor-driven binding rows.
+- `window=custom` parsing, serialization, invalid-window diagnostics, and cache
+  invalidation.
 - Reset rules for run, baseline, scope, framework, scenario, mode, row, desk,
   risk factor, pivot, and filters.
-- URL/local-storage precedence.
+- URL/filter/sort grammar, including repeated filters, repeated sorts, range
+  filters, and percent-encoded reserved characters.
+- URL/local-storage precedence, including proof that local preferences cannot
+  change analytical state for `/navigator/:runId`.
 - Cache-key changes for every query-affecting state field.
 - Entitlement/environment isolation in cache keys.
 - Client-side versus server-side search behavior.
+- Artifact/source-row paging inherits run, baseline, scope, framework, scenario,
+  mode, filters, and selected object.
 - Stale inspector prevention after scope, row, scenario, and mode changes.
 - Explanation invalidation when `inputSnapshotHash` changes.
 - Local-storage preference migration and parse failure.

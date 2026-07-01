@@ -245,8 +245,9 @@ Target mental model:
 Run
   Baseline run
   Hierarchy scope
-    Framework: Binding / SA / IMA / CVA
-      Component: SBM / DRC / RRAO / IMCC / SES / CVA method
+    Capital view: Binding / Framework
+      Framework: SA / IMA / CVA
+        Component: SBM / DRC / RRAO / IMCC / SES / CVA method
         Analytical row: risk class, bucket, issuer, desk, book, counterparty,
         risk factor, NMRF, PLA test
           Inspector evidence: attribution, source rows, model tests, diagnostics
