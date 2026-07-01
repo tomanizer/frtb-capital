@@ -32,6 +32,7 @@ from frtb_result_store.model import (
     RunStatusEvent,
     StorageBackend,
 )
+from frtb_result_store.model_validation import _validate_bundle_artifact_sources
 from frtb_result_store.observability import current_trace_ids, result_store_span
 from frtb_result_store.run_metadata_io import (
     artifact_byte_count as _artifact_byte_count,
@@ -48,7 +49,6 @@ from frtb_result_store.store_status_rows import (
     _initial_status_event,
     _status_event_row,
 )
-from frtb_result_store.model_validation import _validate_bundle_artifact_sources
 
 _LOGGER = logging.getLogger(__name__)
 

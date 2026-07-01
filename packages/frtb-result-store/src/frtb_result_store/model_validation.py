@@ -15,8 +15,8 @@ if TYPE_CHECKING:
     from frtb_result_store.model_entities import (
         CapitalAttributionRecord,
         CapitalEdge,
-        LineageRef,
         CapitalMeasure,
+        LineageRef,
         MovementResult,
         ResultBundle,
     )

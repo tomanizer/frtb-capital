@@ -92,8 +92,8 @@ def create_result_store_app(
 
     try:
         from fastapi import FastAPI, HTTPException, Query
-        from fastapi.responses import FileResponse
         from fastapi.middleware.cors import CORSMiddleware
+        from fastapi.responses import FileResponse
     except ModuleNotFoundError as exc:
         if exc.name == "fastapi":
             raise ModuleNotFoundError(

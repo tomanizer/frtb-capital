@@ -103,7 +103,9 @@ def _validate_artifact_availability(
     uri: str,
     format: str,
 ) -> None:
-    raw_status = metadata.get("artifact_status", ArtifactAvailabilityStatus.AVAILABLE.value)
+    raw_status = str(
+        metadata.get("artifact_status", ArtifactAvailabilityStatus.AVAILABLE.value)
+    )
     try:
         status = ArtifactAvailabilityStatus(raw_status)
     except ValueError as exc:
@@ -124,7 +126,9 @@ def _validate_artifact_availability(
                 "unavailable artifact refs must use format='none'",
                 field="format",
             )
-        required_scheme = "no-data" if status is ArtifactAvailabilityStatus.NO_DATA else "unsupported"
+        required_scheme = (
+            "no-data" if status is ArtifactAvailabilityStatus.NO_DATA else "unsupported"
+        )
         if urlparse(uri).scheme != required_scheme:
             raise ResultStoreContractError(
                 f"{status.value} artifact refs must use {required_scheme}:// URIs",

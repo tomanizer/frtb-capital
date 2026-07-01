@@ -1201,7 +1201,7 @@ def test_artifact_ref_accepts_object_store_drillthrough_uri() -> None:
 
 
 def test_artifact_ref_requires_partition_values_for_partitioned_refs() -> None:
-    with pytest.raises(ResultStoreContractError, match="metadata.partition_values"):
+    with pytest.raises(ResultStoreContractError, match=r"metadata\.partition_values"):
         ArtifactRef(
             run_id="run-001",
             artifact_id="ima-pnl-desk-a",
