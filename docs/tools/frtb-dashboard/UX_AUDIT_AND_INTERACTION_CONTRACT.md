@@ -1389,33 +1389,14 @@ UX detail:
 
 ## 9. Interaction State Model
 
-The app should be driven by one explicit state object:
+The app should be driven by one explicit state object. The canonical state
+contract is `NAVIGATOR_STATE_AND_ROUTING.md`; this UX contract describes intent
+and must not maintain a divergent field list.
 
-```text
-NavigatorState
-  runId
-  baselineRunId | null
-  hierarchyNodeId
-  framework
-  scenario
-  analysisMode
-  timeWindow
-  gridMode
-  rowId | null
-  deskId | null
-  riskFactorId | null
-  inspectorTab
-  explanationId | null
-  pivotRows[]
-  pivotColumns[]
-  filters[]
-  hierarchySearch
-  gridSearch
-  sort
-  columnPreset
-```
+High-level reset intent:
 
-Reset rules:
+The exact reset matrix is owned by `NAVIGATOR_STATE_AND_ROUTING.md`. The UX
+intent is:
 
 - `runId` change: reset baseline, row, inspector tab; keep framework if valid.
 - `baselineRunId` change: keep scope/framework/row if row still exists.
@@ -1444,10 +1425,11 @@ Reset rules:
 
 URL contract:
 
-State should eventually be reflected in the URL:
+Shareable analytical state must be reflected in the URL according to
+`NAVIGATOR_STATE_AND_ROUTING.md`:
 
 ```text
-/navigator/:runId?scope=book-rates-fixture&baseline=prev-month&mode=capital&framework=SA&scenario=High&row=sa-sbm-girr-delta
+/navigator/:runId?scope=book-rates-fixture&baseline=prev-month&mode=capital&view=framework&framework=SA&scenario=High&row=sa-sbm-girr-delta
 ```
 
 This makes findings shareable between risk, finance, and model teams.

@@ -65,6 +65,7 @@ NavigatorState
   deskId: string | null
   riskFactorId: string | null
   artifactId: string | null
+  selectedDrilldownTarget: DrilldownTarget | null
   inspectorTab: summary | attribution | source | model | diagnostics | lineage | explanation
   explanationId: string | null
   pivotRows: string[]
@@ -74,6 +75,7 @@ NavigatorState
   gridSearch: string
   sort: SortSpec[]
   columnPreset: capital | movement | evidence | source | compact
+  columnLayout: ColumnLayoutSpec | null
   artifactPage: PageSpec | null
 ```
 
@@ -82,7 +84,7 @@ Supporting shapes:
 ```text
 FilterSpec
   field: string
-  op: eq | in | contains | range | state
+  op: eq | in | contains | range
   value: string | number | boolean | string[] | number[]
 
 SortSpec
@@ -90,11 +92,15 @@ SortSpec
   direction: asc | desc
 
 PageSpec
-  artifactId: string
   limit: number
   offset: number
   columns: string[]
   filters: FilterSpec[]
+
+ColumnLayoutSpec
+  visibleColumns: string[]
+  columnWidths: map<string, number>
+  pinnedColumns: string[]
 
 CustomWindowSpec
   start: ISO date | run alias | run id
@@ -127,6 +133,7 @@ DrilldownTarget
 | `deskId` | yes | yes | no | no |
 | `riskFactorId` | yes | yes | no | no |
 | `artifactId` | yes | yes | no | no |
+| `selectedDrilldownTarget` | no, derived from selected row | yes for inspector when present | no | no |
 | `artifactPage` | yes when artifact/source tab is open | yes | no | no |
 | `inspectorTab` | yes | no | no | no |
 | `explanationId` | yes, if snapshot-valid | yes | no | no |
@@ -137,6 +144,7 @@ DrilldownTarget
 | `gridSearch` | yes when server-side, no when local-only | yes when server-side | no | no |
 | `sort` | yes | yes | no | no |
 | `columnPreset` | yes | yes | no | no |
+| `columnLayout` | no | no | yes | no |
 | hierarchy rail collapsed/width | no | no | yes | no |
 | loading/error/abort controllers | no | no | no | yes |
 
@@ -216,7 +224,7 @@ Grammar:
 
 ```text
 field      = ALPHA / DIGIT / "_" / "-" / "." repeated
-op         = "eq" | "in" | "contains" | "range" | "state"
+op         = "eq" | "in" | "contains" | "range"
 direction  = "asc" | "desc"
 eq         = filter=component:eq:SBM
 in         = filter=eligibility:in:amber,red
@@ -330,6 +338,11 @@ Normalization rules:
   output-floor driven.
 - The ambient `framework` in binding view is only a framework filter/default for
   framework-specific rows that do not carry their own `DrilldownTarget`.
+- `selectedDrilldownTarget` is derived from the currently selected grid row. It
+  is never serialized into the URL. If the selected row ID is restored before
+  grid data has loaded, the inspector must wait for the grid response to resolve
+  the target or show a pending/no-data state; it must not infer a framework from
+  ambient state.
 - If `timeWindow=custom`, `customWindow` is required and must include `start`,
   `end`, and `basis`. If any part is invalid, normalize to `current`, clear
   `customWindow`, and emit `link_restore_warning`.
@@ -355,6 +368,7 @@ rowId: first valid grid row
 deskId: null
 riskFactorId: null
 artifactId: null
+selectedDrilldownTarget: null
 inspectorTab: summary
 explanationId: null
 pivotRows: []
@@ -364,6 +378,7 @@ hierarchySearch: ""
 gridSearch: ""
 sort: mode default
 columnPreset: capital
+columnLayout: null
 artifactPage: null
 ```
 
@@ -402,12 +417,13 @@ limitations if an explanation is generated from the restored view.
 | `scenario` | row if still present | artifact, explanation | Applies to SBM/SA scenario-sensitive rows. |
 | `timeWindow` / `customWindow` | selected object if still present | explanation | Recompute movement/outlier/time-series panels; `customWindow` is valid only with `timeWindow=custom`. |
 | `gridMode` | scope/mode/framework | row, artifact, inspector tab, explanation | Select first valid row in new grid. |
-| `rowId` | run/scope/mode | inspector tab, artifact page, explanation | Selects inspector primary object. |
+| `rowId` | run/scope/mode | selected drilldown target, inspector tab, artifact page, explanation | Selects inspector primary object; target is re-derived from refreshed grid row. |
 | `deskId` | run/scope/mode | row/risk factor if incompatible, explanation | Desk detail may set `hierarchyNodeId` to desk node. |
 | `riskFactorId` | run/scope/mode | row/desk if incompatible, explanation | Risk factor detail keeps canonical ID. |
 | `pivotRows` / `pivotColumns` / `filters` | selected object only if still present | row if absent, artifact, explanation | Refresh grid and totals. |
 | `sort` | selected object if still present | none | Sorting must not change semantic selection. |
-| `columnPreset` | selected object | none | Pure display unless preset changes query projection. |
+| `columnPreset` | selected object | none | Query-affecting server projection preset. |
+| `columnLayout` | selected object | none | Local display preference only; never changes server projection. |
 | `inspectorTab` | selected object | none | If tab unavailable, fall back to summary. |
 | `artifactPage` | artifact if still valid | none | Page state resets when selected object changes. |
 | `explanationId` | none | none | Read-only pointer; validity checked by snapshot hash. |
@@ -469,8 +485,16 @@ scenario
 timeWindow
 customWindow if timeWindow=custom
 rowId | deskId | riskFactorId | artifactId
+selectedDrilldownTarget when selected row provides one
 inspectorTab
 ```
+
+Inspector requests for binding-view rows must use `selectedDrilldownTarget` when
+present. If the selected row carries a drilldown target and that target has not
+been resolved yet, defer the inspector request until the matching grid response
+arrives. If the target resolves to `bindingSource=output_floor`, show the output
+floor explanation/evidence panel instead of forcing an SA, IMA, or CVA
+framework query.
 
 Artifact page:
 
@@ -502,6 +526,10 @@ selected run, hierarchy node, framework, scenario, mode, filters, and selected
 object. If that declaration is absent, the adapter must pass the full
 state-derived scope above and return a no-data or mismatch diagnostic instead
 of showing rows from a broader artifact.
+
+When `artifactPage` is not null, `artifactId` is the canonical selected artifact
+identifier. `artifactPage` owns only paging, projection, and artifact-local
+filters for that artifact; it must not carry a second artifact identifier.
 
 Explanation snapshot:
 
@@ -547,7 +575,7 @@ Resource families:
 | `metadata` | environment, entitlement context, `runId` |
 | `overview` | environment, entitlement context, `runId`, `baselineRunId`, `hierarchyNodeId`, `analysisMode`, `capitalView`, `framework`, `timeWindow`, `customWindow` when custom |
 | `grid` | environment, entitlement context, `runId`, `baselineRunId`, `hierarchyNodeId`, `analysisMode`, `capitalView`, `framework`, `scenario`, `timeWindow`, `customWindow` when custom, `gridMode`, `pivotRows`, `pivotColumns`, `filters`, server-side `gridSearch`, `sort`, `columnPreset`, page |
-| `inspector` | environment, entitlement context, `runId`, `baselineRunId`, `hierarchyNodeId`, `analysisMode`, `capitalView`, `framework`, `scenario`, `timeWindow`, `customWindow` when custom, selected object, selected row `DrilldownTarget` when present, `inspectorTab` |
+| `inspector` | environment, entitlement context, `runId`, `baselineRunId`, `hierarchyNodeId`, `analysisMode`, `capitalView`, `framework`, `scenario`, `timeWindow`, `customWindow` when custom, selected object, `selectedDrilldownTarget` when present, `inspectorTab` |
 | `artifactPage` | environment, entitlement context, `runId`, `baselineRunId`, `hierarchyNodeId`, `analysisMode`, `capitalView`, `framework`, `scenario`, `timeWindow`, `customWindow` when custom, `gridMode`, selected object, `artifactId`, `columns`, page filters, state filters, server-side `gridSearch`, `limit`, `offset` |
 | `explanationSnapshot` | environment, entitlement context, all snapshot query fields plus visible row IDs |
 | `explanationResult` | environment, entitlement context, `explanationId`, `inputSnapshotHash` |
@@ -599,8 +627,8 @@ Local storage may store:
 
 - hierarchy rail collapsed/expanded state and width;
 - density preference;
-- display-only column sizing/visibility preferences that do not change server
-  projection or aggregate content;
+- `columnLayout` display preferences that do not change server projection or
+  aggregate content;
 - pinned/favourite hierarchy scopes.
 
 Local storage must not store:
@@ -666,6 +694,8 @@ When implementing this state contract, tests should cover:
 - State normalization and compatibility matrix cases.
 - Binding-view row selection through resolved `DrilldownTarget`, including
   output-floor-driven binding rows.
+- Deferred inspector requests while a restored selected row is waiting for its
+  server-resolved `selectedDrilldownTarget`.
 - `window=custom` parsing, serialization, invalid-window diagnostics, and cache
   invalidation.
 - Reset rules for run, baseline, scope, framework, scenario, mode, row, desk,
@@ -679,6 +709,8 @@ When implementing this state contract, tests should cover:
 - Client-side versus server-side search behavior.
 - Artifact/source-row paging inherits run, baseline, scope, framework, scenario,
   mode, filters, and selected object.
+- `artifactId` remains the single selected artifact identifier; `artifactPage`
+  carries only paging, projection, and artifact-local filters.
 - Stale inspector prevention after scope, row, scenario, and mode changes.
 - Explanation invalidation when `inputSnapshotHash` changes.
 - Local-storage preference migration and parse failure.
