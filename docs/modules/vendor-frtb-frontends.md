@@ -150,6 +150,7 @@ For the FRTB suite UI, prioritize:
 - reproducible filters and profile metadata in URL or run manifest.
 
 This aligns with existing attribution and governance expectations while matching the “workbench” patterns seen in Bloomberg and S&P and the control-plane depth from TickSmith.
+
 ## CAS allocation implications (casRisk.pdf)
 
 `casRisk.pdf` (October 2016) introduces Constrained Aumann-Shapley (CAS) allocation.
