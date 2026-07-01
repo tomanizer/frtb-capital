@@ -1,6 +1,6 @@
 {
   "profile_id": "US_NPR_2_0",
-  "profile_hash": "9d7d2190ab9b656d436849c1ddc6367f3ad35b4de9b901ca4ec7dadf8cf1236e",
+  "profile_hash": "8649d5366d0ca26225cc7c05673aeff0d4abb4efa25ac4f34faa99ed16950477",
   "input_hash": "0d90b8f8b8b9b50f27cd614fb54a9705aa566609dfc0d4c2650a8e0e1a50a717",
   "total_capital": 19700.12690314456,
   "warnings": [],
@@ -87,4 +87,3 @@
     ]
   ]
 }
-

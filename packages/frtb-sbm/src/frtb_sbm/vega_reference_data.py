@@ -17,7 +17,6 @@ from frtb_sbm.equity_reference_data import equity_bucket_definition
 from frtb_sbm.girr_reference_correlations import _exponential_tenor_correlation
 from frtb_sbm.girr_reference_data import (
     BASEL_GIRR_TENORS,
-    _ensure_girr_supported,
     girr_tenor_definition,
 )
 from frtb_sbm.reference_profiles import _coerce_risk_class, _resolve_supported_profile
@@ -30,6 +29,7 @@ GIRR_VEGA_RISK_WEIGHT_CAP = 1.0
 
 PROFILE_GIRR_VEGA_LIQUIDITY_HORIZON_DAYS: dict[SbmRegulatoryProfile, int] = {
     SbmRegulatoryProfile.BASEL_MAR21: 60,
+    SbmRegulatoryProfile.US_NPR_2_0: 60,
 }
 
 PROFILE_VEGA_LIQUIDITY_HORIZON_DAYS: dict[
@@ -43,7 +43,10 @@ PROFILE_VEGA_LIQUIDITY_HORIZON_DAYS: dict[
         SbmRiskClass.CSR_SEC_NONCTP: 120,
         SbmRiskClass.COMMODITY: 120,
         SbmRiskClass.FX: 40,
-    }
+    },
+    SbmRegulatoryProfile.US_NPR_2_0: {
+        SbmRiskClass.GIRR: 60,
+    },
 }
 
 EQUITY_VEGA_LARGE_CAP_INDEX_LIQUIDITY_HORIZON_DAYS = 20
@@ -58,6 +61,24 @@ PROFILE_GIRR_VEGA_OPTION_TENORS: dict[
     tuple[SbmGirrTenorDefinition, ...],
 ] = {
     SbmRegulatoryProfile.BASEL_MAR21: BASEL_GIRR_TENORS,
+    SbmRegulatoryProfile.US_NPR_2_0: tuple(
+        SbmGirrTenorDefinition(
+            tenor.tenor,
+            tenor.maturity_years,
+            "us_npr_91_fr_14952_va7a_girr_vega_option_tenors",
+        )
+        for tenor in BASEL_GIRR_TENORS
+    ),
+}
+
+PROFILE_GIRR_VEGA_LIQUIDITY_HORIZON_CITATION_IDS: dict[SbmRegulatoryProfile, str] = {
+    SbmRegulatoryProfile.BASEL_MAR21: "basel_mar21_92",
+    SbmRegulatoryProfile.US_NPR_2_0: "us_npr_91_fr_14952_va7a_girr_vega_lh_rw",
+}
+
+PROFILE_GIRR_VEGA_INTRA_BUCKET_CITATION_IDS: dict[SbmRegulatoryProfile, str] = {
+    SbmRegulatoryProfile.BASEL_MAR21: "basel_mar21_93",
+    SbmRegulatoryProfile.US_NPR_2_0: "us_npr_91_fr_14952_va7a_girr_vega_intra",
 }
 
 
@@ -139,13 +160,14 @@ def vega_risk_weight(
     tuple[float, tuple[str, ...]]
     """
 
+    resolved = _resolve_supported_profile(profile)
     _ensure_vega_supported(profile)
     horizon = require_positive_int(liquidity_horizon_days, "liquidity_horizon_days")
     risk_weight = min(
         GIRR_VEGA_RISK_WEIGHT_CAP,
         GIRR_VEGA_RISK_WEIGHT_FACTOR * math.sqrt(horizon / 10.0),
     )
-    return risk_weight, ("basel_mar21_92",)
+    return risk_weight, (PROFILE_GIRR_VEGA_LIQUIDITY_HORIZON_CITATION_IDS[resolved],)
 
 
 def girr_vega_option_tenors(
@@ -227,7 +249,8 @@ def girr_vega_intra_bucket_correlation(
         constant=GIRR_VEGA_INTRA_BUCKET_CONSTANT,
         floor=None,
     )
-    return min(1.0, rho_opt * rho_ul), ("basel_mar21_93",)
+    resolved = _resolve_supported_profile(profile)
+    return min(1.0, rho_opt * rho_ul), (PROFILE_GIRR_VEGA_INTRA_BUCKET_CITATION_IDS[resolved],)
 
 
 def vega_option_tenor_correlation(
@@ -251,6 +274,7 @@ def vega_option_tenor_correlation(
     tuple[float, tuple[str, ...]]
     """
 
+    resolved = _resolve_supported_profile(profile)
     _ensure_vega_supported(profile)
     option_maturity1 = girr_vega_option_tenor_definition(profile, option_tenor1).maturity_years
     option_maturity2 = girr_vega_option_tenor_definition(profile, option_tenor2).maturity_years
@@ -261,20 +285,27 @@ def vega_option_tenor_correlation(
             constant=GIRR_VEGA_INTRA_BUCKET_CONSTANT,
             floor=None,
         ),
-        ("basel_mar21_93",),
+        (PROFILE_GIRR_VEGA_INTRA_BUCKET_CITATION_IDS[resolved],),
     )
 
 
 def _ensure_vega_supported(profile: SbmRegulatoryProfile | str) -> None:
     resolved = _resolve_supported_profile(profile)
-    if resolved is not SbmRegulatoryProfile.BASEL_MAR21:
+    if resolved not in PROFILE_VEGA_LIQUIDITY_HORIZON_DAYS:
         raise UnsupportedRegulatoryFeatureError(
             f"vega reference data is unsupported for profile {resolved.value}"
         )
 
 
 def _ensure_girr_vega_supported(profile: SbmRegulatoryProfile | str) -> None:
-    _ensure_girr_supported(profile)
+    resolved = _resolve_supported_profile(profile)
+    if (
+        resolved not in PROFILE_GIRR_VEGA_LIQUIDITY_HORIZON_DAYS
+        or resolved not in PROFILE_GIRR_VEGA_OPTION_TENORS
+    ):
+        raise UnsupportedRegulatoryFeatureError(
+            f"GIRR vega reference data is unsupported for profile {resolved.value}"
+        )
 
 
 __all__ = [
@@ -285,6 +316,8 @@ __all__ = [
     "GIRR_VEGA_INTRA_BUCKET_CONSTANT",
     "GIRR_VEGA_RISK_WEIGHT_CAP",
     "GIRR_VEGA_RISK_WEIGHT_FACTOR",
+    "PROFILE_GIRR_VEGA_INTRA_BUCKET_CITATION_IDS",
+    "PROFILE_GIRR_VEGA_LIQUIDITY_HORIZON_CITATION_IDS",
     "PROFILE_GIRR_VEGA_LIQUIDITY_HORIZON_DAYS",
     "PROFILE_GIRR_VEGA_OPTION_TENORS",
     "PROFILE_VEGA_LIQUIDITY_HORIZON_DAYS",

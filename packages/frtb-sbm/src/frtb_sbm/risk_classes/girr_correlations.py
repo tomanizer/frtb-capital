@@ -67,6 +67,27 @@ _PROFILE_GIRR_DELTA_SCENARIO_CITATIONS = {
     SbmRegulatoryProfile.US_NPR_2_0.value: ("us_npr_91_fr_14952_va7a_correlation_scenarios",),
     SbmRegulatoryProfile.PRA_UK_CRR.value: ("pra_uk_crr_325h_correlation_scenarios",),
 }
+_PROFILE_GIRR_VEGA_INTRA_CITATIONS = {
+    SbmRegulatoryProfile.BASEL_MAR21.value: _GIRR_VEGA_INTRA_CITATIONS,
+    SbmRegulatoryProfile.US_NPR_2_0.value: (
+        "us_npr_91_fr_14952_va7a_sbm_scope",
+        "us_npr_91_fr_14952_va7a_girr_vega_intra",
+    ),
+}
+_PROFILE_GIRR_VEGA_INTER_CITATIONS = {
+    SbmRegulatoryProfile.BASEL_MAR21.value: _GIRR_VEGA_INTER_CITATIONS,
+    SbmRegulatoryProfile.US_NPR_2_0.value: (
+        "us_npr_91_fr_14952_va7a_sbm_scope",
+        "us_npr_91_fr_14952_va7a_girr_vega_inter",
+    ),
+}
+_PROFILE_GIRR_VEGA_SCENARIO_CITATIONS = {
+    SbmRegulatoryProfile.BASEL_MAR21.value: (
+        "basel_mar21_6_correlation_scenarios",
+        "basel_mar21_7_scenario_selection",
+    ),
+    SbmRegulatoryProfile.US_NPR_2_0.value: ("us_npr_91_fr_14952_va7a_correlation_scenarios",),
+}
 
 
 def _aggregate_girr_measure_capital(
@@ -122,20 +143,17 @@ def _aggregate_girr_measure_capital(
         citation_ids=(
             _girr_delta_scenario_citations(profile_id)
             if risk_measure is SbmRiskMeasure.DELTA
-            else (
-                "basel_mar21_6_correlation_scenarios",
-                "basel_mar21_7_scenario_selection",
-            )
+            else _girr_vega_scenario_citations(profile_id)
         ),
         intra_bucket_citation_ids=(
             _girr_delta_intra_citations(profile_id)
             if risk_measure is SbmRiskMeasure.DELTA
-            else _GIRR_VEGA_INTRA_CITATIONS
+            else _girr_vega_intra_citations(profile_id)
         ),
         inter_bucket_citation_ids=(
             _girr_delta_inter_citations(profile_id)
             if risk_measure is SbmRiskMeasure.DELTA
-            else _GIRR_VEGA_INTER_CITATIONS
+            else _girr_vega_inter_citations(profile_id)
         ),
         pairwise_evidence_mode=pairwise_evidence_mode,
         pairwise_evidence_limit=pairwise_evidence_limit,
@@ -166,6 +184,33 @@ def _girr_delta_inter_citations(profile_id: str) -> tuple[str, ...]:
     except KeyError as exc:
         raise UnsupportedRegulatoryFeatureError(
             f"GIRR delta inter-bucket citations are unsupported for profile={profile_id}"
+        ) from exc
+
+
+def _girr_vega_scenario_citations(profile_id: str) -> tuple[str, ...]:
+    try:
+        return _PROFILE_GIRR_VEGA_SCENARIO_CITATIONS[profile_id]
+    except KeyError as exc:
+        raise UnsupportedRegulatoryFeatureError(
+            f"GIRR vega scenario citations are unsupported for profile={profile_id}"
+        ) from exc
+
+
+def _girr_vega_intra_citations(profile_id: str) -> tuple[str, ...]:
+    try:
+        return _PROFILE_GIRR_VEGA_INTRA_CITATIONS[profile_id]
+    except KeyError as exc:
+        raise UnsupportedRegulatoryFeatureError(
+            f"GIRR vega intra-bucket citations are unsupported for profile={profile_id}"
+        ) from exc
+
+
+def _girr_vega_inter_citations(profile_id: str) -> tuple[str, ...]:
+    try:
+        return _PROFILE_GIRR_VEGA_INTER_CITATIONS[profile_id]
+    except KeyError as exc:
+        raise UnsupportedRegulatoryFeatureError(
+            f"GIRR vega inter-bucket citations are unsupported for profile={profile_id}"
         ) from exc
 
 

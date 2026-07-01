@@ -22,7 +22,12 @@ from frtb_sbm.equity_reference_data import (
     _require_equity_bucket_number,
     equity_inter_bucket_correlation,
 )
+from frtb_sbm.girr_reference_tables import (
+    PROFILE_GIRR_CURVATURE_INTER_BUCKET_CITATION_IDS,
+    PROFILE_GIRR_CURVATURE_INTRA_BUCKET_CITATION_IDS,
+)
 from frtb_sbm.reference_data import fx_inter_bucket_correlation, girr_inter_bucket_correlation
+from frtb_sbm.reference_profiles import _resolve_supported_profile
 
 _MAR21_CURVATURE_INTRA_CITATION = (
     "basel_mar21_curvature",
@@ -103,9 +108,14 @@ def _curvature_inter_bucket_correlation(
     )
 
 
-def _curvature_intra_citation_ids(risk_class: SbmRiskClass) -> tuple[str, ...]:
+def _curvature_intra_citation_ids(
+    risk_class: SbmRiskClass,
+    profile_id: str = "BASEL_MAR21",
+) -> tuple[str, ...]:
     if risk_class is SbmRiskClass.GIRR:
-        return (*_MAR21_CURVATURE_INTRA_CITATION, "basel_mar21_45_49")
+        return PROFILE_GIRR_CURVATURE_INTRA_BUCKET_CITATION_IDS[
+            _resolve_supported_profile(profile_id)
+        ]
     if risk_class is SbmRiskClass.FX:
         return (*_MAR21_CURVATURE_INTRA_CITATION, "basel_mar21_86")
     if risk_class is SbmRiskClass.EQUITY:
@@ -121,9 +131,14 @@ def _curvature_intra_citation_ids(risk_class: SbmRiskClass) -> tuple[str, ...]:
     return _MAR21_CURVATURE_INTRA_CITATION
 
 
-def _curvature_inter_citation_ids(risk_class: SbmRiskClass) -> tuple[str, ...]:
+def _curvature_inter_citation_ids(
+    risk_class: SbmRiskClass,
+    profile_id: str = "BASEL_MAR21",
+) -> tuple[str, ...]:
     if risk_class is SbmRiskClass.GIRR:
-        return (*_MAR21_CURVATURE_INTER_CITATION, "basel_mar21_50")
+        return PROFILE_GIRR_CURVATURE_INTER_BUCKET_CITATION_IDS[
+            _resolve_supported_profile(profile_id)
+        ]
     if risk_class is SbmRiskClass.FX:
         return (*_MAR21_CURVATURE_INTER_CITATION, "basel_mar21_89")
     if risk_class is SbmRiskClass.EQUITY:

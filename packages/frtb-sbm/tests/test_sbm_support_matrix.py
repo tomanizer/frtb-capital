@@ -22,7 +22,13 @@ NON_BASEL_PROFILES = (
     SbmRegulatoryProfile.PRA_UK_CRR,
 )
 
-US_NPR_EXPECTED_PATHS = frozenset({(SbmRiskClass.GIRR, SbmRiskMeasure.DELTA)})
+US_NPR_EXPECTED_PATHS = frozenset(
+    {
+        (SbmRiskClass.GIRR, SbmRiskMeasure.DELTA),
+        (SbmRiskClass.GIRR, SbmRiskMeasure.VEGA),
+        (SbmRiskClass.GIRR, SbmRiskMeasure.CURVATURE),
+    }
+)
 PRA_UK_CRR_EXPECTED_PATHS = frozenset({(SbmRiskClass.GIRR, SbmRiskMeasure.DELTA)})
 COMPARISON_PROFILE_EXPECTED_PATHS = {
     SbmRegulatoryProfile.US_NPR_2_0: US_NPR_EXPECTED_PATHS,
@@ -53,7 +59,7 @@ def test_basel_phase1_support_matrix_covers_every_risk_class_measure() -> None:
         )
 
 
-def test_us_npr_profile_supports_only_girr_delta() -> None:
+def test_us_npr_profile_supports_only_girr_delta_vega_and_curvature() -> None:
     assert phase1_capital_supported_paths(SbmRegulatoryProfile.US_NPR_2_0.value) == (
         US_NPR_EXPECTED_PATHS
     )
@@ -61,6 +67,16 @@ def test_us_npr_profile_supports_only_girr_delta() -> None:
         SbmRegulatoryProfile.US_NPR_2_0.value,
         SbmRiskClass.GIRR,
         SbmRiskMeasure.DELTA,
+    )
+    ensure_sbm_risk_class_measure_supported(
+        SbmRegulatoryProfile.US_NPR_2_0.value,
+        SbmRiskClass.GIRR,
+        SbmRiskMeasure.VEGA,
+    )
+    ensure_sbm_risk_class_measure_supported(
+        SbmRegulatoryProfile.US_NPR_2_0.value,
+        SbmRiskClass.GIRR,
+        SbmRiskMeasure.CURVATURE,
     )
 
     for risk_class in SbmRiskClass:
@@ -150,11 +166,11 @@ def test_traceability_support_matrix_lists_every_basel_path() -> None:
         row = f"| {label} | {implemented} | {implemented} | {implemented} |"
         assert row in traceability
 
-    assert "| `US_NPR_2_0` | partial (1 / 21 cells) |" in traceability
+    assert "| `US_NPR_2_0` | partial (3 / 21 cells) |" in traceability
     assert "| `PRA_UK_CRR` | partial (1 / 21 cells) |" in traceability
     assert f"| `{SbmRegulatoryProfile.EU_CRR3.value}` | unsupported fail-closed" in traceability
     assert (
-        "| GIRR | implemented under audit | unsupported fail-closed | unsupported fail-closed |"
+        "| GIRR | implemented under audit | implemented under audit | implemented under audit |"
         " unsupported fail-closed | unsupported fail-closed | unsupported fail-closed |"
         " implemented under audit | unsupported fail-closed | unsupported fail-closed |"
         in traceability
@@ -165,6 +181,8 @@ def test_traceability_support_matrix_lists_every_basel_path() -> None:
     )
     assert "ADR 0048" in traceability
     assert "girr_delta_us_npr_v1" in traceability
+    assert "girr_vega_us_npr_v1" in traceability
+    assert "girr_curvature_us_npr_v1" in traceability
     assert "girr_delta_pra_uk_crr_v1" in traceability
 
     for issue_number in ("#160", "#161", "#166", "#169", "#226", "#244"):

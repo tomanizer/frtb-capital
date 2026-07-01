@@ -14,6 +14,7 @@ from typing import TypeVar
 from frtb_sbm._errors import SbmInputError
 from frtb_sbm._text import require_text as _require_text
 from frtb_sbm.data_models import (
+    SbmFxRiskFactorBasis,
     SbmPairwiseEvidenceMode,
     SbmRiskClass,
     SbmRiskMeasure,
@@ -23,6 +24,7 @@ from frtb_sbm.data_models import (
 
 EnumT = TypeVar(
     "EnumT",
+    SbmFxRiskFactorBasis,
     SbmPairwiseEvidenceMode,
     SbmRiskClass,
     SbmRiskMeasure,
@@ -141,6 +143,24 @@ def coerce_pairwise_evidence_mode(
     return _coerce_enum(value, SbmPairwiseEvidenceMode, "pairwise_evidence_mode")
 
 
+def coerce_fx_risk_factor_basis(
+    value: SbmFxRiskFactorBasis | str,
+) -> SbmFxRiskFactorBasis:
+    """Normalise an FX risk-factor basis to the canonical enum.
+
+    Parameters
+    ----------
+    value : SbmFxRiskFactorBasis | str
+        Candidate FX risk-factor basis.
+
+    Returns
+    -------
+    SbmFxRiskFactorBasis
+    """
+
+    return _coerce_enum(value, SbmFxRiskFactorBasis, "fx_risk_factor_basis")
+
+
 def sensitivity_sort_key(sensitivity: SbmSensitivity) -> tuple[str, str, str, str, str]:
     """Return a deterministic ordering key for one sensitivity.
     Parameters
@@ -245,6 +265,7 @@ def require_positive_int(value: object, field: str, sensitivity_id: str = "") ->
 
 
 __all__ = [
+    "coerce_fx_risk_factor_basis",
     "coerce_pairwise_evidence_mode",
     "coerce_risk_class",
     "coerce_risk_measure",

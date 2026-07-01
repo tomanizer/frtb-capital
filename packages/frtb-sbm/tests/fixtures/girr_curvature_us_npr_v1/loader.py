@@ -36,7 +36,6 @@ def _sensitivity_from_payload(payload: dict[str, Any]) -> SbmSensitivity:
     return sbm_sensitivity_from_payload(
         payload,
         text_fields=("tenor", "option_tenor", "maturity", "qualifier"),
-        int_fields=("liquidity_horizon_days",),
         float_fields=("up_shock_amount", "down_shock_amount"),
     )
 

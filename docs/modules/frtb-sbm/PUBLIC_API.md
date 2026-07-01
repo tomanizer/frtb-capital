@@ -4,14 +4,14 @@ This document defines the stable client integration surface for `frtb_sbm`.
 Symbols listed here are top-level imports unless explicitly marked
 submodule-only. Outputs are not final regulatory capital; package validation
 status remains pending and supported runtime paths are limited to documented
-BASEL_MAR21 slices plus the `US_NPR_2_0` GIRR delta comparison slice.
+BASEL_MAR21 slices plus the `US_NPR_2_0` GIRR delta, GIRR vega, and GIRR curvature comparison slices.
 
 ## Stable surface
 
 | Category | Symbols | Rationale |
 | --- | --- | --- |
 | Package identity | `PACKAGE_METADATA`, `__version__` | Workspace discovery and status reporting. |
-| Row entry (Tier 3) | `calculate_sbm_capital`, `SbmSensitivity`, `SbmCalculationContext`, `SbmCapitalResult`, `SbmRiskClass`, `SbmRiskMeasure`, `SbmRegulatoryProfile`, `SbmSourceLineage` | Small books, tests, notebooks, and fixture workflows. |
+| Row entry (Tier 3) | `calculate_sbm_capital`, `SbmSensitivity`, `SbmCalculationContext`, `SbmCapitalResult`, `SbmRiskClass`, `SbmRiskMeasure`, `SbmRegulatoryProfile`, `SbmRunControls`, `SbmFxRiskFactorBasis`, `SbmSourceLineage` | Small books, tests, notebooks, fixture workflows, and explicit FX currency-basis controls. |
 | Registry | `SBM_BATCH_SPECS`, `SBM_BATCH_PATH_ORDER`, `SbmBatchSpec` | Canonical `(SbmRiskClass, SbmRiskMeasure)` routing table for supported batch paths. |
 | Batch entry (Tier 1) | `SbmSensitivityBatch`, `build_sbm_batch`, `build_sbm_batch_from_arrow`, `calculate_sbm_capital_from_arrow`, `calculate_sbm_capital_from_batch`, `calculate_sbm_portfolio_capital_from_batches`, `calculate_sbm_portfolio_capital_from_arrow_tables`, `input_hash_for_batch` | Production input table path from normalized Arrow tables to package-owned NumPy batches. |
 | InputTable specs | All `*_ARROW_COLUMN_SPECS` symbols listed below | Client schema alignment and generated schema export. |
@@ -92,8 +92,8 @@ every documented input_table symbol to remain importable.
 | 3 - Canonical dataclasses | `tuple[SbmSensitivity, ...]` plus `SbmCalculationContext` | `calculate_sbm_capital` | Small books, tests, and notebooks only. |
 
 Supported runtime profiles: `BASEL_MAR21` for implemented delta, vega, and
-curvature paths, plus `US_NPR_2_0` and `PRA_UK_CRR` for GIRR delta only, as
-described in
+curvature paths, plus `US_NPR_2_0` for GIRR delta, GIRR vega, and GIRR
+curvature and `PRA_UK_CRR` for GIRR delta only, as described in
 [`packages/frtb-sbm/docs/REGULATORY_TRACEABILITY.md`](../../../packages/frtb-sbm/docs/REGULATORY_TRACEABILITY.md).
 All other U.S. NPR 2.0 cells, all EU CRR3 cells, and all PRA UK CRR cells
 outside GIRR delta fail closed until separately implemented and cited.

@@ -27,12 +27,12 @@ batch, and Arrow batch curvature paths for:
 The package also supports CRIF/CSV adapter paths where input rows map to the
 canonical sensitivity model and preserve source lineage.
 
-The package also supports `US_NPR_2_0` GIRR delta as a proposed-rule comparison
-slice under Federal Register 91 FR 14952 section V.A.7.a and `PRA_UK_CRR` GIRR
-delta under PRA PS1/26 Appendix 1 / PRA2026/1 Articles 325c, 325h, and
-325ae-325ag. All other U.S. NPR 2.0 cells, all EU CRR3 cells, and all PRA UK
-CRR cells outside GIRR delta fail closed until profile-specific citations and
-deterministic fixtures are added.
+The package also supports `US_NPR_2_0` GIRR delta, GIRR vega, and GIRR curvature
+as proposed-rule comparison slices under Federal Register 91 FR 14952 section
+V.A.7.a and `PRA_UK_CRR` GIRR delta under PRA PS1/26 Appendix 1 / PRA2026/1
+Articles 325c, 325h, and 325ae-325ag. All other U.S. NPR 2.0 cells, all EU
+CRR3 cells, and all PRA UK CRR cells outside GIRR delta fail closed until
+profile-specific citations and deterministic fixtures are added.
 
 Post-calculation attribution is supported for selected, differentiable delta and
 vega branches through analytical Euler `CapitalContribution` records. Curvature
@@ -42,7 +42,7 @@ available as finite difference and is separate from marginal contribution.
 
 ## Out Of Scope
 
-- U.S. NPR 2.0 runtime capital outside GIRR delta;
+- U.S. NPR 2.0 runtime capital outside GIRR delta, GIRR vega, and GIRR curvature;
 - EU CRR3 and PRA UK CRR runtime capital;
 - market-data sourcing, pricing, and sensitivity generation;
 - total SA aggregation across SBM, DRC, and RRAO;

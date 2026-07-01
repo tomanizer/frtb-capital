@@ -32,6 +32,78 @@ US_NPR_2_0_CITATIONS: dict[str, SbmCitation] = {
         url=US_NPR_2_0_URL,
         note="GIRR delta tenor risk weights used by the NPR comparison slice.",
     ),
+    "us_npr_91_fr_14952_va7a_girr_vega_option_tenors": SbmCitation(
+        source_id="us_npr_2_0_91_fr_14952",
+        location="91 FR 15020, section V.A.7.a, footnote 256",
+        url=US_NPR_2_0_URL,
+        note="GIRR vega option- and underlying-tenor axes used by the NPR comparison slice.",
+    ),
+    "us_npr_91_fr_14952_va7a_girr_vega_lh_rw": SbmCitation(
+        source_id="us_npr_2_0_91_fr_14952",
+        location="91 FR 15020, section V.A.7.a, footnote 256",
+        url=US_NPR_2_0_URL,
+        note="GIRR vega liquidity-horizon scaling and risk-weight treatment.",
+    ),
+    "us_npr_91_fr_14952_va7a_girr_vega_intra": SbmCitation(
+        source_id="us_npr_2_0_91_fr_14952",
+        location="91 FR 15020, section V.A.7.a, footnote 256",
+        url=US_NPR_2_0_URL,
+        note="GIRR vega same-bucket option-tenor and underlying-tenor correlation treatment.",
+    ),
+    "us_npr_91_fr_14952_va7a_girr_vega_inter": SbmCitation(
+        source_id="us_npr_2_0_91_fr_14952",
+        location="91 FR 15020, section V.A.7.a, footnote 256",
+        url=US_NPR_2_0_URL,
+        note="GIRR vega cross-bucket correlation treatment used by the NPR comparison slice.",
+    ),
+    "us_npr_91_fr_14952_va7a_girr_curvature_factors": SbmCitation(
+        source_id="us_npr_2_0_91_fr_14952",
+        location="91 FR 15037-15038, section V.A.7.a",
+        url=US_NPR_2_0_URL,
+        note="GIRR curvature sensitivity and risk-factor treatment for the NPR comparison slice.",
+    ),
+    "us_npr_91_fr_14952_va7a_girr_curvature_shocks": SbmCitation(
+        source_id="us_npr_2_0_91_fr_14952",
+        location="91 FR 15037-15038, section V.A.7.a",
+        url=US_NPR_2_0_URL,
+        note="GIRR curvature upward/downward shock and risk-weight treatment.",
+    ),
+    "us_npr_91_fr_14952_va7a_girr_curvature_intra": SbmCitation(
+        source_id="us_npr_2_0_91_fr_14952",
+        location="91 FR 15038, section V.A.7.a",
+        url=US_NPR_2_0_URL,
+        note="GIRR curvature intra-bucket aggregation and correlation treatment.",
+    ),
+    "us_npr_91_fr_14952_va7a_girr_curvature_inter": SbmCitation(
+        source_id="us_npr_2_0_91_fr_14952",
+        location="91 FR 15038, section V.A.7.a",
+        url=US_NPR_2_0_URL,
+        note="GIRR curvature inter-bucket aggregation and correlation treatment.",
+    ),
+    "us_npr_91_fr_14952_va7a_girr_curvature_scenarios": SbmCitation(
+        source_id="us_npr_2_0_91_fr_14952",
+        location="91 FR 15038, section V.A.7.a",
+        url=US_NPR_2_0_URL,
+        note="GIRR curvature low, medium, and high correlation scenario selection.",
+    ),
+    "us_npr_91_fr_14952_va7a_fx_reporting_currency": SbmCitation(
+        source_id="us_npr_2_0_91_fr_14952",
+        location="91 FR 15020, section V.A.7.a",
+        url=US_NPR_2_0_URL,
+        note=(
+            "FX risk factors are treated as reporting-currency currency-pair "
+            "sensitivities for the initial NPR comparison-profile FX slice."
+        ),
+    ),
+    "us_npr_91_fr_14952_va7a_fx_base_currency_approval": SbmCitation(
+        source_id="us_npr_2_0_91_fr_14952",
+        location="91 FR 15020, section V.A.7.a",
+        url=US_NPR_2_0_URL,
+        note=(
+            "FX base-currency treatment requires prior supervisory approval and "
+            "explicit translation-risk evidence before runtime support can open."
+        ),
+    ),
     "us_npr_91_fr_14952_va7a_girr_special_factors": SbmCitation(
         source_id="us_npr_2_0_91_fr_14952",
         location="91 FR 15020, section V.A.7.a",

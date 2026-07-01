@@ -21,6 +21,11 @@ from frtb_sbm.girr_reference_tables import (
     GIRR_DELTA_INTRA_BUCKET_CONSTANT,
     GIRR_INTER_BUCKET_CORRELATION,
     GIRR_INTRA_BUCKET_CORRELATION_FLOOR,
+    PROFILE_GIRR_CURVATURE_CITATION_IDS,
+    PROFILE_GIRR_CURVATURE_INTER_BUCKET_CITATION_IDS,
+    PROFILE_GIRR_CURVATURE_INTRA_BUCKET_CITATION_IDS,
+    PROFILE_GIRR_CURVATURE_RISK_WEIGHT_CITATION_IDS,
+    PROFILE_GIRR_CURVATURE_SCENARIO_CITATION_IDS,
     PROFILE_GIRR_DELTA_INTER_BUCKET_CITATION_IDS,
     PROFILE_GIRR_DELTA_INTRA_BUCKET_CITATION_IDS,
     PROFILE_GIRR_DELTA_RISK_WEIGHTS,
@@ -39,6 +44,8 @@ from frtb_sbm.vega_reference_data import (
     GIRR_VEGA_INTRA_BUCKET_CONSTANT,
     GIRR_VEGA_RISK_WEIGHT_CAP,
     GIRR_VEGA_RISK_WEIGHT_FACTOR,
+    PROFILE_GIRR_VEGA_INTRA_BUCKET_CITATION_IDS,
+    PROFILE_GIRR_VEGA_LIQUIDITY_HORIZON_CITATION_IDS,
     PROFILE_GIRR_VEGA_LIQUIDITY_HORIZON_DAYS,
     PROFILE_VEGA_LIQUIDITY_HORIZON_DAYS,
     girr_vega_option_tenors,
@@ -63,6 +70,7 @@ def profile_reference_payload(profile: SbmRegulatoryProfile | str) -> dict[str, 
     payload = _base_payload(resolved)
     _add_girr_delta_payload(payload, resolved)
     _add_girr_vega_payload(payload, resolved)
+    _add_girr_curvature_payload(payload, resolved)
     _add_non_girr_vega_payload(payload, resolved)
     _add_fx_payload(payload, resolved)
     _add_basel_curvature_and_non_girr_payloads(payload, resolved)
@@ -156,8 +164,10 @@ def _add_girr_vega_payload(payload: dict[str, object], profile: SbmRegulatoryPro
                 "risk_weight_factor": GIRR_VEGA_RISK_WEIGHT_FACTOR,
                 "risk_weight_cap": GIRR_VEGA_RISK_WEIGHT_CAP,
                 "intra_bucket_constant": GIRR_VEGA_INTRA_BUCKET_CONSTANT,
-                "liquidity_horizon_citation_id": "basel_mar21_92",
-                "intra_bucket_citation_id": "basel_mar21_93",
+                "liquidity_horizon_citation_id": (
+                    PROFILE_GIRR_VEGA_LIQUIDITY_HORIZON_CITATION_IDS[profile]
+                ),
+                "intra_bucket_citation_id": PROFILE_GIRR_VEGA_INTRA_BUCKET_CITATION_IDS[profile],
             },
             "girr_vega_option_tenors": [
                 {
@@ -169,6 +179,27 @@ def _add_girr_vega_payload(payload: dict[str, object], profile: SbmRegulatoryPro
             ],
         }
     )
+
+
+def _add_girr_curvature_payload(payload: dict[str, object], profile: SbmRegulatoryProfile) -> None:
+    if profile is SbmRegulatoryProfile.BASEL_MAR21:
+        return
+    if profile not in PROFILE_GIRR_CURVATURE_CITATION_IDS:
+        return
+    payload["girr_curvature_parameters"] = {
+        "citation_ids": list(PROFILE_GIRR_CURVATURE_CITATION_IDS[profile]),
+        "parallel_shift_risk_weight": max(
+            rule.risk_weight for rule in PROFILE_GIRR_DELTA_RISK_WEIGHTS[profile]
+        ),
+        "risk_weight_citation_id": PROFILE_GIRR_CURVATURE_RISK_WEIGHT_CITATION_IDS[profile],
+        "intra_bucket_citation_ids": list(
+            PROFILE_GIRR_CURVATURE_INTRA_BUCKET_CITATION_IDS[profile]
+        ),
+        "inter_bucket_citation_ids": list(
+            PROFILE_GIRR_CURVATURE_INTER_BUCKET_CITATION_IDS[profile]
+        ),
+        "scenario_citation_ids": list(PROFILE_GIRR_CURVATURE_SCENARIO_CITATION_IDS[profile]),
+    }
 
 
 def _add_non_girr_vega_payload(payload: dict[str, object], profile: SbmRegulatoryProfile) -> None:

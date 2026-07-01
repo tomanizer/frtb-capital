@@ -1,0 +1,86 @@
+{
+  "profile_id": "US_NPR_2_0",
+  "profile_hash": "8649d5366d0ca26225cc7c05673aeff0d4abb4efa25ac4f34faa99ed16950477",
+  "input_hash": "59b8d4e591748d3537234463a1958ccecc2f245e7bef853d647201995fb93c31",
+  "total_capital": 547722.5575051662,
+  "warnings": [],
+  "selected_portfolio_scenario": "HIGH",
+  "portfolio_scenario_totals": {
+    "HIGH": 547722.5575051662,
+    "LOW": 498465.09602779144,
+    "MEDIUM": 523673.30080785835
+  },
+  "risk_classes": [
+    {
+      "risk_class": "GIRR",
+      "risk_measure": "VEGA",
+      "selected_capital": 547722.5575051662,
+      "selected_scenario": "HIGH",
+      "citation_ids": [
+        "us_npr_91_fr_14952_va7a_correlation_scenarios",
+        "us_npr_91_fr_14952_va7a_sbm_scope",
+        "us_npr_91_fr_14952_va7a_girr_vega_intra",
+        "us_npr_91_fr_14952_va7a_girr_vega_inter"
+      ]
+    }
+  ],
+  "scenario_totals": {
+    "HIGH": 547722.5575051662,
+    "LOW": 498465.09602779144,
+    "MEDIUM": 523673.30080785835
+  },
+  "buckets": [
+    [
+      {
+        "bucket_id": "1",
+        "kb": 400000.0,
+        "sb": 400000.0,
+        "citation_ids": [
+          "us_npr_91_fr_14952_va7a_sbm_scope",
+          "us_npr_91_fr_14952_va7a_girr_vega_intra"
+        ]
+      },
+      {
+        "bucket_id": "2",
+        "kb": 200000.0,
+        "sb": 200000.0,
+        "citation_ids": [
+          "us_npr_91_fr_14952_va7a_sbm_scope",
+          "us_npr_91_fr_14952_va7a_girr_vega_intra"
+        ]
+      }
+    ]
+  ],
+  "weighted_sensitivities": [
+    [
+      [
+        {
+          "sensitivity_id": "us-npr-eur-vega-1y",
+          "risk_weight": 1.0,
+          "scaled_amount": 250000.0,
+          "citation_ids": [
+            "us_npr_91_fr_14952_va7a_girr_vega_lh_rw"
+          ]
+        },
+        {
+          "sensitivity_id": "us-npr-eur-vega-5y",
+          "risk_weight": 1.0,
+          "scaled_amount": 150000.0,
+          "citation_ids": [
+            "us_npr_91_fr_14952_va7a_girr_vega_lh_rw"
+          ]
+        }
+      ],
+      [
+        {
+          "sensitivity_id": "us-npr-usd-vega-5y",
+          "risk_weight": 1.0,
+          "scaled_amount": 200000.0,
+          "citation_ids": [
+            "us_npr_91_fr_14952_va7a_girr_vega_lh_rw"
+          ]
+        }
+      ]
+    ]
+  ]
+}

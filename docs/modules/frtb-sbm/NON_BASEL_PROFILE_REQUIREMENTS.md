@@ -232,8 +232,8 @@ Add `tests/fixtures/girr_delta_us_npr_v1/` containing:
 - `manifest.json` with `profile: US_NPR_2_0`, schema version, file SHA256 hashes;
 - `sensitivities.json` — synthetic rows with NPR-appropriate bucket/tenor labels;
 - `expected_outputs.json` — total capital, bucket breakdown, citation ids;
-- `invalid_cases.json` — at least one fail-closed case (e.g. unsupported vega
-  under NPR profile);
+- `invalid_cases.json` — at least one fail-closed case (e.g. unsupported
+  curvature under NPR profile);
 - `loader.py` and `README.md` following existing fixture pack conventions.
 
 Existing `girr_delta_v1` manifest hashes must not change.
@@ -247,8 +247,86 @@ Required tests for the first slice:
 | Row-wise capital | `calculate_sbm_capital` matches fixture expected outputs |
 | Reference data | NPR weight lookup returns cited ids |
 | Regimes | `resolve_sbm_profile(US_NPR_2_0)` succeeds; profile hash stable |
-| Support matrix | Doc and `_PHASE1_SUPPORTED` include only GIRR/DELTA for NPR |
-| Fail-closed | NPR GIRR vega/curvature and all other NPR classes still raise |
+| Support matrix | Doc and `_PHASE1_SUPPORTED` include GIRR/DELTA for NPR |
+| Fail-closed | NPR GIRR vega, GIRR curvature, and all other NPR classes still raise until their slices land |
+| Batch parity | Package-owned batch matches row-wise for fixture sensitivities |
+| Arrow parity | Arrow batch handoff matches row-wise where adapter exists |
+
+## Second-slice requirements (`US_NPR_2_0` × GIRR × VEGA)
+
+### SBM-NBP-034: NPR GIRR vega reference data
+
+The package must provide `US_NPR_2_0` GIRR vega:
+
+- option-tenor and underlying-tenor reference data;
+- liquidity-horizon and risk-weight citation ids;
+- intra-bucket and inter-bucket correlation citation ids;
+- correlation scenario definitions with cited multipliers.
+
+Data must be stored in profile-keyed structures parallel to existing
+`BASEL_MAR21` GIRR vega reference data. The implementation must not silently
+fall back to Basel citation ids.
+
+### SBM-NBP-035: NPR GIRR vega fixture pack
+
+Add `tests/fixtures/girr_vega_us_npr_v1/` containing:
+
+- `manifest.json` with `profile: US_NPR_2_0`, schema version, file SHA256 hashes;
+- `sensitivities.json` with synthetic GIRR vega rows and profile-owned mapping citations;
+- `expected_outputs.json` with deterministic capital, profile hash, input hash, scenario totals, bucket details, weighted sensitivities, and citation ids;
+- `invalid_cases.json` covering missing option tenor plus still-unsupported NPR cells;
+- `loader.py` and `README.md` following existing fixture pack conventions.
+
+### SBM-NBP-036: NPR GIRR vega tests
+
+Required tests for the second slice:
+
+| Test | Requirement |
+| --- | --- |
+| Row-wise capital | `calculate_sbm_capital` matches fixture expected outputs |
+| Reference data | NPR GIRR vega lookup returns cited ids |
+| Citation hygiene | No Basel citation id appears in the NPR GIRR vega result payload |
+| Support matrix | Doc and `_PHASE1_SUPPORTED` include GIRR/DELTA and GIRR/VEGA for NPR |
+| Fail-closed | Non-GIRR NPR vega and curvature cells still raise until their slices land |
+| Batch parity | Package-owned batch matches row-wise for fixture sensitivities |
+| Arrow parity | Arrow batch handoff matches row-wise where adapter exists |
+
+## Third-slice requirements (`US_NPR_2_0` × GIRR × CURVATURE)
+
+### SBM-NBP-037: NPR GIRR curvature reference data
+
+The package must provide `US_NPR_2_0` GIRR curvature:
+
+- curvature sensitivity and risk-factor citation ids;
+- up/down shock and risk-weight citation ids;
+- intra-bucket and inter-bucket correlation citation ids;
+- correlation scenario and branch-selection citation ids.
+
+Data must be stored in profile-keyed structures parallel to existing
+`BASEL_MAR21` GIRR curvature reference data. The implementation must not
+silently fall back to Basel citation ids.
+
+### SBM-NBP-038: NPR GIRR curvature fixture pack
+
+Add `tests/fixtures/girr_curvature_us_npr_v1/` containing:
+
+- `manifest.json` with `profile: US_NPR_2_0`, schema version, file SHA256 hashes;
+- `sensitivities.json` with synthetic GIRR curvature rows and profile-owned mapping citations;
+- `expected_outputs.json` with deterministic capital, profile hash, input hash, scenario totals, bucket details, weighted sensitivities, CVR branch records, and citation ids;
+- `invalid_cases.json` covering missing up/down shocks plus still-unsupported NPR cells;
+- `loader.py` and `README.md` following existing fixture pack conventions.
+
+### SBM-NBP-039: NPR GIRR curvature tests
+
+Required tests for the third slice:
+
+| Test | Requirement |
+| --- | --- |
+| Row-wise capital | `calculate_sbm_capital` matches fixture expected outputs |
+| Reference data | NPR GIRR curvature lookup returns cited ids |
+| Citation hygiene | No Basel citation id appears in the NPR GIRR curvature result payload |
+| Support matrix | Doc and `_PHASE1_SUPPORTED` include exactly GIRR/DELTA, GIRR/VEGA, and GIRR/CURVATURE for NPR |
+| Fail-closed | Non-GIRR NPR curvature still raises |
 | Batch parity | Package-owned batch matches row-wise for fixture sensitivities |
 | Arrow parity | Arrow batch handoff matches row-wise where adapter exists |
 
@@ -262,6 +340,38 @@ If CRIF mapping is included in the first NPR slice, it must:
 
 CRIF omission is acceptable if documented as a follow-up; capital path must still
 meet SBM-NBP-032.
+
+## U.S. NPR FX policy requirements
+
+### SBM-NBP-043: NPR FX reporting-currency first policy
+
+The first `US_NPR_2_0` FX runtime slice must support reporting-currency FX risk
+factors only. The policy citation ids are:
+
+- `us_npr_91_fr_14952_va7a_fx_reporting_currency`;
+- `us_npr_91_fr_14952_va7a_fx_base_currency_approval`.
+
+Both ids cite Federal Register 91 FR 15020 section V.A.7.a in
+`reference_citations_us_npr.py`. The FX delta implementation must use
+profile-owned NPR FX reference data and must not infer base-currency approval
+from `SbmCalculationContext.base_currency`.
+
+### SBM-NBP-044: NPR FX base-currency treatment fails closed
+
+Base-currency FX treatment remains unsupported until a dedicated implementation
+models all required approval evidence. `SbmRunControls.fx_risk_factor_basis`
+must accept only `REPORTING_CURRENCY` in current runtime validation.
+`BASE_CURRENCY_APPROVED` must raise `UnsupportedRegulatoryFeatureError` even
+when `fx_base_currency_approval_ids` are supplied.
+
+Future support for `BASE_CURRENCY_APPROVED` must add:
+
+- prior supervisory approval identifier(s);
+- the single approved base currency;
+- explicit translation-risk treatment;
+- profile-owned FX reference data and citation ids;
+- deterministic reporting-currency and base-currency fixtures;
+- fail-closed tests for missing or malformed approval evidence.
 
 ---
 
@@ -333,10 +443,11 @@ must reflect the cited profile — not Basel shortcuts.
 | Requirement | Current evidence | Remaining target |
 | --- | --- | --- |
 | SBM-NBP-001 | Met (design + traceability link; `US_NPR_2_0` and `PRA_UK_CRR` partial matrices) | Maintain in traceability |
-| SBM-NBP-002 | Met for Basel, `US_NPR_2_0` GIRR delta, and `PRA_UK_CRR` GIRR delta via `test_sbm_support_matrix.py` | Extend for each new cell |
-| SBM-NBP-010 | Enforced for the implemented NPR and PRA GIRR delta slices through profile-owned citations and fixture citation checks | Extend for each new cell |
+| SBM-NBP-002 | Met for Basel, `US_NPR_2_0` GIRR delta/vega/curvature, and `PRA_UK_CRR` GIRR delta via `test_sbm_support_matrix.py` | Extend for each new cell |
+| SBM-NBP-010 | Enforced for the implemented NPR GIRR delta/vega/curvature and PRA GIRR delta slices through profile-owned citations and fixture citation checks | Extend for each new cell |
 | SBM-NBP-013 | Met for exact-cell PRA gating | Preserve as PRA coverage expands |
-| SBM-NBP-030–032 | Met for `US_NPR_2_0` GIRR delta with `girr_delta_us_npr_v1` and for `PRA_UK_CRR` GIRR delta with `girr_delta_pra_uk_crr_v1`; both have row/batch/Arrow tests | Extend to later cells |
+| SBM-NBP-030–039 | Met for `US_NPR_2_0` GIRR delta/vega/curvature with `girr_delta_us_npr_v1`, `girr_vega_us_npr_v1`, `girr_curvature_us_npr_v1`, and for `PRA_UK_CRR` GIRR delta with `girr_delta_pra_uk_crr_v1`; supported cells have row/batch/Arrow tests | Extend to later cells |
+| SBM-NBP-043–044 | Met for the NPR FX policy decision through reporting-currency citation ids, `SbmRunControls.fx_risk_factor_basis`, and fail-closed base-currency validation tests | Preserve when implementing FX delta |
 | SBM-NBP-040–042 | Met for unsupported NPR cells, EU cells, and unsupported PRA cells through fail-closed tests | Preserve as coverage expands |
 | SBM-NBP-060 | Required for implementation PRs | Run before push |
 
@@ -346,8 +457,8 @@ must reflect the cited profile — not Basel shortcuts.
 
 Use these titles when splitting implementation work:
 
-1. **SBM NPR GIRR vega/curvature** — extend NPR GIRR row (phase 2).
-2. **SBM NPR non-GIRR delta** — FX, equity, commodity, and CSR NPR mappings.
+1. **SBM NPR FX policy and FX delta** — resolve reporting-currency policy before opening FX runtime.
+2. **SBM NPR non-GIRR delta** — equity, commodity, and CSR NPR mappings.
 3. **SBM EU CRR3 GIRR delta** — article mapping + first EU cell (blocked on legal mapping review).
 4. **SBM PRA UK CRR next cells** — SBM-NBP-020 prerequisite satisfied by
    PS1/26 Appendix 1 / PRA2026/1; GIRR delta is implemented under audit, and

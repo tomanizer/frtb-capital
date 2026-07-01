@@ -1,0 +1,71 @@
+{
+  "context": {
+    "run_id": "sbm-girr-curvature-us-npr-v1",
+    "calculation_date": "2026-07-01",
+    "base_currency": "USD",
+    "reporting_currency": "USD",
+    "profile_id": "US_NPR_2_0"
+  },
+  "sensitivities": [
+    {
+      "sensitivity_id": "us-npr-usd-ois-curv",
+      "source_row_id": "row-301",
+      "desk_id": "rates-desk",
+      "legal_entity": "LE-001",
+      "risk_class": "GIRR",
+      "risk_measure": "CURVATURE",
+      "bucket": "2",
+      "risk_factor": "USD-OIS",
+      "amount": 0.0,
+      "amount_currency": "USD",
+      "tenor": "5y",
+      "up_shock_amount": 120.0,
+      "down_shock_amount": 80.0,
+      "sign_convention": "RECEIVE",
+      "mapping_citation_ids": [
+        "us_npr_91_fr_14952_va7a_girr_buckets",
+        "us_npr_91_fr_14952_va7a_girr_curvature_factors"
+      ]
+    },
+    {
+      "sensitivity_id": "us-npr-usd-libor-curv",
+      "source_row_id": "row-302",
+      "desk_id": "rates-desk",
+      "legal_entity": "LE-001",
+      "risk_class": "GIRR",
+      "risk_measure": "CURVATURE",
+      "bucket": "2",
+      "risk_factor": "USD-LIBOR",
+      "amount": 0.0,
+      "amount_currency": "USD",
+      "tenor": "5y",
+      "up_shock_amount": 60.0,
+      "down_shock_amount": 140.0,
+      "sign_convention": "RECEIVE",
+      "mapping_citation_ids": [
+        "us_npr_91_fr_14952_va7a_girr_buckets",
+        "us_npr_91_fr_14952_va7a_girr_curvature_factors"
+      ]
+    },
+    {
+      "sensitivity_id": "us-npr-eur-ois-curv",
+      "source_row_id": "row-303",
+      "desk_id": "rates-desk",
+      "legal_entity": "LE-001",
+      "risk_class": "GIRR",
+      "risk_measure": "CURVATURE",
+      "bucket": "1",
+      "risk_factor": "EUR-OIS",
+      "amount": 0.0,
+      "amount_currency": "USD",
+      "tenor": "5y",
+      "up_shock_amount": 90.0,
+      "down_shock_amount": 40.0,
+      "sign_convention": "RECEIVE",
+      "mapping_citation_ids": [
+        "us_npr_91_fr_14952_va7a_girr_buckets",
+        "us_npr_91_fr_14952_va7a_girr_curvature_factors"
+      ]
+    }
+  ]
+}

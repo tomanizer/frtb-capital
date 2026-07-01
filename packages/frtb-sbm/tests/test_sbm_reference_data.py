@@ -70,6 +70,14 @@ def test_reference_data_entries_have_citations() -> None:
         assert bucket.citation_id in citations
 
 
+def test_us_npr_fx_policy_citations_are_registered() -> None:
+    citations = citations_for_profile(SbmRegulatoryProfile.US_NPR_2_0)
+
+    assert "us_npr_91_fr_14952_va7a_fx_reporting_currency" in citations
+    assert "us_npr_91_fr_14952_va7a_fx_base_currency_approval" in citations
+    assert "91 FR 15020" in citations["us_npr_91_fr_14952_va7a_fx_base_currency_approval"].location
+
+
 @pytest.mark.parametrize(
     ("currency", "bucket_id"),
     [

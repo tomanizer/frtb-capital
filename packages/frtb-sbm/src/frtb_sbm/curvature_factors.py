@@ -11,8 +11,9 @@ from dataclasses import dataclass
 from frtb_common import UnsupportedRegulatoryFeatureError
 
 from frtb_sbm._citations import merge_citation_ids as _merge_citation_ids
-from frtb_sbm.data_models import SbmRiskClass, SbmSensitivity
+from frtb_sbm.data_models import SbmRegulatoryProfile, SbmRiskClass, SbmSensitivity
 from frtb_sbm.equity_reference_data import EQUITY_SPOT_RISK_FACTOR
+from frtb_sbm.girr_reference_tables import PROFILE_GIRR_CURVATURE_RISK_WEIGHT_CITATION_IDS
 from frtb_sbm.reference_data import curvature_citation_ids, normalise_fx_delta_currency_code
 from frtb_sbm.validation import SbmInputError, normalise_sensitivity_amount
 
@@ -108,12 +109,20 @@ def _curvature_factor_citation_ids(
     del bucket_id, risk_factor
     return _merge_citation_ids(
         curvature_citation_ids(profile_id),
-        _curvature_definition_citation_ids(risk_class),
-        _curvature_weight_rule_citation_ids(risk_class),
+        _curvature_definition_citation_ids(profile_id, risk_class),
+        _curvature_weight_rule_citation_ids(profile_id, risk_class),
     )
 
 
-def _curvature_definition_citation_ids(risk_class: SbmRiskClass) -> tuple[str, ...]:
+def _curvature_definition_citation_ids(
+    profile_id: str,
+    risk_class: SbmRiskClass,
+) -> tuple[str, ...]:
+    if (
+        SbmRegulatoryProfile(profile_id) is SbmRegulatoryProfile.US_NPR_2_0
+        and risk_class is SbmRiskClass.GIRR
+    ):
+        return ("us_npr_91_fr_14952_va7a_girr_curvature_factors",)
     if risk_class is SbmRiskClass.GIRR:
         return ("basel_mar21_8", "basel_mar21_96", "basel_mar21_97")
     if risk_class is SbmRiskClass.FX:
@@ -131,7 +140,16 @@ def _curvature_definition_citation_ids(risk_class: SbmRiskClass) -> tuple[str, .
     return ("basel_mar21_96", "basel_mar21_97")
 
 
-def _curvature_weight_rule_citation_ids(risk_class: SbmRiskClass) -> tuple[str, ...]:
+def _curvature_weight_rule_citation_ids(
+    profile_id: str,
+    risk_class: SbmRiskClass,
+) -> tuple[str, ...]:
+    profile = SbmRegulatoryProfile(profile_id)
+    if profile is SbmRegulatoryProfile.US_NPR_2_0 and risk_class is SbmRiskClass.GIRR:
+        return (
+            PROFILE_GIRR_CURVATURE_RISK_WEIGHT_CITATION_IDS[profile],
+            "us_npr_91_fr_14952_va7a_girr_delta_weights",
+        )
     if risk_class is SbmRiskClass.GIRR:
         return ("basel_mar21_99", "basel_mar21_39")
     if risk_class is SbmRiskClass.FX:

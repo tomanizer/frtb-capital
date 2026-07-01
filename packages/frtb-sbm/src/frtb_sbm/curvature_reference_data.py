@@ -19,6 +19,10 @@ from frtb_sbm.girr_reference_data import (
     PROFILE_GIRR_DELTA_RISK_WEIGHTS,
     _ensure_girr_delta_supported,
 )
+from frtb_sbm.girr_reference_tables import (
+    PROFILE_GIRR_CURVATURE_CITATION_IDS,
+    PROFILE_GIRR_CURVATURE_RISK_WEIGHT_CITATION_IDS,
+)
 from frtb_sbm.reference_profiles import (
     _coerce_risk_class,
     _resolve_supported_profile,
@@ -38,16 +42,13 @@ def curvature_citation_ids(profile: SbmRegulatoryProfile | str) -> tuple[str, ..
     tuple[str, ...]
     """
 
-    citations = citations_for_profile(profile)
-    required = (
-        "basel_mar21_curvature",
-        "basel_mar21_96",
-        "basel_mar21_97",
-        "basel_mar21_98",
-        "basel_mar21_99",
-        "basel_mar21_100",
-        "basel_mar21_101",
-    )
+    resolved = _resolve_supported_profile(profile)
+    citations = citations_for_profile(resolved)
+    required = PROFILE_GIRR_CURVATURE_CITATION_IDS.get(resolved)
+    if required is None:
+        raise UnsupportedRegulatoryFeatureError(
+            f"curvature citations are unavailable for profile={profile!r}"
+        )
     missing = [citation_id for citation_id in required if citation_id not in citations]
     if missing:
         raise UnsupportedRegulatoryFeatureError(
@@ -79,11 +80,15 @@ def curvature_risk_weight(
     resolved_class = _coerce_risk_class(risk_class)
     if resolved_class is SbmRiskClass.GIRR:
         _ensure_girr_delta_supported(profile)
+        resolved = _resolve_supported_profile(profile)
         rule = max(
-            PROFILE_GIRR_DELTA_RISK_WEIGHTS[_resolve_supported_profile(profile)],
+            PROFILE_GIRR_DELTA_RISK_WEIGHTS[resolved],
             key=lambda item: item.risk_weight,
         )
-        return rule.risk_weight, ("basel_mar21_99", rule.citation_id)
+        return rule.risk_weight, (
+            PROFILE_GIRR_CURVATURE_RISK_WEIGHT_CITATION_IDS[resolved],
+            rule.citation_id,
+        )
     if resolved_class is SbmRiskClass.FX:
         weight, citations = fx_delta_risk_weight(
             profile,

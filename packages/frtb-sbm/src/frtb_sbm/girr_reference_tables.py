@@ -210,6 +210,65 @@ PROFILE_GIRR_DELTA_INTER_BUCKET_CITATION_IDS: dict[SbmRegulatoryProfile, str] = 
     SbmRegulatoryProfile.PRA_UK_CRR: "pra_uk_crr_325ag_girr_inter",
 }
 
+PROFILE_GIRR_CURVATURE_CITATION_IDS: dict[SbmRegulatoryProfile, tuple[str, ...]] = {
+    SbmRegulatoryProfile.BASEL_MAR21: (
+        "basel_mar21_curvature",
+        "basel_mar21_96",
+        "basel_mar21_97",
+        "basel_mar21_98",
+        "basel_mar21_99",
+        "basel_mar21_100",
+        "basel_mar21_101",
+    ),
+    SbmRegulatoryProfile.US_NPR_2_0: (
+        "us_npr_91_fr_14952_va7a_sbm_scope",
+        "us_npr_91_fr_14952_va7a_girr_curvature_factors",
+        "us_npr_91_fr_14952_va7a_girr_curvature_shocks",
+        "us_npr_91_fr_14952_va7a_girr_curvature_intra",
+        "us_npr_91_fr_14952_va7a_girr_curvature_inter",
+        "us_npr_91_fr_14952_va7a_girr_curvature_scenarios",
+    ),
+}
+
+PROFILE_GIRR_CURVATURE_RISK_WEIGHT_CITATION_IDS: dict[SbmRegulatoryProfile, str] = {
+    SbmRegulatoryProfile.BASEL_MAR21: "basel_mar21_99",
+    SbmRegulatoryProfile.US_NPR_2_0: ("us_npr_91_fr_14952_va7a_girr_curvature_shocks"),
+}
+
+PROFILE_GIRR_CURVATURE_INTRA_BUCKET_CITATION_IDS: dict[SbmRegulatoryProfile, tuple[str, ...]] = {
+    SbmRegulatoryProfile.BASEL_MAR21: (
+        "basel_mar21_curvature",
+        "basel_mar21_100",
+        "basel_mar21_45_49",
+    ),
+    SbmRegulatoryProfile.US_NPR_2_0: (
+        "us_npr_91_fr_14952_va7a_sbm_scope",
+        "us_npr_91_fr_14952_va7a_girr_curvature_intra",
+        "us_npr_91_fr_14952_va7a_girr_intra",
+    ),
+}
+
+PROFILE_GIRR_CURVATURE_INTER_BUCKET_CITATION_IDS: dict[SbmRegulatoryProfile, tuple[str, ...]] = {
+    SbmRegulatoryProfile.BASEL_MAR21: (
+        "basel_mar21_curvature",
+        "basel_mar21_101",
+        "basel_mar21_50",
+    ),
+    SbmRegulatoryProfile.US_NPR_2_0: (
+        "us_npr_91_fr_14952_va7a_sbm_scope",
+        "us_npr_91_fr_14952_va7a_girr_curvature_inter",
+        "us_npr_91_fr_14952_va7a_girr_inter",
+    ),
+}
+
+PROFILE_GIRR_CURVATURE_SCENARIO_CITATION_IDS: dict[SbmRegulatoryProfile, tuple[str, ...]] = {
+    SbmRegulatoryProfile.BASEL_MAR21: (
+        "basel_mar21_6_correlation_scenarios",
+        "basel_mar21_7_scenario_selection",
+    ),
+    SbmRegulatoryProfile.US_NPR_2_0: ("us_npr_91_fr_14952_va7a_girr_curvature_scenarios",),
+}
+
 PROFILE_GIRR_BUCKETS: dict[SbmRegulatoryProfile, tuple[SbmGirrBucketDefinition, ...]] = {
     SbmRegulatoryProfile.BASEL_MAR21: BASEL_GIRR_BUCKETS,
     SbmRegulatoryProfile.US_NPR_2_0: US_NPR_GIRR_BUCKETS,
@@ -262,6 +321,11 @@ __all__ = [
     "PRA_UK_CRR_GIRR_SPECIAL_RISK_FACTORS",
     "PRA_UK_CRR_GIRR_TENORS",
     "PROFILE_GIRR_BUCKETS",
+    "PROFILE_GIRR_CURVATURE_CITATION_IDS",
+    "PROFILE_GIRR_CURVATURE_INTER_BUCKET_CITATION_IDS",
+    "PROFILE_GIRR_CURVATURE_INTRA_BUCKET_CITATION_IDS",
+    "PROFILE_GIRR_CURVATURE_RISK_WEIGHT_CITATION_IDS",
+    "PROFILE_GIRR_CURVATURE_SCENARIO_CITATION_IDS",
     "PROFILE_GIRR_DELTA_INTER_BUCKET_CITATION_IDS",
     "PROFILE_GIRR_DELTA_INTRA_BUCKET_CITATION_IDS",
     "PROFILE_GIRR_DELTA_RISK_WEIGHTS",

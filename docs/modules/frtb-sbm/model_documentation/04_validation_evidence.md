@@ -6,6 +6,9 @@
 | --- | --- | --- |
 | `fixtures/girr_delta_v1/` | GIRR delta | MAR21.40 risk weights, MAR21.41 intra-bucket, MAR21.42 inter-bucket, MAR21.6-MAR21.7 scenario selection. |
 | `fixtures/girr_vega_v1/` | GIRR vega | MAR21.92-MAR21.95 vega scaling and aggregation. |
+| `fixtures/girr_delta_us_npr_v1/` | U.S. NPR 2.0 GIRR delta | Federal Register 91 FR 15020 section V.A.7.a profile-owned GIRR delta citations, profile hash, and fail-closed comparison-profile behavior. |
+| `fixtures/girr_vega_us_npr_v1/` | U.S. NPR 2.0 GIRR vega | Federal Register 91 FR 15020 section V.A.7.a profile-owned GIRR vega citations, row/batch/Arrow parity, and fail-closed remaining-cell behavior. |
+| `fixtures/girr_curvature_us_npr_v1/` | U.S. NPR 2.0 GIRR curvature | Federal Register 91 FR 15037-15038 section V.A.7.a profile-owned GIRR curvature citations, CVR branch records, row/batch/Arrow parity, and fail-closed remaining-cell behavior. |
 | `fixtures/fx_delta_v1/` | FX delta | MAR21.86-MAR21.89 bucket, risk-weight, specified-pair, and inter-bucket behavior. |
 | `fixtures/equity_delta_v1/` | Equity delta | MAR21.72, MAR21.77-MAR21.80 bucket and correlation behavior. |
 | `fixtures/commodity_delta_v1/` | Commodity delta | MAR21.81-MAR21.85 bucket and correlation behavior. |
