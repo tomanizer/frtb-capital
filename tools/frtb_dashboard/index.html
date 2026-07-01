@@ -571,7 +571,7 @@
 
     async function fetchJson(path, signal) {
       const base = $("apiBase").value.replace(/\/$/, "");
-      const run = encodeURIComponent($("runId").value);
+      const run = $("runId").value.split("/").map(encodeURIComponent).join("/");
       const url = `${base}/runs/${run}/${path}`;
       const response = await fetch(url, { signal });
       if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);

@@ -100,6 +100,7 @@ def _register_time_series_metadata_routes(
         offset: int = query(default=0, ge=0),
     ) -> dict[str, object]:
         require_run(result_store, run_id, http_exception_type)
+        time_series_id = _filter_value(time_series_id, "time_series_id", http_exception_type)
         ref = artifact_ref_for_partition_value(
             result_store,
             run_id,
@@ -149,6 +150,7 @@ def _register_shock_metadata_routes(
         offset: int = query(default=0, ge=0),
     ) -> dict[str, object]:
         require_run(result_store, run_id, http_exception_type)
+        shock_id = _filter_value(shock_id, "shock_id", http_exception_type)
         ref = artifact_ref_for_partition_value(
             result_store,
             run_id,
@@ -207,6 +209,10 @@ def _register_scenario_vector_metadata_routes(
         offset: int = query(default=0, ge=0),
     ) -> dict[str, object]:
         require_run(result_store, run_id, http_exception_type)
+        scenario_set_id = _filter_value(scenario_set_id, "scenario_set_id", http_exception_type)
+        scenario_vector_id = _filter_value(
+            scenario_vector_id, "scenario_vector_id", http_exception_type
+        )
         ref = artifact_ref_for_partition_values(
             result_store,
             run_id,
@@ -263,6 +269,7 @@ def _register_surface_metadata_routes(
         offset: int = query(default=0, ge=0),
     ) -> dict[str, object]:
         require_run(result_store, run_id, http_exception_type)
+        surface_id = _filter_value(surface_id, "surface_id", http_exception_type)
         ref = artifact_ref_for_partition_value(
             result_store,
             run_id,
@@ -273,8 +280,10 @@ def _register_surface_metadata_routes(
         )
         filters = [f"surface_id={surface_id}"]
         if axis_1_value is not None:
+            axis_1_value = _filter_value(axis_1_value, "axis_1_value", http_exception_type)
             filters.append(f"axis_1_value={axis_1_value}")
         if axis_2_value is not None:
+            axis_2_value = _filter_value(axis_2_value, "axis_2_value", http_exception_type)
             filters.append(f"axis_2_value={axis_2_value}")
         return filtered_artifact_page(
             result_store,
@@ -285,3 +294,22 @@ def _register_surface_metadata_routes(
             http_exception_type,
             to_jsonable,
         )
+
+
+def _filter_value(
+    value: str,
+    field: str,
+    http_exception_type: type[Exception],
+) -> str:
+    value = value.strip()
+    if not value or any(character in value for character in ("=", "'", '"')):
+        raise http_exception_type(  # type: ignore[call-arg]
+            status_code=422,
+            detail=f"{field} contains characters that cannot be used in artifact filters",
+        )
+    if any(ord(character) < 32 for character in value):
+        raise http_exception_type(  # type: ignore[call-arg]
+            status_code=422,
+            detail=f"{field} contains control characters",
+        )
+    return value

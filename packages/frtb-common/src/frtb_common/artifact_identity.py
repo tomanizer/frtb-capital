@@ -111,7 +111,7 @@ class SurfaceCoordinate:
             object.__setattr__(
                 self,
                 "value",
-                _require_non_empty_text(str(self.value), "value"),
+                _require_label_coordinate(self.value),
             )
 
 
@@ -149,6 +149,12 @@ def _optional_text(value: object, field: str) -> str:
     if not isinstance(value, str):
         raise ArtifactIdentityError(f"{field} must be text")
     return value.strip()
+
+
+def _require_label_coordinate(value: object) -> str:
+    if isinstance(value, bool) or not isinstance(value, str | int | float):
+        raise ArtifactIdentityError("surface coordinate value must be a string, int, or float")
+    return _require_non_empty_text(str(value), "value")
 
 
 def _coerce_axis_name(value: SurfaceAxisName | str) -> SurfaceAxisName:

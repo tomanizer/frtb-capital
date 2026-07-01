@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import date
 
 import pytest
+import frtb_orchestration.artifact_evidence as artifact_evidence
 from frtb_common import StandardisedComponent
 from frtb_orchestration import (
     ArtifactEvidenceKind,
@@ -192,6 +193,45 @@ def test_suite_artifact_evidence_rejects_duplicate_component_kind_role() -> None
 
     with pytest.raises(OrchestrationInputError, match="duplicate artifact evidence ref"):
         build_suite_artifact_evidence_view(_suite_result(), (ref, ref))
+
+
+def test_suite_artifact_evidence_tolerates_absent_sa_result() -> None:
+    suite_result = _suite_result()
+    object.__setattr__(suite_result, "sa_result", None)
+
+    view = build_suite_artifact_evidence_view(
+        suite_result,
+        (
+            ArtifactEvidenceRef(
+                component=SuiteEvidenceComponent.IMA,
+                kind=ArtifactEvidenceKind.TIME_SERIES,
+                role="plat_upl",
+                artifact_id="ts-ima-upl",
+            ),
+        ),
+    )
+
+    assert [component.component for component in view.components] == [SuiteEvidenceComponent.IMA]
+
+
+def test_suite_artifact_evidence_rejects_unmapped_sa_component(monkeypatch) -> None:
+    monkeypatch.delitem(
+        artifact_evidence._SA_COMPONENT_TO_EVIDENCE_COMPONENT,
+        StandardisedComponent.SBM,
+    )
+
+    with pytest.raises(OrchestrationInputError, match="not mapped"):
+        build_suite_artifact_evidence_view(
+            _suite_result(),
+            (
+                ArtifactEvidenceRef(
+                    component=SuiteEvidenceComponent.SBM,
+                    kind=ArtifactEvidenceKind.SHOCK,
+                    role="curvature_up",
+                    artifact_id="shock-sbm-curv-up",
+                ),
+            ),
+        )
 
 
 def test_suite_artifact_evidence_rejects_available_ref_without_artifact_id() -> None:

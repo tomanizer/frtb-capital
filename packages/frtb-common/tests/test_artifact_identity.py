@@ -73,6 +73,15 @@ def test_surface_coordinate_rejects_invalid_numeric_axis_values() -> None:
         SurfaceCoordinate(axis_name="expiry", value=float("nan"), kind=SurfaceAxisKind.NUMERIC)
 
 
+def test_surface_coordinate_rejects_invalid_label_axis_values() -> None:
+    with pytest.raises(ArtifactIdentityError, match="string, int, or float"):
+        SurfaceCoordinate(axis_name="expiry", value=None)  # type: ignore[arg-type]
+    with pytest.raises(ArtifactIdentityError, match="string, int, or float"):
+        SurfaceCoordinate(axis_name="expiry", value=True)  # type: ignore[arg-type]
+    with pytest.raises(ArtifactIdentityError, match="string, int, or float"):
+        SurfaceCoordinate(axis_name="expiry", value=["1Y"])  # type: ignore[arg-type]
+
+
 def test_shock_direction_is_a_canonical_string_enum() -> None:
     assert ShockDirection.UP.value == "UP"
     assert ShockDirection("DOWN") is ShockDirection.DOWN

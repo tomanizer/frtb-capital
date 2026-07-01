@@ -141,6 +141,12 @@ def test_artifact_metadata_api_serves_timelines_shocks_scenarios_and_surfaces(
     ).json()
     assert surface["rows"][0]["axis_2_value"] == "5Y"
 
+    invalid_surface_filter = client.get(
+        f"/runs/{run.run_id}/surfaces/surface-usd-swaption-vol/slice",
+        params={"axis_1_value": "3M' OR '1'='1"},
+    )
+    assert invalid_surface_filter.status_code == 422
+
     missing = client.get(f"/runs/{run.run_id}/shocks/missing-shock")
     assert missing.status_code == 404
 

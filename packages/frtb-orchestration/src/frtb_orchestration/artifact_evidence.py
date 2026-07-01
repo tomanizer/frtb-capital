@@ -324,10 +324,7 @@ def _component_ordered_refs(
     known_components = [
         SuiteEvidenceComponent.IMA,
         SuiteEvidenceComponent.SA,
-        *(
-            _SA_COMPONENT_TO_EVIDENCE_COMPONENT[subtotal.component]
-            for subtotal in suite_result.sa_result.component_subtotals
-        ),
+        *_sa_evidence_components(suite_result),
         SuiteEvidenceComponent.CVA,
         SuiteEvidenceComponent.SUITE,
     ]
@@ -346,6 +343,22 @@ def _component_ordered_refs(
         for component, component_refs in ref_map.items()
         if component_refs
     )
+
+
+def _sa_evidence_components(suite_result: SuiteCapitalResult) -> tuple[SuiteEvidenceComponent, ...]:
+    sa_result = suite_result.sa_result
+    if sa_result is None:
+        return ()
+    components: list[SuiteEvidenceComponent] = []
+    for subtotal in sa_result.component_subtotals:
+        component = _SA_COMPONENT_TO_EVIDENCE_COMPONENT.get(subtotal.component)
+        if component is None:
+            raise OrchestrationInputError(
+                "SA component is not mapped to an artifact evidence component",
+                field="sa_result.component_subtotals",
+            )
+        components.append(component)
+    return tuple(components)
 
 
 def _reject_duplicate_refs(refs: tuple[ArtifactEvidenceRef, ...]) -> None:
