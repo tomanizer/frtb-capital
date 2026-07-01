@@ -710,7 +710,10 @@ def _translate_eu_crr3_result_citations(value: Any) -> Any:
     if isinstance(value, list):
         return [_translate_eu_crr3_result_citations(item) for item in value]
     if isinstance(value, dict):
-        return {key: _translate_eu_crr3_result_citations(item) for key, item in value.items()}
+        return {
+            key: _translate_eu_crr3_result_citations(item)
+            for key, item in value.items()
+        }
     return value
 
 
@@ -727,7 +730,10 @@ def _ordered_supported_paths(
     }
     ordered = tuple(path for path in _SBM_CAPITAL_PATH_ORDER if path in present)
     remaining = tuple(
-        sorted(present - set(_SBM_CAPITAL_PATH_ORDER), key=lambda p: (p[0].value, p[1].value))
+        sorted(
+            present - set(_SBM_CAPITAL_PATH_ORDER),
+            key=lambda p: (p[0].value, p[1].value),
+        )
     )
     return ordered + remaining
 
