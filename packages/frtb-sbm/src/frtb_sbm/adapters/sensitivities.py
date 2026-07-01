@@ -149,7 +149,6 @@ def build_sbm_batch_from_columns(
         optional,
         source_column_maps=source_column_maps,
         mapping_citation_ids=mapping_citation_ids,
-        org_scopes=scope_metadata,
         row_count=row_count,
         expected_risk_class=resolved_risk_class,
         expected_risk_measure=resolved_risk_measure,
@@ -252,15 +251,12 @@ def _validate_batch_arrays(
     *,
     source_column_maps: tuple[tuple[tuple[str, str], ...], ...] | None,
     mapping_citation_ids: tuple[tuple[str, ...], ...] | None,
-    org_scopes: tuple[CalculationScope | None, ...] | None,
     row_count: int,
     expected_risk_class: SbmRiskClass,
     expected_risk_measure: SbmRiskMeasure,
 ) -> None:
     validate_source_column_maps(source_column_maps, row_count)
     validate_mapping_citations(mapping_citation_ids, row_count)
-    if org_scopes is not None and len(org_scopes) != row_count:
-        raise SbmInputError("org_scopes length must match batch row count", field="org_scopes")
     validate_homogeneous_batch_arrays(
         arrays,
         amount_array,
