@@ -360,7 +360,7 @@ def _nonsec_bucket_citation(profile_id: str) -> str:
         US_NPR_2_0_PROFILE_ID: "US_NPR_210_B_3_I",
         BASEL_MAR22_PROFILE_ID: "BASEL_MAR22_22",
         EU_CRR3_PROFILE_ID: "EU_CRR3_ARTICLE_325Y_1_2",
-        PRA_UK_CRR_PROFILE_ID: "PRA_PS1_26_MARKET_RISK",
+        PRA_UK_CRR_PROFILE_ID: "PRA_DRC_ARTICLE_325Y",
     }.get(profile_id, profile_id)
 
 
@@ -369,7 +369,7 @@ def _nonsec_credit_quality_citation(profile_id: str) -> str:
         US_NPR_2_0_PROFILE_ID: "US_NPR_210_B_3_II",
         BASEL_MAR22_PROFILE_ID: "BASEL_MAR22_24",
         EU_CRR3_PROFILE_ID: "EU_CRR3_ARTICLE_325Y_6",
-        PRA_UK_CRR_PROFILE_ID: "PRA_PS1_26_MARKET_RISK",
+        PRA_UK_CRR_PROFILE_ID: "PRA_DRC_ARTICLE_325Y",
     }.get(profile_id, profile_id)
 
 

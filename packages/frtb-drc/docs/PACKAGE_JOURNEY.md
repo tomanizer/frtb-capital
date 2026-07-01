@@ -120,8 +120,8 @@ implemented `regimes.py` contracts:
 | --- | --- | --- | --- |
 | `US_NPR_2_0` | Supported (row + batch) | Supported; legacy `securitisation_non_ctp_risk_weights` float map **or** typed `DrcRiskWeightEvidence` | Supported; legacy `ctp_risk_weights` **or** typed evidence; offset groups via `ctp_offset_groups` |
 | `BASEL_MAR22` | Supported (row + batch) | Supported; **typed** `DrcRiskWeightEvidence` required (float map alone is not sufficient) | Supported; **typed** MAR22.42 `DrcRiskWeightEvidence` required (float map alone is not sufficient) |
-| `EU_CRR3` | Supported (row + batch) | Fail closed | Fail closed |
-| `PRA_UK_CRR` | Fail closed | Fail closed | Fail closed |
+| `EU_CRR3` | Supported (row + batch) | Supported; **typed** Article 325aa risk-weight and fair-value-cap evidence required | Supported; **typed** Article 325ad risk-weight/decomposition evidence required |
+| `PRA_UK_CRR` | Supported (row + batch) | Fail closed | Fail closed |
 
 `citation_policy` must be **`strict`** (validated on row and batch paths).
 
@@ -372,7 +372,7 @@ When reviewing module READMEs or planning docs against this journey:
 | Attribution | Always computed in both capital entrypoints | Wording that sounds like a separate backward pass through the calculator |
 | Batch audit payload | Empty `gross_jtds` / `input_positions` on batch results | Assuming batch and row results carry identical evidence depth |
 | Vendor ingress | `adapt_drc_crif_rows` → canonical positions or class-specific Arrow tables | Treating the adapter as a capital kernel or source of missing securitisation/CTP risk-weight evidence |
-| EU / PRA profiles | Known IDs, **fail closed** for all classes | Any prose implying comparison-profile capital is already produced |
+| EU / PRA profiles | Known IDs with supported cells listed by `drc_profile_support_matrix()` and unsupported cells fail-closed | Any prose implying an unsupported comparison-profile cell emits capital |
 | Basel CTP | Supported on `BASEL_MAR22` with typed MAR22.42 risk-weight evidence | Tables that list CTP as unsupported under Basel |
 
 ---

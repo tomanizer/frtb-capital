@@ -82,10 +82,10 @@ def test_eu_crr3_profile_supports_all_drc_risk_classes() -> None:
     ensure_risk_class_supported(profile, DrcRiskClass.CORRELATION_TRADING_PORTFOLIO)
 
 
-def test_pra_profile_is_known_and_fail_closed() -> None:
+def test_pra_profile_supports_nonsec_and_keeps_sec_ctp_fail_closed() -> None:
     profile = get_rule_profile(PRA_UK_CRR_PROFILE_ID)
 
-    assert profile.supported_risk_classes == frozenset()
+    assert profile.supported_risk_classes == frozenset({DrcRiskClass.NON_SECURITISATION})
     assert "PRA_PS1_26_MARKET_RISK" in profile.citations
     assert "PRA_DRC_ARTICLE_325V" in profile.citations
     assert "PRA_DRC_ARTICLE_325W" in profile.citations
@@ -96,8 +96,11 @@ def test_pra_profile_is_known_and_fail_closed() -> None:
     assert "PRA_DRC_ARTICLE_325AB" in profile.citations
     assert "PRA_DRC_ARTICLE_325AC" in profile.citations
     assert "PRA_DRC_ARTICLE_325AD" in profile.citations
+    ensure_risk_class_supported(profile, DrcRiskClass.NON_SECURITISATION)
     with pytest.raises(UnsupportedRegulatoryFeatureError, match=PRA_UK_CRR_PROFILE_ID):
-        ensure_risk_class_supported(profile, DrcRiskClass.NON_SECURITISATION)
+        ensure_risk_class_supported(profile, DrcRiskClass.SECURITISATION_NON_CTP)
+    with pytest.raises(UnsupportedRegulatoryFeatureError, match=PRA_UK_CRR_PROFILE_ID):
+        ensure_risk_class_supported(profile, DrcRiskClass.CORRELATION_TRADING_PORTFOLIO)
 
 
 def test_unsupported_risk_classes_fail_closed() -> None:
@@ -165,21 +168,23 @@ def test_profile_support_matrix_marks_eu_crr3_all_paths_supported() -> None:
     assert eu_ctp.next_step == "Maintain EU CRR3 CTP fixture and typed decomposition evidence coverage."
 
 
-def test_profile_support_matrix_marks_pra_paths_fail_closed_with_source_map_ids() -> None:
+def test_profile_support_matrix_marks_pra_nonsec_supported_and_other_paths_fail_closed() -> None:
     cells = {(cell.profile_id, cell.risk_class): cell for cell in drc_profile_support_matrix()}
 
     pra_nonsec = cells[(PRA_UK_CRR_PROFILE_ID, DrcRiskClass.NON_SECURITISATION)]
     pra_sec = cells[(PRA_UK_CRR_PROFILE_ID, DrcRiskClass.SECURITISATION_NON_CTP)]
     pra_ctp = cells[(PRA_UK_CRR_PROFILE_ID, DrcRiskClass.CORRELATION_TRADING_PORTFOLIO)]
 
-    assert pra_nonsec.status == "FAIL_CLOSED"
+    assert pra_nonsec.status == "SUPPORTED"
     assert pra_nonsec.citation_ids == (
         "PRA_DRC_ARTICLE_325V",
         "PRA_DRC_ARTICLE_325W",
         "PRA_DRC_ARTICLE_325X",
         "PRA_DRC_ARTICLE_325Y",
     )
-    assert "before enabling runtime support" in pra_nonsec.next_step
+    assert pra_nonsec.next_step == (
+        "Maintain PRA UK CRR non-securitisation fixture and article-level citation coverage."
+    )
     assert pra_sec.status == "FAIL_CLOSED"
     assert pra_sec.citation_ids == (
         "PRA_DRC_ARTICLE_325V",

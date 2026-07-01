@@ -18,7 +18,7 @@ advice and not a final regulatory capital interpretation.
 | Commission Implementing Regulation (EU) 2016/1799 | https://eur-lex.europa.eu/eli/reg_impl/2016/1799/oj/eng | ECAI credit assessment to credit quality step mapping used by CRR Standardised Approach credit-quality categories referenced by Article 325y(6). |
 | EBA RTS on gross jump-to-default amounts | https://www.eba.europa.eu/legacy/regulation-and-policy/regulatory-activities/market-counterparty-and-cva-risk/regulatory-3 | EU technical reference for gross JTD amount methodology. |
 | PRA PS1/26 | https://www.bankofengland.co.uk/prudential-regulation/publication/2026/january/implementation-of-the-basel-3-1-final-rules-policy-statement | UK PRA Basel 3.1 market-risk policy-statement anchor. This is not sufficient by itself for runtime DRC support. |
-| PRA2026/1 Rulebook instrument | https://www.prarulebook.co.uk/-/media/pra/files/legal-instruments/2026/pra2026-1.pdf | UK PRA Rulebook legal-instrument source for Market Risk Part DRC source-map ids `PRA_DRC_ARTICLE_325V` through `PRA_DRC_ARTICLE_325AD`; runtime remains fail-closed until implementation issues add mappings and fixtures. |
+| PRA2026/1 Rulebook instrument | https://www.prarulebook.co.uk/-/media/pra/files/legal-instruments/2026/pra2026-1.pdf | UK PRA Rulebook legal-instrument source for Market Risk Part DRC source-map ids `PRA_DRC_ARTICLE_325V` through `PRA_DRC_ARTICLE_325AD`; Article 325w/x/y support PRA non-securitisation runtime, while securitisation non-CTP and CTP remain fail-closed until implementation issues add mappings and fixtures. |
 | Local reference implementation | External `extract_cva` capital navigator, DRC component | Implementation inspiration for CRIF mappings, risk-weight tables, DRC risk-class split, and Euler/audit breakdowns; not included in this repository. |
 
 ## Regulatory Scope
@@ -163,9 +163,11 @@ with Article 325z gross/net JTD mapping and Article 325aa bucket, HBR,
 risk-weight, category, and fair-value-cap evidence. EU CRR3 CTP row and batch
 paths are implemented with Article 325ab scope/gross JTD, Article 325ac
 netting/replication/decomposition, and Article 325ad bucket, HBR, risk-weight,
-and category evidence. PRA UK CRR DRC is source-mapped to `PRA_DRC_ARTICLE_325V` through
-`PRA_DRC_ARTICLE_325AD` but remains fail closed for all DRC risk classes until
-PRA-owned reference data, deterministic fixtures, and support-matrix tests land.
+and category evidence. PRA UK CRR non-securitisation row and batch paths are
+implemented with Article 325w gross JTD/LGD, Article 325x netting and maturity
+weighting, and Article 325y bucket, risk-weight, HBR, and category evidence.
+PRA UK CRR securitisation non-CTP and CTP remain fail closed until PRA-owned
+reference data, deterministic fixtures, and support-matrix tests land.
 
 ### DRC-REQ-007: Hedge Benefit Ratio and Bucket Capital
 

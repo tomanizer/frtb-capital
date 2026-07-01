@@ -89,8 +89,10 @@ implemented with Article 325w, Article 325x, Article 325y, and ECAI/CQS mapping
 evidence. EU CRR3 securitisation non-CTP is implemented with Article 325z,
 Article 325aa, typed risk-weight, fair-value-cap, and offset evidence. EU CRR3
 CTP is implemented with Article 325ab, Article 325ac, Article 325ad, typed
-risk-weight, decomposition, and offset evidence. PRA UK CRR paths fail closed
-until their cited rule mappings and fixtures are complete.
+risk-weight, decomposition, and offset evidence. PRA UK CRR non-securitisation
+is implemented with Article 325w, Article 325x, Article 325y, and fixture
+evidence. PRA UK CRR securitisation non-CTP and CTP fail closed until their
+cited rule mappings and fixtures are complete.
 
 ## Delivery Slices
 
@@ -129,7 +131,7 @@ until their cited rule mappings and fixtures are complete.
 
 - Securitisation and CTP treatment remains profile-sensitive. U.S. NPR 2.0 and
   Basel MAR22 paths rely on cited upstream risk-weight and decomposition
-  evidence; EU and PRA mappings must continue to fail closed until implemented
+  evidence; unsupported EU and PRA mappings must continue to fail closed until implemented
   with profile-specific citations and tests.
 - U.S. NPR 2.0 is proposed-rule material. Label all U.S. outputs as proposed
   and keep Basel defaults separately selectable.

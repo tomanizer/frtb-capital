@@ -33,7 +33,7 @@ requirements:
     challenger_refs:
       - frtb_net_frtb
       - ankitjha67_baselkit
-    notes: "US_NPR_2_0, BASEL_MAR22, and EU_CRR3 non-securitisation, securitisation non-CTP, and CTP paths are capital-producing. All PRA_UK_CRR DRC paths remain fail-closed pending #1004-#1006."
+    notes: "US_NPR_2_0, BASEL_MAR22, and EU_CRR3 non-securitisation, securitisation non-CTP, and CTP paths are capital-producing. PRA_UK_CRR non-securitisation is capital-producing. PRA_UK_CRR securitisation non-CTP and CTP remain fail-closed pending #1005-#1006."
 
   - id: DRC-HBR-001
     topic: Hedge benefit ratio and netting constraints
@@ -55,7 +55,7 @@ requirements:
     coverage_status: partially_implemented_under_audit
     challenger_refs:
       - frtb_net_frtb
-    notes: "Supported paths preserve issuer/tranche grouping, HBR inputs, bucket/category totals, and attribution-ready lineage. Planned PRA cells have source-map ids but no capital-producing runtime support yet."
+    notes: "Supported paths preserve issuer/tranche grouping, HBR inputs, bucket/category totals, and attribution-ready lineage. PRA securitisation non-CTP and CTP cells have source-map ids but no capital-producing runtime support yet."
 
   - id: DRC-EU-SEC-001
     topic: EU CRR3 securitisation non-CTP DRC runtime support
@@ -98,14 +98,21 @@ requirements:
     notes: "Source-map ids `EU_CRR3_ARTICLE_325AB`, `EU_CRR3_ARTICLE_325AC`, and `EU_CRR3_ARTICLE_325AD` are runtime citations for #1003. Row, batch, Arrow, fixture, evidence-fail-closed, attribution, and citation tests cover the supported path."
 
   - id: DRC-PRA-001
-    topic: PRA UK CRR DRC source map
+    topic: PRA UK CRR non-securitisation DRC runtime support
     source_refs:
       - uk_pra_ps1_26_basel_3_1_final_rules
       - uk_pra_2026_1_market_risk_part
     code_refs:
       - packages/frtb-drc/src/frtb_drc/regime_citations_eu_pra.py
       - packages/frtb-drc/src/frtb_drc/regimes.py
+      - packages/frtb-drc/src/frtb_drc/reference_data.py
+      - packages/frtb-drc/src/frtb_drc/kernel/nonsec.py
+      - packages/frtb-drc/src/frtb_drc/assembly/citations.py
+      - packages/frtb-drc/src/frtb_drc/adapters/arrow.py
     test_refs:
       - packages/frtb-drc/tests/test_drc_regimes.py
-    coverage_status: planned_fail_closed
-    notes: "Source-map ids `PRA_DRC_ARTICLE_325V` through `PRA_DRC_ARTICLE_325AD` identify the planned non-securitisation, securitisation non-CTP, and CTP work for #1004-#1006. All PRA_UK_CRR DRC runtime paths continue to raise `UnsupportedRegulatoryFeatureError`."
+      - packages/frtb-drc/tests/test_drc_reference_data.py
+      - packages/frtb-drc/tests/test_drc_arrow_batch.py
+      - packages/frtb-drc/tests/fixtures/drc_pra_nonsec_v1
+    coverage_status: implemented_with_fixture
+    notes: "Source-map ids `PRA_DRC_ARTICLE_325W`, `PRA_DRC_ARTICLE_325X`, and `PRA_DRC_ARTICLE_325Y` are runtime citations for #1004. Row, batch, Arrow, fixture, attribution, and citation tests cover the supported non-securitisation path. `PRA_DRC_ARTICLE_325Z` through `PRA_DRC_ARTICLE_325AD` remain fail-closed anchors for #1005-#1006."

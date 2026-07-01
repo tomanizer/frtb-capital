@@ -71,9 +71,8 @@ EU_CRR3_CITATIONS: dict[str, DrcCitation] = {
         paragraph="Article 325z",
         url="https://eur-lex.europa.eu/eli/reg/2024/1623/oj/eng",
         note=(
-            "EU securitisation non-CTP gross JTD and net JTD source map; "
-            "runtime path remains fail-closed until profile-specific mappings "
-            "and fixtures are implemented."
+            "EU securitisation non-CTP gross JTD and net JTD source map for "
+            "the supported Article 325z row and batch runtime path."
         ),
     ),
     "EU_CRR3_ARTICLE_325AA": DrcCitation(
@@ -83,8 +82,8 @@ EU_CRR3_CITATIONS: dict[str, DrcCitation] = {
         url="https://eur-lex.europa.eu/eli/reg/2024/1623/oj/eng",
         note=(
             "EU securitisation non-CTP bucket, risk-weight, hedge benefit, and "
-            "category capital source map; runtime path remains fail-closed until "
-            "profile-specific mappings and fixtures are implemented."
+            "category capital source map for the supported Article 325aa row "
+            "and batch runtime path."
         ),
     ),
     "EU_CRR3_ARTICLE_325AB": DrcCitation(
@@ -93,8 +92,8 @@ EU_CRR3_CITATIONS: dict[str, DrcCitation] = {
         paragraph="Article 325ab",
         url="https://eur-lex.europa.eu/eli/reg/2024/1623/oj/eng",
         note=(
-            "EU CTP DRC scope and gross JTD source map; runtime path remains "
-            "fail-closed until profile-specific mappings and fixtures are implemented."
+            "EU CTP DRC scope and gross JTD source map for the supported "
+            "Article 325ab row and batch runtime path."
         ),
     ),
     "EU_CRR3_ARTICLE_325AC": DrcCitation(
@@ -104,8 +103,7 @@ EU_CRR3_CITATIONS: dict[str, DrcCitation] = {
         url="https://eur-lex.europa.eu/eli/reg/2024/1623/oj/eng",
         note=(
             "EU CTP net JTD, offsetting, replication, and decomposition source "
-            "map; runtime path remains fail-closed until profile-specific mappings "
-            "and fixtures are implemented."
+            "map for the supported Article 325ac row and batch runtime path."
         ),
     ),
     "EU_CRR3_ARTICLE_325AD": DrcCitation(
@@ -115,8 +113,7 @@ EU_CRR3_CITATIONS: dict[str, DrcCitation] = {
         url="https://eur-lex.europa.eu/eli/reg/2024/1623/oj/eng",
         note=(
             "EU CTP bucket, risk-weight, hedge benefit, and category capital "
-            "source map; runtime path remains fail-closed until profile-specific "
-            "mappings and fixtures are implemented."
+            "source map for the supported Article 325ad row and batch runtime path."
         ),
     ),
 }
@@ -148,8 +145,8 @@ PRA_UK_CRR_CITATIONS: dict[str, DrcCitation] = {
         paragraph="Article 325w",
         url="https://www.prarulebook.co.uk/-/media/pra/files/legal-instruments/2026/pra2026-1.pdf",
         note=(
-            "UK PRA non-securitisation gross JTD and LGD source map. Runtime "
-            "remains fail-closed until PRA reference data and fixtures are implemented."
+            "UK PRA non-securitisation gross JTD and LGD source map for the "
+            "supported Article 325w row and batch runtime path."
         ),
     ),
     "PRA_DRC_ARTICLE_325X": DrcCitation(
@@ -159,7 +156,7 @@ PRA_UK_CRR_CITATIONS: dict[str, DrcCitation] = {
         url="https://www.prarulebook.co.uk/-/media/pra/files/legal-instruments/2026/pra2026-1.pdf",
         note=(
             "UK PRA non-securitisation net JTD, offsetting, and maturity source "
-            "map. Runtime remains fail-closed until PRA mappings and fixtures are implemented."
+            "map for the supported Article 325x row and batch runtime path."
         ),
     ),
     "PRA_DRC_ARTICLE_325Y": DrcCitation(
@@ -169,8 +166,8 @@ PRA_UK_CRR_CITATIONS: dict[str, DrcCitation] = {
         url="https://www.prarulebook.co.uk/-/media/pra/files/legal-instruments/2026/pra2026-1.pdf",
         note=(
             "UK PRA non-securitisation bucket, risk-weight, HBR, and category "
-            "capital source map. Runtime remains fail-closed until PRA mappings "
-            "and fixtures are implemented."
+            "capital source map for the supported Article 325y row and batch "
+            "runtime path."
         ),
     ),
     "PRA_DRC_ARTICLE_325Z": DrcCitation(

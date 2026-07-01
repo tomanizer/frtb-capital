@@ -14,6 +14,9 @@ The committed fixture packs are:
 - `drc_eu_nonsec_v1/`: static EU CRR3 non-securitisation cases covering
   Article 325w gross JTD/LGD, Article 325x netting and maturity weighting,
   Article 325y HBR/risk weights, and ECAI/CQS mapping citations.
+- `drc_pra_nonsec_v1/`: static PRA UK CRR non-securitisation cases covering
+  Article 325w gross JTD/LGD, Article 325x netting and maturity weighting,
+  and Article 325y HBR/risk weights.
 - `drc_sec_nonctp_v1/`: static U.S. NPR 2.0 securitisation non-CTP cases.
 - `drc_basel_sec_nonctp_v1/`: static Basel MAR22 securitisation non-CTP cases
   with typed MAR22.34 risk-weight evidence and fair-value cap evidence.
@@ -72,6 +75,14 @@ class-specific Arrow handoffs, or deterministic rejected-row diagnostics.
   maturity weighting, net JTD, bucket capital, category capital, citation ids,
   and total DRC.
 - `README.md`: case-level intent and CRR3/ECAI citation ids.
+
+`packages/frtb-drc/tests/fixtures/drc_pra_nonsec_v1/` contains:
+
+- `positions.json`: static PRA UK CRR non-securitisation positions and context.
+- `expected_outputs.json`: selected deterministic outputs across gross JTD,
+  maturity weighting, net JTD, bucket capital, category capital, citation ids,
+  and total DRC.
+- `README.md`: case-level intent and PRA Article 325w/x/y citation ids.
 
 `packages/frtb-drc/tests/fixtures/drc_sec_nonctp_v1/` contains:
 

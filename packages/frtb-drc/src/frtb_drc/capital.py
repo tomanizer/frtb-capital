@@ -22,6 +22,7 @@ from frtb_drc.reference_data import get_bucket_definition, get_risk_weight_rule
 from frtb_drc.regimes import (
     BASEL_MAR22_PROFILE_ID,
     EU_CRR3_PROFILE_ID,
+    PRA_UK_CRR_PROFILE_ID,
     US_NPR_2_0_PROFILE_ID,
     ensure_risk_class_supported,
     get_rule_profile,
@@ -37,6 +38,9 @@ _BASEL_CATEGORY_CITATION = "BASEL_MAR22_26"
 _EU_CRR3_HBR_CITATION = "EU_CRR3_ARTICLE_325Y_3_5"
 _EU_CRR3_BUCKET_CAPITAL_CITATION = "EU_CRR3_ARTICLE_325Y_3_5"
 _EU_CRR3_CATEGORY_CITATION = "EU_CRR3_ARTICLE_325Y_3_5"
+_PRA_HBR_CITATION = "PRA_DRC_ARTICLE_325Y"
+_PRA_BUCKET_CAPITAL_CITATION = "PRA_DRC_ARTICLE_325Y"
+_PRA_CATEGORY_CITATION = "PRA_DRC_ARTICLE_325Y"
 
 
 @dataclass(frozen=True)
@@ -270,6 +274,8 @@ def _hbr_citation(profile_id: str) -> str:
         return _BASEL_HBR_CITATION
     if profile_id == EU_CRR3_PROFILE_ID:
         return _EU_CRR3_HBR_CITATION
+    if profile_id == PRA_UK_CRR_PROFILE_ID:
+        return _PRA_HBR_CITATION
     return _US_NPR_HBR_CITATION
 
 
@@ -278,6 +284,8 @@ def _bucket_capital_citation(profile_id: str) -> str:
         return _BASEL_BUCKET_CAPITAL_CITATION
     if profile_id == EU_CRR3_PROFILE_ID:
         return _EU_CRR3_BUCKET_CAPITAL_CITATION
+    if profile_id == PRA_UK_CRR_PROFILE_ID:
+        return _PRA_BUCKET_CAPITAL_CITATION
     return _US_NPR_BUCKET_CAPITAL_CITATION
 
 
@@ -286,6 +294,8 @@ def _category_citation(profile_id: str) -> str:
         return _BASEL_CATEGORY_CITATION
     if profile_id == EU_CRR3_PROFILE_ID:
         return _EU_CRR3_CATEGORY_CITATION
+    if profile_id == PRA_UK_CRR_PROFILE_ID:
+        return _PRA_CATEGORY_CITATION
     return _US_NPR_CATEGORY_CITATION
 
 

@@ -306,14 +306,10 @@ _PRA_UK_CRR_PROFILE = DrcRuleProfile(
     version="Basel 3.1 PS1/26",
     publication_date=date(2026, 1, 20),
     effective_date=date(2027, 1, 1),
-    status="final_rule_mapping_pending",
-    supported_risk_classes=frozenset(),
+    status="partial_nonsec_supported",
+    supported_risk_classes=frozenset({DrcRiskClass.NON_SECURITISATION}),
     citations=PRA_UK_CRR_CITATIONS,
     unsupported_features={
-        DrcRiskClass.NON_SECURITISATION: (
-            "PRA_UK_CRR non-securitisation DRC because PS1/26 Chapter 3 and "
-            "Appendix 1 rulebook paragraph mappings have not been implemented"
-        ),
         DrcRiskClass.SECURITISATION_NON_CTP: (
             "PRA_UK_CRR securitisation non-CTP DRC because PS1/26 Chapter 3 and "
             "Appendix 1 securitisation mappings have not been implemented"
@@ -494,6 +490,23 @@ _SUPPORTED_CELL_DETAILS: Mapping[tuple[str, DrcRiskClass], tuple[str, tuple[str,
                 ),
                 "Maintain EU CRR3 CTP fixture and typed decomposition evidence coverage.",
             ),
+            (
+                PRA_UK_CRR_PROFILE_ID,
+                DrcRiskClass.NON_SECURITISATION,
+            ): (
+                (
+                    "PRA UK CRR non-securitisation row and batch capital supported "
+                    "with Article 325w/x/y LGD, maturity, netting, bucket, risk-weight, "
+                    "HBR, and category evidence."
+                ),
+                (
+                    "PRA_DRC_ARTICLE_325V",
+                    "PRA_DRC_ARTICLE_325W",
+                    "PRA_DRC_ARTICLE_325X",
+                    "PRA_DRC_ARTICLE_325Y",
+                ),
+                "Maintain PRA UK CRR non-securitisation fixture and article-level citation coverage.",
+            ),
         }
     )
 )
@@ -501,21 +514,6 @@ _SUPPORTED_CELL_DETAILS: Mapping[tuple[str, DrcRiskClass], tuple[str, tuple[str,
 _PLANNED_CELL_DETAILS: Mapping[tuple[str, DrcRiskClass], tuple[tuple[str, ...], str]] = (
     MappingProxyType(
         {
-            (
-                PRA_UK_CRR_PROFILE_ID,
-                DrcRiskClass.NON_SECURITISATION,
-            ): (
-                (
-                    "PRA_DRC_ARTICLE_325V",
-                    "PRA_DRC_ARTICLE_325W",
-                    "PRA_DRC_ARTICLE_325X",
-                    "PRA_DRC_ARTICLE_325Y",
-                ),
-                (
-                    "Implement PRA-owned non-securitisation LGD, netting, maturity, "
-                    "risk-weight, HBR, and fixture evidence before enabling runtime support."
-                ),
-            ),
             (
                 PRA_UK_CRR_PROFILE_ID,
                 DrcRiskClass.SECURITISATION_NON_CTP,

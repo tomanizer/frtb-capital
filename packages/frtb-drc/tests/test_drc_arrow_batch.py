@@ -143,6 +143,49 @@ def test_drc_batch_supports_eu_crr3_nonsec_profile() -> None:
     validate_reconciliation(calculation.result)
 
 
+def test_drc_batch_supports_pra_uk_crr_nonsec_profile() -> None:
+    batch = build_drc_nonsec_batch_from_columns(
+        position_ids=["pra-long"],
+        source_row_ids=["row-pra-long"],
+        desk_ids=["desk-a"],
+        legal_entities=["bank-uk"],
+        risk_classes=["NON_SECURITISATION"],
+        instrument_types=["BOND"],
+        default_directions=["LONG"],
+        issuer_ids=["issuer-a"],
+        bucket_keys=["SOVEREIGN"],
+        seniorities=["SENIOR_DEBT"],
+        credit_qualities=["AA"],
+        notionals=[100.0],
+        market_values=[100.0],
+        cumulative_pnls=[0.0],
+        maturity_years=[1.0],
+        currencies=["GBP"],
+        lineage_source_systems=["synthetic"],
+        lineage_source_files=["pra-batch.csv"],
+        citation_ids=[("PRA_DRC_ARTICLE_325W", "PRA_DRC_ARTICLE_325Y")],
+        profile_id=PRA_UK_CRR_PROFILE_ID,
+    )
+    context = DrcCalculationContext(
+        run_id="run-pra-batch",
+        calculation_date=date(2026, 5, 29),
+        base_currency="GBP",
+        profile_id=PRA_UK_CRR_PROFILE_ID,
+    )
+
+    calculation = calculate_drc_capital_from_batch(batch, context=context)
+
+    assert calculation.result.profile_id == PRA_UK_CRR_PROFILE_ID
+    assert calculation.result.total_drc == pytest.approx(1.5)
+    assert "PRA_DRC_ARTICLE_325W" in calculation.result.citations
+    assert "PRA_DRC_ARTICLE_325X" in calculation.result.citations
+    assert "PRA_DRC_ARTICLE_325Y" in calculation.result.citations
+    assert not any(citation.startswith("US_NPR") for citation in calculation.result.citations)
+    assert not any(citation.startswith("BASEL_MAR22") for citation in calculation.result.citations)
+    assert not any(citation.startswith("EU_CRR3") for citation in calculation.result.citations)
+    validate_reconciliation(calculation.result)
+
+
 def test_drc_batch_caps_nonsec_explicit_pnl_at_market_value() -> None:
     batch = build_drc_nonsec_batch_from_columns(
         position_ids=["capped-long"],
@@ -529,13 +572,6 @@ def test_drc_eu_crr3_ctp_batch_matches_row_result_for_typed_evidence() -> None:
 @pytest.mark.parametrize(
     ("fixture_name", "normalize", "build_batch", "profile_id", "expected"),
     [
-        (
-            "drc_nonsec_v1",
-            normalize_drc_nonsec_arrow_table,
-            build_drc_nonsec_batch_from_arrow,
-            PRA_UK_CRR_PROFILE_ID,
-            PRA_UK_CRR_PROFILE_ID,
-        ),
         (
             "drc_sec_nonctp_v1",
             normalize_drc_securitisation_non_ctp_arrow_table,

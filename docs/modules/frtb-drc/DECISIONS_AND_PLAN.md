@@ -22,8 +22,11 @@ implemented with Article 325w, Article 325x, Article 325y, and ECAI/CQS mapping
 evidence. EU CRR3 securitisation non-CTP row/batch is implemented with Article
 325z/325aa typed risk-weight, fair-value-cap, and offset evidence. EU CRR3 CTP
 row/batch is implemented with Article 325ab-325ad typed risk-weight,
-decomposition, and offset evidence. PRA UK CRR remains fail-closed until
-profile-specific mappings and tests are implemented.
+decomposition, and offset evidence. PRA UK CRR non-securitisation row/batch is
+implemented with Article 325w, Article 325x, and Article 325y LGD, maturity,
+netting, bucket, risk-weight, HBR, and category evidence. PRA UK CRR
+securitisation non-CTP and CTP remain fail-closed until profile-specific
+mappings and tests are implemented.
 
 ### DRC-DEC-002: Keep data contracts package-local initially
 

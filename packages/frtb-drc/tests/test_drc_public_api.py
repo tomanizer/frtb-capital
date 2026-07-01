@@ -109,10 +109,36 @@ def test_calculate_drc_capital_supports_eu_crr3_nonsec_profile() -> None:
     validate_reconciliation(result)
 
 
+def test_calculate_drc_capital_supports_pra_uk_crr_nonsec_profile() -> None:
+    result = calculate_drc_capital(
+        (
+            _position(
+                "pra-long",
+                DefaultDirection.LONG,
+                100.0,
+                bucket_key="SOVEREIGN",
+                credit_quality=CreditQuality.AA,
+                currency="GBP",
+                citation_ids=("PRA_DRC_ARTICLE_325W", "PRA_DRC_ARTICLE_325Y"),
+            ),
+        ),
+        context=_context(profile_id=PRA_UK_CRR_PROFILE_ID, base_currency="GBP"),
+    )
+
+    assert result.profile_id == PRA_UK_CRR_PROFILE_ID
+    assert result.total_drc == pytest.approx(1.5)
+    assert "PRA_DRC_ARTICLE_325W" in result.citations
+    assert "PRA_DRC_ARTICLE_325X" in result.citations
+    assert "PRA_DRC_ARTICLE_325Y" in result.citations
+    assert not any(citation.startswith("US_NPR") for citation in result.citations)
+    assert not any(citation.startswith("BASEL_MAR22") for citation in result.citations)
+    assert not any(citation.startswith("EU_CRR3") for citation in result.citations)
+    validate_reconciliation(result)
+
+
 @pytest.mark.parametrize(
     ("profile_id", "risk_class", "expected"),
     [
-        (PRA_UK_CRR_PROFILE_ID, DrcRiskClass.NON_SECURITISATION, PRA_UK_CRR_PROFILE_ID),
         (PRA_UK_CRR_PROFILE_ID, DrcRiskClass.SECURITISATION_NON_CTP, PRA_UK_CRR_PROFILE_ID),
         (
             PRA_UK_CRR_PROFILE_ID,

@@ -24,29 +24,26 @@
   },
   "category_capital": 3.9749999999999996,
   "citations": [
-    "EU_CRR3_ARTICLE_325W",
-    "EU_CRR3_ARTICLE_325X",
-    "EU_CRR3_ARTICLE_325Y_1_2",
-    "EU_CRR3_ARTICLE_325Y_3_5",
-    "EU_CRR3_ARTICLE_325Y_6",
-    "EU_CRR3_ECAI_CQS_MAPPING"
+    "PRA_DRC_ARTICLE_325W",
+    "PRA_DRC_ARTICLE_325X",
+    "PRA_DRC_ARTICLE_325Y"
   ],
-  "fixture_id": "drc_eu_nonsec_v1",
+  "fixture_id": "drc_pra_nonsec_v1",
   "gross": {
-    "eu-corp-alpha-long": 75.0,
-    "eu-corp-alpha-short": 30.0,
-    "eu-corp-beta-short": 15.0,
-    "eu-muni-short-maturity": 60.0,
-    "eu-sovereign-long": 75.0
+    "pra-corp-alpha-long": 75.0,
+    "pra-corp-alpha-short": 30.0,
+    "pra-corp-beta-short": 15.0,
+    "pra-muni-short-maturity": 60.0,
+    "pra-sovereign-long": 75.0
   },
   "input_count": 5,
-  "input_hash": "50ce9aaf4ebd56d346e0ebbfcd982ced3cdafe1f9cc775b268de045aa5f1bd73",
+  "input_hash": "82802f3dbc8b952d001a9987267261cccf090a943eadadc47701f2794f81b938",
   "maturity_weights": {
-    "eu-corp-alpha-long": 1.0,
-    "eu-corp-alpha-short": 1.0,
-    "eu-corp-beta-short": 1.0,
-    "eu-muni-short-maturity": 0.25,
-    "eu-sovereign-long": 1.0
+    "pra-corp-alpha-long": 1.0,
+    "pra-corp-alpha-short": 1.0,
+    "pra-corp-beta-short": 1.0,
+    "pra-muni-short-maturity": 0.25,
+    "pra-sovereign-long": 1.0
   },
   "net": {
     "net-corporate-issuer-alpha-senior_debt-long": {
@@ -78,14 +75,14 @@
       "rejected_offsets": []
     }
   },
-  "profile_hash": "a6775a78d513f2d53409517b98d16235642cdfc90f2824c23da13229d9234f93",
-  "result_json_sha256": "6772eae90ab0cbdaefabb00fcac3c6d3a99b941db0c3e4de0f7a7d468c6bfb5e",
+  "profile_hash": "a97e70b9c6103fb9c4244de0d0b7fc51740c52e62a69ada9c7f2e276a431d871",
+  "result_json_sha256": "ca93ad118c01576f36fecb2bb3008b36769bfdba5ed9450dbd6adb5eb0ebca86",
   "scaled": {
-    "eu-corp-alpha-long": 75.0,
-    "eu-corp-alpha-short": 30.0,
-    "eu-corp-beta-short": 15.0,
-    "eu-muni-short-maturity": 15.0,
-    "eu-sovereign-long": 75.0
+    "pra-corp-alpha-long": 75.0,
+    "pra-corp-alpha-short": 30.0,
+    "pra-corp-beta-short": 15.0,
+    "pra-muni-short-maturity": 15.0,
+    "pra-sovereign-long": 75.0
   },
   "total_drc": 3.9749999999999996
 }

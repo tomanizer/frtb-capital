@@ -20,6 +20,8 @@ The current capital-producing scope is:
 - EU CRR3 CTP row/batch paths using Article 325ab, Article 325ac, Article
   325ad, typed banking-book securitisation risk-weight evidence, decomposition
   evidence, and explicit offset-group evidence;
+- PRA UK CRR non-securitisation row/batch paths using Article 325w, Article
+  325x, Article 325y, and deterministic fixture evidence;
 - class-specific Arrow batches for non-securitisation, securitisation non-CTP,
   and CTP under ADR 0023.
 

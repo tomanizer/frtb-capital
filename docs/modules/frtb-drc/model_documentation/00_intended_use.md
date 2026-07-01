@@ -53,12 +53,14 @@ Supported profile coverage is:
   batch paths using Article 325ab, Article 325ac, Article 325ad, typed
   banking-book securitisation risk-weight evidence, decomposition evidence, and
   explicit offset-group evidence.
+- PRA UK CRR non-securitisation row and batch paths using Article 325w,
+  Article 325x, Article 325y, and deterministic fixture evidence.
 
 Known fail-closed profile paths are:
 
-- `PRA_UK_CRR` for all DRC risk classes, source-mapped to
-  `PRA_DRC_ARTICLE_325V` through `PRA_DRC_ARTICLE_325AD` for issues #1004,
-  #1005, and #1006.
+- `PRA_UK_CRR` securitisation non-CTP and CTP, source-mapped to
+  `PRA_DRC_ARTICLE_325Z` through `PRA_DRC_ARTICLE_325AD` for issues #1005
+  and #1006.
 
 Regulatory anchors for the supported path are recorded in
 [`REGULATORY_REQUIREMENTS.md`](../REGULATORY_REQUIREMENTS.md) and
