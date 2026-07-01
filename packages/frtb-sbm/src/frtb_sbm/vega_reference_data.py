@@ -56,6 +56,10 @@ PROFILE_VEGA_LIQUIDITY_HORIZON_DAYS: dict[
         SbmRiskClass.GIRR: 60,
         SbmRiskClass.FX: 40,
     },
+    SbmRegulatoryProfile.PRA_UK_CRR: {
+        SbmRiskClass.GIRR: 60,
+        SbmRiskClass.FX: 40,
+    },
 }
 
 EQUITY_VEGA_LARGE_CAP_INDEX_LIQUIDITY_HORIZON_DAYS = 20
@@ -79,7 +83,14 @@ PROFILE_GIRR_VEGA_OPTION_TENORS: dict[
         for tenor in BASEL_GIRR_TENORS
     ),
     SbmRegulatoryProfile.EU_CRR3: EU_CRR3_GIRR_TENORS,
-    SbmRegulatoryProfile.PRA_UK_CRR: PRA_UK_CRR_GIRR_TENORS,
+    SbmRegulatoryProfile.PRA_UK_CRR: tuple(
+        SbmGirrTenorDefinition(
+            tenor.tenor,
+            tenor.maturity_years,
+            "pra_uk_crr_325s_vega_sensitivities",
+        )
+        for tenor in PRA_UK_CRR_GIRR_TENORS
+    ),
 }
 
 PROFILE_GIRR_VEGA_LIQUIDITY_HORIZON_CITATION_IDS: dict[SbmRegulatoryProfile, str] = {
@@ -100,7 +111,7 @@ PROFILE_GIRR_VEGA_OPTION_TENOR_CITATION_IDS: dict[SbmRegulatoryProfile, str] = {
     SbmRegulatoryProfile.BASEL_MAR21: "basel_mar21_93",
     SbmRegulatoryProfile.US_NPR_2_0: "us_npr_91_fr_14952_va7a_girr_vega_intra",
     SbmRegulatoryProfile.EU_CRR3: eu_crr3_citation_id_for_basel("basel_mar21_93"),
-    SbmRegulatoryProfile.PRA_UK_CRR: "pra_uk_crr_325ay_vega_correlations",
+    SbmRegulatoryProfile.PRA_UK_CRR: "pra_uk_crr_325s_vega_sensitivities",
 }
 
 PROFILE_VEGA_RISK_WEIGHT_CITATION_IDS: dict[
@@ -127,6 +138,10 @@ PROFILE_VEGA_RISK_WEIGHT_CITATION_IDS: dict[
         risk_class: eu_crr3_citation_id_for_basel("basel_mar21_92")
         for risk_class in (SbmRiskClass.GIRR, SbmRiskClass.FX)
     },
+    SbmRegulatoryProfile.PRA_UK_CRR: {
+        SbmRiskClass.GIRR: "pra_uk_crr_325ax_vega_risk_weights",
+        SbmRiskClass.FX: "pra_uk_crr_325ax_fx_vega_risk_weights",
+    },
 }
 
 PROFILE_VEGA_OPTION_TENOR_CITATION_IDS: dict[
@@ -152,6 +167,10 @@ PROFILE_VEGA_OPTION_TENOR_CITATION_IDS: dict[
     SbmRegulatoryProfile.EU_CRR3: {
         risk_class: eu_crr3_citation_id_for_basel("basel_mar21_93")
         for risk_class in (SbmRiskClass.GIRR, SbmRiskClass.FX)
+    },
+    SbmRegulatoryProfile.PRA_UK_CRR: {
+        SbmRiskClass.GIRR: "pra_uk_crr_325s_vega_sensitivities",
+        SbmRiskClass.FX: "pra_uk_crr_325s_vega_sensitivities",
     },
 }
 
@@ -204,6 +223,13 @@ PROFILE_VEGA_INTRA_BUCKET_CITATION_IDS: dict[
             for citation_id in ("basel_mar21_4_intra_bucket", "basel_mar21_94", "basel_mar21_86")
         ),
     },
+    SbmRegulatoryProfile.PRA_UK_CRR: {
+        SbmRiskClass.FX: (
+            "pra_uk_crr_325f_delta_vega_aggregation",
+            "pra_uk_crr_325ay_vega_correlations",
+            "pra_uk_crr_325av_fx_delta_buckets",
+        ),
+    },
 }
 
 PROFILE_VEGA_INTER_BUCKET_CITATION_IDS: dict[
@@ -247,6 +273,13 @@ PROFILE_VEGA_INTER_BUCKET_CITATION_IDS: dict[
             for citation_id in ("basel_mar21_4_inter_bucket", "basel_mar21_95", "basel_mar21_89")
         ),
     },
+    SbmRegulatoryProfile.PRA_UK_CRR: {
+        SbmRiskClass.FX: (
+            "pra_uk_crr_325f_delta_vega_aggregation",
+            "pra_uk_crr_325ay_vega_correlations",
+            "pra_uk_crr_325aw_fx_delta_inter",
+        ),
+    },
 }
 
 PROFILE_VEGA_SCENARIO_CITATION_IDS: dict[SbmRegulatoryProfile, tuple[str, ...]] = {
@@ -262,6 +295,7 @@ PROFILE_VEGA_SCENARIO_CITATION_IDS: dict[SbmRegulatoryProfile, tuple[str, ...]] 
             "basel_mar21_7_scenario_selection",
         )
     ),
+    SbmRegulatoryProfile.PRA_UK_CRR: ("pra_uk_crr_325h_correlation_scenarios",),
 }
 
 

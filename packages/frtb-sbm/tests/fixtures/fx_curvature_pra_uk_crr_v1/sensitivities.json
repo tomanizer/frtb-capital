@@ -1,0 +1,31 @@
+{
+  "context": {
+    "run_id": "sbm-fx_curvature_pra_uk_crr_v1",
+    "calculation_date": "2026-07-01",
+    "base_currency": "USD",
+    "reporting_currency": "USD",
+    "profile_id": "PRA_UK_CRR"
+  },
+  "sensitivities": [
+    {
+      "sensitivity_id": "fx-curvature-pra-uk-crr-v1-001",
+      "source_row_id": "row-001",
+      "desk_id": "pra-comparison-desk",
+      "legal_entity": "PRA-LE-001",
+      "risk_class": "FX",
+      "risk_measure": "CURVATURE",
+      "bucket": "EUR",
+      "risk_factor": "EUR",
+      "amount": 0.0,
+      "amount_currency": "USD",
+      "sign_convention": "LONG",
+      "up_shock_amount": 100.0,
+      "down_shock_amount": 40.0,
+      "mapping_citation_ids": [
+        "pra_uk_crr_325q_fx_risk_factors",
+        "pra_uk_crr_325ax_fx_curvature_risk_weights"
+      ],
+      "qualifier": "EUR"
+    }
+  ]
+}

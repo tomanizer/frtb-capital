@@ -193,6 +193,11 @@ from frtb_ima.rfet_evidence import (
     assess_rfet_observation_batch,
     input_hash_for_rfet_observation_batch,
 )
+from frtb_ima.risk_factor_metadata import (
+    ImaRiskFactorEvidenceRow,
+    ImaRiskFactorEvidenceState,
+    build_ima_risk_factor_evidence_rows,
+)
 from frtb_ima.scenario import (
     ScenarioMetadata,
     ScenarioMetadataBatch,
@@ -257,6 +262,8 @@ __all__ = [
     "IMAIneligibleError",
     "IMCCResult",
     "IMCCRiskClassComponent",
+    "ImaRiskFactorEvidenceRow",
+    "ImaRiskFactorEvidenceState",
     "InputArtifactLineage",
     "InputValidationStatus",
     "JSONFormatter",
@@ -345,6 +352,7 @@ __all__ = [
     "audit_records_to_ndjson",
     "build_capital_run_input_manifest_from_arrow",
     "build_ima_contribution_bundle",
+    "build_ima_risk_factor_evidence_rows",
     "build_nmrf_valuation_run_request",
     "build_nmrf_valuation_spec",
     "build_nmrf_valuation_specs",

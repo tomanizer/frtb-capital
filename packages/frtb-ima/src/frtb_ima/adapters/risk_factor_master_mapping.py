@@ -171,6 +171,14 @@ def build_risk_factor_master_batch_from_arrow(
     accepted = table.accepted
     return RiskFactorMasterBatch(
         risk_factor_names=np.asarray(_column_values(accepted, "risk_factor_name"), dtype=np.str_),
+        risk_factor_ids=np.asarray(
+            _column_values(accepted, "risk_factor_id", default=""),
+            dtype=np.str_,
+        ),
+        risk_factor_mapping_versions=np.asarray(
+            _column_values(accepted, "risk_factor_mapping_version", default=""),
+            dtype=np.str_,
+        ),
         risk_classes=np.asarray(_column_values(accepted, "risk_class"), dtype=np.str_),
         liquidity_horizons=np.asarray(
             _column_values(accepted, "liquidity_horizon"), dtype=np.int64
@@ -229,9 +237,15 @@ def _map_risk_factor_master_row(
     )
     return {
         "risk_factor_name": mapped_str(row, fields["risk_factor_name"], "risk_factor_name"),
+        "risk_factor_id": _optional_str(row, fields.get("risk_factor_id"), "risk_factor_id"),
+        "risk_factor_mapping_version": _optional_str(
+            row,
+            fields.get("risk_factor_mapping_version"),
+            "risk_factor_mapping_version",
+        ),
         "risk_class": risk_class.value,
         "liquidity_horizon": liquidity_horizon.value,
-        "bucket": _optional_str(row, fields.get("bucket")),
+        "bucket": _optional_str(row, fields.get("bucket"), "bucket"),
         "effective_date": mapped_date(row, fields["effective_date"], "effective_date"),
         "source_row_id": source_row_id,
     }
@@ -272,10 +286,15 @@ def _liquidity_horizon(value: object) -> LiquidityHorizon:
         raise ValueError("liquidity_horizon must be one of 10, 20, 40, 60, 120") from exc
 
 
-def _optional_str(row: Mapping[str, object], mapping: FieldMapping | None) -> str:
+def _optional_str(row: Mapping[str, object], mapping: FieldMapping | None, field: str) -> str:
     if mapping is None:
         return ""
-    value = mapped_value(row, mapping, "bucket")
+    try:
+        value = mapped_value(row, mapping, field)
+    except ValueError as exc:
+        if mapping.constant is None and mapping.source is not None and mapping.source not in row:
+            return ""
+        raise exc
     if value is None:
         return ""
     return str(value).strip()
@@ -296,6 +315,12 @@ def _finding(code: str, message: str, source_row_id: str) -> MappingFinding:
     )
 
 
-def _column_values(table: pa.Table, column_name: str) -> list[object]:
+def _column_values(
+    table: pa.Table, column_name: str, *, default: object | None = None
+) -> list[object]:
+    if column_name not in table.column_names:
+        if default is None:
+            raise KeyError(column_name)
+        return [default] * table.num_rows
     values: Sequence[object] = table.column(column_name).to_pylist()
     return list(values)

@@ -1,18 +1,24 @@
 {
   "calculation_date": "2026-06-03",
   "files": {
+    "README.md": {
+      "sha256": "516c5c1224d27616eaeb3dcc36287ac79f2504d27b11e48762e71cc214b90628"
+    },
     "expected_outputs.json": {
-      "sha256": "f100afe4143248b0d58157577035be31b96f9cf65c6cd78c516a672ec0654549"
+      "sha256": "30870d0c250d76d24701d31d03c7999e43408d7b2a6f426b40a01a249fae084b"
     },
     "invalid_cases.json": {
-      "sha256": "e3d9431e96f76d3cb9e4bf4a35007fec1ed8a0cc85559bd01aaca96ea41ff06e"
+      "sha256": "036423fd6d1589f9b4f3e884623e2ccc061c0e54a4d4bf0018fb193486e7273c"
+    },
+    "loader.py": {
+      "sha256": "505445e9793a5cb4088e605da787216596d0b792590105c7715c76bd1d89bb05"
     },
     "sensitivities.json": {
       "sha256": "3252ec8e260f844838b6524f55f72722f4552598e9fc52e790d88b2929e6b886"
     }
   },
   "profile": "PRA_UK_CRR",
-  "schema_version": "girr_delta_pra_uk_crr_fixture_v1",
+  "schema_version": "girr_delta_pra_uk_crr_v1_fixture_v1",
   "sensitivity_count": 3,
   "total_capital": 19700.12690314456
 }

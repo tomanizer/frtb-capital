@@ -35,10 +35,13 @@ It inspects:
 - shock-definition catalogs and paged rows;
 - scenario-vector metadata catalogs and paged rows;
 - surface catalogs and filtered surface slices;
+- canonical risk-factor metadata, lineage, stored capital contribution state,
+  and bounded source-row mappings from the result-store risk-factor APIs;
 - artifact availability states: `AVAILABLE`, `NO_DATA`, and `UNSUPPORTED`;
 - artifact-row lineage/provenance fields for inspection.
 
-For the result-store schema and endpoint guide, see
+For the result-store schema and endpoint guides, see
+`docs/modules/frtb-result-store/PUBLIC_API.md` and
 `docs/modules/frtb-result-store/ARTIFACT_METADATA.md`.
 
 ## Capital Navigator v2 dashboard
@@ -88,6 +91,7 @@ source are available.
 
 The static metadata shell intentionally does not implement the production OLAP
 backend, AG Grid Enterprise, entitlements, market-data sourcing, shock
-generation, surface interpolation, RFET vendor remediation, or capital
-calculation. Those remain outside this tool directory and are documented as
-boundaries in ADRs 0049-0052.
+generation, surface interpolation, RFET vendor remediation, regulatory
+risk-factor classification, or capital calculation. Those remain outside this
+tool directory and are documented as boundaries in ADRs 0049-0052 and
+`docs/RISK_FACTOR_METADATA_OWNERSHIP.md`.

@@ -51,6 +51,7 @@ _PROFILE_FX_DELTA_SCENARIO_CITATIONS = {
             "basel_mar21_7_scenario_selection",
         )
     ),
+    SbmRegulatoryProfile.PRA_UK_CRR.value: ("pra_uk_crr_325h_correlation_scenarios",),
 }
 _PROFILE_FX_DELTA_INTRA_CITATIONS = {
     SbmRegulatoryProfile.BASEL_MAR21.value: ("basel_mar21_4_intra_bucket", "basel_mar21_86"),
@@ -61,6 +62,10 @@ _PROFILE_FX_DELTA_INTRA_CITATIONS = {
     SbmRegulatoryProfile.EU_CRR3.value: translate_basel_citation_ids_to_eu(
         ("basel_mar21_4_intra_bucket", "basel_mar21_86")
     ),
+    SbmRegulatoryProfile.PRA_UK_CRR.value: (
+        "pra_uk_crr_325f_delta_vega_aggregation",
+        "pra_uk_crr_325av_fx_delta_buckets",
+    ),
 }
 _PROFILE_FX_DELTA_INTER_CITATIONS = {
     SbmRegulatoryProfile.BASEL_MAR21.value: ("basel_mar21_4_inter_bucket", "basel_mar21_89"),
@@ -70,6 +75,10 @@ _PROFILE_FX_DELTA_INTER_CITATIONS = {
     ),
     SbmRegulatoryProfile.EU_CRR3.value: translate_basel_citation_ids_to_eu(
         ("basel_mar21_4_inter_bucket", "basel_mar21_89")
+    ),
+    SbmRegulatoryProfile.PRA_UK_CRR.value: (
+        "pra_uk_crr_325f_delta_vega_aggregation",
+        "pra_uk_crr_325aw_fx_delta_inter",
     ),
 }
 

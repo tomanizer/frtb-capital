@@ -1,0 +1,26 @@
+{
+  "calculation_date": "2026-07-01",
+  "files": {
+    "README.md": {
+      "sha256": "9126ae71db447955c0f929f0510b7740dac69424b36d6c8c7f1c9a5a8e969a72"
+    },
+    "expected_outputs.json": {
+      "sha256": "490f3f57738bbc60d6d1409934e9feb5129f5cee03b186d07425b88dc507122a"
+    },
+    "invalid_cases.json": {
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+    },
+    "loader.py": {
+      "sha256": "43a024d0eb24472b6763af48c4808c6a3b66c3108a7052ac2ff6ffe7957ae915"
+    },
+    "sensitivities.json": {
+      "sha256": "29e37ef526d2ad66eb801dc866f3a4b84cb4e3f0c7a7719db9cb6df05bea8823"
+    }
+  },
+  "profile": "PRA_UK_CRR",
+  "risk_class": "GIRR",
+  "risk_measure": "CURVATURE",
+  "schema_version": "girr_curvature_pra_uk_crr_v1_fixture_v1",
+  "sensitivity_count": 1,
+  "total_capital": 100.0
+}

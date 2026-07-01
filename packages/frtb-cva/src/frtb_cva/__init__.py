@@ -107,6 +107,10 @@ from frtb_cva.registry import (
     SA_CVA_SENSITIVITY_ENTITY_SPEC,
     EntityBatchSpec,
 )
+from frtb_cva.risk_factor_metadata import (
+    CvaRiskFactorMetadataRow,
+    build_cva_risk_factor_metadata_rows,
+)
 from frtb_cva.scaffold import PACKAGE_METADATA
 from frtb_cva.scope import (
     ScopeResolution,
@@ -173,6 +177,7 @@ __all__ = [
     "CvaNettingSetBatch",
     "CvaProfileSupportStatus",
     "CvaRegulatoryProfile",
+    "CvaRiskFactorMetadataRow",
     "CvaRuleProfile",
     "CvaRunControls",
     "CvaSector",
@@ -213,6 +218,7 @@ __all__ = [
     "build_cva_netting_set_batch_from_arrow",
     "build_cva_netting_set_batch_from_columns",
     "build_cva_netting_set_batch_from_netting_sets",
+    "build_cva_risk_factor_metadata_rows",
     "build_sa_cva_sensitivity_batch_from_arrow",
     "build_sa_cva_sensitivity_batch_from_columns",
     "build_sa_cva_sensitivity_batch_from_sensitivities",

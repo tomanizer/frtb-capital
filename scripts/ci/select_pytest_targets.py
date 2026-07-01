@@ -90,7 +90,7 @@ def select_targets(paths: Iterable[str]) -> tuple[str, ...]:
                 if parts[1] == "frtb-common":
                     force_full = True
                 else:
-                    selected.add(f"packages/{parts[1]}/tests")
+                    force_full = True
             continue
         if path.startswith("scripts/") and path.endswith(".py"):
             selected.update(SCRIPT_TEST_TARGETS)
@@ -100,7 +100,10 @@ def select_targets(paths: Iterable[str]) -> tuple[str, ...]:
 
     if force_full:
         return FULL_TEST_TARGETS
-    return tuple(sorted(selected))
+    if selected:
+        selected.add("tests")
+        return tuple(["tests", *sorted(selected - {"tests"})])
+    return ()
 
 
 def _write_github_output(targets: tuple[str, ...]) -> None:

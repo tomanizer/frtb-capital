@@ -1,0 +1,589 @@
+{
+  "input_hash": "25fe499b81037da886aaa38b804b934a9c9cb2dc35da41bd8cb6c8ce7aa550a3",
+  "input_hash_algorithm": "json-row-v1",
+  "portfolio_scenario_selection": {
+    "branch_id": "portfolio_scenario_selection",
+    "branch_type": "SCENARIO_SELECTION",
+    "citation_ids": [
+      "pra_uk_crr_325h_correlation_scenarios"
+    ],
+    "reason": "selected LOW scenario with capital 1510949.951603295 as the maximum across correlation scenarios",
+    "selected": true,
+    "source_id": "mar21_7_2"
+  },
+  "portfolio_scenario_totals": {
+    "HIGH": 1503863.056847265,
+    "LOW": 1510949.951603295,
+    "MEDIUM": 1507410.6689950153
+  },
+  "profile_hash": "8f98d3238da15f6bcbc1b7595aea70aaad6ec7ebae4bfd25f0c3137e4debb5d1",
+  "profile_id": "PRA_UK_CRR",
+  "reconciliation": {
+    "citation_ids": [
+      "pra_uk_crr_325h_correlation_scenarios",
+      "pra_uk_crr_325f_delta_vega_aggregation",
+      "pra_uk_crr_325aq_equity_other_sector",
+      "pra_uk_crr_325ap_equity_weights"
+    ],
+    "input_count": 6,
+    "rejected_input_count": 0,
+    "requirement_ids": [
+      "SBM-WS-001",
+      "SBM-AGG-001",
+      "SBM-AGG-002",
+      "SBM-AUDIT-001",
+      "SBM-FUNC-017",
+      "SBM-FUNC-018",
+      "SBM-FUNC-019",
+      "SBM-FUNC-014",
+      "SBM-FUNC-015",
+      "SBM-FUNC-016",
+      "SBM-CURV-001"
+    ]
+  },
+  "risk_classes": [
+    {
+      "buckets": [
+        {
+          "bucket_id": "11",
+          "citation_ids": [
+            "pra_uk_crr_325aq_equity_other_sector"
+          ],
+          "floor_applied": false,
+          "kb": 1260000.0,
+          "risk_class": "EQUITY",
+          "risk_measure": "DELTA",
+          "sb": 140000.0,
+          "scenario": "LOW",
+          "weighted_sensitivities": [
+            {
+              "bucket": "11",
+              "citation_ids": [
+                "pra_uk_crr_325ap_equity_weights"
+              ],
+              "qualifier": "ISS-X",
+              "raw_amount": 1000000.0,
+              "risk_class": "EQUITY",
+              "risk_measure": "DELTA",
+              "risk_weight": 0.7,
+              "scaled_amount": 700000.0,
+              "sensitivity_id": "equity-delta-pra-uk-crr-v1-005",
+              "source_row_id": "row-005",
+              "source_system": "synthetic-sbm-fixture"
+            },
+            {
+              "bucket": "11",
+              "citation_ids": [
+                "pra_uk_crr_325ap_equity_weights"
+              ],
+              "qualifier": "ISS-Y",
+              "raw_amount": -800000.0,
+              "risk_class": "EQUITY",
+              "risk_measure": "DELTA",
+              "risk_weight": 0.7,
+              "scaled_amount": -560000.0,
+              "sensitivity_id": "equity-delta-pra-uk-crr-v1-006",
+              "source_row_id": "row-006",
+              "source_system": "synthetic-sbm-fixture"
+            }
+          ]
+        },
+        {
+          "bucket_id": "5",
+          "citation_ids": [
+            "pra_uk_crr_325f_delta_vega_aggregation"
+          ],
+          "floor_applied": false,
+          "kb": 619782.2752789886,
+          "risk_class": "EQUITY",
+          "risk_measure": "DELTA",
+          "sb": 301500.0,
+          "scenario": "LOW",
+          "weighted_sensitivities": [
+            {
+              "bucket": "5",
+              "citation_ids": [
+                "pra_uk_crr_325ap_equity_weights"
+              ],
+              "qualifier": "ISS-A",
+              "raw_amount": 2000000.0,
+              "risk_class": "EQUITY",
+              "risk_measure": "DELTA",
+              "risk_weight": 0.3,
+              "scaled_amount": 600000.0,
+              "sensitivity_id": "equity-delta-pra-uk-crr-v1-001",
+              "source_row_id": "row-001",
+              "source_system": "synthetic-sbm-fixture"
+            },
+            {
+              "bucket": "5",
+              "citation_ids": [
+                "pra_uk_crr_325ap_equity_weights"
+              ],
+              "qualifier": "ISS-A",
+              "raw_amount": 500000.0,
+              "risk_class": "EQUITY",
+              "risk_measure": "DELTA",
+              "risk_weight": 0.003,
+              "scaled_amount": 1500.0,
+              "sensitivity_id": "equity-delta-pra-uk-crr-v1-002",
+              "source_row_id": "row-002",
+              "source_system": "synthetic-sbm-fixture"
+            },
+            {
+              "bucket": "5",
+              "citation_ids": [
+                "pra_uk_crr_325ap_equity_weights"
+              ],
+              "qualifier": "ISS-B",
+              "raw_amount": -1000000.0,
+              "risk_class": "EQUITY",
+              "risk_measure": "DELTA",
+              "risk_weight": 0.3,
+              "scaled_amount": -300000.0,
+              "sensitivity_id": "equity-delta-pra-uk-crr-v1-003",
+              "source_row_id": "row-003",
+              "source_system": "synthetic-sbm-fixture"
+            }
+          ]
+        },
+        {
+          "bucket_id": "6",
+          "citation_ids": [
+            "pra_uk_crr_325f_delta_vega_aggregation"
+          ],
+          "floor_applied": false,
+          "kb": 525000.0,
+          "risk_class": "EQUITY",
+          "risk_measure": "DELTA",
+          "sb": 525000.0,
+          "scenario": "LOW",
+          "weighted_sensitivities": [
+            {
+              "bucket": "6",
+              "citation_ids": [
+                "pra_uk_crr_325ap_equity_weights"
+              ],
+              "qualifier": "ISS-C",
+              "raw_amount": 1500000.0,
+              "risk_class": "EQUITY",
+              "risk_measure": "DELTA",
+              "risk_weight": 0.35,
+              "scaled_amount": 525000.0,
+              "sensitivity_id": "equity-delta-pra-uk-crr-v1-004",
+              "source_row_id": "row-004",
+              "source_system": "synthetic-sbm-fixture"
+            }
+          ]
+        }
+      ],
+      "citation_ids": [
+        "pra_uk_crr_325h_correlation_scenarios",
+        "pra_uk_crr_325f_delta_vega_aggregation"
+      ],
+      "risk_class": "EQUITY",
+      "risk_measure": "DELTA",
+      "scenario_details": [
+        {
+          "alternative_sb_used": false,
+          "capital": 1510949.951603295,
+          "citation_ids": [
+            "pra_uk_crr_325h_correlation_scenarios"
+          ],
+          "inter_bucket_correlations": [
+            {
+              "bucket_a": "5",
+              "bucket_b": "11",
+              "correlation": 0.0
+            },
+            {
+              "bucket_a": "5",
+              "bucket_b": "6",
+              "correlation": 0.11249999999999999
+            },
+            {
+              "bucket_a": "6",
+              "bucket_b": "11",
+              "correlation": 0.0
+            }
+          ],
+          "intra_buckets": [
+            {
+              "bucket_id": "11",
+              "citation_ids": [
+                "pra_uk_crr_325aq_equity_other_sector"
+              ],
+              "floor_applied": false,
+              "kb": 1260000.0,
+              "pairwise_correlation_summary": {
+                "evidence_mode": "AUTO",
+                "factor_ids": [
+                  "equity-delta-pra-uk-crr-v1-005",
+                  "equity-delta-pra-uk-crr-v1-006"
+                ],
+                "materialized_count": 0,
+                "omitted_count": 0,
+                "total_count": 0
+              },
+              "pairwise_correlations": [],
+              "sb": 140000.0
+            },
+            {
+              "bucket_id": "5",
+              "citation_ids": [
+                "pra_uk_crr_325f_delta_vega_aggregation"
+              ],
+              "floor_applied": false,
+              "kb": 619782.2752789886,
+              "pairwise_correlation_summary": {
+                "evidence_mode": "AUTO",
+                "factor_ids": [
+                  "equity-delta-pra-uk-crr-v1-001",
+                  "equity-delta-pra-uk-crr-v1-002",
+                  "equity-delta-pra-uk-crr-v1-003"
+                ],
+                "materialized_count": 6,
+                "omitted_count": 0,
+                "total_count": 6
+              },
+              "pairwise_correlations": [
+                {
+                  "correlation": 1.0,
+                  "sensitivity_a": "equity-delta-pra-uk-crr-v1-001",
+                  "sensitivity_b": "equity-delta-pra-uk-crr-v1-001"
+                },
+                {
+                  "correlation": 0.998,
+                  "sensitivity_a": "equity-delta-pra-uk-crr-v1-001",
+                  "sensitivity_b": "equity-delta-pra-uk-crr-v1-002"
+                },
+                {
+                  "correlation": 0.1875,
+                  "sensitivity_a": "equity-delta-pra-uk-crr-v1-001",
+                  "sensitivity_b": "equity-delta-pra-uk-crr-v1-003"
+                },
+                {
+                  "correlation": 1.0,
+                  "sensitivity_a": "equity-delta-pra-uk-crr-v1-002",
+                  "sensitivity_b": "equity-delta-pra-uk-crr-v1-002"
+                },
+                {
+                  "correlation": 0.1873125,
+                  "sensitivity_a": "equity-delta-pra-uk-crr-v1-002",
+                  "sensitivity_b": "equity-delta-pra-uk-crr-v1-003"
+                },
+                {
+                  "correlation": 1.0,
+                  "sensitivity_a": "equity-delta-pra-uk-crr-v1-003",
+                  "sensitivity_b": "equity-delta-pra-uk-crr-v1-003"
+                }
+              ],
+              "sb": 301500.0
+            },
+            {
+              "bucket_id": "6",
+              "citation_ids": [
+                "pra_uk_crr_325f_delta_vega_aggregation"
+              ],
+              "floor_applied": false,
+              "kb": 525000.0,
+              "pairwise_correlation_summary": {
+                "evidence_mode": "AUTO",
+                "factor_ids": [
+                  "equity-delta-pra-uk-crr-v1-004"
+                ],
+                "materialized_count": 1,
+                "omitted_count": 0,
+                "total_count": 1
+              },
+              "pairwise_correlations": [
+                {
+                  "correlation": 1.0,
+                  "sensitivity_a": "equity-delta-pra-uk-crr-v1-004",
+                  "sensitivity_b": "equity-delta-pra-uk-crr-v1-004"
+                }
+              ],
+              "sb": 525000.0
+            }
+          ],
+          "scenario": "LOW"
+        },
+        {
+          "alternative_sb_used": false,
+          "capital": 1507410.6689950153,
+          "citation_ids": [
+            "pra_uk_crr_325h_correlation_scenarios"
+          ],
+          "inter_bucket_correlations": [
+            {
+              "bucket_a": "5",
+              "bucket_b": "11",
+              "correlation": 0.0
+            },
+            {
+              "bucket_a": "5",
+              "bucket_b": "6",
+              "correlation": 0.15
+            },
+            {
+              "bucket_a": "6",
+              "bucket_b": "11",
+              "correlation": 0.0
+            }
+          ],
+          "intra_buckets": [
+            {
+              "bucket_id": "11",
+              "citation_ids": [
+                "pra_uk_crr_325aq_equity_other_sector"
+              ],
+              "floor_applied": false,
+              "kb": 1260000.0,
+              "pairwise_correlation_summary": {
+                "evidence_mode": "AUTO",
+                "factor_ids": [
+                  "equity-delta-pra-uk-crr-v1-005",
+                  "equity-delta-pra-uk-crr-v1-006"
+                ],
+                "materialized_count": 0,
+                "omitted_count": 0,
+                "total_count": 0
+              },
+              "pairwise_correlations": [],
+              "sb": 140000.0
+            },
+            {
+              "bucket_id": "5",
+              "citation_ids": [
+                "pra_uk_crr_325f_delta_vega_aggregation"
+              ],
+              "floor_applied": false,
+              "kb": 601311.6288581154,
+              "pairwise_correlation_summary": {
+                "evidence_mode": "AUTO",
+                "factor_ids": [
+                  "equity-delta-pra-uk-crr-v1-001",
+                  "equity-delta-pra-uk-crr-v1-002",
+                  "equity-delta-pra-uk-crr-v1-003"
+                ],
+                "materialized_count": 6,
+                "omitted_count": 0,
+                "total_count": 6
+              },
+              "pairwise_correlations": [
+                {
+                  "correlation": 1.0,
+                  "sensitivity_a": "equity-delta-pra-uk-crr-v1-001",
+                  "sensitivity_b": "equity-delta-pra-uk-crr-v1-001"
+                },
+                {
+                  "correlation": 0.999,
+                  "sensitivity_a": "equity-delta-pra-uk-crr-v1-001",
+                  "sensitivity_b": "equity-delta-pra-uk-crr-v1-002"
+                },
+                {
+                  "correlation": 0.25,
+                  "sensitivity_a": "equity-delta-pra-uk-crr-v1-001",
+                  "sensitivity_b": "equity-delta-pra-uk-crr-v1-003"
+                },
+                {
+                  "correlation": 1.0,
+                  "sensitivity_a": "equity-delta-pra-uk-crr-v1-002",
+                  "sensitivity_b": "equity-delta-pra-uk-crr-v1-002"
+                },
+                {
+                  "correlation": 0.24975,
+                  "sensitivity_a": "equity-delta-pra-uk-crr-v1-002",
+                  "sensitivity_b": "equity-delta-pra-uk-crr-v1-003"
+                },
+                {
+                  "correlation": 1.0,
+                  "sensitivity_a": "equity-delta-pra-uk-crr-v1-003",
+                  "sensitivity_b": "equity-delta-pra-uk-crr-v1-003"
+                }
+              ],
+              "sb": 301500.0
+            },
+            {
+              "bucket_id": "6",
+              "citation_ids": [
+                "pra_uk_crr_325f_delta_vega_aggregation"
+              ],
+              "floor_applied": false,
+              "kb": 525000.0,
+              "pairwise_correlation_summary": {
+                "evidence_mode": "AUTO",
+                "factor_ids": [
+                  "equity-delta-pra-uk-crr-v1-004"
+                ],
+                "materialized_count": 1,
+                "omitted_count": 0,
+                "total_count": 1
+              },
+              "pairwise_correlations": [
+                {
+                  "correlation": 1.0,
+                  "sensitivity_a": "equity-delta-pra-uk-crr-v1-004",
+                  "sensitivity_b": "equity-delta-pra-uk-crr-v1-004"
+                }
+              ],
+              "sb": 525000.0
+            }
+          ],
+          "scenario": "MEDIUM"
+        },
+        {
+          "alternative_sb_used": false,
+          "capital": 1503863.056847265,
+          "citation_ids": [
+            "pra_uk_crr_325h_correlation_scenarios"
+          ],
+          "inter_bucket_correlations": [
+            {
+              "bucket_a": "5",
+              "bucket_b": "11",
+              "correlation": 0.0
+            },
+            {
+              "bucket_a": "5",
+              "bucket_b": "6",
+              "correlation": 0.1875
+            },
+            {
+              "bucket_a": "6",
+              "bucket_b": "11",
+              "correlation": 0.0
+            }
+          ],
+          "intra_buckets": [
+            {
+              "bucket_id": "11",
+              "citation_ids": [
+                "pra_uk_crr_325aq_equity_other_sector"
+              ],
+              "floor_applied": false,
+              "kb": 1260000.0,
+              "pairwise_correlation_summary": {
+                "evidence_mode": "AUTO",
+                "factor_ids": [
+                  "equity-delta-pra-uk-crr-v1-005",
+                  "equity-delta-pra-uk-crr-v1-006"
+                ],
+                "materialized_count": 0,
+                "omitted_count": 0,
+                "total_count": 0
+              },
+              "pairwise_correlations": [],
+              "sb": 140000.0
+            },
+            {
+              "bucket_id": "5",
+              "citation_ids": [
+                "pra_uk_crr_325f_delta_vega_aggregation"
+              ],
+              "floor_applied": false,
+              "kb": 582255.3402503063,
+              "pairwise_correlation_summary": {
+                "evidence_mode": "AUTO",
+                "factor_ids": [
+                  "equity-delta-pra-uk-crr-v1-001",
+                  "equity-delta-pra-uk-crr-v1-002",
+                  "equity-delta-pra-uk-crr-v1-003"
+                ],
+                "materialized_count": 6,
+                "omitted_count": 0,
+                "total_count": 6
+              },
+              "pairwise_correlations": [
+                {
+                  "correlation": 1.0,
+                  "sensitivity_a": "equity-delta-pra-uk-crr-v1-001",
+                  "sensitivity_b": "equity-delta-pra-uk-crr-v1-001"
+                },
+                {
+                  "correlation": 1.0,
+                  "sensitivity_a": "equity-delta-pra-uk-crr-v1-001",
+                  "sensitivity_b": "equity-delta-pra-uk-crr-v1-002"
+                },
+                {
+                  "correlation": 0.3125,
+                  "sensitivity_a": "equity-delta-pra-uk-crr-v1-001",
+                  "sensitivity_b": "equity-delta-pra-uk-crr-v1-003"
+                },
+                {
+                  "correlation": 1.0,
+                  "sensitivity_a": "equity-delta-pra-uk-crr-v1-002",
+                  "sensitivity_b": "equity-delta-pra-uk-crr-v1-002"
+                },
+                {
+                  "correlation": 0.3121875,
+                  "sensitivity_a": "equity-delta-pra-uk-crr-v1-002",
+                  "sensitivity_b": "equity-delta-pra-uk-crr-v1-003"
+                },
+                {
+                  "correlation": 1.0,
+                  "sensitivity_a": "equity-delta-pra-uk-crr-v1-003",
+                  "sensitivity_b": "equity-delta-pra-uk-crr-v1-003"
+                }
+              ],
+              "sb": 301500.0
+            },
+            {
+              "bucket_id": "6",
+              "citation_ids": [
+                "pra_uk_crr_325f_delta_vega_aggregation"
+              ],
+              "floor_applied": false,
+              "kb": 525000.0,
+              "pairwise_correlation_summary": {
+                "evidence_mode": "AUTO",
+                "factor_ids": [
+                  "equity-delta-pra-uk-crr-v1-004"
+                ],
+                "materialized_count": 1,
+                "omitted_count": 0,
+                "total_count": 1
+              },
+              "pairwise_correlations": [
+                {
+                  "correlation": 1.0,
+                  "sensitivity_a": "equity-delta-pra-uk-crr-v1-004",
+                  "sensitivity_b": "equity-delta-pra-uk-crr-v1-004"
+                }
+              ],
+              "sb": 525000.0
+            }
+          ],
+          "scenario": "HIGH"
+        }
+      ],
+      "scenario_selection": {
+        "branch_id": "equity_delta_scenario_selection",
+        "branch_type": "SCENARIO_SELECTION",
+        "citation_ids": [
+          "pra_uk_crr_325h_correlation_scenarios"
+        ],
+        "reason": "selected LOW scenario with capital 1510949.951603295 as the maximum across correlation scenarios",
+        "selected": true,
+        "source_id": "mar21_7_2"
+      },
+      "scenario_totals": {
+        "HIGH": 1503863.056847265,
+        "LOW": 1510949.951603295,
+        "MEDIUM": 1507410.6689950153
+      },
+      "selected_capital": 1510949.951603295,
+      "selected_scenario": "LOW"
+    }
+  ],
+  "run_context": {
+    "base_currency": "USD",
+    "calculation_date": "2026-07-01",
+    "reporting_currency": "USD",
+    "run_id": "sbm-equity_delta_pra_uk_crr_v1"
+  },
+  "selected_portfolio_scenario": "LOW",
+  "total_capital": 1510949.951603295,
+  "unsupported_flags": [],
+  "warnings": []
+}

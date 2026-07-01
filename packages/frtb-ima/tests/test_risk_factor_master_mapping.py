@@ -2,14 +2,18 @@
 
 from __future__ import annotations
 
+from datetime import date
 from pathlib import Path
 
+import pyarrow as pa
 import pytest
+from frtb_common.arrow_table import NormalizedArrowTable
 
 from frtb_ima.adapters.mapping_spec import MappingSpecError, parse_ima_mapping_spec
 from frtb_ima.adapters.risk_factor_master_mapping import (
     IMA_RISK_FACTOR_MASTER_ARROW_COLUMN_SPECS,
     IMA_RISK_FACTOR_MASTER_TARGET,
+    build_risk_factor_master_batch_from_arrow,
     input_hash_for_risk_factor_master_batch,
     materialize_risk_factor_master_from_mapping,
     materialize_risk_factor_master_from_rows,
@@ -32,6 +36,8 @@ tables:
     target: ima_risk_factor_master
     fields:
       risk_factor_name: RISK_FACTOR
+      risk_factor_id: RISK_FACTOR_ID
+      risk_factor_mapping_version: MAPPING_VERSION
       risk_class: RISK_CLASS
       liquidity_horizon: LH
       bucket: BUCKET
@@ -48,6 +54,8 @@ def test_risk_factor_master_mapping_materializes_readonly_batch() -> None:
             {
                 "ROW_ID": "r2",
                 "RISK_FACTOR": "CSR_IG_5Y",
+                "RISK_FACTOR_ID": "rf:csr:ig:5y",
+                "MAPPING_VERSION": "ima-map-v1",
                 "RISK_CLASS": "CSR",
                 "LH": "LH40",
                 "BUCKET": "IG",
@@ -56,6 +64,8 @@ def test_risk_factor_master_mapping_materializes_readonly_batch() -> None:
             {
                 "ROW_ID": "r1",
                 "RISK_FACTOR": "IR_USD_SWAP_10Y",
+                "RISK_FACTOR_ID": "rf:girr:usd-swap:10y",
+                "MAPPING_VERSION": "ima-map-v1",
                 "RISK_CLASS": "GIRR",
                 "LH": "10",
                 "BUCKET": "USD",
@@ -68,6 +78,8 @@ def test_risk_factor_master_mapping_materializes_readonly_batch() -> None:
 
     assert batch.row_count == 2
     assert batch.risk_factor_names.tolist() == ["CSR_IG_5Y", "IR_USD_SWAP_10Y"]
+    assert batch.risk_factor_ids.tolist() == ["rf:csr:ig:5y", "rf:girr:usd-swap:10y"]
+    assert batch.risk_factor_mapping_versions.tolist() == ["ima-map-v1", "ima-map-v1"]
     assert batch.risk_classes.tolist() == [RiskClass.CSR.value, RiskClass.GIRR.value]
     assert batch.liquidity_horizons.tolist() == [LiquidityHorizon.LH40.value, 10]
     assert batch.effective_dates.astype("datetime64[D]").astype(str).tolist() == [
@@ -80,6 +92,8 @@ def test_risk_factor_master_mapping_materializes_readonly_batch() -> None:
     assert not batch.effective_dates.flags.writeable
     assert batch.liquidity_horizon_by_name()["IR_USD_SWAP_10Y"] == LiquidityHorizon.LH10
     assert batch.risk_class_by_name()["CSR_IG_5Y"] == RiskClass.CSR
+    assert batch.risk_factor_id_by_name()["IR_USD_SWAP_10Y"] == "rf:girr:usd-swap:10y"
+    assert batch.mapping_version_by_name()["CSR_IG_5Y"] == "ima-map-v1"
     assert result.report.row_count_read == 2
     assert result.report.row_count_mapped == 2
     assert result.report.passed
@@ -145,6 +159,8 @@ def test_risk_factor_master_mapping_requires_table_for_materialization() -> None
             "    target: ima_risk_factor_master\n"
             "    fields:\n"
             "      risk_factor_name: RISK_FACTOR\n"
+            "      risk_factor_id: RISK_FACTOR_ID\n"
+            "      risk_factor_mapping_version: MAPPING_VERSION\n"
             "      risk_class: RISK_CLASS\n"
             "      liquidity_horizon: LH\n"
             "      bucket: BUCKET\n"
@@ -175,6 +191,8 @@ def test_risk_factor_master_mapping_exposes_column_specs() -> None:
     assert IMA_RISK_FACTOR_MASTER_TARGET == "ima_risk_factor_master"
     assert [spec.name for spec in IMA_RISK_FACTOR_MASTER_ARROW_COLUMN_SPECS] == [
         "risk_factor_name",
+        "risk_factor_id",
+        "risk_factor_mapping_version",
         "risk_class",
         "liquidity_horizon",
         "bucket",
@@ -186,8 +204,8 @@ def test_risk_factor_master_mapping_exposes_column_specs() -> None:
 def test_risk_factor_master_mapping_materializes_from_csv(tmp_path: Path) -> None:
     source = tmp_path / "risk_factor_master.csv"
     source.write_text(
-        "ROW_ID,RISK_FACTOR,RISK_CLASS,LH,BUCKET,EFFECTIVE_DATE\n"
-        "r1,EURUSD_FX,FX,10,FX,2025-01-01\n",
+        "ROW_ID,RISK_FACTOR,RISK_FACTOR_ID,MAPPING_VERSION,RISK_CLASS,LH,BUCKET,EFFECTIVE_DATE\n"
+        "r1,EURUSD_FX,rf:fx:eurusd,ima-map-v1,FX,10,FX,2025-01-01\n",
         encoding="utf-8",
     )
     spec = parse_ima_mapping_spec(MAPPING_YAML)
@@ -196,4 +214,27 @@ def test_risk_factor_master_mapping_materializes_from_csv(tmp_path: Path) -> Non
 
     assert result.batch.row_count == 1
     assert result.batch.risk_factor_names.tolist() == ["EURUSD_FX"]
+    assert result.batch.risk_factor_ids.tolist() == ["rf:fx:eurusd"]
     assert result.report.source_file == "risk_factor_master.csv"
+
+
+def test_risk_factor_master_arrow_batch_tolerates_missing_optional_id_columns() -> None:
+    table = pa.table(
+        {
+            "risk_factor_name": ["EURUSD_FX"],
+            "risk_class": ["FX"],
+            "liquidity_horizon": [10],
+            "bucket": ["FX"],
+            "effective_date": [date(2025, 1, 1)],
+            "source_row_id": ["r1"],
+        }
+    )
+    normalized = NormalizedArrowTable(
+        accepted=table,
+        column_specs=IMA_RISK_FACTOR_MASTER_ARROW_COLUMN_SPECS,
+    )
+
+    batch = build_risk_factor_master_batch_from_arrow(normalized)
+
+    assert batch.risk_factor_ids.tolist() == [""]
+    assert batch.risk_factor_mapping_versions.tolist() == [""]

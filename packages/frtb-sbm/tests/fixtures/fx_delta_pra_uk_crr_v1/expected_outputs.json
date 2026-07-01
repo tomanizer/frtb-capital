@@ -1,0 +1,493 @@
+{
+  "input_hash": "6f77a00a9ff2d3e29ad72be37f6340d52c308285ad462e8b024ed38ca1010817",
+  "input_hash_algorithm": "json-row-v1",
+  "portfolio_scenario_selection": {
+    "branch_id": "portfolio_scenario_selection",
+    "branch_type": "SCENARIO_SELECTION",
+    "citation_ids": [
+      "pra_uk_crr_325h_correlation_scenarios"
+    ],
+    "reason": "selected LOW scenario with capital 221680.4639109114 as the maximum across correlation scenarios",
+    "selected": true,
+    "source_id": "mar21_7_2"
+  },
+  "portfolio_scenario_totals": {
+    "HIGH": 176857.8905965507,
+    "LOW": 221680.4639109114,
+    "MEDIUM": 200525.4865921267
+  },
+  "profile_hash": "8f98d3238da15f6bcbc1b7595aea70aaad6ec7ebae4bfd25f0c3137e4debb5d1",
+  "profile_id": "PRA_UK_CRR",
+  "reconciliation": {
+    "citation_ids": [
+      "pra_uk_crr_325h_correlation_scenarios",
+      "pra_uk_crr_325f_delta_vega_aggregation",
+      "pra_uk_crr_325av_fx_delta_buckets",
+      "pra_uk_crr_325aw_fx_delta_inter",
+      "pra_uk_crr_325av_fx_delta_weights",
+      "pra_uk_crr_325av_fx_delta_sqrt2"
+    ],
+    "input_count": 3,
+    "rejected_input_count": 0,
+    "requirement_ids": [
+      "SBM-WS-001",
+      "SBM-AGG-001",
+      "SBM-AGG-002",
+      "SBM-AUDIT-001",
+      "SBM-FUNC-017",
+      "SBM-FUNC-018",
+      "SBM-FUNC-019",
+      "SBM-FUNC-014",
+      "SBM-FUNC-015",
+      "SBM-FUNC-016",
+      "SBM-CURV-001"
+    ]
+  },
+  "risk_classes": [
+    {
+      "buckets": [
+        {
+          "bucket_id": "EUR",
+          "citation_ids": [
+            "pra_uk_crr_325f_delta_vega_aggregation",
+            "pra_uk_crr_325av_fx_delta_buckets"
+          ],
+          "floor_applied": false,
+          "kb": 212132.03435596422,
+          "risk_class": "FX",
+          "risk_measure": "DELTA",
+          "sb": 212132.03435596422,
+          "scenario": "LOW",
+          "weighted_sensitivities": [
+            {
+              "bucket": "EUR",
+              "citation_ids": [
+                "pra_uk_crr_325av_fx_delta_weights",
+                "pra_uk_crr_325av_fx_delta_sqrt2"
+              ],
+              "raw_amount": 2000000.0,
+              "risk_class": "FX",
+              "risk_measure": "DELTA",
+              "risk_weight": 0.10606601717798211,
+              "scaled_amount": 212132.03435596422,
+              "sensitivity_id": "fx-delta-pra-uk-crr-v1-001",
+              "source_row_id": "row-001",
+              "source_system": "synthetic-sbm-fixture"
+            }
+          ]
+        },
+        {
+          "bucket_id": "GBP",
+          "citation_ids": [
+            "pra_uk_crr_325f_delta_vega_aggregation",
+            "pra_uk_crr_325av_fx_delta_buckets"
+          ],
+          "floor_applied": false,
+          "kb": 159099.02576697318,
+          "risk_class": "FX",
+          "risk_measure": "DELTA",
+          "sb": -159099.02576697318,
+          "scenario": "LOW",
+          "weighted_sensitivities": [
+            {
+              "bucket": "GBP",
+              "citation_ids": [
+                "pra_uk_crr_325av_fx_delta_weights",
+                "pra_uk_crr_325av_fx_delta_sqrt2"
+              ],
+              "raw_amount": -1500000.0,
+              "risk_class": "FX",
+              "risk_measure": "DELTA",
+              "risk_weight": 0.10606601717798211,
+              "scaled_amount": -159099.02576697318,
+              "sensitivity_id": "fx-delta-pra-uk-crr-v1-002",
+              "source_row_id": "row-002",
+              "source_system": "synthetic-sbm-fixture"
+            }
+          ]
+        },
+        {
+          "bucket_id": "MYR",
+          "citation_ids": [
+            "pra_uk_crr_325f_delta_vega_aggregation",
+            "pra_uk_crr_325av_fx_delta_buckets"
+          ],
+          "floor_applied": false,
+          "kb": 75000.0,
+          "risk_class": "FX",
+          "risk_measure": "DELTA",
+          "sb": 75000.0,
+          "scenario": "LOW",
+          "weighted_sensitivities": [
+            {
+              "bucket": "MYR",
+              "citation_ids": [
+                "pra_uk_crr_325av_fx_delta_weights"
+              ],
+              "raw_amount": 500000.0,
+              "risk_class": "FX",
+              "risk_measure": "DELTA",
+              "risk_weight": 0.15,
+              "scaled_amount": 75000.0,
+              "sensitivity_id": "fx-delta-pra-uk-crr-v1-003",
+              "source_row_id": "row-003",
+              "source_system": "synthetic-sbm-fixture"
+            }
+          ]
+        }
+      ],
+      "citation_ids": [
+        "pra_uk_crr_325h_correlation_scenarios",
+        "pra_uk_crr_325f_delta_vega_aggregation",
+        "pra_uk_crr_325av_fx_delta_buckets",
+        "pra_uk_crr_325aw_fx_delta_inter"
+      ],
+      "risk_class": "FX",
+      "risk_measure": "DELTA",
+      "scenario_details": [
+        {
+          "alternative_sb_used": false,
+          "capital": 221680.4639109114,
+          "citation_ids": [
+            "pra_uk_crr_325h_correlation_scenarios"
+          ],
+          "inter_bucket_correlations": [
+            {
+              "bucket_a": "EUR",
+              "bucket_b": "GBP",
+              "correlation": 0.44999999999999996
+            },
+            {
+              "bucket_a": "EUR",
+              "bucket_b": "MYR",
+              "correlation": 0.44999999999999996
+            },
+            {
+              "bucket_a": "GBP",
+              "bucket_b": "MYR",
+              "correlation": 0.44999999999999996
+            }
+          ],
+          "intra_buckets": [
+            {
+              "bucket_id": "EUR",
+              "citation_ids": [
+                "pra_uk_crr_325f_delta_vega_aggregation",
+                "pra_uk_crr_325av_fx_delta_buckets"
+              ],
+              "floor_applied": false,
+              "kb": 212132.03435596422,
+              "pairwise_correlation_summary": {
+                "evidence_mode": "AUTO",
+                "factor_ids": [
+                  "fx-delta-pra-uk-crr-v1-001"
+                ],
+                "materialized_count": 1,
+                "omitted_count": 0,
+                "total_count": 1
+              },
+              "pairwise_correlations": [
+                {
+                  "correlation": 1.0,
+                  "sensitivity_a": "fx-delta-pra-uk-crr-v1-001",
+                  "sensitivity_b": "fx-delta-pra-uk-crr-v1-001"
+                }
+              ],
+              "sb": 212132.03435596422
+            },
+            {
+              "bucket_id": "GBP",
+              "citation_ids": [
+                "pra_uk_crr_325f_delta_vega_aggregation",
+                "pra_uk_crr_325av_fx_delta_buckets"
+              ],
+              "floor_applied": false,
+              "kb": 159099.02576697318,
+              "pairwise_correlation_summary": {
+                "evidence_mode": "AUTO",
+                "factor_ids": [
+                  "fx-delta-pra-uk-crr-v1-002"
+                ],
+                "materialized_count": 1,
+                "omitted_count": 0,
+                "total_count": 1
+              },
+              "pairwise_correlations": [
+                {
+                  "correlation": 1.0,
+                  "sensitivity_a": "fx-delta-pra-uk-crr-v1-002",
+                  "sensitivity_b": "fx-delta-pra-uk-crr-v1-002"
+                }
+              ],
+              "sb": -159099.02576697318
+            },
+            {
+              "bucket_id": "MYR",
+              "citation_ids": [
+                "pra_uk_crr_325f_delta_vega_aggregation",
+                "pra_uk_crr_325av_fx_delta_buckets"
+              ],
+              "floor_applied": false,
+              "kb": 75000.0,
+              "pairwise_correlation_summary": {
+                "evidence_mode": "AUTO",
+                "factor_ids": [
+                  "fx-delta-pra-uk-crr-v1-003"
+                ],
+                "materialized_count": 1,
+                "omitted_count": 0,
+                "total_count": 1
+              },
+              "pairwise_correlations": [
+                {
+                  "correlation": 1.0,
+                  "sensitivity_a": "fx-delta-pra-uk-crr-v1-003",
+                  "sensitivity_b": "fx-delta-pra-uk-crr-v1-003"
+                }
+              ],
+              "sb": 75000.0
+            }
+          ],
+          "scenario": "LOW"
+        },
+        {
+          "alternative_sb_used": false,
+          "capital": 200525.4865921267,
+          "citation_ids": [
+            "pra_uk_crr_325h_correlation_scenarios"
+          ],
+          "inter_bucket_correlations": [
+            {
+              "bucket_a": "EUR",
+              "bucket_b": "GBP",
+              "correlation": 0.6
+            },
+            {
+              "bucket_a": "EUR",
+              "bucket_b": "MYR",
+              "correlation": 0.6
+            },
+            {
+              "bucket_a": "GBP",
+              "bucket_b": "MYR",
+              "correlation": 0.6
+            }
+          ],
+          "intra_buckets": [
+            {
+              "bucket_id": "EUR",
+              "citation_ids": [
+                "pra_uk_crr_325f_delta_vega_aggregation",
+                "pra_uk_crr_325av_fx_delta_buckets"
+              ],
+              "floor_applied": false,
+              "kb": 212132.03435596422,
+              "pairwise_correlation_summary": {
+                "evidence_mode": "AUTO",
+                "factor_ids": [
+                  "fx-delta-pra-uk-crr-v1-001"
+                ],
+                "materialized_count": 1,
+                "omitted_count": 0,
+                "total_count": 1
+              },
+              "pairwise_correlations": [
+                {
+                  "correlation": 1.0,
+                  "sensitivity_a": "fx-delta-pra-uk-crr-v1-001",
+                  "sensitivity_b": "fx-delta-pra-uk-crr-v1-001"
+                }
+              ],
+              "sb": 212132.03435596422
+            },
+            {
+              "bucket_id": "GBP",
+              "citation_ids": [
+                "pra_uk_crr_325f_delta_vega_aggregation",
+                "pra_uk_crr_325av_fx_delta_buckets"
+              ],
+              "floor_applied": false,
+              "kb": 159099.02576697318,
+              "pairwise_correlation_summary": {
+                "evidence_mode": "AUTO",
+                "factor_ids": [
+                  "fx-delta-pra-uk-crr-v1-002"
+                ],
+                "materialized_count": 1,
+                "omitted_count": 0,
+                "total_count": 1
+              },
+              "pairwise_correlations": [
+                {
+                  "correlation": 1.0,
+                  "sensitivity_a": "fx-delta-pra-uk-crr-v1-002",
+                  "sensitivity_b": "fx-delta-pra-uk-crr-v1-002"
+                }
+              ],
+              "sb": -159099.02576697318
+            },
+            {
+              "bucket_id": "MYR",
+              "citation_ids": [
+                "pra_uk_crr_325f_delta_vega_aggregation",
+                "pra_uk_crr_325av_fx_delta_buckets"
+              ],
+              "floor_applied": false,
+              "kb": 75000.0,
+              "pairwise_correlation_summary": {
+                "evidence_mode": "AUTO",
+                "factor_ids": [
+                  "fx-delta-pra-uk-crr-v1-003"
+                ],
+                "materialized_count": 1,
+                "omitted_count": 0,
+                "total_count": 1
+              },
+              "pairwise_correlations": [
+                {
+                  "correlation": 1.0,
+                  "sensitivity_a": "fx-delta-pra-uk-crr-v1-003",
+                  "sensitivity_b": "fx-delta-pra-uk-crr-v1-003"
+                }
+              ],
+              "sb": 75000.0
+            }
+          ],
+          "scenario": "MEDIUM"
+        },
+        {
+          "alternative_sb_used": false,
+          "capital": 176857.8905965507,
+          "citation_ids": [
+            "pra_uk_crr_325h_correlation_scenarios"
+          ],
+          "inter_bucket_correlations": [
+            {
+              "bucket_a": "EUR",
+              "bucket_b": "GBP",
+              "correlation": 0.75
+            },
+            {
+              "bucket_a": "EUR",
+              "bucket_b": "MYR",
+              "correlation": 0.75
+            },
+            {
+              "bucket_a": "GBP",
+              "bucket_b": "MYR",
+              "correlation": 0.75
+            }
+          ],
+          "intra_buckets": [
+            {
+              "bucket_id": "EUR",
+              "citation_ids": [
+                "pra_uk_crr_325f_delta_vega_aggregation",
+                "pra_uk_crr_325av_fx_delta_buckets"
+              ],
+              "floor_applied": false,
+              "kb": 212132.03435596422,
+              "pairwise_correlation_summary": {
+                "evidence_mode": "AUTO",
+                "factor_ids": [
+                  "fx-delta-pra-uk-crr-v1-001"
+                ],
+                "materialized_count": 1,
+                "omitted_count": 0,
+                "total_count": 1
+              },
+              "pairwise_correlations": [
+                {
+                  "correlation": 1.0,
+                  "sensitivity_a": "fx-delta-pra-uk-crr-v1-001",
+                  "sensitivity_b": "fx-delta-pra-uk-crr-v1-001"
+                }
+              ],
+              "sb": 212132.03435596422
+            },
+            {
+              "bucket_id": "GBP",
+              "citation_ids": [
+                "pra_uk_crr_325f_delta_vega_aggregation",
+                "pra_uk_crr_325av_fx_delta_buckets"
+              ],
+              "floor_applied": false,
+              "kb": 159099.02576697318,
+              "pairwise_correlation_summary": {
+                "evidence_mode": "AUTO",
+                "factor_ids": [
+                  "fx-delta-pra-uk-crr-v1-002"
+                ],
+                "materialized_count": 1,
+                "omitted_count": 0,
+                "total_count": 1
+              },
+              "pairwise_correlations": [
+                {
+                  "correlation": 1.0,
+                  "sensitivity_a": "fx-delta-pra-uk-crr-v1-002",
+                  "sensitivity_b": "fx-delta-pra-uk-crr-v1-002"
+                }
+              ],
+              "sb": -159099.02576697318
+            },
+            {
+              "bucket_id": "MYR",
+              "citation_ids": [
+                "pra_uk_crr_325f_delta_vega_aggregation",
+                "pra_uk_crr_325av_fx_delta_buckets"
+              ],
+              "floor_applied": false,
+              "kb": 75000.0,
+              "pairwise_correlation_summary": {
+                "evidence_mode": "AUTO",
+                "factor_ids": [
+                  "fx-delta-pra-uk-crr-v1-003"
+                ],
+                "materialized_count": 1,
+                "omitted_count": 0,
+                "total_count": 1
+              },
+              "pairwise_correlations": [
+                {
+                  "correlation": 1.0,
+                  "sensitivity_a": "fx-delta-pra-uk-crr-v1-003",
+                  "sensitivity_b": "fx-delta-pra-uk-crr-v1-003"
+                }
+              ],
+              "sb": 75000.0
+            }
+          ],
+          "scenario": "HIGH"
+        }
+      ],
+      "scenario_selection": {
+        "branch_id": "fx_delta_scenario_selection",
+        "branch_type": "SCENARIO_SELECTION",
+        "citation_ids": [
+          "pra_uk_crr_325h_correlation_scenarios"
+        ],
+        "reason": "selected LOW scenario with capital 221680.4639109114 as the maximum across correlation scenarios",
+        "selected": true,
+        "source_id": "mar21_7_2"
+      },
+      "scenario_totals": {
+        "HIGH": 176857.8905965507,
+        "LOW": 221680.4639109114,
+        "MEDIUM": 200525.4865921267
+      },
+      "selected_capital": 221680.4639109114,
+      "selected_scenario": "LOW"
+    }
+  ],
+  "run_context": {
+    "base_currency": "USD",
+    "calculation_date": "2026-07-01",
+    "reporting_currency": "USD",
+    "run_id": "sbm-fx_delta_pra_uk_crr_v1"
+  },
+  "selected_portfolio_scenario": "LOW",
+  "total_capital": 221680.4639109114,
+  "unsupported_flags": [],
+  "warnings": []
+}
