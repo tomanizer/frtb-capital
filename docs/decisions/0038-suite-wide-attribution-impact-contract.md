@@ -157,7 +157,7 @@ the method categorisation established in ADR 0037.
 ### 4.1. Alternative method rationale
 
 The FRTB IMCC literature also describes constrained Aumann-Shapley style
-allocations (for example in arXiv:1801.07358v2). Those methods preserve
+allocations (for example in ArXiv:1801.07358v2). Those methods preserve
 attribution axioms and can reduce instability for some portfolio geometries,
 but they remain permutation-based and materially more expensive than standard
 Euler for large attribution sets.
