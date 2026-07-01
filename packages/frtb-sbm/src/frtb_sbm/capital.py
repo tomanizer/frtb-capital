@@ -83,6 +83,10 @@ from frtb_sbm.risk_classes.vega import (
     calculate_non_girr_vega_risk_class_capital,
     calculate_non_girr_vega_risk_class_capital_from_batch,
 )
+from frtb_sbm.risk_factor_metadata import (
+    attach_risk_factor_metadata_from_batch,
+    attach_risk_factor_metadata_from_sensitivities,
+)
 from frtb_sbm.validation import (
     SbmInputError,
     ensure_sbm_capital_paths_supported,
@@ -265,8 +269,12 @@ def calculate_sbm_capital(
                 f"risk_class={risk_class.value}, risk_measure={risk_measure.value}"
             )
 
-    return _build_sbm_capital_result(
+    metadata_results = attach_risk_factor_metadata_from_sensitivities(
         risk_class_results,
+        validated,
+    )
+    return _build_sbm_capital_result(
+        metadata_results,
         rule_profile=rule_profile,
         context=context,
         input_hash=input_hash_for_validated_sensitivities(validated),
@@ -305,7 +313,10 @@ def calculate_sbm_capital_from_batch(
 
     validate_sbm_calculation_context(context)
     rule_profile = get_sbm_rule_profile(context.profile_id)
-    risk_class = _calculate_batch_risk_class_capital(batch, context=context)
+    risk_class = attach_risk_factor_metadata_from_batch(
+        _calculate_batch_risk_class_capital(batch, context=context),
+        batch,
+    )
     return _build_sbm_capital_result(
         (risk_class,),
         rule_profile=rule_profile,

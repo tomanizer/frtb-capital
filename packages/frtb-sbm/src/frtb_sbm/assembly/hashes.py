@@ -215,6 +215,9 @@ def sensitivity_payload(sensitivity: SbmSensitivity) -> dict[str, object]:
         "maturity": sensitivity.maturity,
         "up_shock_amount": sensitivity.up_shock_amount,
         "down_shock_amount": sensitivity.down_shock_amount,
+        "risk_factor_id": sensitivity.risk_factor_id,
+        "risk_factor_mapping_version": sensitivity.risk_factor_mapping_version,
+        "bucket_label": sensitivity.bucket_label,
     }
     for field_name, value in optional_fields.items():
         if value is not None:
@@ -307,6 +310,14 @@ def sensitivity_payloads_from_batch(
         org_scope = scope_payload(scope_at(batch.org_scopes, row_index))
         if org_scope is not None:
             payload["org_scope"] = org_scope
+        _add_optional_payload_field(payload, "risk_factor_id", batch.risk_factor_ids, row_index)
+        _add_optional_payload_field(
+            payload,
+            "risk_factor_mapping_version",
+            batch.risk_factor_mapping_versions,
+            row_index,
+        )
+        _add_optional_payload_field(payload, "bucket_label", batch.bucket_labels, row_index)
         yield payload
 
 

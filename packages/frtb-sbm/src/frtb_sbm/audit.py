@@ -332,6 +332,16 @@ def _weighted_sensitivity_payload(item: WeightedSensitivity) -> dict[str, object
             if scope_record is not None:
                 contributing_scopes.append(scope_record)
         payload["contributing_org_scopes"] = contributing_scopes
+    if item.risk_factor_id is not None:
+        payload["risk_factor_id"] = item.risk_factor_id
+    if item.risk_factor_mapping_version is not None:
+        payload["risk_factor_mapping_version"] = item.risk_factor_mapping_version
+    if item.bucket_label is not None:
+        payload["bucket_label"] = item.bucket_label
+    if item.source_system is not None:
+        payload["source_system"] = item.source_system
+    if item.source_row_id is not None:
+        payload["source_row_id"] = item.source_row_id
     return payload
 
 

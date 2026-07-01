@@ -7,6 +7,12 @@ Regulatory traceability:
 
 from __future__ import annotations
 
+from frtb_common import (
+    RiskFactorId,
+    RiskFactorMappingVersion,
+    RiskFactorPrimitiveError,
+)
+
 from frtb_sbm._errors import SbmInputError
 from frtb_sbm._text import require_text as _require_text
 from frtb_sbm.data_models import (
@@ -103,6 +109,7 @@ def _validate_sensitivity(sensitivity: SbmSensitivity, seen_sensitivity_ids: set
         field="org_scope",
         sensitivity_id=sensitivity_id,
     )
+    _validate_risk_factor_metadata(sensitivity, sensitivity_id)
 
     _validate_lineage(sensitivity.lineage, sensitivity_id)
     if sensitivity.source_row_id != sensitivity.lineage.source_row_id:
@@ -120,6 +127,29 @@ def _validate_sensitivity(sensitivity: SbmSensitivity, seen_sensitivity_ids: set
         risk_class=risk_class,
         risk_measure=risk_measure,
     )
+
+
+def _validate_risk_factor_metadata(sensitivity: SbmSensitivity, sensitivity_id: str) -> None:
+    if sensitivity.risk_factor_id is not None:
+        try:
+            RiskFactorId(sensitivity.risk_factor_id)
+        except (AttributeError, RiskFactorPrimitiveError, TypeError) as exc:
+            raise SbmInputError(
+                "invalid risk_factor_id",
+                field="risk_factor_id",
+                sensitivity_id=sensitivity_id,
+            ) from exc
+    if sensitivity.risk_factor_mapping_version is not None:
+        try:
+            RiskFactorMappingVersion(sensitivity.risk_factor_mapping_version)
+        except (AttributeError, RiskFactorPrimitiveError, TypeError) as exc:
+            raise SbmInputError(
+                "invalid risk_factor_mapping_version",
+                field="risk_factor_mapping_version",
+                sensitivity_id=sensitivity_id,
+            ) from exc
+    if sensitivity.bucket_label is not None:
+        _require_text(sensitivity.bucket_label, "bucket_label", sensitivity_id)
 
 
 def _validate_lineage(lineage: SbmSourceLineage, sensitivity_id: str) -> None:
