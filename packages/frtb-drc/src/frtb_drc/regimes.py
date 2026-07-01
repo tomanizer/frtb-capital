@@ -286,7 +286,7 @@ _EU_CRR3_PROFILE = DrcRuleProfile(
     version="Regulation (EU) 2024/1623",
     publication_date=date(2024, 5, 31),
     effective_date=None,
-    status="partial_nonsec_sec_supported",
+    status="supported",
     supported_risk_classes=frozenset(
         {
             DrcRiskClass.NON_SECURITISATION,

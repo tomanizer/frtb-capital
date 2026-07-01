@@ -70,8 +70,8 @@ non-securitisation slice.
   U.S. NPR 2.0 securitisation non-CTP and CTP row/batch paths are implemented,
   Basel MAR22 securitisation non-CTP and CTP row/batch paths are implemented,
   EU CRR3 securitisation non-CTP and CTP row/batch paths are implemented, and
-  PRA UK CRR non-securitisation is implemented. PRA UK CRR securitisation
-  non-CTP and CTP remain fail-closed.
+  PRA UK CRR non-securitisation, securitisation non-CTP, and CTP row/batch
+  paths are implemented.
 
 **Acceptance criteria:**
 

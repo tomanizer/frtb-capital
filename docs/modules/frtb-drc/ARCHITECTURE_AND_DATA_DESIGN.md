@@ -34,8 +34,8 @@ SA composition, or top-of-house aggregation.
 | `capital.py` | HBR, bucket capital, category totals, and public calculation entry point. |
 | `attribution.py` | Analytical Euler, residual, and unsupported attribution over the audited capital graph. |
 | `impact.py` | Baseline-vs-candidate capital deltas for change-control reporting. Not part of the capital kernel. |
-| `securitisation.py` | U.S. NPR 2.0, Basel MAR22, and EU CRR3 securitisation non-CTP market-value gross default exposure, profile-controlled fair-value cap evidence, offsetting, HBR, bucket, and category capital paths. Unsupported profiles fail closed. |
-| `ctp.py` | U.S. NPR 2.0 CTP market-value gross default exposure, replication-group netting, CTP-wide HBR, bucket recognition, and category capital path. Unsupported profiles fail closed. |
+| `securitisation.py` | U.S. NPR 2.0, Basel MAR22, EU CRR3, and PRA UK CRR securitisation non-CTP market-value gross default exposure, profile-controlled fair-value cap evidence, offsetting, HBR, bucket, and category capital paths. Unsupported profiles fail closed. |
+| `ctp.py` | U.S. NPR 2.0, Basel MAR22, EU CRR3, and PRA UK CRR CTP market-value gross default exposure, replication-group netting, CTP-wide HBR, bucket recognition, and category capital paths. Unsupported profiles fail closed. |
 | `crif.py` | Optional CRIF-to-canonical mapping. Not imported by kernels. |
 | `audit.py` | Serialisable audit records, profile/input hashes, result reconciliation, Markdown/JSON helpers. |
 | `fixtures.py` | Synthetic fixture builders used by tests and examples. |

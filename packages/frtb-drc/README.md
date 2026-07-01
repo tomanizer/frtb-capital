@@ -8,8 +8,8 @@ suite.
 The package exposes `calculate_drc_capital` for supported U.S. NPR 2.0
 non-securitisation, securitisation non-CTP, and correlation trading portfolio
 (CTP) paths, plus cited Basel MAR22 non-securitisation, securitisation
-non-CTP, and CTP paths. EU CRR3 non-securitisation and securitisation non-CTP
-row and Arrow batch paths are supported with Article 325w, Article 325x,
+non-CTP, and CTP paths. EU CRR3 non-securitisation, securitisation non-CTP,
+and CTP row and Arrow batch paths are supported with Article 325w, Article 325x,
 Article 325y, Article 325z, Article 325aa, Article 325ab, Article 325ac,
 Article 325ad, and ECAI/CQS mapping evidence. PRA_UK_CRR non-securitisation
 row and Arrow batch paths are supported with Article 325w, Article 325x, and

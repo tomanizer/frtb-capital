@@ -121,7 +121,7 @@ implemented `regimes.py` contracts:
 | `US_NPR_2_0` | Supported (row + batch) | Supported; legacy `securitisation_non_ctp_risk_weights` float map **or** typed `DrcRiskWeightEvidence` | Supported; legacy `ctp_risk_weights` **or** typed evidence; offset groups via `ctp_offset_groups` |
 | `BASEL_MAR22` | Supported (row + batch) | Supported; **typed** `DrcRiskWeightEvidence` required (float map alone is not sufficient) | Supported; **typed** MAR22.42 `DrcRiskWeightEvidence` required (float map alone is not sufficient) |
 | `EU_CRR3` | Supported (row + batch) | Supported; **typed** Article 325aa risk-weight and fair-value-cap evidence required | Supported; **typed** Article 325ad risk-weight/decomposition evidence required |
-| `PRA_UK_CRR` | Supported (row + batch) | Fail closed | Fail closed |
+| `PRA_UK_CRR` | Supported (row + batch) | Supported; **typed** Article 325aa risk-weight and fair-value-cap evidence required | Supported; **typed** Article 325ad risk-weight/decomposition evidence required |
 
 `citation_policy` must be **`strict`** (validated on row and batch paths).
 
