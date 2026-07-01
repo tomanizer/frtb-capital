@@ -6,10 +6,12 @@ reporting. It is a storage and query package, not a capital calculation package.
 See [DETAILED_DESIGN.md](DETAILED_DESIGN.md) for implementation-level storage,
 schema, API, and backend details. See [STORAGE_CONTRACT.md](STORAGE_CONTRACT.md)
 for manifest-gated write semantics, rollback behavior, orphan handling, and
-evidence boundaries. See [PUBLIC_API.md](PUBLIC_API.md) for domain objects,
-the DuckDB/Parquet store, the read-only API factory, and the admin CLI. See
-[BACKEND_ACCEPTANCE_CRITERIA.md](BACKEND_ACCEPTANCE_CRITERIA.md) before enabling
-a non-test object-store backend. Historical issue sequencing remains in
+evidence boundaries. See [ARTIFACT_METADATA.md](ARTIFACT_METADATA.md) for the
+time-series, shock, scenario-vector, and surface metadata read model. See
+[PUBLIC_API.md](PUBLIC_API.md) for domain objects, the DuckDB/Parquet store, the
+read-only API factory, and the admin CLI. See
+[BACKEND_ACCEPTANCE_CRITERIA.md](BACKEND_ACCEPTANCE_CRITERIA.md) before enabling a
+non-test object-store backend. Historical issue sequencing remains in
 [ISSUE_BREAKDOWN.md](ISSUE_BREAKDOWN.md); earlier target design notes remain in
 [FIRST_PASS_DESIGN.md](FIRST_PASS_DESIGN.md).
 
@@ -61,3 +63,9 @@ The store persists completed calculation evidence only. It does not calculate
 capital, decide whether a run is official for submission, or transform
 component unsupported/residual attribution branches into exact decomposition.
 Those semantics remain owned by the capital packages and orchestration.
+
+Metadata artifact families for RFET timelines, PLA/backtesting vectors, shock
+definitions, scenario-vector metadata, and surface-grid inspection are
+documented in [ARTIFACT_METADATA.md](ARTIFACT_METADATA.md). They are run-scoped
+evidence contracts, not market-data, shock-generation, or interpolation
+services.

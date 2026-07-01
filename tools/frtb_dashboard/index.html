@@ -424,12 +424,16 @@
       state.detail = null;
       state.lineage = [];
       try {
-        for (const family of Object.keys(familyConfig)) {
+        const families = Object.keys(familyConfig);
+        const payloads = await Promise.all(
+          families.map(family => fetchJson(familyConfig[family].list))
+        );
+        families.forEach((family, index) => {
           const config = familyConfig[family];
-          const payload = await fetchJson(config.list);
+          const payload = payloads[index];
           state.catalog[family] = payload.catalog || [];
           state.refs[family] = payload[config.listKey] || [];
-        }
+        });
         const total = Object.values(state.catalog).reduce((acc, rows) => acc + rows.length, 0);
         $("catalogKpi").textContent = String(total);
         setStatus("catalogs loaded");

@@ -133,6 +133,9 @@ covering `AVAILABLE`, `NO_DATA`, and `UNSUPPORTED` refs for the metadata family.
 The dashboard-facing selection, no-data, reconciliation, and cache/cancellation
 contract is documented in
 [`CAPITAL_NAVIGATOR_METADATA_CONTRACT.md`](CAPITAL_NAVIGATOR_METADATA_CONTRACT.md).
+The developer-facing overview of schema fields, availability states, fixture
+examples, and implementation limits is documented in
+[`ARTIFACT_METADATA.md`](ARTIFACT_METADATA.md).
 
 The Capital Navigator fixture includes concrete examples for each metadata
 family: an RFET observation time series, SBM curvature up/down shock

@@ -88,6 +88,9 @@ boundaries and `common.surface_grid.v1` rows in the result-store read model.
 The concrete Capital Navigator consumption contract for these artifact families
 is in
 [`CAPITAL_NAVIGATOR_METADATA_CONTRACT.md`](CAPITAL_NAVIGATOR_METADATA_CONTRACT.md).
+For a developer-facing guide to the four artifact schemas, their status model,
+current fixture examples, and follow-up limitations, see
+[`ARTIFACT_METADATA.md`](ARTIFACT_METADATA.md).
 
 ## Boundary rules
 

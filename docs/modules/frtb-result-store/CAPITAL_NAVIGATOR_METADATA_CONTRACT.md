@@ -107,7 +107,7 @@ The Capital Navigator fixture currently provides:
 - `ts-plat-upl` as a no-data UPL time series;
 - `shock-sbm-curvature-up` and `shock-sbm-curvature-down`;
 - `scenario-vector-rtpl`;
-- `surface-usd-swaption-vol`.
+- `surface-usd-swaption-vol`;
 - `surface-cva-full-vol-cube` as an unsupported CVA surface cube.
 
 The fixture also exposes unsupported CRIF drillthrough through an unavailable
@@ -134,3 +134,8 @@ The Navigator may display metadata fields but must not reinterpret them:
 - `shock_direction` and `shock_type` are persisted definitions, not generated
   from UI controls;
 - surface axes are stored coordinates, not interpolation instructions.
+
+The broader developer guide to these artifact families is
+[`ARTIFACT_METADATA.md`](ARTIFACT_METADATA.md). The architectural boundaries for
+future risk-factor catalogs, RFET vendor mapping, and organisation hierarchy are
+recorded in ADRs 0049-0052.

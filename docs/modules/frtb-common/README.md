@@ -59,6 +59,29 @@ Capital packages still own RiskType meaning, regulatory validation, typed input
 batches, NumPy kernels, audit records, and package-specific policy objects.
 `frtb-common` does not encode IMA, SBM, DRC, RRAO, or CVA regulatory semantics.
 
+## Artifact identity primitives
+
+The package-neutral artifact identifiers are deliberately small value objects:
+
+| Primitive | Use |
+| --- | --- |
+| `TimeSeriesId` | Identifies a persisted observed or calculated timeline. |
+| `ScenarioId` | Identifies one scenario observation. |
+| `ScenarioSetId` | Identifies an ordered set of scenario observations. |
+| `ScenarioVectorId` | Identifies a scenario vector or cube artifact. |
+| `ShockId` | Identifies a persisted shock definition. |
+| `ShockDirection` | Provides canonical direction labels for persisted shock definitions. |
+| `SurfaceId` | Identifies a persisted surface or grid. |
+| `SurfacePointId` | Identifies one coordinate point on a persisted surface. |
+| `SurfaceAxisName`, `SurfaceCoordinate`, `SurfacePointCoordinates` | Validate two-axis surface coordinates for provenance and read models. |
+| `SurfaceAxisKind` | Distinguishes labelled and numeric surface coordinate values. |
+| `ArtifactIdentityError` | Reports invalid artifact identifiers or surface coordinates. |
+
+These primitives are suitable for result-store references, package provenance
+fields, and Navigator lineage. They are not a market-data model. Risk-factor
+identity, RFET vendor mapping, and organisation hierarchy boundaries are
+documented separately in ADRs 0050-0052.
+
 `frtb-common` must not import from capital component packages.
 
 `pyarrow` is allowed here only for tabular handoff and CRIF normalization under
