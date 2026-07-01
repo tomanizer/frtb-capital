@@ -16,11 +16,15 @@ from frtb_result_store import (
     OrgSliceKeys,
     ResultStoreContractError,
     aggregate_by_org_hierarchy,
+    aggregate_org_node,
     generate_org_aggregate_row_id,
+    list_org_hierarchy,
+    org_node_children,
     resolve_org_hierarchy_version,
     sample_org_capital_rows,
     sample_org_hierarchy,
     source_rows_for_org_aggregate,
+    source_rows_for_org_node,
     validate_org_hierarchy,
 )
 
@@ -252,6 +256,172 @@ def test_org_aggregate_source_rows_are_scoped() -> None:
         "org-row-sbm-rates-book",
     ]
     assert [row.source_row_id for row in toh_sources] == sorted(row.source_row_id for row in rows)
+
+
+def test_org_hierarchy_query_snapshot_and_children_are_ordered() -> None:
+    snapshot = list_org_hierarchy(sample_org_hierarchy(), as_of_date=date(2026, 6, 3))
+
+    assert snapshot.hierarchy_id == "enterprise-demo"
+    assert snapshot.version_id == "2026-01"
+    assert [node.node_id for node in snapshot.nodes[:5]] == [
+        "GLOBAL_GROUP",
+        "UK_BANK_PLC",
+        "TREASURY",
+        "LIQUIDITY",
+        "UK_LIQUIDITY_DESK",
+    ]
+    assert ("GLOBAL_GROUP", "US_BANK_NA") in {
+        (edge.parent_node_id, edge.child_node_id) for edge in snapshot.edges
+    }
+
+    assert [
+        node.node_id
+        for node in org_node_children(
+            sample_org_hierarchy(),
+            "MARKETS",
+            as_of_date=date(2026, 6, 3),
+        )
+    ] == ["EQUITIES", "FICC", "FX"]
+
+
+def test_org_node_query_aggregates_selected_node_levels() -> None:
+    hierarchy = sample_org_hierarchy()
+    rows = sample_org_capital_rows()
+    run_id = rows[0].run_id
+
+    toh = aggregate_org_node(
+        rows,
+        hierarchy,
+        run_id=run_id,
+        node_id="GLOBAL_GROUP",
+        as_of_date=date(2026, 6, 3),
+    )
+    legal_entity = aggregate_org_node(
+        rows,
+        hierarchy,
+        run_id=run_id,
+        node_id="US_BANK_NA",
+        as_of_date=date(2026, 6, 3),
+    )
+    division = aggregate_org_node(
+        rows,
+        hierarchy,
+        run_id=run_id,
+        node_id="MARKETS",
+        as_of_date=date(2026, 6, 3),
+    )
+    desk = aggregate_org_node(
+        rows,
+        hierarchy,
+        run_id=run_id,
+        node_id="USD_RATES_VOLCKER",
+        as_of_date=date(2026, 6, 3),
+    )
+    book = aggregate_org_node(
+        rows,
+        hierarchy,
+        run_id=run_id,
+        node_id="USD_SWAP_BOOK_01",
+        as_of_date=date(2026, 6, 3),
+    )
+
+    result_rows = (toh, legal_entity, division, desk, book)
+    assert [
+        (row.status, row.aggregate.capital if row.aggregate else None) for row in result_rows
+    ] == [
+        ("OK", 114.0),
+        ("OK", 103.0),
+        ("OK", 103.0),
+        ("OK", 77.0),
+        ("OK", 35.0),
+    ]
+    assert toh.aggregate is not None
+    assert toh.aggregate.component_breakdown == {
+        "CVA": 11.0,
+        "DRC": 18.0,
+        "IMA": 42.0,
+        "SBM": 43.0,
+    }
+    assert desk.aggregate is not None
+    assert book.aggregate is not None
+    assert book.aggregate.parent_id == desk.aggregate.row_id
+    assert book.aggregate.group_path == (
+        "GLOBAL_GROUP",
+        "US_BANK_NA",
+        "MARKETS",
+        "FICC",
+        "USD_RATES_VOLCKER",
+        "USD_SWAP_BOOK_01",
+    )
+
+
+def test_org_node_query_source_rows_page_and_match_aggregate() -> None:
+    hierarchy = sample_org_hierarchy()
+    rows = sample_org_capital_rows()
+    run_id = rows[0].run_id
+    aggregate = aggregate_org_node(
+        rows,
+        hierarchy,
+        run_id=run_id,
+        node_id="USD_RATES_VOLCKER",
+        as_of_date=date(2026, 6, 3),
+    )
+    first_page = source_rows_for_org_node(
+        rows,
+        hierarchy,
+        run_id=run_id,
+        node_id="USD_RATES_VOLCKER",
+        as_of_date=date(2026, 6, 3),
+        limit=1,
+    )
+    second_page = source_rows_for_org_node(
+        rows,
+        hierarchy,
+        run_id=run_id,
+        node_id="USD_RATES_VOLCKER",
+        as_of_date=date(2026, 6, 3),
+        limit=2,
+        offset=1,
+    )
+
+    assert aggregate.aggregate is not None
+    page_rows = first_page.rows + second_page.rows
+    assert aggregate.aggregate.capital == sum(row.capital for row in page_rows)
+    assert first_page.total_row_count == 2
+    assert first_page.next_offset == 1
+    assert [row.source_row_id for row in first_page.rows] == ["org-row-ima-rates-desk"]
+    assert [row.source_row_id for row in second_page.rows] == ["org-row-sbm-rates-book"]
+    assert second_page.next_offset is None
+
+
+def test_org_node_query_reports_no_data_and_unsupported_frameworks() -> None:
+    hierarchy = sample_org_hierarchy()
+    rows = sample_org_capital_rows()
+    run_id = rows[0].run_id
+
+    no_data = aggregate_org_node(
+        rows,
+        hierarchy,
+        run_id=run_id,
+        node_id="USD_RATES_VOLCKER",
+        as_of_date=date(2026, 6, 3),
+        framework="CVA",
+    )
+    unsupported = source_rows_for_org_node(
+        rows,
+        hierarchy,
+        run_id=run_id,
+        node_id="GLOBAL_GROUP",
+        as_of_date=date(2026, 6, 3),
+        framework="RFET",
+    )
+
+    assert no_data.status == "NO_DATA"
+    assert no_data.aggregate is None
+    assert no_data.message == "no mapped source rows for selected hierarchy node"
+    assert unsupported.status == "UNSUPPORTED"
+    assert unsupported.rows == ()
+    assert "RFET" in unsupported.message
 
 
 def test_org_aggregate_source_lookup_filters_other_hierarchy_rows_before_validation() -> None:

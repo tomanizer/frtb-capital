@@ -133,6 +133,15 @@ traces an aggregate row back to the source rows under that branch; selecting
 the source rows under that Volcker desk, while selecting `GLOBAL_GROUP` returns
 all source rows for the hierarchy version.
 
+`list_org_hierarchy(...)`, `org_node_children(...)`, `aggregate_org_node(...)`,
+and `source_rows_for_org_node(...)` provide the narrower Navigator query
+contract. They resolve one effective hierarchy version for a run date, keep
+aggregate and source-row lookups separate, page source rows with `limit` and
+`offset`, and return explicit `OK`, `NO_DATA`, or `UNSUPPORTED` statuses rather
+than asking the dashboard to infer missing fixture datasets. The FastAPI app
+exposes the same read-only contract under
+`/runs/{run_id}/org-hierarchy/...` for deterministic synthetic runs.
+
 This is fixture/read-model infrastructure, not production master data,
 entitlements, SSO, or a general OLAP engine. Component packages preserve
 stable identifiers and audit records, but they must not traverse the enterprise
