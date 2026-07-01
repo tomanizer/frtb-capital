@@ -8,6 +8,7 @@ from typing import cast
 from frtb_result_store._io_catalog import StoreCatalogMixin
 from frtb_result_store._io_manifest import StoreManifestMixin
 from frtb_result_store._io_query import StoreQueryMixin
+from frtb_result_store._io_rfet_nmrf_ses_queries import StoreRiskFactorEvidenceQueryMixin
 from frtb_result_store._io_write import StoreWriteMixin
 from frtb_result_store.model import ResultStoreContractError, StorageBackend
 from frtb_result_store.store_config import (
@@ -34,6 +35,7 @@ class DuckDbParquetResultStore(
     StoreQueryMixin,
     StoreManifestMixin,
     StoreCatalogMixin,
+    StoreRiskFactorEvidenceQueryMixin,
 ):
     """Append-only Parquet store queried through DuckDB.
 

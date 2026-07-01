@@ -7,6 +7,15 @@ shape, large-artifact references, and attribution-ready records.
 
 from __future__ import annotations
 
+from frtb_result_store._model_risk_factor_evidence import (
+    ModellabilityState,
+    NMRFSESBridge,
+    RFETObservationEvidence,
+    RfetStaleState,
+    RiskFactorEvidenceRow,
+    RiskFactorHierarchyUsage,
+    SesComponent,
+)
 from frtb_result_store.model_entities import (
     ArtifactAvailabilityStatus,
     ArtifactRef,
@@ -112,8 +121,10 @@ __all__ = [
     "HierarchyNode",
     "InputSnapshotManifest",
     "LineageRef",
+    "ModellabilityState",
     "MovementResult",
     "MovementSummaryRow",
+    "NMRFSESBridge",
     "NodeType",
     "OrgAggregateRow",
     "OrgCapitalResultRow",
@@ -126,12 +137,16 @@ __all__ = [
     "OrgQueryStatus",
     "OrgSliceKeys",
     "OrgSourceRowPage",
+    "RFETObservationEvidence",
     "ResultBundle",
     "ResultEvent",
     "ResultEventSeverity",
     "ResultEventType",
     "ResultStoreContractError",
+    "RfetStaleState",
+    "RiskFactorEvidenceRow",
     "RiskFactorEvidenceState",
+    "RiskFactorHierarchyUsage",
     "RiskFactorMetadataRecord",
     "RiskFactorMetadataSnapshot",
     "RiskFactorRecordStatus",
@@ -139,6 +154,7 @@ __all__ = [
     "RunStatus",
     "RunStatusEvent",
     "RunTelemetry",
+    "SesComponent",
     "StorageBackend",
     "TelemetryPhase",
     "_coerce_enum",
