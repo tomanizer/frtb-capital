@@ -9,6 +9,7 @@ semantics for capital, movement, hierarchy, contribution, and attribution.
 Related:
 
 - UX contract: [`UX_AUDIT_AND_INTERACTION_CONTRACT.md`](UX_AUDIT_AND_INTERACTION_CONTRACT.md)
+- Mode wireframes: [`MODE_WIREFRAMES.md`](MODE_WIREFRAMES.md)
 - State and routing contract: [`NAVIGATOR_STATE_AND_ROUTING.md`](NAVIGATOR_STATE_AND_ROUTING.md)
 - Result-store data contract: [`RESULT_STORE_DATA_CONTRACT.md`](RESULT_STORE_DATA_CONTRACT.md)
 - Result-store public API: [`PUBLIC_API.md`](../../modules/frtb-result-store/PUBLIC_API.md)
