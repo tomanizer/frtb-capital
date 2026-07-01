@@ -1,4 +1,4 @@
-# PRA UK CRR profile source-mapping status (IMA and RRAO)
+# PRA UK CRR profile source-mapping status
 
 Canonical status for the `PRA_UK_CRR` profile across capital packages. Parent
 audit: [#507](https://github.com/tomanizer/frtb-capital/issues/507). Suite regime
@@ -26,6 +26,7 @@ by `mapped_and_cited` entries and fixture-backed tests.
 | Package | Profile enum | Policy retrieval | Capital runtime | Primary guard |
 | --- | --- | --- | --- | --- |
 | `frtb-ima` | `PRA_UK_CRR` | Allowed (`get_policy`) | `mapped_and_cited` partial runtime | `tests/fixtures/ima_pra` replay; RFET/NMRF/IMCC capital for supported synthetic inputs |
+| `frtb-sbm` | `PRA_UK_CRR` | Fail-closed (`resolve_sbm_profile`) | `unsupported_fail_closed` | Source mapped to PS1/26 Appendix 1 / PRA2026/1 Articles 325c-325ay for planning; no PRA SBM runtime cell has profile-owned reference data or fixtures. |
 | `frtb-rrao` | `PRA_UK_CRR` | Allowed (`resolve_rrao_profile`) | `mapped_and_cited` partial runtime | `tests/fixtures/rrao_pra` replay; investment-fund paths remain fail-closed |
 
 Do not implement PRA capital by silently reusing Basel, U.S. NPR, or EU defaults.
@@ -54,14 +55,27 @@ component.
 | `src/frtb_rrao/regimes.py` `PRA_UK_CRR` metadata | `mapped_and_cited` | Supported profile with effective date 2027-01-01. |
 | Investment fund inclusion paths | `unsupported_fail_closed` | Empty `PROFILE_INVESTMENT_FUND_RULES` for PRA, same as EU. |
 
+## SBM inventory (`packages/frtb-sbm`)
+
+| Location | Classification | Notes |
+| --- | --- | --- |
+| `packages/frtb-sbm/docs/regulatory_sources.yml` `uk_pra_ps1_26_sbm_asa` | `mapped_and_cited` planning source | PS1/26 Appendix 1 / PRA2026/1 Articles 325c-325ay mapped to SBM planning topics. |
+| `packages/frtb-sbm/docs/REGULATORY_TRACEABILITY.md` PRA rows | `unsupported_fail_closed` | All 21 PRA SBM profile/risk-class/measure cells remain runtime fail-closed. |
+| `src/frtb_sbm/regimes.py` `PRA_UK_CRR` unsupported reason | `unsupported_fail_closed` | Profile resolution and capital routing remain closed until exact-cell citation ids, reference data, and fixtures land. |
+
 ## Follow-up implementation issues (not in #507 scope)
 
 1. [#512](https://github.com/tomanizer/frtb-capital/issues/512) — IMA PRA RFET,
    NMRF, and capital-runtime enablement with `ima_pra` fixtures (delivered).
 2. [#513](https://github.com/tomanizer/frtb-capital/issues/513) — RRAO PRA
    Article 325u mapping and `rrao_pra` fixtures (delivered).
+3. [#1046](https://github.com/tomanizer/frtb-capital/issues/1046) — SBM PRA UK
+   CRR comparison-profile expansion roadmap.
+4. [#1064](https://github.com/tomanizer/frtb-capital/issues/1064) — SBM PRA
+   source-map documentation and manifest update.
 
 ## Crosswalk pointers
 
 - [`docs/regulatory/crosswalk/frtb-ima.yml`](../crosswalk/frtb-ima.yml)
+- [`packages/frtb-sbm/docs/REGULATORY_TRACEABILITY.md`](../../../packages/frtb-sbm/docs/REGULATORY_TRACEABILITY.md)
 - [`docs/regulatory/crosswalk/frtb-rrao.yml`](../crosswalk/frtb-rrao.yml)

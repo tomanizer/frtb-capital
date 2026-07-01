@@ -71,7 +71,9 @@ the import-shadowing guardrail before adding `adapters/`, `validation/`,
 
 ## Profile boundaries
 
-`SbmRegulatoryProfile` includes `US_NPR_2_0`, `EU_CRR3`, and `PRA_UK_CRR` for
-forward compatibility, but phase-1 capital is implemented only for
-`BASEL_MAR21`. Non-Basel profiles fail closed at validation with explicit
-unsupported-profile errors.
+`SbmRegulatoryProfile` includes `US_NPR_2_0`, `EU_CRR3`, and `PRA_UK_CRR`.
+`US_NPR_2_0` is capital-producing only for GIRR delta as proposed-rule
+comparison material. `EU_CRR3` and `PRA_UK_CRR` remain runtime fail-closed.
+`PRA_UK_CRR` is source-mapped to PS1/26 Appendix 1 / PRA2026/1 for planning
+only; do not open a PRA runtime gate without exact-cell PRA citations,
+profile-owned reference data, and deterministic fixtures.

@@ -23,8 +23,10 @@ non-authoritative evidence for this decision.
   Federal Register 91 FR 14952 section V.A.7.a.
 
 `EU_CRR3` is source-mapped only at the article-family level for Regulation (EU)
-2024/1623 Articles 325e-325az. `PRA_UK_CRR` has no package-local SBM source
-mapping yet and remains blocked by `SBM-NBP-020`.
+2024/1623 Articles 325e-325az. `PRA_UK_CRR` is source-mapped for planning to
+PRA PS1/26 Appendix 1 / PRA2026/1 Articles 325c-325ay, but no PRA SBM runtime
+cell has exact-cell citations, profile-owned reference data, or fixture
+evidence yet.
 
 ## Decision
 
@@ -63,7 +65,7 @@ The current comparison-profile support matrix is:
 | `US_NPR_2_0` GIRR | implemented under audit | unsupported fail-closed | unsupported fail-closed | Keep only GIRR delta capital-producing. |
 | `US_NPR_2_0` non-GIRR classes | unsupported fail-closed | unsupported fail-closed | unsupported fail-closed | Add cells one at a time with profile-owned evidence. |
 | `EU_CRR3` all classes | unsupported fail-closed | unsupported fail-closed | unsupported fail-closed | Add cells only after article-level mapping and fixtures. |
-| `PRA_UK_CRR` all classes | unsupported fail-closed | unsupported fail-closed | unsupported fail-closed | Block until `SBM-NBP-020` source mapping is complete. |
+| `PRA_UK_CRR` all classes | unsupported fail-closed | unsupported fail-closed | unsupported fail-closed | Source mapped to PS1/26 Appendix 1; add cells only with exact-cell citations, reference data, and fixtures. |
 
 ## Consequences
 
@@ -91,4 +93,5 @@ The current comparison-profile support matrix is:
 - PR #989: non-authoritative attempted implementation.
 - Federal Register 91 FR 14952 section V.A.7.a.
 - Regulation (EU) 2024/1623 Articles 325e-325az.
+- PRA PS1/26 Appendix 1 / PRA2026/1 Articles 325c-325ay.
 - `docs/modules/frtb-sbm/NON_BASEL_PROFILE_REQUIREMENTS.md`, `SBM-NBP-020`.

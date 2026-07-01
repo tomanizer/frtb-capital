@@ -75,14 +75,26 @@ sources:
     requirement_ids:
       - SBM-REF-001
 
-  - id: pra_uk_crr_sbm_mapping_tbd
+  - id: uk_pra_ps1_26_sbm_asa
     family: PRA_UK_CRR
     jurisdiction: UK
-    title: "PRA UK CRR SBM source mapping pending"
-    url: "https://www.bankofengland.co.uk/prudential-regulation"
-    section_hint: "SBM-NBP-020 must add PRA/UK CRR market-risk article or rulebook paragraph mappings before any PRA_UK_CRR SBM cell is capital-producing."
-    status: blocked_pending_source_mapping
-    reuse_note: "Placeholder source-register row for fail-closed status only; do not use this as authority for capital parameters."
+    title: "PS1/26 and PRA2026/1, Market Risk: Advanced Standardised Approach (CRR) Part"
+    url: "https://www.bankofengland.co.uk/-/media/boe/files/prudential-regulation/policy-statement/2026/january/ps126app1.pdf"
+    section_hint: "Final PRA Rulebook CRR Firms Instrument 2026, Annex I, Market Risk: Advanced Standardised Approach (CRR) Part. Articles 325c-325h cover ASA/SBM structure, delta/vega/curvature aggregation, and correlation scenarios; Articles 325l-325u cover SBM risk-factor and sensitivity definitions; Articles 325ae-325ay cover GIRR, CSR, equity, commodity, FX, vega, and curvature weights/correlations."
+    status: final_rule_reference
+    reuse_note: "Final UK PRA source map for SBM planning. This is not sufficient by itself to make PRA_UK_CRR capital-producing; runtime cells still need profile-owned citation ids, reference data, fixtures, and support-matrix updates."
+    module_paths: []
+    requirement_ids:
+      - SBM-REF-001
+
+  - id: uk_pra_cp16_22_market_risk
+    family: PRA_UK_CRR
+    jurisdiction: UK
+    title: "CP16/22 Chapter 6, Implementation of the Basel 3.1 standards: Market risk"
+    url: "https://www.bankofengland.co.uk/prudential-regulation/publication/2022/november/implementation-of-the-basel-3-1-standards/market-risk"
+    section_hint: "Historical consultation and policy rationale for the PRA market-risk framework. PS1/26 and PRA2026/1 Appendix 1 supersede it for final rule parameters."
+    status: historical_context
+    reuse_note: "Use for design rationale only; do not use as final authority where PS1/26 or PRA2026/1 provides a rule."
     module_paths: []
     requirement_ids:
       - SBM-REF-001

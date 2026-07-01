@@ -104,7 +104,7 @@ and
 | --- | --- | --- |
 | `US_NPR_2_0` | partial (1 / 21 cells) | GIRR delta implemented under audit; all other cells unsupported fail-closed. Proposed-rule material only. |
 | `EU_CRR3` | unsupported fail-closed (0 / 21 cells) | planned after article-level mapping (Regulation (EU) 2024/1623, Arts. 325e-325az). |
-| `PRA_UK_CRR` | unsupported fail-closed (0 / 21 cells) | blocked pending PRA/UK CRR SBM source mapping (see SBM-NBP-020). |
+| `PRA_UK_CRR` | unsupported fail-closed (0 / 21 cells) | source-mapped under SBM-NBP-020 to PRA PS1/26 Appendix 1 / PRA2026/1 Articles 325c-325ay; runtime cells remain unsupported fail-closed until exact-cell citations, reference data, and deterministic fixtures are added. |
 
 Except for `US_NPR_2_0` GIRR delta, every risk-class and measure combination for
 non-Basel profiles remains unsupported fail-closed. Basel MAR21 sub-features that
@@ -145,10 +145,16 @@ before capital is emitted.
 | Basel Standardised Approach | Basel Framework MAR20 and MAR21. MAR20.4 places SBM in the SA stack. MAR21.1-MAR21.101 define risk classes, measures, weights, buckets, and aggregation. | Implemented for supported phase-1 Basel slices. |
 | U.S. NPR 2.0 | Federal Register 91 FR 14952, March 27, 2026. Section V.A.7.a defines the standardized non-default process. | Partial comparison profile: GIRR delta implemented under audit; proposed-rule material only. |
 | EU CRR3 | Regulation (EU) 2024/1623 Articles 325e-325az. | Planned comparison profile; EU CRR3 runtime cells fail closed until article-level mappings and deterministic fixtures are added. |
-| PRA UK CRR | PRA/UK CRR source mapping not yet present for SBM. | Blocked comparison profile; all PRA UK CRR runtime cells fail closed until `SBM-NBP-020` adds source mappings and fixtures. |
+| PRA UK CRR | PRA PS1/26 Appendix 1 / PRA2026/1, Market Risk: Advanced Standardised Approach (CRR) Part, Articles 325c-325ay. | Source-mapped comparison profile; all PRA UK CRR runtime cells fail closed until exact-cell citations, profile-owned reference data, and fixtures are added. |
 | ISDA CRIF | CRIF field convention. | Adapter inspiration only; not a regulatory source. |
 
 Use `docs/regulatory_sources.yml` for topic-level links and review notes.
+
+PRA mirroring policy: Basel or EU numerical identity is not implementation
+evidence for `PRA_UK_CRR`. Runtime cells require PRA2026/1 article citations,
+`PRA_UK_CRR` profile identity, PRA profile hashes, and deterministic
+`*_pra_uk_crr_v1` fixtures. PS1/26 / PRA2026/1 runtime metadata should use the
+2027-01-01 effective date.
 
 ## Primary-source links
 
@@ -160,6 +166,11 @@ Use `docs/regulatory_sources.yml` for topic-level links and review notes.
   https://www.govinfo.gov/app/details/FR-2026-03-27/2026-05959
 - Regulation (EU) 2024/1623 (CRR3):
   https://eur-lex.europa.eu/eli/reg/2024/1623/oj/eng
+- PRA PS1/26 Appendix 1 / PRA2026/1, Market Risk: Advanced Standardised
+  Approach (CRR) Part:
+  https://www.bankofengland.co.uk/-/media/boe/files/prudential-regulation/policy-statement/2026/january/ps126app1.pdf
+- PRA CP16/22 Chapter 6, Market risk (historical context):
+  https://www.bankofengland.co.uk/prudential-regulation/publication/2022/november/implementation-of-the-basel-3-1-standards/market-risk
 
 ## Code to regulation
 

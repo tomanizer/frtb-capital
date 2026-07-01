@@ -13,7 +13,7 @@ not replace, [DETAILED_REQUIREMENTS.md](DETAILED_REQUIREMENTS.md) (`SBM-FUNC-*`,
 | --- | --- | --- |
 | 1 | [91 FR 14952](https://www.govinfo.gov/app/details/FR-2026-03-27/2026-05959), section V.A.7.a | `US_NPR_2_0` |
 | 1 | [Regulation (EU) 2024/1623](https://eur-lex.europa.eu/eli/reg/2024/1623/oj/eng), Arts. 325e–325az | `EU_CRR3` |
-| 2 | PRA UK CRR / PRA Rulebook (TBD) | `PRA_UK_CRR` |
+| 1 | [PRA PS1/26 Appendix 1](https://www.bankofengland.co.uk/-/media/boe/files/prudential-regulation/policy-statement/2026/january/ps126app1.pdf), Market Risk: Advanced Standardised Approach (CRR) Part, Arts. 325c-325ay | `PRA_UK_CRR` |
 | 3 | [NON_BASEL_PROFILE_DESIGN.md](NON_BASEL_PROFILE_DESIGN.md) | Sequencing and matrix |
 
 Proposed U.S. rule text is comparison material only. Every implemented
@@ -52,9 +52,10 @@ match the matrix for every cell marked implemented. Tests in
 
 Each profile family used for implementation must have an entry in
 `packages/frtb-sbm/docs/regulatory_sources.yml` with `section_hint` granular
-enough for reviewers to locate bucket/weight tables. `PRA_UK_CRR` has a
-blocked-status source-register row only; it is not authority for capital
-parameters until SBM-NBP-020 adds official paragraph mappings.
+enough for reviewers to locate bucket/weight tables. `PRA_UK_CRR` is now
+source-mapped to PRA PS1/26 Appendix 1 / PRA2026/1, but the mapped source is not
+authority for capital-producing runtime until exact-cell citation ids,
+profile-owned reference data, and deterministic fixtures are added.
 
 ### SBM-NBP-004: Basel sub-feature matrix
 
@@ -97,9 +98,10 @@ enumerated allowed list (`ensure_sbm_profile_known`).
 
 ### SBM-NBP-013: Blocked profile behaviour
 
-`PRA_UK_CRR` must remain unsupported fail-closed at runtime until
-SBM-NBP-020 is complete. Documentation must mark all 21 cells fail-closed at
-runtime and blocked, not planned, until a PRA source mapping issue is closed.
+`PRA_UK_CRR` must remain unsupported fail-closed at runtime until the exact
+profile/risk-class/measure cell has profile-owned citations, reference data, and
+fixtures. Documentation must mark all 21 cells fail-closed at runtime; planning
+rows may move from blocked to planned once SBM-NBP-020 is satisfied.
 
 ---
 
@@ -109,12 +111,66 @@ runtime and blocked, not planned, until a PRA source mapping issue is closed.
 
 Before any `PRA_UK_CRR` cell is implemented:
 
-- Add `regulatory_sources.yml` entry with official PRA/UK CRR link and section
-  hints for SBM tables.
+- Keep the `regulatory_sources.yml` entry linked to PS1/26 Appendix 1 /
+  PRA2026/1 and granular enough for reviewers to locate the relevant
+  market-risk ASA articles.
+- Use the SBM source map below to create exact-cell citation ids; generic
+  profile-family citations are not sufficient for capital output.
 - Record divergence from `EU_CRR3` where UK rules differ.
 - Close a dedicated mapping issue referenced from traceability.
 
-Until then, all PRA cells remain blocked.
+Until then, all PRA cells fail closed.
+
+Initial PRA SBM source map:
+
+| Topic | PRA source |
+| --- | --- |
+| ASA scope and structure | Article 325c |
+| SBM definitions and risk classes | Article 325d |
+| Delta, vega, and curvature components | Article 325e |
+| Delta and vega aggregation | Article 325f |
+| Curvature aggregation | Article 325g |
+| Correlation scenarios and final SBM selection | Article 325h |
+| Index and multi-underlying treatment | Article 325i |
+| Collective investment undertaking treatment | Article 325j |
+| GIRR risk factors | Article 325l |
+| CSR non-securitisation risk factors | Article 325m |
+| CSR securitisation ACTP and non-ACTP risk factors | Article 325n |
+| Equity risk factors | Article 325o |
+| Commodity risk factors | Article 325p |
+| FX risk factors, base-currency permission, and FX curvature scalar | Article 325q |
+| Delta sensitivity formulas | Article 325r |
+| Vega sensitivity formulas | Article 325s |
+| Sensitivity computation requirements and alternative delta permission | Article 325t |
+| Residual risk add-on boundary | Article 325u |
+| GIRR delta weights/correlations | Articles 325ae-325ag |
+| CSR non-sec weights/correlations | Articles 325ah-325aj |
+| CSR ACTP weights/correlations | Articles 325ak-325al |
+| CSR non-ACTP weights/correlations | Articles 325am-325ao |
+| Equity weights/correlations | Articles 325ap-325ar |
+| Commodity weights/correlations | Articles 325as-325au |
+| FX weights/correlations | Articles 325av-325aw |
+| Vega and curvature weights/correlations | Articles 325ax-325ay |
+
+PRA CP16/22 Chapter 6 remains historical policy context only. PS1/26 Appendix 1
+and PRA2026/1 are the final-rule authority for parameter mapping.
+
+### SBM-NBP-020A: PRA mirroring, divergence, and effective-date policy
+
+`PRA_UK_CRR` runtime support requires profile-owned UK citations and fixtures
+even where PRA numerics appear identical to Basel MAR21 or EU CRR3. A PRA cell
+may share a numerical table shape only when the implementation records:
+
+- the exact PRA2026/1 article ids for that cell;
+- any known PRA-vs-EU or PRA-vs-Basel divergence;
+- `PRA_UK_CRR` profile id, PRA citation ids, and a PRA profile hash in runtime
+  output;
+- deterministic `*_pra_uk_crr_v1` fixture evidence.
+
+The effective date for PRA2026/1 planning metadata is 2027-01-01. Runtime code
+must not present PRA output as current production capital before that effective
+date, and package documentation must continue to describe evidence as synthetic
+and validation pending.
 
 ### SBM-NBP-021: U.S. NPR citation registry
 
@@ -289,4 +345,6 @@ Use these titles when splitting implementation work:
 1. **SBM NPR GIRR vega/curvature** — extend NPR GIRR row (phase 2).
 2. **SBM NPR non-GIRR delta** — FX, equity, commodity, and CSR NPR mappings.
 3. **SBM EU CRR3 GIRR delta** — article mapping + first EU cell (blocked on legal mapping review).
-4. **SBM PRA UK CRR source mapping** — SBM-NBP-020 prerequisite.
+4. **SBM PRA UK CRR source mapping** — SBM-NBP-020 prerequisite satisfied by
+   PS1/26 Appendix 1 / PRA2026/1; runtime cells remain fail-closed until
+   exact-cell citations, reference data, and fixtures land.

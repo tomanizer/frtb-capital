@@ -22,7 +22,9 @@ production regulatory capital.
 `BASEL_MAR21` produces phase-1 capital for the supported delta, vega, and
 curvature matrix. `US_NPR_2_0` produces capital only for GIRR delta; all other
 U.S. NPR cells and the `EU_CRR3` / `PRA_UK_CRR` profiles fail closed until cited
-reference data exists.
+reference data exists. `PRA_UK_CRR` is source-mapped to PS1/26 Appendix 1 /
+PRA2026/1 for planning only; do not open a PRA runtime gate without exact-cell
+PRA citations, profile-owned reference data, and deterministic fixtures.
 
 Package-local traceability lives under `packages/frtb-sbm/docs/`. See
 `REGULATORY_TRACEABILITY.md` for implemented/unsupported status by area.
