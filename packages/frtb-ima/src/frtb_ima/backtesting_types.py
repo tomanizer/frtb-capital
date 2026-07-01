@@ -33,15 +33,18 @@ class BacktestResult:
     apl_zone: str  # "GREEN", "AMBER", "RED"
     hpl_zone: str
     window_size: int
+    confidence_level: float = 0.99
 
     def as_dict(self) -> dict[str, object]:
         """Return a serialisable dictionary for reporting and audit trails.
         Returns
         -------
         dict[str, object]
-            Result of the operation.
+            Serialisable dict with confidence_level, exception counts, zone
+            labels, and window_size.
         """
         return {
+            "confidence_level": self.confidence_level,
             "apl_exceptions": self.apl_exceptions,
             "hpl_exceptions": self.hpl_exceptions,
             "apl_zone": self.apl_zone,
@@ -65,10 +68,12 @@ class BacktestLevelResult:
 
     def as_dict(self) -> dict[str, object]:
         """Return a serialisable dictionary for reporting and audit trails.
+
         Returns
         -------
         dict[str, object]
-            Result of the operation.
+            Serialisable dict with confidence_level, exception counts, limit,
+            pass flags, and window_size.
         """
         return {
             "confidence_level": self.confidence_level,
@@ -120,6 +125,7 @@ class TradingDeskBacktestResult:
 
     def level(self, confidence_level: float) -> BacktestLevelResult:
         """Return the result for one configured VaR confidence level.
+
         Parameters
         ----------
         confidence_level : float
@@ -128,7 +134,7 @@ class TradingDeskBacktestResult:
         Returns
         -------
         BacktestLevelResult
-            Result of the operation.
+            The BacktestLevelResult matching ``confidence_level``.
         """
         for result in self.levels:
             if result.confidence_level == confidence_level:
@@ -137,10 +143,12 @@ class TradingDeskBacktestResult:
 
     def as_dict(self) -> dict[str, object]:
         """Return a serialisable dictionary for reporting and audit trails.
+
         Returns
         -------
         dict[str, object]
-            Result of the operation.
+            Serialisable dict with window diagnostics, time-series lineage, and
+            per-level backtesting results.
         """
         return add_scope_payload(
             {
@@ -188,10 +196,12 @@ class BacktestObservationTrace:
 
     def as_dict(self) -> dict[str, object]:
         """Return a serialisable dictionary for reporting and notebooks.
+
         Returns
         -------
         dict[str, object]
-            Result of the operation.
+            Serialisable dict with original index, optional date, P&L, VaR,
+            holiday flag, exception flags, and reason labels.
         """
         return {
             "original_index": self.original_index,
@@ -219,19 +229,21 @@ class BacktestLevelTrace:
     @property
     def confidence_level(self) -> float:
         """VaR confidence level for this trace.
+
         Returns
         -------
         float
-            Result of the operation.
+            VaR confidence level for this trace.
         """
         return self.result.confidence_level
 
     def exception_observations(self) -> tuple[BacktestObservationTrace, ...]:
         """Return observations where either APL or HPL produced an exception.
+
         Returns
         -------
         tuple[BacktestObservationTrace, ...]
-            Result of the operation.
+            Tuple of observations where APL or HPL produced an exception.
         """
         return tuple(
             observation
@@ -241,10 +253,11 @@ class BacktestLevelTrace:
 
     def as_dict(self) -> dict[str, object]:
         """Return a serialisable dictionary for reporting and notebooks.
+
         Returns
         -------
         dict[str, object]
-            Result of the operation.
+            Serialisable dict with the level result and observation trace.
         """
         return {
             "result": self.result.as_dict(),
@@ -262,25 +275,28 @@ class TradingDeskBacktestTraceResult:
     @property
     def window_size(self) -> int:
         """Number of observations used after policy windowing.
+
         Returns
         -------
         int
-            Result of the operation.
+            Number of observations used after policy windowing.
         """
         return self.result.window_size
 
     @property
     def model_eligible(self) -> bool:
         """Whether every configured APL/HPL VaR level passed.
+
         Returns
         -------
         bool
-            Result of the operation.
+            Whether every configured APL/HPL VaR level passed.
         """
         return self.result.model_eligible
 
     def level(self, confidence_level: float) -> BacktestLevelTrace:
         """Return the trace for one configured VaR confidence level.
+
         Parameters
         ----------
         confidence_level : float
@@ -289,7 +305,7 @@ class TradingDeskBacktestTraceResult:
         Returns
         -------
         BacktestLevelTrace
-            Result of the operation.
+            The BacktestLevelTrace matching ``confidence_level``.
         """
         for trace in self.levels:
             if trace.confidence_level == confidence_level:
@@ -298,10 +314,12 @@ class TradingDeskBacktestTraceResult:
 
     def as_dict(self) -> dict[str, object]:
         """Return a serialisable dictionary for reporting and notebooks.
+
         Returns
         -------
         dict[str, object]
-            Result of the operation.
+            Serialisable dict with window diagnostics, time-series lineage, and
+            per-level observation traces.
         """
         return {
             "window_size": self.window_size,

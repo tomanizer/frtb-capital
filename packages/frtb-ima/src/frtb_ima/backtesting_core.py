@@ -8,6 +8,8 @@ calculation. Trading-desk multi-level trace assembly lives in
 
 from __future__ import annotations
 
+import warnings
+
 import numpy as np
 
 from frtb_ima._array_utils import finite_1d_float_array as _as_finite_1d_array
@@ -39,7 +41,8 @@ def count_exceptions(
     Returns
     -------
     int
-        Result of the operation.
+        Number of observations where ``-pnl[i]`` strictly exceeds
+        ``var_estimates[i]``.
     """
     pnl_arr = _as_finite_1d_array(pnl, "pnl")
     var_arr = _as_finite_1d_array(var_estimates, "var_estimates")
@@ -58,6 +61,8 @@ def backtest(
     var_estimates: FloatVector,
     window: int = 250,
     minimum_history: int | None = None,
+    confidence_level: float = 0.99,
+    allow_prorated_thresholds: bool = False,
 ) -> BacktestResult:
     """Run scalar backtesting over the most recent observations.
 
@@ -74,12 +79,19 @@ def backtest(
     window : int, optional
         Window.
     minimum_history : int | None, optional
-        Minimum history.
+        Required aligned history before windowing.
+    confidence_level : float, optional
+        VaR confidence level represented by ``var_estimates``; defaults to the
+        Basel MAR32.2 / NPR proposed section ``__.211`` scalar backtesting level.
+    allow_prorated_thresholds : bool, optional
+        If ``False``, emit a warning when the effective window is not the
+        Basel MAR32.5 / MAR99 Table 1 250-observation window.
 
     Returns
     -------
     BacktestResult
-        Result of the operation.
+        BacktestResult with APL and HPL exception counts, traffic-light zone
+        labels, effective window size, and VaR confidence level.
     """
     _require_positive_observation_count(window, field="window")
     _require_positive_optional_observation_count(minimum_history, field="minimum_history")
@@ -105,15 +117,27 @@ def backtest(
     if np.any(var_w <= 0.0):
         raise ValueError("var_estimates must contain only positive values")
 
+    window_size = len(var_w)
+    if window_size != 250 and not allow_prorated_thresholds:
+        warnings.warn(
+            "Scalar backtesting used an effective window_size other than 250 without "
+            "explicitly allowing prorated thresholds. Basel MAR32.5 / MAR99 Table 1 "
+            "and NPR proposed section __.212(d) define traffic-light thresholds over "
+            "a 250-observation backtesting window.",
+            UserWarning,
+            stacklevel=2,
+        )
+
     n_apl = int(np.sum(-apl_w > var_w))
     n_hpl = int(np.sum(-hpl_w > var_w))
 
     return BacktestResult(
         apl_exceptions=n_apl,
         hpl_exceptions=n_hpl,
-        apl_zone=_zone(n_apl),
-        hpl_zone=_zone(n_hpl),
-        window_size=len(var_w),
+        apl_zone=_zone(n_apl, window_size),
+        hpl_zone=_zone(n_hpl, window_size),
+        window_size=window_size,
+        confidence_level=confidence_level,
     )
 
 

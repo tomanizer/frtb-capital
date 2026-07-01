@@ -8,14 +8,23 @@ import pytest
 
 from frtb_ima.backtesting import (
     backtest,
+    backtest_for_policy,
     count_exceptions,
     trading_desk_backtest,
+    trading_desk_backtest_for_policy,
     trading_desk_backtest_trace,
     trading_desk_backtest_trace_for_policy,
 )
 from frtb_ima.backtesting_types import BacktestLevelResult, TradingDeskBacktestResult
 from frtb_ima.calendar import BusinessCalendar, ObservationWindowBasis
-from frtb_ima.regimes import get_policy
+from frtb_ima.regimes import (
+    PRA_UK_CRR_CAPITAL_RUNTIME_FEATURE,
+    RegulatoryPolicy,
+    RegulatoryRegime,
+    UnsupportedFeature,
+    UnsupportedRegulatoryFeature,
+    get_policy,
+)
 from frtb_ima.validation.backtesting_stages import (
     _count_exceptions_regulatory,
     _exception_flags_regulatory,
@@ -79,6 +88,8 @@ def test_backtest_window_trims_to_250() -> None:
     assert result.window_size == 250
     assert result.apl_exceptions == 0
     assert result.hpl_exceptions == 0
+    assert result.confidence_level == pytest.approx(0.99)
+    assert result.as_dict()["confidence_level"] == pytest.approx(0.99)
 
 
 def test_backtest_exception_zones() -> None:
@@ -111,6 +122,37 @@ def test_backtesting_exception_stage_classifies_missing_and_holiday_values() -> 
     assert _zone(4) == "GREEN"
     assert _zone(9) == "AMBER"
     assert _zone(10) == "RED"
+    assert _zone(3, window_size=200) == "GREEN"
+    assert _zone(4, window_size=200) == "AMBER"
+    assert _zone(7, window_size=200) == "AMBER"
+    assert _zone(8, window_size=200) == "RED"
+    assert _zone(2, window_size=125) == "GREEN"
+    assert _zone(3, window_size=125) == "AMBER"
+    assert _zone(4, window_size=125) == "AMBER"
+    assert _zone(5, window_size=125) == "RED"
+
+
+def test_backtest_prorates_zone_thresholds_for_short_windows() -> None:
+    n = 200
+    apl = [-200.0] * 4 + [100.0] * (n - 4)
+    hpl = [-200.0] * 8 + [100.0] * (n - 8)
+    var = [100.0] * n
+
+    result = backtest(apl, hpl, var, window=200, allow_prorated_thresholds=True)
+
+    assert result.window_size == 200
+    assert result.apl_zone == "AMBER"
+    assert result.hpl_zone == "RED"
+
+
+def test_backtest_warns_when_short_window_prorating_not_explicit() -> None:
+    n = 125
+
+    with pytest.warns(UserWarning, match="Basel MAR32.5"):
+        result = backtest([100.0] * n, [100.0] * n, [100.0] * n, window=125)
+
+    assert result.window_size == 125
+    assert result.apl_zone == "GREEN"
 
 
 def test_backtest_red_zone() -> None:
@@ -136,6 +178,7 @@ def test_backtest_rejects_non_positive_window() -> None:
 
 def test_trading_desk_backtest_uses_975_and_99_percentile_limits() -> None:
     n = 250
+    dates = business_dates(n, start=date(2025, 1, 1))
     apl = [-200.0] * 12 + [-150.0] * 18 + [100.0] * (n - 30)
     hpl = [-200.0] * 5 + [-150.0] * 10 + [100.0] * (n - 15)
     var = {
@@ -143,7 +186,7 @@ def test_trading_desk_backtest_uses_975_and_99_percentile_limits() -> None:
         0.99: [175.0] * n,
     }
 
-    result = trading_desk_backtest(apl, hpl, var)
+    result = trading_desk_backtest(apl, hpl, var, observation_dates=dates)
 
     assert result.model_eligible is True
     assert result.level(0.99).apl_exceptions == 12
@@ -186,6 +229,7 @@ def test_trading_desk_backtest_result_serializes_time_series_ids() -> None:
 
 def test_trading_desk_backtest_fails_when_either_pnl_series_exceeds_limit() -> None:
     n = 250
+    dates = business_dates(n, start=date(2025, 1, 1))
     apl = [-200.0] * 13 + [100.0] * (n - 13)
     hpl = [100.0] * n
     var = {
@@ -193,7 +237,7 @@ def test_trading_desk_backtest_fails_when_either_pnl_series_exceeds_limit() -> N
         0.99: [100.0] * n,
     }
 
-    result = trading_desk_backtest(apl, hpl, var)
+    result = trading_desk_backtest(apl, hpl, var, observation_dates=dates)
 
     assert result.model_eligible is False
     assert result.level(0.99).apl_passed is False
@@ -202,6 +246,7 @@ def test_trading_desk_backtest_fails_when_either_pnl_series_exceeds_limit() -> N
 
 def test_trading_desk_backtest_counts_missing_values_as_exceptions() -> None:
     n = 250
+    dates = business_dates(n, start=date(2025, 1, 1))
     apl = [100.0] * n
     hpl = [100.0] * n
     apl[0] = math.nan
@@ -210,7 +255,7 @@ def test_trading_desk_backtest_counts_missing_values_as_exceptions() -> None:
         0.99: [100.0] * n,
     }
 
-    result = trading_desk_backtest(apl, hpl, var)
+    result = trading_desk_backtest(apl, hpl, var, observation_dates=dates)
 
     assert result.level(0.99).apl_exceptions == 1
     assert result.level(0.975).apl_exceptions == 1
@@ -257,6 +302,7 @@ def test_trading_desk_backtest_trace_reports_dated_exception_reasons() -> None:
 
 def test_trading_desk_backtest_trace_reports_missing_pnl_and_var_reason() -> None:
     n = 250
+    dates = business_dates(n, start=date(2025, 1, 1))
     apl = [100.0] * n
     hpl = [100.0] * n
     apl[0] = math.nan
@@ -267,7 +313,7 @@ def test_trading_desk_backtest_trace_reports_missing_pnl_and_var_reason() -> Non
     }
     var[0.99][0] = math.nan
 
-    result = trading_desk_backtest_trace(apl, hpl, var)
+    result = trading_desk_backtest_trace(apl, hpl, var, observation_dates=dates)
     observation = result.level(0.99).observations[0]
 
     assert observation.apl_reason == "missing_pnl_and_var"
@@ -277,6 +323,7 @@ def test_trading_desk_backtest_trace_reports_missing_pnl_and_var_reason() -> Non
 
 def test_trading_desk_backtest_excludes_official_holiday_missing_values() -> None:
     n = 250
+    dates = business_dates(n, start=date(2025, 1, 1))
     apl = [100.0] * n
     hpl = [100.0] * n
     apl[0] = math.nan
@@ -287,7 +334,13 @@ def test_trading_desk_backtest_excludes_official_holiday_missing_values() -> Non
     holidays = [False] * n
     holidays[0] = True
 
-    result = trading_desk_backtest(apl, hpl, var, official_holiday_mask=holidays)
+    result = trading_desk_backtest(
+        apl,
+        hpl,
+        var,
+        official_holiday_mask=holidays,
+        observation_dates=dates,
+    )
 
     assert result.level(0.99).apl_exceptions == 0
     assert result.level(0.975).apl_exceptions == 0
@@ -295,6 +348,7 @@ def test_trading_desk_backtest_excludes_official_holiday_missing_values() -> Non
 
 def test_trading_desk_backtest_trace_marks_official_holiday_exclusions() -> None:
     n = 250
+    dates = business_dates(n, start=date(2025, 1, 1))
     apl = [100.0] * n
     hpl = [100.0] * n
     apl[0] = math.nan
@@ -310,6 +364,7 @@ def test_trading_desk_backtest_trace_marks_official_holiday_exclusions() -> None
         hpl,
         var,
         official_holiday_mask=holidays,
+        observation_dates=dates,
     )
 
     observation = result.level(0.99).observations[0]
@@ -320,6 +375,7 @@ def test_trading_desk_backtest_trace_marks_official_holiday_exclusions() -> None
 
 def test_trading_desk_backtest_prorates_exception_limits_for_short_history() -> None:
     n = 125
+    dates = business_dates(n, start=date(2025, 1, 1))
     apl = [-200.0] * 6 + [100.0] * (n - 6)
     hpl = [100.0] * n
     var = {
@@ -333,6 +389,7 @@ def test_trading_desk_backtest_prorates_exception_limits_for_short_history() -> 
         var,
         minimum_history=250,
         allow_prorated_thresholds=True,
+        observation_dates=dates,
     )
 
     assert result.window_size == 125
@@ -372,6 +429,7 @@ def test_trading_desk_backtest_prorated_calendar_uses_actual_window_size() -> No
 def test_trading_desk_backtest_trace_for_policy_uses_policy_window() -> None:
     policy = get_policy()
     n = policy.backtesting_window_days
+    dates = business_dates(n, start=date(2025, 1, 1))
     apl = [100.0] * n
     hpl = [100.0] * n
     var = {
@@ -379,10 +437,134 @@ def test_trading_desk_backtest_trace_for_policy_uses_policy_window() -> None:
         0.99: [100.0] * n,
     }
 
-    result = trading_desk_backtest_trace_for_policy(apl, hpl, var, policy)
+    result = trading_desk_backtest_trace_for_policy(
+        apl,
+        hpl,
+        var,
+        policy,
+        observation_dates=dates,
+    )
 
     assert result.window_size == policy.backtesting_window_days
     assert result.model_eligible is True
+
+
+def test_policy_backtest_wrappers_gate_unsupported_capital_runtime() -> None:
+    unsupported_policy = _pra_policy_with_unsupported_capital_runtime()
+    n = unsupported_policy.backtesting_window_days
+    apl = [100.0] * n
+    hpl = [100.0] * n
+    scalar_var = [100.0] * n
+    desk_var = {
+        0.975: [100.0] * n,
+        0.99: [100.0] * n,
+    }
+
+    with pytest.raises(UnsupportedRegulatoryFeature, match=PRA_UK_CRR_CAPITAL_RUNTIME_FEATURE):
+        backtest_for_policy(apl, hpl, scalar_var, unsupported_policy)
+    with pytest.raises(UnsupportedRegulatoryFeature, match=PRA_UK_CRR_CAPITAL_RUNTIME_FEATURE):
+        trading_desk_backtest_for_policy(apl, hpl, desk_var, unsupported_policy)
+    with pytest.raises(UnsupportedRegulatoryFeature, match=PRA_UK_CRR_CAPITAL_RUNTIME_FEATURE):
+        trading_desk_backtest_trace_for_policy(apl, hpl, desk_var, unsupported_policy)
+
+
+def test_policy_backtest_wrappers_validate_policy_type() -> None:
+    n = 250
+    desk_var = {
+        0.975: [100.0] * n,
+        0.99: [100.0] * n,
+    }
+
+    with pytest.raises(TypeError, match="RegulatoryPolicy"):
+        backtest_for_policy([100.0] * n, [100.0] * n, [100.0] * n, object())  # type: ignore[arg-type]
+    with pytest.raises(TypeError, match="RegulatoryPolicy"):
+        trading_desk_backtest_for_policy([100.0] * n, [100.0] * n, desk_var, object())  # type: ignore[arg-type]
+    with pytest.raises(TypeError, match="RegulatoryPolicy"):
+        trading_desk_backtest_trace_for_policy([100.0] * n, [100.0] * n, desk_var, object())  # type: ignore[arg-type]
+
+
+def test_policy_backtest_wrappers_run_for_supported_regimes() -> None:
+    for policy in (
+        get_policy(RegulatoryRegime.FED_NPR_2_0),
+        get_policy(RegulatoryRegime.ECB_CRR3),
+    ):
+        n = policy.backtesting_window_days
+        apl = [100.0] * n
+        hpl = [100.0] * n
+        scalar_var = [100.0] * n
+        desk_var = {
+            0.975: [100.0] * n,
+            0.99: [100.0] * n,
+        }
+        dates = business_dates(n, start=date(2025, 1, 1))
+
+        scalar = backtest_for_policy(apl, hpl, scalar_var, policy)
+        desk = trading_desk_backtest_for_policy(
+            apl,
+            hpl,
+            desk_var,
+            policy,
+            observation_dates=dates,
+        )
+        trace = trading_desk_backtest_trace_for_policy(
+            apl,
+            hpl,
+            desk_var,
+            policy,
+            observation_dates=dates,
+        )
+
+        assert scalar.confidence_level == pytest.approx(0.99)
+        assert desk.model_eligible is True
+        assert trace.model_eligible is True
+
+
+def test_trading_desk_backtests_warn_without_observation_dates() -> None:
+    n = 250
+    var = {
+        0.975: [100.0] * n,
+        0.99: [100.0] * n,
+    }
+    policy = get_policy()
+
+    with pytest.warns(UserWarning, match="observation_dates"):
+        desk = trading_desk_backtest([100.0] * n, [100.0] * n, var)
+    with pytest.warns(UserWarning, match="observation_dates"):
+        trace = trading_desk_backtest_trace([100.0] * n, [100.0] * n, var)
+    with pytest.warns(UserWarning, match="observation_dates"):
+        policy_desk = trading_desk_backtest_for_policy([100.0] * n, [100.0] * n, var, policy)
+    with pytest.warns(UserWarning, match="observation_dates"):
+        policy_trace = trading_desk_backtest_trace_for_policy(
+            [100.0] * n,
+            [100.0] * n,
+            var,
+            policy,
+        )
+
+    assert desk.model_eligible is True
+    assert trace.model_eligible is True
+    assert policy_desk.window_size == policy.backtesting_window_days
+    assert policy_trace.window_size == policy.backtesting_window_days
+
+
+def test_trading_desk_backtests_do_not_warn_with_observation_dates(
+    recwarn: pytest.WarningsRecorder,
+) -> None:
+    n = 250
+    dates = business_dates(n, start=date(2025, 1, 1))
+    var = {
+        0.975: [100.0] * n,
+        0.99: [100.0] * n,
+    }
+
+    trading_desk_backtest_trace(
+        [100.0] * n,
+        [100.0] * n,
+        var,
+        observation_dates=dates,
+    )
+
+    assert not [warning for warning in recwarn if "observation_dates" in str(warning.message)]
 
 
 def test_trading_desk_backtest_policy_calendar_validates_business_window() -> None:
@@ -444,22 +626,41 @@ def test_trading_desk_backtest_trace_rejects_misaligned_dates() -> None:
 
 def test_trading_desk_backtest_trace_validates_windowing_and_series_inputs() -> None:
     n = 250
+    dates = business_dates(n, start=date(2025, 1, 1))
     var = {
         0.975: [100.0] * n,
         0.99: [100.0] * n,
     }
     with pytest.raises(ValueError, match="window"):
-        trading_desk_backtest_trace([100.0] * n, [100.0] * n, var, window=0)
+        trading_desk_backtest_trace(
+            [100.0] * n,
+            [100.0] * n,
+            var,
+            window=0,
+            observation_dates=dates,
+        )
     with pytest.raises(ValueError, match="minimum_history"):
-        trading_desk_backtest_trace([100.0] * n, [100.0] * n, var, minimum_history=0)
+        trading_desk_backtest_trace(
+            [100.0] * n,
+            [100.0] * n,
+            var,
+            minimum_history=0,
+            observation_dates=dates,
+        )
     with pytest.raises(ValueError, match="equal length"):
-        trading_desk_backtest_trace([100.0] * n, [100.0] * (n - 1), var)
+        trading_desk_backtest_trace(
+            [100.0] * n,
+            [100.0] * (n - 1),
+            var,
+            observation_dates=dates,
+        )
     with pytest.raises(ValueError, match="official_holiday_mask"):
         trading_desk_backtest_trace(
             [100.0] * n,
             [100.0] * n,
             var,
             official_holiday_mask=[[False] * n],  # type: ignore[list-item]
+            observation_dates=dates,
         )
     with pytest.raises(ValueError, match="official_holiday_mask length"):
         trading_desk_backtest_trace(
@@ -467,14 +668,21 @@ def test_trading_desk_backtest_trace_validates_windowing_and_series_inputs() -> 
             [100.0] * n,
             var,
             official_holiday_mask=[False],
+            observation_dates=dates,
         )
     with pytest.raises(KeyError, match="Missing VaR"):
-        trading_desk_backtest_trace([100.0] * n, [100.0] * n, {0.99: [100.0] * n})
+        trading_desk_backtest_trace(
+            [100.0] * n,
+            [100.0] * n,
+            {0.99: [100.0] * n},
+            observation_dates=dates,
+        )
     with pytest.raises(ValueError, match="must match APL"):
         trading_desk_backtest_trace(
             [100.0] * n,
             [100.0] * n,
             {0.975: [100.0] * n, 0.99: [100.0]},
+            observation_dates=dates,
         )
     with pytest.raises(ValueError, match="at least 251 observations"):
         trading_desk_backtest_trace(
@@ -482,6 +690,7 @@ def test_trading_desk_backtest_trace_validates_windowing_and_series_inputs() -> 
             [100.0] * n,
             var,
             minimum_history=251,
+            observation_dates=dates,
         )
     bad_var = {
         0.975: [100.0] * n,
@@ -489,7 +698,12 @@ def test_trading_desk_backtest_trace_validates_windowing_and_series_inputs() -> 
     }
     bad_var[0.99][0] = 0.0
     with pytest.raises(ValueError, match="finite VaR"):
-        trading_desk_backtest_trace([100.0] * n, [100.0] * n, bad_var)
+        trading_desk_backtest_trace(
+            [100.0] * n,
+            [100.0] * n,
+            bad_var,
+            observation_dates=dates,
+        )
 
 
 def test_backtesting_compatibility_imports_match_physical_modules() -> None:
@@ -511,4 +725,20 @@ def test_backtesting_compatibility_imports_match_physical_modules() -> None:
         core.backtest,
         trace.trading_desk_backtest_trace,
         policy.trading_desk_backtest_trace_for_policy,
+    )
+
+
+def _pra_policy_with_unsupported_capital_runtime() -> RegulatoryPolicy:
+    return RegulatoryPolicy(
+        regime=RegulatoryRegime.PRA_UK_CRR,
+        unsupported_features=(
+            UnsupportedFeature(
+                feature_name=PRA_UK_CRR_CAPITAL_RUNTIME_FEATURE,
+                source_topic="PRA UK CRR capital runtime source mapping",
+                notes=(
+                    "Backtesting policy wrappers must fail closed when the "
+                    "capital runtime is unsupported."
+                ),
+            ),
+        ),
     )

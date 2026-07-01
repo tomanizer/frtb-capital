@@ -7,15 +7,20 @@ import math
 import numpy as np
 import numpy.typing as npt
 
-# Basel MAR32/MAR99 backtesting traffic-light thresholds over 250 observations.
+# Basel MAR32.5 / MAR99 Table 1 traffic-light thresholds over 250 observations.
 GREEN_MAX = 4
 AMBER_MAX = 9
 
 
-def _zone(count: int) -> str:
-    if count <= GREEN_MAX:
+def _zone(count: int, window_size: int = 250) -> str:
+    """Return the Basel MAR32.5 / MAR99 Table 1 traffic-light zone."""
+    if window_size <= 0:
+        raise ValueError("window_size must be positive")
+    green_max = math.floor(GREEN_MAX * window_size / 250)
+    amber_max = math.floor(AMBER_MAX * window_size / 250)
+    if count <= green_max:
         return "GREEN"
-    if count <= AMBER_MAX:
+    if count <= amber_max:
         return "AMBER"
     return "RED"
 
