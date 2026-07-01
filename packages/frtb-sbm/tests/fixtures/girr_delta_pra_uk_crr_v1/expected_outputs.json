@@ -1,0 +1,89 @@
+{
+  "profile_id": "PRA_UK_CRR",
+  "profile_hash": "3f5bf8a7d33a09e0d94cf5d190df5243e888353555310a80fabf516294d1f972",
+  "input_hash": "034791490a905c9f358a8893d9c9a0228d38bff48ba12d8d0338e3569c73ce46",
+  "total_capital": 19700.12690314456,
+  "warnings": [],
+  "selected_portfolio_scenario": "HIGH",
+  "portfolio_scenario_totals": {
+    "HIGH": 19700.12690314456,
+    "LOW": 17913.48645189483,
+    "MEDIUM": 18828.011005709282
+  },
+  "risk_classes": [
+    {
+      "risk_class": "GIRR",
+      "selected_capital": 19700.12690314456,
+      "selected_scenario": "HIGH",
+      "risk_measure": "DELTA",
+      "citation_ids": [
+        "pra_uk_crr_325h_correlation_scenarios",
+        "pra_uk_crr_325c_asa_scope",
+        "pra_uk_crr_325af_girr_intra",
+        "pra_uk_crr_325ag_girr_inter"
+      ]
+    }
+  ],
+  "scenario_totals": {
+    "HIGH": 19700.12690314456,
+    "LOW": 17913.48645189483,
+    "MEDIUM": 18828.011005709282
+  },
+  "buckets": [
+    [
+      {
+        "bucket_id": "1",
+        "kb": 15202.795795510772,
+        "sb": 15202.795795510772,
+        "citation_ids": [
+          "pra_uk_crr_325c_asa_scope",
+          "pra_uk_crr_325af_girr_intra"
+        ]
+      },
+      {
+        "bucket_id": "2",
+        "kb": 6222.5396744416175,
+        "sb": 6222.5396744416175,
+        "citation_ids": [
+          "pra_uk_crr_325c_asa_scope",
+          "pra_uk_crr_325af_girr_intra"
+        ]
+      }
+    ]
+  ],
+  "weighted_sensitivities": [
+    [
+      [
+        {
+          "sensitivity_id": "pra-uk-crr-eur-1y",
+          "risk_weight": 0.01131370849898476,
+          "scaled_amount": 11313.70849898476,
+          "citation_ids": [
+            "pra_uk_crr_325ae_girr_delta_weights",
+            "pra_uk_crr_325ae_girr_sqrt2"
+          ]
+        },
+        {
+          "sensitivity_id": "pra-uk-crr-eur-5y",
+          "risk_weight": 0.007778174593052022,
+          "scaled_amount": 3889.087296526011,
+          "citation_ids": [
+            "pra_uk_crr_325ae_girr_delta_weights",
+            "pra_uk_crr_325ae_girr_sqrt2"
+          ]
+        }
+      ],
+      [
+        {
+          "sensitivity_id": "pra-uk-crr-usd-5y",
+          "risk_weight": 0.007778174593052022,
+          "scaled_amount": 6222.5396744416175,
+          "citation_ids": [
+            "pra_uk_crr_325ae_girr_delta_weights",
+            "pra_uk_crr_325ae_girr_sqrt2"
+          ]
+        }
+      ]
+    ]
+  ]
+}
