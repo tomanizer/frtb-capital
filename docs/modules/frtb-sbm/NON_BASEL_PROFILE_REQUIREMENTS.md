@@ -191,6 +191,36 @@ For each implemented `EU_CRR3` cell, citations must use article-level ids
 (e.g. `EU_CRR3_ART_325r`) suitable for cross-linking to EBA single-rulebook
 pages where applicable.
 
+### SBM-NBP-022A: EU CRR3 CSR implementation map
+
+Before any `EU_CRR3` CSR cell is implemented, the package must retain a
+profile-owned implementation map covering CSR non-securitisation, CSR
+securitisation non-CTP, and CSR securitisation CTP. The current source map is:
+
+| CSR topic | EU CRR3 source anchor | Canonical field boundary |
+| --- | --- | --- |
+| CSR non-securitisation risk factors | Amended CRR Article 325n | `risk_class=CSR_NONSEC`; issuer/obligor in `qualifier`; tenor in `tenor`; bucket from sector/quality evidence. |
+| CSR non-securitisation buckets and risk weights | Amended CRR Article 325ah(1), Table 4 | `bucket`, `risk_factor`, and credit-quality evidence drive profile-owned table lookup. |
+| CSR non-securitisation correlations | Amended CRR Articles 325ai-325aj | Intra-bucket issuer/tenor basis and inter-bucket gamma remain profile-owned citations. |
+| CSR securitisation non-CTP risk factors | Amended CRR Article 325o | `risk_class=CSR_SEC_NONCTP`; tranche/issuer evidence in `qualifier` and source lineage. |
+| CSR securitisation non-CTP buckets, weights, and correlations | Amended CRR Articles 325ak-325al, Tables 6 and related paragraphs | Tranche bucket, risk weight, other-sector handling, and decomposition evidence must be explicit. |
+| CSR securitisation CTP risk factors | Amended CRR Article 325p | `risk_class=CSR_SEC_CTP`; underlying-name evidence must be present before capital. |
+| CSR securitisation CTP buckets, weights, and correlations | Amended CRR Article 325am, Table 7 and related paragraphs | ACTP bucket, risk weight, other-bucket handling, and correlation rule must be fixture-backed. |
+| CSR vega and curvature overlays | Amended CRR Article 325ax(1)-(6) | Vega reuses delta buckets with option maturity/underlying tenor evidence; curvature reuses delta buckets and highest-delta-risk-weight shock logic. |
+
+EU CSR runtime gates must remain unsupported fail-closed until a follow-on PR
+adds profile-owned reference data and deterministic fixture packs. Planned
+fixture ids are `csr_nonsec_delta_eu_crr3_v1`,
+`csr_nonsec_vega_eu_crr3_v1`, `csr_nonsec_curvature_eu_crr3_v1`,
+`csr_sec_nonctp_delta_eu_crr3_v1`, `csr_sec_nonctp_vega_eu_crr3_v1`,
+`csr_sec_nonctp_curvature_eu_crr3_v1`, `csr_sec_ctp_delta_eu_crr3_v1`,
+`csr_sec_ctp_vega_eu_crr3_v1`, and `csr_sec_ctp_curvature_eu_crr3_v1`.
+
+Fail-closed cases must include missing issuer or tranche decomposition evidence,
+missing underlying-name evidence for CTP, unsupported option or volatility
+treatment for vega, unsupported curvature decomposition, and any CSR table key
+that has not been transcribed into `EU_CRR3` profile-owned reference data.
+
 ### SBM-NBP-023: Profile reference payload hash
 
 `get_sbm_rule_profile(profile)` must include non-Basel reference payloads in

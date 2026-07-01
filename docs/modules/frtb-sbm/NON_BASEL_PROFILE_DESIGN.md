@@ -109,6 +109,13 @@ Per-class detail for non-Basel profiles (all measures share the same status unti
 | CSR sec non-CTP | Planned | Planned | Planned after PS1/26 source map; runtime fail-closed |
 | CSR sec CTP | Planned | Planned | Planned after PS1/26 source map; runtime fail-closed |
 
+`EU_CRR3` CSR planning is source-mapped but not runtime-enabled. The CSR map in
+[NON_BASEL_PROFILE_REQUIREMENTS.md](NON_BASEL_PROFILE_REQUIREMENTS.md#sbm-nbp-022a-eu-crr3-csr-implementation-map)
+links non-securitisation, securitisation non-CTP, securitisation CTP, vega, and
+curvature overlays to amended CRR Articles 325n-325p, 325ah-325am, and 325ax.
+Those cells must keep failing closed until profile-owned EU reference data and
+the nine planned `csr_*_eu_crr3_v1` fixture packs land.
+
 ### First implementation cell
 
 **`US_NPR_2_0` × GIRR × DELTA**

@@ -68,7 +68,7 @@ sources:
     jurisdiction: EU
     title: "Regulation (EU) 2024/1623 (CRR3) consolidated text"
     url: "https://eur-lex.europa.eu/eli/reg/2024/1623/oj/eng"
-    section_hint: "Articles 325e-325az and related market-risk provisions for EU comparison profile work; delivered cells map profile-owned ids for GIRR, FX, equity delta, and commodity delta support."
+    section_hint: "Articles 325e-325az and related market-risk provisions for EU comparison profile work. Delivered cells map profile-owned ids for GIRR, FX, equity delta, and commodity delta support; CSR planning maps Articles 325n-325p, 325ah-325am, and 325ax before runtime."
     status: comparison_reference
     reuse_note: "EU_CRR3 is partial runtime support: GIRR delta/vega/curvature, FX delta/vega/curvature, equity delta, and commodity delta are implemented under audit; CSR and non-delivered cells fail closed."
     module_paths:

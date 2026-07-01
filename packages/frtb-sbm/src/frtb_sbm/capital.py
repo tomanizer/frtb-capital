@@ -717,6 +717,10 @@ def _translate_eu_crr3_result_citations(value: Any) -> Any:
         if not changes:
             return value
         return replace(value, **changes)
+    if isinstance(value, Mapping):
+        return _translate_eu_crr3_result_citations_in_mapping(value)
+    if isinstance(value, (tuple, list)):
+        return _translate_eu_crr3_result_citations_in_collection(value)
     return value
 
 
@@ -733,7 +737,7 @@ def _translate_eu_crr3_result_citations_in_collection(values: Sequence[Any]) -> 
     for item in values:
         if is_dataclass(item) or isinstance(item, (tuple, list, Mapping)):
             translated_item = _translate_eu_crr3_result_citations(item)
-            changed = changed or (translated_item is not item)
+            changed = changed or (translated_item != item)
             translated.append(translated_item)
         else:
             translated.append(item)
@@ -748,9 +752,19 @@ def _translate_eu_crr3_result_citations_in_mapping(value: Mapping[str, Any]) -> 
     translated = {}
     changed = False
     for key, item in value.items():
-        if is_dataclass(item) or isinstance(item, (tuple, list, Mapping)):
+        if key == "citation_ids" and isinstance(item, (tuple, list)):
+            citation_ids = tuple(str(citation_id) for citation_id in item)
+            try:
+                translated_item = list(translate_basel_citation_ids_to_eu(citation_ids))
+            except KeyError as exc:
+                raise UnsupportedRegulatoryFeatureError(
+                    f"EU_CRR3 result contains an unsupported Basel citation id: {item!r}"
+                ) from exc
+            changed = changed or (translated_item != item)
+            translated[key] = translated_item
+        elif is_dataclass(item) or isinstance(item, (tuple, list, Mapping)):
             translated_item = _translate_eu_crr3_result_citations(item)
-            changed = changed or (translated_item is not item)
+            changed = changed or (translated_item != item)
             translated[key] = translated_item
         else:
             translated[key] = item

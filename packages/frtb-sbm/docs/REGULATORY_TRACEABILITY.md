@@ -104,7 +104,7 @@ and
 | Profile | Current runtime status | Planning status |
 | --- | --- | --- |
 | `US_NPR_2_0` | partial (1 / 21 cells) | GIRR delta implemented under audit; all other cells unsupported fail-closed. Proposed-rule material only. |
-| `EU_CRR3` | partial (8 / 21 cells) | GIRR delta/vega/curvature, FX delta/vega/curvature, equity delta, and commodity delta implemented under audit with profile-owned Regulation (EU) 2024/1623 citation ids; CSR and non-delivered cells unsupported fail-closed. |
+| `EU_CRR3` | partial (8 / 21 cells) | GIRR delta/vega/curvature, FX delta/vega/curvature, equity delta, and commodity delta implemented under audit with profile-owned Regulation (EU) 2024/1623 citation ids; CSR and non-delivered cells unsupported fail-closed. CSR planning is source-mapped under SBM-NBP-022A for Articles 325n-325p, 325ah-325am, and 325ax before runtime support. |
 | `PRA_UK_CRR` | unsupported fail-closed (0 / 21 cells) | source-mapped under SBM-NBP-020 to PRA PS1/26 Appendix 1 / PRA2026/1 Articles 325c-325ay; runtime cells remain unsupported fail-closed until exact-cell citations, reference data, and deterministic fixtures are added. |
 
 Except for `US_NPR_2_0` GIRR delta and the eight delivered `EU_CRR3` cells,
@@ -148,7 +148,7 @@ emitted.
 | --- | --- | --- |
 | Basel Standardised Approach | Basel Framework MAR20 and MAR21. MAR20.4 places SBM in the SA stack. MAR21.1-MAR21.101 define risk classes, measures, weights, buckets, and aggregation. | Implemented for supported phase-1 Basel slices. |
 | U.S. NPR 2.0 | Federal Register 91 FR 14952, March 27, 2026. Section V.A.7.a defines the standardized non-default process. | Partial comparison profile: GIRR delta implemented under audit; proposed-rule material only. |
-| EU CRR3 | Regulation (EU) 2024/1623 Articles 325e-325az and related market-risk amendments. | Partial comparison profile: GIRR delta/vega/curvature, FX delta/vega/curvature, equity delta, and commodity delta implemented under audit; CSR and non-delivered cells fail closed. |
+| EU CRR3 | Regulation (EU) 2024/1623 Articles 325e-325az and related market-risk amendments. | Partial comparison profile: GIRR delta/vega/curvature, FX delta/vega/curvature, equity delta, and commodity delta implemented under audit; CSR and non-delivered cells fail closed. CSR mapping for non-sec, sec non-CTP, sec CTP, vega overlays, and curvature overlays is recorded in SBM-NBP-022A before runtime implementation. |
 | PRA UK CRR | PRA PS1/26 Appendix 1 / PRA2026/1, Market Risk: Advanced Standardised Approach (CRR) Part, Articles 325c-325ay. | Source-mapped comparison profile; all PRA UK CRR runtime cells fail closed until exact-cell citations, profile-owned reference data, and fixtures are added. |
 | ISDA CRIF | CRIF field convention. | Adapter inspiration only; not a regulatory source. |
 
