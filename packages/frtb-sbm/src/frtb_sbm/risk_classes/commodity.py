@@ -54,6 +54,7 @@ _COMMODITY_SCENARIO_CITATION_IDS: dict[str, tuple[str, ...]] = {
             "basel_mar21_7_scenario_selection",
         )
     ),
+    SbmRegulatoryProfile.PRA_UK_CRR.value: ("pra_uk_crr_325h_correlation_scenarios",),
 }
 _COMMODITY_INTRA_BRANCH_CITATION_IDS: dict[str, tuple[str, ...]] = {
     SbmRegulatoryProfile.BASEL_MAR21.value: ("basel_mar21_4_intra_bucket",),
@@ -61,6 +62,7 @@ _COMMODITY_INTRA_BRANCH_CITATION_IDS: dict[str, tuple[str, ...]] = {
     SbmRegulatoryProfile.EU_CRR3.value: translate_basel_citation_ids_to_eu(
         ("basel_mar21_4_intra_bucket",)
     ),
+    SbmRegulatoryProfile.PRA_UK_CRR.value: ("pra_uk_crr_325f_delta_vega_aggregation",),
 }
 _COMMODITY_INTER_BRANCH_CITATION_IDS: dict[str, tuple[str, ...]] = {
     SbmRegulatoryProfile.BASEL_MAR21.value: ("basel_mar21_4_inter_bucket",),
@@ -68,6 +70,7 @@ _COMMODITY_INTER_BRANCH_CITATION_IDS: dict[str, tuple[str, ...]] = {
     SbmRegulatoryProfile.EU_CRR3.value: translate_basel_citation_ids_to_eu(
         ("basel_mar21_4_inter_bucket",)
     ),
+    SbmRegulatoryProfile.PRA_UK_CRR.value: ("pra_uk_crr_325f_delta_vega_aggregation",),
 }
 
 

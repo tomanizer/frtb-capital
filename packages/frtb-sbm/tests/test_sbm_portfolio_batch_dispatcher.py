@@ -223,18 +223,15 @@ def test_batch_dispatcher_reports_batch_field_for_invalid_batch_inputs() -> None
 
 
 def test_batch_dispatcher_fails_closed_for_unsupported_profile_cell() -> None:
+    sensitivity = sample_sensitivity(
+        1,
+        risk_class=SbmRiskClass.CSR_NONSEC,
+        risk_measure=SbmRiskMeasure.DELTA,
+    )
     handoff = normalize_sbm_path(
-        SbmRiskClass.FX,
+        SbmRiskClass.CSR_NONSEC,
         SbmRiskMeasure.DELTA,
-        arrow_table(
-            (
-                sample_sensitivity(
-                    1,
-                    risk_class=SbmRiskClass.FX,
-                    risk_measure=SbmRiskMeasure.DELTA,
-                ),
-            )
-        ),
+        arrow_table((sensitivity,)),
     )
     context = SbmCalculationContext(
         run_id="sbm-portfolio-dispatch-unsupported",

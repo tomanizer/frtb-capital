@@ -1,0 +1,71 @@
+{
+  "context": {
+    "run_id": "sbm-commodity_delta_pra_uk_crr_v1",
+    "calculation_date": "2026-07-01",
+    "base_currency": "USD",
+    "reporting_currency": "USD",
+    "profile_id": "PRA_UK_CRR"
+  },
+  "sensitivities": [
+    {
+      "sensitivity_id": "commodity-delta-pra-uk-crr-v1-001",
+      "source_row_id": "row-001",
+      "desk_id": "pra-comparison-desk",
+      "legal_entity": "PRA-LE-001",
+      "risk_class": "COMMODITY",
+      "risk_measure": "DELTA",
+      "bucket": "2",
+      "risk_factor": "WTI",
+      "qualifier": "NYMEX",
+      "tenor": "3m",
+      "amount": 3000000.0,
+      "amount_currency": "USD",
+      "sign_convention": "LONG"
+    },
+    {
+      "sensitivity_id": "commodity-delta-pra-uk-crr-v1-002",
+      "source_row_id": "row-002",
+      "desk_id": "pra-comparison-desk",
+      "legal_entity": "PRA-LE-001",
+      "risk_class": "COMMODITY",
+      "risk_measure": "DELTA",
+      "bucket": "2",
+      "risk_factor": "WTI",
+      "qualifier": "NYMEX",
+      "tenor": "6m",
+      "amount": 1000000.0,
+      "amount_currency": "USD",
+      "sign_convention": "LONG"
+    },
+    {
+      "sensitivity_id": "commodity-delta-pra-uk-crr-v1-003",
+      "source_row_id": "row-003",
+      "desk_id": "pra-comparison-desk",
+      "legal_entity": "PRA-LE-001",
+      "risk_class": "COMMODITY",
+      "risk_measure": "DELTA",
+      "bucket": "2",
+      "risk_factor": "BRENT",
+      "qualifier": "ICE",
+      "tenor": "3m",
+      "amount": -2000000.0,
+      "amount_currency": "USD",
+      "sign_convention": "SHORT"
+    },
+    {
+      "sensitivity_id": "commodity-delta-pra-uk-crr-v1-004",
+      "source_row_id": "row-004",
+      "desk_id": "pra-comparison-desk",
+      "legal_entity": "PRA-LE-001",
+      "risk_class": "COMMODITY",
+      "risk_measure": "DELTA",
+      "bucket": "5",
+      "risk_factor": "ALU",
+      "qualifier": "LME",
+      "tenor": "1y",
+      "amount": 1500000.0,
+      "amount_currency": "USD",
+      "sign_convention": "LONG"
+    }
+  ]
+}

@@ -1,0 +1,351 @@
+{
+  "input_hash": "37e709dcbc852253322f4823d06f1abcfa594b980e415596cab88d8dfd1133da",
+  "input_hash_algorithm": "json-row-v1",
+  "portfolio_scenario_selection": {
+    "branch_id": "portfolio_scenario_selection",
+    "branch_type": "SCENARIO_SELECTION",
+    "citation_ids": [
+      "pra_uk_crr_325h_correlation_scenarios"
+    ],
+    "reason": "selected HIGH scenario with capital 100.0 as the maximum across correlation scenarios",
+    "selected": true,
+    "source_id": "mar21_7_2"
+  },
+  "portfolio_scenario_totals": {
+    "HIGH": 100.0,
+    "LOW": 100.0,
+    "MEDIUM": 100.0
+  },
+  "profile_hash": "8f98d3238da15f6bcbc1b7595aea70aaad6ec7ebae4bfd25f0c3137e4debb5d1",
+  "profile_id": "PRA_UK_CRR",
+  "reconciliation": {
+    "citation_ids": [
+      "pra_uk_crr_325h_correlation_scenarios",
+      "pra_uk_crr_325g_curvature_aggregation",
+      "pra_uk_crr_325ay_curvature_correlations",
+      "pra_uk_crr_325af_girr_intra",
+      "pra_uk_crr_325ag_girr_inter",
+      "pra_uk_crr_325e_components",
+      "pra_uk_crr_325l_girr_risk_factors",
+      "pra_uk_crr_325ax_curvature_risk_weights",
+      "pra_uk_crr_325ae_girr_delta_weights"
+    ],
+    "input_count": 1,
+    "rejected_input_count": 0,
+    "requirement_ids": [
+      "SBM-WS-001",
+      "SBM-AGG-001",
+      "SBM-AGG-002",
+      "SBM-AUDIT-001",
+      "SBM-FUNC-017",
+      "SBM-FUNC-018",
+      "SBM-FUNC-019",
+      "SBM-FUNC-014",
+      "SBM-FUNC-015",
+      "SBM-FUNC-016",
+      "SBM-CURV-001"
+    ]
+  },
+  "risk_classes": [
+    {
+      "buckets": [
+        {
+          "bucket_id": "2",
+          "citation_ids": [
+            "pra_uk_crr_325g_curvature_aggregation",
+            "pra_uk_crr_325ay_curvature_correlations",
+            "pra_uk_crr_325af_girr_intra"
+          ],
+          "floor_applied": false,
+          "kb": 100.0,
+          "risk_class": "GIRR",
+          "risk_measure": "CURVATURE",
+          "sb": 100.0,
+          "scenario": "HIGH",
+          "weighted_sensitivities": [
+            {
+              "bucket": "2",
+              "citation_ids": [
+                "pra_uk_crr_325e_components",
+                "pra_uk_crr_325g_curvature_aggregation",
+                "pra_uk_crr_325h_correlation_scenarios",
+                "pra_uk_crr_325l_girr_risk_factors",
+                "pra_uk_crr_325ax_curvature_risk_weights",
+                "pra_uk_crr_325ay_curvature_correlations",
+                "pra_uk_crr_325ae_girr_delta_weights"
+              ],
+              "contributing_sensitivity_ids": [
+                "girr-curvature-pra-uk-crr-v1-001"
+              ],
+              "contributing_source_row_ids": [
+                "row-001"
+              ],
+              "factor_key": [
+                "2",
+                "USD"
+              ],
+              "qualifier": "USD:up:HIGH",
+              "raw_amount": 100.0,
+              "risk_class": "GIRR",
+              "risk_measure": "CURVATURE",
+              "risk_weight": 1.0,
+              "scaled_amount": 100.0,
+              "sensitivity_id": "2|USD",
+              "source_row_id": "row-001",
+              "source_system": "synthetic-sbm-fixture"
+            }
+          ]
+        }
+      ],
+      "citation_ids": [
+        "pra_uk_crr_325h_correlation_scenarios",
+        "pra_uk_crr_325g_curvature_aggregation",
+        "pra_uk_crr_325ay_curvature_correlations",
+        "pra_uk_crr_325af_girr_intra",
+        "pra_uk_crr_325ag_girr_inter",
+        "pra_uk_crr_325e_components"
+      ],
+      "curvature_branches": [
+        {
+          "citation_ids": [
+            "pra_uk_crr_325e_components",
+            "pra_uk_crr_325g_curvature_aggregation",
+            "pra_uk_crr_325h_correlation_scenarios",
+            "pra_uk_crr_325l_girr_risk_factors",
+            "pra_uk_crr_325ax_curvature_risk_weights",
+            "pra_uk_crr_325ay_curvature_correlations"
+          ],
+          "down_shock_amount": 40.0,
+          "selected_branch": "down",
+          "sensitivity_id": "girr-curvature-pra-uk-crr-v1-001",
+          "up_shock_amount": 100.0
+        }
+      ],
+      "curvature_bucket_branches": [
+        {
+          "bucket_id": "2",
+          "citation_ids": [
+            "pra_uk_crr_325g_curvature_aggregation",
+            "pra_uk_crr_325ay_curvature_correlations",
+            "pra_uk_crr_325af_girr_intra"
+          ],
+          "down_bucket_capital": 40.0,
+          "down_psi_zero_count": 0,
+          "down_sum": 40.0,
+          "floor_applied": false,
+          "rejected_branch": "down",
+          "rejected_bucket_capital": 40.0,
+          "scenario": "LOW",
+          "selected_branch": "up",
+          "selected_bucket_capital": 100.0,
+          "selected_psi_zero_count": 0,
+          "selected_sum": 100.0,
+          "up_bucket_capital": 100.0,
+          "up_psi_zero_count": 0,
+          "up_sum": 100.0
+        },
+        {
+          "bucket_id": "2",
+          "citation_ids": [
+            "pra_uk_crr_325g_curvature_aggregation",
+            "pra_uk_crr_325ay_curvature_correlations",
+            "pra_uk_crr_325af_girr_intra"
+          ],
+          "down_bucket_capital": 40.0,
+          "down_psi_zero_count": 0,
+          "down_sum": 40.0,
+          "floor_applied": false,
+          "rejected_branch": "down",
+          "rejected_bucket_capital": 40.0,
+          "scenario": "MEDIUM",
+          "selected_branch": "up",
+          "selected_bucket_capital": 100.0,
+          "selected_psi_zero_count": 0,
+          "selected_sum": 100.0,
+          "up_bucket_capital": 100.0,
+          "up_psi_zero_count": 0,
+          "up_sum": 100.0
+        },
+        {
+          "bucket_id": "2",
+          "citation_ids": [
+            "pra_uk_crr_325g_curvature_aggregation",
+            "pra_uk_crr_325ay_curvature_correlations",
+            "pra_uk_crr_325af_girr_intra"
+          ],
+          "down_bucket_capital": 40.0,
+          "down_psi_zero_count": 0,
+          "down_sum": 40.0,
+          "floor_applied": false,
+          "rejected_branch": "down",
+          "rejected_bucket_capital": 40.0,
+          "scenario": "HIGH",
+          "selected_branch": "up",
+          "selected_bucket_capital": 100.0,
+          "selected_psi_zero_count": 0,
+          "selected_sum": 100.0,
+          "up_bucket_capital": 100.0,
+          "up_psi_zero_count": 0,
+          "up_sum": 100.0
+        }
+      ],
+      "risk_class": "GIRR",
+      "risk_measure": "CURVATURE",
+      "scenario_details": [
+        {
+          "alternative_sb_used": false,
+          "capital": 100.0,
+          "citation_ids": [
+            "pra_uk_crr_325h_correlation_scenarios",
+            "pra_uk_crr_325g_curvature_aggregation",
+            "pra_uk_crr_325ay_curvature_correlations",
+            "pra_uk_crr_325af_girr_intra",
+            "pra_uk_crr_325ag_girr_inter"
+          ],
+          "inter_bucket_correlations": [],
+          "intra_buckets": [
+            {
+              "bucket_id": "2",
+              "citation_ids": [
+                "pra_uk_crr_325g_curvature_aggregation",
+                "pra_uk_crr_325ay_curvature_correlations",
+                "pra_uk_crr_325af_girr_intra"
+              ],
+              "floor_applied": false,
+              "kb": 100.0,
+              "pairwise_correlation_summary": {
+                "evidence_mode": "AUTO",
+                "factor_ids": [
+                  "2|USD"
+                ],
+                "materialized_count": 1,
+                "omitted_count": 0,
+                "total_count": 1
+              },
+              "pairwise_correlations": [
+                {
+                  "correlation": 1.0,
+                  "sensitivity_a": "2|USD",
+                  "sensitivity_b": "2|USD"
+                }
+              ],
+              "sb": 100.0
+            }
+          ],
+          "scenario": "LOW"
+        },
+        {
+          "alternative_sb_used": false,
+          "capital": 100.0,
+          "citation_ids": [
+            "pra_uk_crr_325h_correlation_scenarios",
+            "pra_uk_crr_325g_curvature_aggregation",
+            "pra_uk_crr_325ay_curvature_correlations",
+            "pra_uk_crr_325af_girr_intra",
+            "pra_uk_crr_325ag_girr_inter"
+          ],
+          "inter_bucket_correlations": [],
+          "intra_buckets": [
+            {
+              "bucket_id": "2",
+              "citation_ids": [
+                "pra_uk_crr_325g_curvature_aggregation",
+                "pra_uk_crr_325ay_curvature_correlations",
+                "pra_uk_crr_325af_girr_intra"
+              ],
+              "floor_applied": false,
+              "kb": 100.0,
+              "pairwise_correlation_summary": {
+                "evidence_mode": "AUTO",
+                "factor_ids": [
+                  "2|USD"
+                ],
+                "materialized_count": 1,
+                "omitted_count": 0,
+                "total_count": 1
+              },
+              "pairwise_correlations": [
+                {
+                  "correlation": 1.0,
+                  "sensitivity_a": "2|USD",
+                  "sensitivity_b": "2|USD"
+                }
+              ],
+              "sb": 100.0
+            }
+          ],
+          "scenario": "MEDIUM"
+        },
+        {
+          "alternative_sb_used": false,
+          "capital": 100.0,
+          "citation_ids": [
+            "pra_uk_crr_325h_correlation_scenarios",
+            "pra_uk_crr_325g_curvature_aggregation",
+            "pra_uk_crr_325ay_curvature_correlations",
+            "pra_uk_crr_325af_girr_intra",
+            "pra_uk_crr_325ag_girr_inter"
+          ],
+          "inter_bucket_correlations": [],
+          "intra_buckets": [
+            {
+              "bucket_id": "2",
+              "citation_ids": [
+                "pra_uk_crr_325g_curvature_aggregation",
+                "pra_uk_crr_325ay_curvature_correlations",
+                "pra_uk_crr_325af_girr_intra"
+              ],
+              "floor_applied": false,
+              "kb": 100.0,
+              "pairwise_correlation_summary": {
+                "evidence_mode": "AUTO",
+                "factor_ids": [
+                  "2|USD"
+                ],
+                "materialized_count": 1,
+                "omitted_count": 0,
+                "total_count": 1
+              },
+              "pairwise_correlations": [
+                {
+                  "correlation": 1.0,
+                  "sensitivity_a": "2|USD",
+                  "sensitivity_b": "2|USD"
+                }
+              ],
+              "sb": 100.0
+            }
+          ],
+          "scenario": "HIGH"
+        }
+      ],
+      "scenario_selection": {
+        "branch_id": "girr_curvature_scenario_selection",
+        "branch_type": "SCENARIO_SELECTION",
+        "citation_ids": [
+          "pra_uk_crr_325h_correlation_scenarios"
+        ],
+        "reason": "selected HIGH scenario with capital 100.0 as the maximum across correlation scenarios",
+        "selected": true,
+        "source_id": "mar21_7_2"
+      },
+      "scenario_totals": {
+        "HIGH": 100.0,
+        "LOW": 100.0,
+        "MEDIUM": 100.0
+      },
+      "selected_capital": 100.0,
+      "selected_scenario": "HIGH"
+    }
+  ],
+  "run_context": {
+    "base_currency": "USD",
+    "calculation_date": "2026-07-01",
+    "reporting_currency": "USD",
+    "run_id": "sbm-girr_curvature_pra_uk_crr_v1"
+  },
+  "selected_portfolio_scenario": "HIGH",
+  "total_capital": 100.0,
+  "unsupported_flags": [],
+  "warnings": []
+}
