@@ -17,10 +17,9 @@ from frtb_sbm.equity_reference_data import equity_bucket_definition
 from frtb_sbm.girr_reference_correlations import _exponential_tenor_correlation
 from frtb_sbm.girr_reference_data import (
     BASEL_GIRR_TENORS,
-    _ensure_girr_supported,
     girr_tenor_definition,
 )
-from frtb_sbm.girr_reference_tables import EU_CRR3_GIRR_TENORS
+from frtb_sbm.girr_reference_tables import EU_CRR3_GIRR_TENORS, PRA_UK_CRR_GIRR_TENORS
 from frtb_sbm.reference_citations_eu_crr3 import eu_crr3_citation_id_for_basel
 from frtb_sbm.reference_profiles import _coerce_risk_class, _resolve_supported_profile
 from frtb_sbm.reference_types import SbmGirrTenorDefinition
@@ -33,6 +32,7 @@ GIRR_VEGA_RISK_WEIGHT_CAP = 1.0
 PROFILE_GIRR_VEGA_LIQUIDITY_HORIZON_DAYS: dict[SbmRegulatoryProfile, int] = {
     SbmRegulatoryProfile.BASEL_MAR21: 60,
     SbmRegulatoryProfile.EU_CRR3: 60,
+    SbmRegulatoryProfile.PRA_UK_CRR: 60,
 }
 
 PROFILE_VEGA_LIQUIDITY_HORIZON_DAYS: dict[
@@ -66,6 +66,25 @@ PROFILE_GIRR_VEGA_OPTION_TENORS: dict[
 ] = {
     SbmRegulatoryProfile.BASEL_MAR21: BASEL_GIRR_TENORS,
     SbmRegulatoryProfile.EU_CRR3: EU_CRR3_GIRR_TENORS,
+    SbmRegulatoryProfile.PRA_UK_CRR: PRA_UK_CRR_GIRR_TENORS,
+}
+
+PROFILE_GIRR_VEGA_LIQUIDITY_HORIZON_CITATION_IDS: dict[SbmRegulatoryProfile, str] = {
+    SbmRegulatoryProfile.BASEL_MAR21: "basel_mar21_92",
+    SbmRegulatoryProfile.EU_CRR3: eu_crr3_citation_id_for_basel("basel_mar21_92"),
+    SbmRegulatoryProfile.PRA_UK_CRR: "pra_uk_crr_325ax_vega_risk_weights",
+}
+
+PROFILE_GIRR_VEGA_INTRA_BUCKET_CITATION_IDS: dict[SbmRegulatoryProfile, str] = {
+    SbmRegulatoryProfile.BASEL_MAR21: "basel_mar21_93",
+    SbmRegulatoryProfile.EU_CRR3: eu_crr3_citation_id_for_basel("basel_mar21_93"),
+    SbmRegulatoryProfile.PRA_UK_CRR: "pra_uk_crr_325ay_vega_correlations",
+}
+
+PROFILE_GIRR_VEGA_OPTION_TENOR_CITATION_IDS: dict[SbmRegulatoryProfile, str] = {
+    SbmRegulatoryProfile.BASEL_MAR21: "basel_mar21_93",
+    SbmRegulatoryProfile.EU_CRR3: eu_crr3_citation_id_for_basel("basel_mar21_93"),
+    SbmRegulatoryProfile.PRA_UK_CRR: "pra_uk_crr_325ay_vega_correlations",
 }
 
 
@@ -109,8 +128,11 @@ def vega_liquidity_horizon_days(
     """
 
     resolved = _resolve_supported_profile(profile)
-    _ensure_vega_supported(profile)
     resolved_class = _coerce_risk_class(risk_class)
+    if resolved_class is SbmRiskClass.GIRR:
+        _ensure_girr_vega_supported(profile)
+        return PROFILE_GIRR_VEGA_LIQUIDITY_HORIZON_DAYS[resolved]
+    _ensure_vega_supported(profile)
     if resolved_class is SbmRiskClass.EQUITY:
         normalised_bucket = equity_bucket_definition(profile, bucket_id).bucket_id
         if normalised_bucket in EQUITY_VEGA_LARGE_CAP_INDEX_BUCKETS:
@@ -147,17 +169,18 @@ def vega_risk_weight(
     tuple[float, tuple[str, ...]]
     """
 
-    _ensure_vega_supported(profile)
+    resolved = _resolve_supported_profile(profile)
+    _ensure_girr_vega_supported(profile)
     horizon = require_positive_int(liquidity_horizon_days, "liquidity_horizon_days")
     risk_weight = min(
         GIRR_VEGA_RISK_WEIGHT_CAP,
         GIRR_VEGA_RISK_WEIGHT_FACTOR * math.sqrt(horizon / 10.0),
     )
-    citation_id = (
-        eu_crr3_citation_id_for_basel("basel_mar21_92")
-        if _resolve_supported_profile(profile) is SbmRegulatoryProfile.EU_CRR3
-        else "basel_mar21_92"
-    )
+    citation_id = PROFILE_GIRR_VEGA_LIQUIDITY_HORIZON_CITATION_IDS.get(resolved)
+    if citation_id is None:
+        raise UnsupportedRegulatoryFeatureError(
+            f"GIRR vega risk weights are unsupported for profile {resolved.value}"
+        )
     return risk_weight, (citation_id,)
 
 
@@ -226,6 +249,7 @@ def girr_vega_intra_bucket_correlation(
     tuple[float, tuple[str, ...]]
     """
 
+    resolved = _resolve_supported_profile(profile)
     _ensure_girr_vega_supported(profile)
     rho_opt, _ = vega_option_tenor_correlation(
         profile,
@@ -240,12 +264,7 @@ def girr_vega_intra_bucket_correlation(
         constant=GIRR_VEGA_INTRA_BUCKET_CONSTANT,
         floor=None,
     )
-    citation_id = (
-        eu_crr3_citation_id_for_basel("basel_mar21_93")
-        if _resolve_supported_profile(profile) is SbmRegulatoryProfile.EU_CRR3
-        else "basel_mar21_93"
-    )
-    return min(1.0, rho_opt * rho_ul), (citation_id,)
+    return min(1.0, rho_opt * rho_ul), (PROFILE_GIRR_VEGA_INTRA_BUCKET_CITATION_IDS[resolved],)
 
 
 def vega_option_tenor_correlation(
@@ -269,14 +288,10 @@ def vega_option_tenor_correlation(
     tuple[float, tuple[str, ...]]
     """
 
-    _ensure_vega_supported(profile)
+    resolved = _resolve_supported_profile(profile)
+    _ensure_girr_vega_supported(profile)
     option_maturity1 = girr_vega_option_tenor_definition(profile, option_tenor1).maturity_years
     option_maturity2 = girr_vega_option_tenor_definition(profile, option_tenor2).maturity_years
-    citation_id = (
-        eu_crr3_citation_id_for_basel("basel_mar21_93")
-        if _resolve_supported_profile(profile) is SbmRegulatoryProfile.EU_CRR3
-        else "basel_mar21_93"
-    )
     return (
         _exponential_tenor_correlation(
             option_maturity1,
@@ -284,7 +299,7 @@ def vega_option_tenor_correlation(
             constant=GIRR_VEGA_INTRA_BUCKET_CONSTANT,
             floor=None,
         ),
-        (citation_id,),
+        (PROFILE_GIRR_VEGA_OPTION_TENOR_CITATION_IDS[resolved],),
     )
 
 
@@ -297,7 +312,11 @@ def _ensure_vega_supported(profile: SbmRegulatoryProfile | str) -> None:
 
 
 def _ensure_girr_vega_supported(profile: SbmRegulatoryProfile | str) -> None:
-    _ensure_girr_supported(profile)
+    resolved = _resolve_supported_profile(profile)
+    if resolved not in PROFILE_GIRR_VEGA_LIQUIDITY_HORIZON_DAYS:
+        raise UnsupportedRegulatoryFeatureError(
+            f"GIRR vega reference data is unsupported for profile {resolved.value}"
+        )
 
 
 __all__ = [
@@ -308,8 +327,11 @@ __all__ = [
     "GIRR_VEGA_INTRA_BUCKET_CONSTANT",
     "GIRR_VEGA_RISK_WEIGHT_CAP",
     "GIRR_VEGA_RISK_WEIGHT_FACTOR",
+    "PROFILE_GIRR_VEGA_INTRA_BUCKET_CITATION_IDS",
+    "PROFILE_GIRR_VEGA_LIQUIDITY_HORIZON_CITATION_IDS",
     "PROFILE_GIRR_VEGA_LIQUIDITY_HORIZON_DAYS",
     "PROFILE_GIRR_VEGA_OPTION_TENORS",
+    "PROFILE_GIRR_VEGA_OPTION_TENOR_CITATION_IDS",
     "PROFILE_VEGA_LIQUIDITY_HORIZON_DAYS",
     "girr_vega_intra_bucket_correlation",
     "girr_vega_liquidity_horizon_days",

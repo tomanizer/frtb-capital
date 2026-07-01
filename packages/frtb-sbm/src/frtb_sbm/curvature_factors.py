@@ -11,9 +11,10 @@ from dataclasses import dataclass
 from frtb_common import CalculationScope, UnsupportedRegulatoryFeatureError
 
 from frtb_sbm._citations import merge_citation_ids as _merge_citation_ids
-from frtb_sbm.data_models import SbmRiskClass, SbmSensitivity
+from frtb_sbm.data_models import SbmRegulatoryProfile, SbmRiskClass, SbmSensitivity
 from frtb_sbm.equity_reference_data import EQUITY_SPOT_RISK_FACTOR
 from frtb_sbm.reference_data import curvature_citation_ids, normalise_fx_delta_currency_code
+from frtb_sbm.reference_profiles import _resolve_supported_profile
 from frtb_sbm.validation import SbmInputError, normalise_sensitivity_amount
 
 FX_CURVATURE_SCALAR_1_5_FLAG = "fx_curvature_scalar_1_5"
@@ -108,14 +109,33 @@ def _curvature_factor_citation_ids(
     risk_factor: str,
 ) -> tuple[str, ...]:
     del bucket_id, risk_factor
+    profile = _resolve_supported_profile(profile_id)
     return _merge_citation_ids(
         curvature_citation_ids(profile_id),
-        _curvature_definition_citation_ids(risk_class),
-        _curvature_weight_rule_citation_ids(risk_class),
+        _curvature_definition_citation_ids(risk_class, profile=profile),
+        _curvature_weight_rule_citation_ids(risk_class, profile=profile),
     )
 
 
-def _curvature_definition_citation_ids(risk_class: SbmRiskClass) -> tuple[str, ...]:
+def _curvature_definition_citation_ids(
+    risk_class: SbmRiskClass,
+    *,
+    profile: SbmRegulatoryProfile = SbmRegulatoryProfile.BASEL_MAR21,
+) -> tuple[str, ...]:
+    if profile is SbmRegulatoryProfile.PRA_UK_CRR:
+        if risk_class is SbmRiskClass.GIRR:
+            return (
+                "pra_uk_crr_325e_components",
+                "pra_uk_crr_325g_curvature_aggregation",
+                "pra_uk_crr_325l_girr_risk_factors",
+            )
+        raise UnsupportedRegulatoryFeatureError(
+            f"PRA_UK_CRR curvature definitions are unsupported for risk_class={risk_class.value}"
+        )
+    if profile not in {SbmRegulatoryProfile.BASEL_MAR21, SbmRegulatoryProfile.EU_CRR3}:
+        raise UnsupportedRegulatoryFeatureError(
+            f"curvature definitions are unsupported for profile {profile.value}"
+        )
     if risk_class is SbmRiskClass.GIRR:
         return ("basel_mar21_8", "basel_mar21_96", "basel_mar21_97")
     if risk_class is SbmRiskClass.FX:
@@ -133,7 +153,24 @@ def _curvature_definition_citation_ids(risk_class: SbmRiskClass) -> tuple[str, .
     return ("basel_mar21_96", "basel_mar21_97")
 
 
-def _curvature_weight_rule_citation_ids(risk_class: SbmRiskClass) -> tuple[str, ...]:
+def _curvature_weight_rule_citation_ids(
+    risk_class: SbmRiskClass,
+    *,
+    profile: SbmRegulatoryProfile = SbmRegulatoryProfile.BASEL_MAR21,
+) -> tuple[str, ...]:
+    if profile is SbmRegulatoryProfile.PRA_UK_CRR:
+        if risk_class is SbmRiskClass.GIRR:
+            return (
+                "pra_uk_crr_325ax_curvature_risk_weights",
+                "pra_uk_crr_325ae_girr_delta_weights",
+            )
+        raise UnsupportedRegulatoryFeatureError(
+            f"PRA_UK_CRR curvature weights are unsupported for risk_class={risk_class.value}"
+        )
+    if profile not in {SbmRegulatoryProfile.BASEL_MAR21, SbmRegulatoryProfile.EU_CRR3}:
+        raise UnsupportedRegulatoryFeatureError(
+            f"curvature weights are unsupported for profile {profile.value}"
+        )
     if risk_class is SbmRiskClass.GIRR:
         return ("basel_mar21_99", "basel_mar21_39")
     if risk_class is SbmRiskClass.FX:

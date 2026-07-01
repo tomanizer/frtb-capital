@@ -152,15 +152,15 @@ def test_calculate_sbm_capital_validates_context_shape() -> None:
 def test_calculate_sbm_capital_fails_closed_for_unsupported_profile_cells() -> None:
     unsupported = replace(
         sample_sensitivity(
-            sensitivity_id="eur-1y-vega",
+            sensitivity_id="fx-eur-delta",
             source_row_id="row-001",
-            bucket="1",
+            bucket="EUR",
             risk_factor="EUR",
             tenor="1y",
             amount=1_000_000.0,
         ),
-        risk_measure=SbmRiskMeasure.VEGA,
-        option_tenor="1y",
+        risk_class=SbmRiskClass.FX,
+        tenor=None,
     )
     with pytest.raises(UnsupportedRegulatoryFeatureError, match="unsupported"):
         calculate_sbm_capital(

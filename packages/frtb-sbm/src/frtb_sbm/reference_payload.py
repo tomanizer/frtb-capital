@@ -40,6 +40,8 @@ from frtb_sbm.vega_reference_data import (
     GIRR_VEGA_INTRA_BUCKET_CONSTANT,
     GIRR_VEGA_RISK_WEIGHT_CAP,
     GIRR_VEGA_RISK_WEIGHT_FACTOR,
+    PROFILE_GIRR_VEGA_INTRA_BUCKET_CITATION_IDS,
+    PROFILE_GIRR_VEGA_LIQUIDITY_HORIZON_CITATION_IDS,
     PROFILE_GIRR_VEGA_LIQUIDITY_HORIZON_DAYS,
     PROFILE_VEGA_LIQUIDITY_HORIZON_DAYS,
     girr_vega_option_tenors,
@@ -157,11 +159,10 @@ def _add_girr_vega_payload(payload: dict[str, object], profile: SbmRegulatoryPro
                 "risk_weight_factor": GIRR_VEGA_RISK_WEIGHT_FACTOR,
                 "risk_weight_cap": GIRR_VEGA_RISK_WEIGHT_CAP,
                 "intra_bucket_constant": GIRR_VEGA_INTRA_BUCKET_CONSTANT,
-                "liquidity_horizon_citation_id": _profile_citation_id(
-                    profile,
-                    "basel_mar21_92",
+                "liquidity_horizon_citation_id": (
+                    PROFILE_GIRR_VEGA_LIQUIDITY_HORIZON_CITATION_IDS[profile]
                 ),
-                "intra_bucket_citation_id": _profile_citation_id(profile, "basel_mar21_93"),
+                "intra_bucket_citation_id": PROFILE_GIRR_VEGA_INTRA_BUCKET_CITATION_IDS[profile],
             },
             "girr_vega_option_tenors": [
                 {
@@ -235,6 +236,17 @@ def _add_basel_curvature_and_non_girr_payloads(
     payload: dict[str, object],
     profile: SbmRegulatoryProfile,
 ) -> None:
+    if profile is SbmRegulatoryProfile.PRA_UK_CRR:
+        payload["curvature_parameters"] = {
+            "citation_ids": list(curvature_citation_ids(profile)),
+            "girr_parallel_shift_risk_weight": max(
+                rule.risk_weight for rule in PROFILE_GIRR_DELTA_RISK_WEIGHTS[profile]
+            ),
+            "parallel_shift_rule_citation_id": "pra_uk_crr_325ax_curvature_risk_weights",
+            "intra_bucket_correlation_citation_id": ("pra_uk_crr_325ay_curvature_correlations"),
+            "inter_bucket_correlation_citation_id": ("pra_uk_crr_325ay_curvature_correlations"),
+        }
+        return
     if profile not in {SbmRegulatoryProfile.BASEL_MAR21, SbmRegulatoryProfile.EU_CRR3}:
         return
     payload["curvature_parameters"] = {

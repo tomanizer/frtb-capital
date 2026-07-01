@@ -61,6 +61,15 @@ PRA_UK_CRR_CITATIONS: dict[str, SbmCitation] = {
         url=PRA_UK_CRR_URL,
         note="Specified-currency square-root-of-two GIRR risk-weight adjustment.",
     ),
+    "pra_uk_crr_325e_components": SbmCitation(
+        source_id="uk_pra_ps1_26_sbm_asa",
+        location=(
+            "PRA PS1/26 Appendix 1, Market Risk: Advanced Standardised "
+            "Approach (CRR) Part, Article 325e"
+        ),
+        url=PRA_UK_CRR_URL,
+        note="Delta, vega, and curvature component definitions for the ASA.",
+    ),
     "pra_uk_crr_325af_girr_intra": SbmCitation(
         source_id="uk_pra_ps1_26_sbm_asa",
         location=(
@@ -87,6 +96,69 @@ PRA_UK_CRR_CITATIONS: dict[str, SbmCitation] = {
         ),
         url=PRA_UK_CRR_URL,
         note="Low, medium, and high correlation scenario aggregation.",
+    ),
+    "pra_uk_crr_325l_girr_risk_factors": SbmCitation(
+        source_id="uk_pra_ps1_26_sbm_asa",
+        location=(
+            "PRA PS1/26 Appendix 1, Market Risk: Advanced Standardised "
+            "Approach (CRR) Part, Article 325l"
+        ),
+        url=PRA_UK_CRR_URL,
+        note="GIRR prescribed risk factors and tenor axes for delta, vega, and curvature.",
+    ),
+    "pra_uk_crr_325s_vega_sensitivities": SbmCitation(
+        source_id="uk_pra_ps1_26_sbm_asa",
+        location=(
+            "PRA PS1/26 Appendix 1, Market Risk: Advanced Standardised "
+            "Approach (CRR) Part, Article 325s"
+        ),
+        url=PRA_UK_CRR_URL,
+        note="Vega sensitivity formula and option-underlying tenor treatment.",
+    ),
+    "pra_uk_crr_325g_curvature_aggregation": SbmCitation(
+        source_id="uk_pra_ps1_26_sbm_asa",
+        location=(
+            "PRA PS1/26 Appendix 1, Market Risk: Advanced Standardised "
+            "Approach (CRR) Part, Article 325g"
+        ),
+        url=PRA_UK_CRR_URL,
+        note="Curvature aggregation, branch selection, and floor mechanics.",
+    ),
+    "pra_uk_crr_325ax_vega_risk_weights": SbmCitation(
+        source_id="uk_pra_ps1_26_sbm_asa",
+        location=(
+            "PRA PS1/26 Appendix 1, Market Risk: Advanced Standardised "
+            "Approach (CRR) Part, Article 325ax"
+        ),
+        url=PRA_UK_CRR_URL,
+        note="Vega liquidity-horizon risk-weight scaling for PRA_UK_CRR comparison runs.",
+    ),
+    "pra_uk_crr_325ax_curvature_risk_weights": SbmCitation(
+        source_id="uk_pra_ps1_26_sbm_asa",
+        location=(
+            "PRA PS1/26 Appendix 1, Market Risk: Advanced Standardised "
+            "Approach (CRR) Part, Article 325ax"
+        ),
+        url=PRA_UK_CRR_URL,
+        note="Curvature risk-weight shock scaling for PRA_UK_CRR comparison runs.",
+    ),
+    "pra_uk_crr_325ay_vega_correlations": SbmCitation(
+        source_id="uk_pra_ps1_26_sbm_asa",
+        location=(
+            "PRA PS1/26 Appendix 1, Market Risk: Advanced Standardised "
+            "Approach (CRR) Part, Article 325ay"
+        ),
+        url=PRA_UK_CRR_URL,
+        note="Vega correlation parameters, including GIRR option and underlying tenor terms.",
+    ),
+    "pra_uk_crr_325ay_curvature_correlations": SbmCitation(
+        source_id="uk_pra_ps1_26_sbm_asa",
+        location=(
+            "PRA PS1/26 Appendix 1, Market Risk: Advanced Standardised "
+            "Approach (CRR) Part, Article 325ay"
+        ),
+        url=PRA_UK_CRR_URL,
+        note="Curvature correlation parameters for PRA_UK_CRR comparison runs.",
     ),
 }
 

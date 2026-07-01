@@ -86,7 +86,7 @@ def _evaluate_curvature_bucket_scenario(
         down=down,
         factors=factors,
         correlation_matrix=adjusted_matrix,
-        citation_ids=_curvature_intra_citation_ids(risk_class),
+        citation_ids=_curvature_intra_citation_ids(risk_class, profile_id),
     )
 
 
