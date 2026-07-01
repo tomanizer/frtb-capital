@@ -690,7 +690,8 @@ def _translate_eu_crr3_result_citations(value: Any) -> Any:
         changes: dict[str, object] = {}
         for field in fields(value):
             field_value = getattr(value, field.name)
-            if field.name == "citation_ids":
+        if field.name == "citation_ids":
+            if isinstance(field_value, (tuple, list)):
                 try:
                     translated = translate_basel_citation_ids_to_eu(field_value)
                 except KeyError as exc:
@@ -699,7 +700,9 @@ def _translate_eu_crr3_result_citations(value: Any) -> Any:
                         f"{field_value!r}"
                     ) from exc
             else:
-                translated = _translate_eu_crr3_result_citations(field_value)
+                translated = field_value
+        else:
+            translated = _translate_eu_crr3_result_citations(field_value)
             if translated != field_value:
                 changes[field.name] = translated
         if not changes:

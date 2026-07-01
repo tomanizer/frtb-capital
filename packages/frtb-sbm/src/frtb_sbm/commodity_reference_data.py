@@ -272,17 +272,32 @@ def _ensure_commodity_delta_supported(profile: SbmRegulatoryProfile | str) -> No
 
 def _commodity_weight_citation(profile: SbmRegulatoryProfile | str) -> str:
     resolved = ensure_sbm_profile_known(profile if isinstance(profile, str) else profile.value)
-    return _PROFILE_COMMODITY_WEIGHT_CITATIONS[resolved]
+    citation = _PROFILE_COMMODITY_WEIGHT_CITATIONS.get(resolved)
+    if citation is None:
+        raise UnsupportedRegulatoryFeatureError(
+            f"Profile {resolved.value} is not supported for commodity weight citations."
+        )
+    return citation
 
 
 def _commodity_intra_citation(profile: SbmRegulatoryProfile | str) -> str:
     resolved = ensure_sbm_profile_known(profile if isinstance(profile, str) else profile.value)
-    return _PROFILE_COMMODITY_INTRA_CITATIONS[resolved]
+    citation = _PROFILE_COMMODITY_INTRA_CITATIONS.get(resolved)
+    if citation is None:
+        raise UnsupportedRegulatoryFeatureError(
+            f"Profile {resolved.value} is not supported for commodity intra citations."
+        )
+    return citation
 
 
 def _commodity_inter_citation(profile: SbmRegulatoryProfile | str) -> str:
     resolved = ensure_sbm_profile_known(profile if isinstance(profile, str) else profile.value)
-    return _PROFILE_COMMODITY_INTER_CITATIONS[resolved]
+    citation = _PROFILE_COMMODITY_INTER_CITATIONS.get(resolved)
+    if citation is None:
+        raise UnsupportedRegulatoryFeatureError(
+            f"Profile {resolved.value} is not supported for commodity inter citations."
+        )
+    return citation
 
 
 def _require_commodity_bucket_number(bucket_id: str) -> int:

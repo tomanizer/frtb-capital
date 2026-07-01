@@ -349,17 +349,32 @@ def _ensure_equity_delta_supported(profile: SbmRegulatoryProfile | str) -> None:
 
 def _equity_intra_citation(profile: SbmRegulatoryProfile | str) -> str:
     resolved = ensure_sbm_profile_known(profile if isinstance(profile, str) else profile.value)
-    return _PROFILE_EQUITY_INTRA_CITATIONS[resolved]
+    citation = _PROFILE_EQUITY_INTRA_CITATIONS.get(resolved)
+    if citation is None:
+        raise UnsupportedRegulatoryFeatureError(
+            f"Profile {resolved.value} is not supported for equity intra citations."
+        )
+    return citation
 
 
 def _equity_other_sector_citation(profile: SbmRegulatoryProfile | str) -> str:
     resolved = ensure_sbm_profile_known(profile if isinstance(profile, str) else profile.value)
-    return _PROFILE_EQUITY_OTHER_SECTOR_CITATIONS[resolved]
+    citation = _PROFILE_EQUITY_OTHER_SECTOR_CITATIONS.get(resolved)
+    if citation is None:
+        raise UnsupportedRegulatoryFeatureError(
+            f"Profile {resolved.value} is not supported for equity other sector citations."
+        )
+    return citation
 
 
 def _equity_inter_citation(profile: SbmRegulatoryProfile | str) -> str:
     resolved = ensure_sbm_profile_known(profile if isinstance(profile, str) else profile.value)
-    return _PROFILE_EQUITY_INTER_CITATIONS[resolved]
+    citation = _PROFILE_EQUITY_INTER_CITATIONS.get(resolved)
+    if citation is None:
+        raise UnsupportedRegulatoryFeatureError(
+            f"Profile {resolved.value} is not supported for equity inter citations."
+        )
+    return citation
 
 
 def _normalise_equity_risk_factor(risk_factor: str) -> str:
