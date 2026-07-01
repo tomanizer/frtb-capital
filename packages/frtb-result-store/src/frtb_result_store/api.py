@@ -102,6 +102,7 @@ def create_result_store_app(
     _register_attribution_projection_routes(routes, result_store, HTTPException)
     _register_artifact_routes(routes, result_store, HTTPException, Query, FileResponse)
     _register_run_group_routes(routes, result_store, HTTPException)
+    _register_run_detail_route(routes, result_store, HTTPException)
 
     return app
 
@@ -119,18 +120,15 @@ def _register_run_routes(
     def list_run_groups() -> dict[str, object]:
         return {"run_groups": _run_group_payloads(result_store.list_runs())}
 
-    @app.get("/runs/{run_id}", tags=["Runs"], summary="Get one committed calculation run")
-    def get_run(run_id: str) -> dict[str, object]:
-        run = _require_run(result_store, run_id, http_exception_type)
-        return _run_payload(result_store, run)
-
-    @app.get("/runs/{run_id}/events", tags=["Events"], summary="Return result events for a run")
+    @app.get(
+        "/runs/{run_id:path}/events", tags=["Events"], summary="Return result events for a run"
+    )
     def result_events(run_id: str) -> dict[str, object]:
         _require_run(result_store, run_id, http_exception_type)
         return {"events": _to_jsonable(result_store.result_events(run_id))}
 
     @app.get(
-        "/runs/{run_id}/movements",
+        "/runs/{run_id:path}/movements",
         tags=["Movements"],
         summary="Return movement explanation rows for a run",
     )
@@ -148,7 +146,7 @@ def _register_attribution_projection_routes(
     http_exception_type: type[Exception],
 ) -> None:
     @app.get(
-        "/runs/{run_id}/top-contributors",
+        "/runs/{run_id:path}/top-contributors",
         tags=["Attribution"],
         summary="Return top persisted attribution contributors",
     )
@@ -162,7 +160,7 @@ def _register_attribution_projection_routes(
         return {"contributors": _to_jsonable(result_store.top_contributors(run_id, limit=limit))}
 
     @app.get(
-        "/runs/{run_id}/attribution/residual",
+        "/runs/{run_id:path}/attribution/residual",
         tags=["Attribution"],
         summary="Return persisted residual attribution records for a run",
     )
@@ -178,7 +176,7 @@ def _register_attribution_projection_routes(
         }
 
     @app.get(
-        "/runs/{run_id}/attribution/unsupported",
+        "/runs/{run_id:path}/attribution/unsupported",
         tags=["Attribution"],
         summary="Return persisted unsupported attribution records for a run",
     )
@@ -200,7 +198,7 @@ def _register_capital_tree_routes(
     http_exception_type: type[Exception],
 ) -> None:
     @app.get(
-        "/runs/{run_id}/capital-tree",
+        "/runs/{run_id:path}/capital-tree",
         tags=["Capital Tree"],
         summary="Return the flattened FRTB capital tree for a run",
     )
@@ -209,7 +207,7 @@ def _register_capital_tree_routes(
         return {"nodes": _to_jsonable(result_store.capital_tree(run_id))}
 
     @app.get(
-        "/runs/{run_id}/nodes/{node_id}",
+        "/runs/{run_id:path}/nodes/{node_id}",
         tags=["Capital Tree"],
         summary="Return one capital tree node",
     )
@@ -224,7 +222,7 @@ def _register_capital_tree_routes(
         return cast(dict[str, object], _to_jsonable(node))
 
     @app.get(
-        "/runs/{run_id}/nodes/{node_id}/children",
+        "/runs/{run_id:path}/nodes/{node_id}/children",
         tags=["Capital Tree"],
         summary="Return direct child capital nodes",
     )
@@ -233,7 +231,7 @@ def _register_capital_tree_routes(
         return {"nodes": _to_jsonable(result_store.child_nodes(run_id, node_id))}
 
     @app.get(
-        "/runs/{run_id}/nodes/{node_id}/measures",
+        "/runs/{run_id:path}/nodes/{node_id}/measures",
         tags=["Capital Tree"],
         summary="Return scalar measures attached to one capital node",
     )
@@ -242,7 +240,7 @@ def _register_capital_tree_routes(
         return {"measures": _to_jsonable(result_store.measures_for_node(run_id, node_id))}
 
     @app.get(
-        "/runs/{run_id}/nodes/{node_id}/attribution",
+        "/runs/{run_id:path}/nodes/{node_id}/attribution",
         tags=["Attribution"],
         summary="Return attribution rows attached to one capital node",
     )
@@ -256,7 +254,7 @@ def _register_capital_tree_routes(
         }
 
     @app.get(
-        "/runs/{run_id}/nodes/{node_id}/lineage",
+        "/runs/{run_id:path}/nodes/{node_id}/lineage",
         tags=["Lineage"],
         summary="Return lineage rows for one stored result object",
     )
@@ -273,7 +271,7 @@ def _register_artifact_routes(
     file_response_type: type[Any],
 ) -> None:
     @app.get(
-        "/runs/{run_id}/artifacts",
+        "/runs/{run_id:path}/artifacts",
         tags=["Artifacts"],
         summary="Return artifact references for a run",
     )
@@ -292,7 +290,7 @@ def _register_artifact_routes(
         }
 
     @app.get(
-        "/runs/{run_id}/artifacts/{artifact_id}/page",
+        "/runs/{run_id:path}/artifacts/{artifact_id}/page",
         tags=["Artifacts"],
         summary="Return one deterministic page of artifact rows",
     )
@@ -325,7 +323,7 @@ def _register_artifact_routes(
         )
 
     @app.get(
-        "/runs/{run_id}/artifacts/{artifact_id}/download",
+        "/runs/{run_id:path}/artifacts/{artifact_id}/download",
         tags=["Artifacts"],
         summary="Download a local Parquet artifact or return an object-store URI handoff",
     )
@@ -344,6 +342,17 @@ def _register_artifact_routes(
             media_type="application/vnd.apache.parquet",
             filename=f"{ref.artifact_id}.parquet",
         )
+
+
+def _register_run_detail_route(
+    app: _RouteRegistrar,
+    result_store: DuckDbParquetResultStore,
+    http_exception_type: type[Exception],
+) -> None:
+    @app.get("/runs/{run_id:path}", tags=["Runs"], summary="Get one committed calculation run")
+    def get_run(run_id: str) -> dict[str, object]:
+        run = _require_run(result_store, run_id, http_exception_type)
+        return _run_payload(result_store, run)
 
 
 def _register_run_group_routes(
