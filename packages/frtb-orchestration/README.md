@@ -30,6 +30,10 @@ Outputs are prototype engineering evidence, not final regulatory capital.
 - `calculate_suite_capital` — additive `IMA + SA + CVA` from
   `ImaCapitalSummary`, `StandardisedApproachCapitalResult`, and
   `CvaCapitalSummary`.
+- `compose_scope_capital_view` — scope-aware composition over component totals
+  already resolved by the result store: SA remains `SBM + DRC + RRAO`, CVA and
+  IMA carry explicit `OK`/`NO_DATA`/`UNSUPPORTED` states, and output-floor
+  binding is reported as `IMA`, `SA_FLOOR`, or `NO_DATA`.
 - `recognise_ima_summary` / `recognise_cva_summary` — duck-typed summary
   projection from public component result shapes.
 - `CapitalRunManifest`, `validate_capital_run_manifest`, and
@@ -80,6 +84,10 @@ Runtime modules must not import capital sibling packages or private batch
 internals. Package-local tests may use concrete component fixtures to verify
 that public adapters and result shapes remain compatible with orchestration
 contracts.
+
+Enterprise hierarchy storage and node traversal stay in `frtb-result-store`.
+`frtb-orchestration` consumes resolved component totals for a selected scope
+and composes cross-framework capital; it does not own hierarchy metadata.
 
 See `AGENTS.md` for package boundary rules.
 
