@@ -16,6 +16,8 @@ from dataclasses import dataclass
 from datetime import date
 from enum import StrEnum
 
+from frtb_common import CalculationScope
+
 
 class RraoClassification(StrEnum):
     """Canonical RRAO classification outcome."""
@@ -179,6 +181,7 @@ class RraoPosition:
     investment_fund_descriptor: RraoInvestmentFundDescriptor | None = None
     notional_source: str = "reported"
     citations: tuple[str, ...] = ()
+    org_scope: CalculationScope | None = None
 
 
 @dataclass(frozen=True)
@@ -192,6 +195,7 @@ class RraoCalculationContext:
     desk_id: str = ""
     legal_entity: str = ""
     citation_policy: str = "strict"
+    calculation_scope: CalculationScope | None = None
 
 
 @dataclass(frozen=True)
@@ -228,6 +232,7 @@ class RraoCapitalLine:
     source_row_id: str = ""
     exclusion_reason: RraoExclusionReason | None = None
     exclusion_evidence_id: str | None = None
+    org_scope: CalculationScope | None = None
 
 
 @dataclass(frozen=True)
@@ -289,6 +294,7 @@ class RraoCapitalResult:
     citations: tuple[str, ...]
     warnings: tuple[str, ...] = ()
     input_hash_algorithm: str = "json-row-v1"
+    calculation_scope: CalculationScope | None = None
 
     def as_dict(self) -> dict[str, object]:
         """Return the deterministic audit payload for this result."""

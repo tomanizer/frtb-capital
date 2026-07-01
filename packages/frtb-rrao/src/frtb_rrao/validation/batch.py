@@ -13,6 +13,7 @@ from frtb_rrao.data_models import (
     RraoEvidenceType,
     RraoExclusionReason,
 )
+from frtb_rrao.org_scope import validate_scope_metadata
 from frtb_rrao.validation._batch_common import (
     position_id_at_first,
     require_non_empty_object_column,
@@ -73,8 +74,18 @@ def validate_rrao_batch(batch: Any) -> None:
         field="lineage.source_row_id",
     )
     _validate_evidence_requirements(batch)
+    _validate_org_scopes(batch)
     _validate_back_to_back_match_groups(batch)
     validate_investment_fund_batch_fields(batch)
+
+
+def _validate_org_scopes(batch: Any) -> None:
+    if batch.org_scopes is None:
+        return
+    if len(batch.org_scopes) != batch.row_count:
+        raise RraoInputError("org_scopes length does not match position_ids", field="org_scopes")
+    for index, scope in enumerate(batch.org_scopes):
+        validate_scope_metadata(scope, field=f"org_scopes[{index}]")
 
 
 def _validate_evidence_requirements(batch: Any) -> None:
