@@ -12,6 +12,8 @@ analysis across run, month, quarter, and year horizons.
 
 Companion implementation contracts:
 
+- Specification guide:
+  [`README.md`](README.md)
 - Capital and movement semantics:
   [`CAPITAL_AND_MOVEMENT_SEMANTICS.md`](CAPITAL_AND_MOVEMENT_SEMANTICS.md)
 - Mode wireframes:
@@ -166,95 +168,19 @@ The current dashboard already has the beginnings of the right analytical model.
 The UX should make these objects explicit instead of letting them leak through
 as backend-shaped labels.
 
-Current backend concepts:
+The binding field lists, endpoint mapping, result-store marts, cache keys, and
+adapter responsibilities now live in companion specs:
 
-- `RunSummary`: one calculation run with status, regime/profile, currency, and
-  headline totals.
-- `HierarchyNodeSpec`: the selected business scope. The fixture already covers
-  top of house, legal entity, division, business line, desk, Volcker desk, and
-  book. The current synthetic membership is rates nodes -> IMA/SBM, credit nodes
-  -> DRC, and residual-risk nodes -> RRAO.
-- `ScopeTotals`: scoped IMA, SBM, DRC, RRAO, SA, output floor, and binding
-  values.
-- `GridView` / `GridRowView`: aggregate analytical rows for SA, IMA, or CVA.
-  These are the rows the user ranks, sorts, filters, and selects.
-- `InspectorView`: row-specific evidence: attribution rows, source/audit rows,
-  diagnostics, and framework extras.
-- Attribution records: component-produced explanations of contribution and
-  reconciliation status.
-- Audit/source rows: the nearest available traceable detail rows. In the demo
-  fixture these are synthetic; in production they should point to result-store
-  artifacts or OLAP detail tables.
+- state, URL, reset, cache, and stale-evidence behavior:
+  [`NAVIGATOR_STATE_AND_ROUTING.md`](NAVIGATOR_STATE_AND_ROUTING.md);
+- result-store endpoint, mart, artifact, and adapter boundaries:
+  [`RESULT_STORE_DATA_CONTRACT.md`](RESULT_STORE_DATA_CONTRACT.md);
+- capital, movement, hierarchy, attribution, and unavailable-state semantics:
+  [`CAPITAL_AND_MOVEMENT_SEMANTICS.md`](CAPITAL_AND_MOVEMENT_SEMANTICS.md);
+- governed explanation snapshot and evidence-reference rules:
+  [`AI_EXPLANATION_CONTRACT.md`](AI_EXPLANATION_CONTRACT.md).
 
-Current endpoint contract:
-
-- `GET /api/runs` chooses the available run set.
-- `GET /api/runs/{run_id}?hierarchyNodeId=...` returns scoped run overview and
-  top-of-house-style totals.
-- `GET /api/runs/{run_id}/metadata` returns hierarchy and classification
-  metadata.
-- `GET /api/runs/{run_id}/grid?framework=SA&scenario=Binding&hierarchyNodeId=...`
-  returns scoped aggregate rows.
-- `GET /api/runs/{run_id}/inspector?row_id=...&scenario=...&hierarchyNodeId=...`
-  returns row-specific evidence.
-- `GET /api/runs/{run_id}/nodes/{node_id}` is a future hook for hierarchy-node
-  summary drilldown.
-
-Result-store boundary:
-
-The production Capital Navigator should meet data through `frtb-result-store`,
-not through dashboard-owned synthetic aggregators. The dashboard may keep a thin
-adapter while fixtures mature, but the authoritative boundary should be the
-read-only result-store API and persisted marts.
-
-Existing result-store surfaces that map directly to Navigator needs:
-
-- Runs and status: `GET /runs`, `GET /runs/{run_id}`, `GET
-  /runs/{run_id}/events`, and `GET /run-groups`.
-- Top-of-house and component capital: `capital_summary`, `component_breakdown`,
-  and `GET /runs/{run_id}/capital-tree`.
-- Node drilldown: `GET /runs/{run_id}/nodes/{node_id}`, child nodes, measures,
-  attribution, and lineage.
-- Movement: `GET /runs/{run_id}/movements` backed by `movement_summary`.
-- Attribution: `top_contributors`, `residual_attribution`,
-  `unsupported_attribution`, and node-level attribution endpoints.
-- Organisation hierarchy: `GET /runs/{run_id}/org-hierarchy`,
-  `/org-hierarchy/nodes/{node_id}/children`, `/aggregate`, and `/source-rows`.
-- Component marts: `ima_desk_dashboard`, `sbm_bucket_ladder`,
-  `drc_issuer_contributors`, `cva_counterparty_contributors`, and
-  `rrao_exposure_summary`.
-- Artifact drillthrough: `GET /runs/{run_id}/artifacts`, artifact page, and
-  artifact download/S3 URI handoff.
-
-Navigator adapter responsibilities:
-
-- Translate `NavigatorState` into result-store query parameters.
-- Compose a small number of result-store calls into one UI view model when this
-  improves latency and consistency.
-- Preserve result-store IDs (`run_id`, `node_id`, `artifact_id`,
-  `attribution_id`, hierarchy node IDs) in UI state and AI explanation
-  snapshots.
-- Render no-data, unsupported, stale, residual, and synthetic states based on
-  result-store rows and diagnostics rather than UI inference.
-- Never recalculate capital, source-row totals, official subtotals, or
-  attribution in the browser.
-
-Result-store gaps for the expanded UX:
-
-- RFET/NMRF/SES needs dedicated marts or artifacts with canonical
-  `risk_factor_id`, observation evidence, modellability state, usage mapping,
-  SES amount, movement, stress period, and liquidity horizon.
-- PLA/backtesting needs a desk eligibility mart with desk status, test metrics,
-  thresholds/profile, exception counts, source hashes, and capital consequence.
-- Time-series drivers need historical risk-factor/value/capital movement rows,
-  not only current-run capital-tree rows.
-- Pivot support needs a server-side aggregate query contract with allowed
-  dimensions, allowed measures, subtotal reconciliation flags, and paging.
-- AI explanations need a server-side snapshot builder that pulls bounded,
-  entitlement-safe result-store rows and artifact pages before calling an
-  external or internal model service.
-
-Target mental model:
+The UX mental model remains:
 
 ```text
 Run
@@ -943,134 +869,22 @@ context that produced it.
 This feature should feel like asking a senior market-risk analyst to comment on
 the evidence already on screen. It must not feel like an open-ended chatbot.
 
-Trigger points:
+North-star UX requirements:
 
-- Capital stack: explain binding capital, floor relationship, component
-  contribution, and movement vs baseline.
-- Workbench grid: explain selected rows, top movers, outliers, and no-data
-  states.
-- Inspector: explain attribution, source rows, diagnostics, and evidence gaps.
-- RFET/NMRF panel: explain failing risk factors, book/business usage, SES
-  contribution, and remediation state.
-- PLA desk eligibility panel: explain desk status, PLA/backtesting evidence,
-  fallback risk, and capital impact.
+- Provide `Explain this view` and `Explain selected row` actions only where the
+  current state can produce a bounded evidence snapshot.
+- Keep the AI drawer beside the grid and inspector; generated commentary must
+  never replace evidence, source rows, diagnostics, or lineage.
+- Lead with limitations when data is partial, synthetic, stale, unsupported, or
+  missing.
+- Render evidence references as clickable chips that navigate back to rows,
+  source lines, desks, risk factors, or artifacts.
+- Label copied output as `AI-generated analytical commentary` and include run,
+  scope, baseline, timestamp, and snapshot metadata.
 
-User controls:
-
-- Button label: `Explain this view` for a screen/panel and `Explain selected row`
-  for a selected object.
-- Optional explanation style:
-  - executive summary;
-  - risk-manager commentary;
-  - model-validation commentary;
-  - source-data diagnostic;
-  - movement/outlier explanation.
-- Optional depth:
-  - short: three to five bullets;
-  - standard: prose summary plus evidence bullets;
-  - detailed: structured analysis with caveats and next actions.
-
-Interaction contract:
-
-- The request is created from the current `NavigatorState`, not from free text
-  alone.
-- The user can add a short question, but the backend controls the data payload
-  and prompt template.
-- The explanation is generated from a frozen input snapshot: run, baseline,
-  hierarchy node, framework, scenario, analysis mode, selected row, visible
-  aggregates, inspector evidence, diagnostics, and source-row samples.
-- The response must cite internal evidence identifiers such as row IDs, source
-  IDs, risk-factor IDs, desk IDs, diagnostic codes, or attribution IDs.
-- The response must distinguish fact, inference, limitation, and recommended
-  next action.
-- The response must never present proposed-rule/comparison outputs as final
-  regulatory capital.
-- The response must not recompute capital. It may explain supplied numbers and
-  request missing data, but calculation remains in the capital engines.
-- If the visible data is partial, synthetic, stale, unsupported, or missing, the
-  answer must lead with that limitation.
-- The user can copy the explanation, but copied text includes run ID, timestamp,
-  scope, baseline, and an "AI-generated analytical commentary" label.
-
-Response shape:
-
-```text
-AiExplanation
-  explanationId
-  runId
-  baselineRunId | null
-  hierarchyNodeId
-  analysisMode
-  targetType: view | panel | row | desk | risk_factor | source_rows
-  targetId
-  model
-  promptTemplateId
-  inputSnapshotHash
-  generatedAt
-  status: complete | partial | refused | failed
-  summary
-  findings[]
-    severity: info | watch | warning | critical
-    claim
-    evidenceRefs[]
-    confidence: low | medium | high
-  limitations[]
-  nextActions[]
-```
-
-Backend/API contract:
-
-- `POST /api/runs/{run_id}/explanations` creates an explanation request.
-- Request body includes target type, target ID, explanation style, depth, and
-  optional user question.
-- Backend expands the request into a governed prompt payload from server-side
-  data. The browser must not send arbitrary hidden datasets or credentials to
-  the model provider.
-- The service may call the OpenAI Responses API or an internal completion/agent
-  service, but the dashboard contract is provider-neutral.
-- Use structured output for the model response so the UI can render findings,
-  evidence links, limitations, and next actions deterministically.
-- Store prompt template ID, input snapshot hash, output hash, model identifier,
-  requestor, and timestamp for audit.
-- Explanation generation should be asynchronous for large panels and cancellable
-  from the UI.
-- Cached explanations may be reused only when the input snapshot hash matches.
-
-Prompt/data guardrails:
-
-- Include only the rows needed for the selected view. For raw source tables, send
-  aggregate summaries plus bounded samples unless the user explicitly requests a
-  source-row explanation.
-- Redact or omit entitlements, user IDs, credentials, and non-displayable source
-  fields.
-- Add a system instruction that the agent is an FRTB analytical assistant, not a
-  regulatory authority, not a capital calculator, and not a control owner.
-- Require the agent to say "not available in this view" rather than infer missing
-  fields.
-- Require the agent to cite every material claim to supplied evidence IDs.
-- Add a refusal path for prompts that ask for unsupported regulatory
-  conclusions, data outside the user's entitlement, or capital recomputation.
-
-UI rendering:
-
-- Render the answer in a side drawer or inspector tab, not as a modal that blocks
-  the investigation.
-- Show an evidence sidebar with clickable row/source/risk-factor references.
-- Show generated timestamp, model/agent name, and input snapshot label.
-- Show limitations above findings when data quality is weak.
-- Allow regenerate only with an explicit reason or changed state; do not create
-  silent alternate answers for the same snapshot.
-
-UX detail:
-
-- The AI drawer should open on the right side of the inspector and keep the
-  selected row visible.
-- Generated findings should be short by default: headline, evidence-backed
-  bullets, limitations, next actions.
-- Evidence references should be clickable chips that select the referenced row,
-  source line, desk, or risk factor.
-- The answer should never replace the grid or inspector. It is commentary on
-  evidence, not the evidence itself.
+The binding request schema, response schema, data boundary, prompt-template
+versioning, caching, redaction, prompt-injection, refusal, and audit rules live
+in [`AI_EXPLANATION_CONTRACT.md`](AI_EXPLANATION_CONTRACT.md).
 
 ## 6. Component-Specific UX Contracts
 
@@ -1285,131 +1099,43 @@ UX detail:
 Movement analysis is the missing centre of the product. A risk manager rarely
 looks only at an absolute capital number; they ask why it changed.
 
-Baseline types:
+This UX contract keeps the interaction intent:
 
-- Previous official run.
-- Previous business day.
-- Month-end.
-- Quarter-end.
-- Year-on-year.
-- Custom run.
+- baseline selection is global and visible wherever movement appears;
+- movement columns must distinguish current, baseline, absolute movement,
+  percentage movement, new, dropped, no-baseline, and restated-baseline states;
+- top movers are a mode in the same workbench, not a separate dashboard;
+- every movement row should link to the row, driver, limitation, and source
+  evidence that support it.
 
-Movement values:
-
-- current amount;
-- baseline amount;
-- absolute movement;
-- percentage movement;
-- contribution to total movement;
-- rank;
-- sign and materiality band.
-
-Interaction contract:
-
-- Baseline selection is global and included in every query.
-- Movement columns are hidden or marked unavailable when no baseline exists.
-- "Zero movement" means both values exist and are equal.
-- "No baseline" means baseline is unavailable.
-- "New" means current exists and baseline does not.
-- "Dropped" means baseline exists and current does not.
-- Restated baselines must be labelled.
-
-Outlier logic:
-
-- Near-term: rank by absolute movement and percentage movement.
-- Later: add historical percentile, z-score, or business-defined thresholds.
-- Every outlier must link to a traceable row and source evidence.
-
-UX detail:
-
-- Movement should always name the baseline in the column header, eg `Movement vs
-  prior run` or `Movement vs month-end`.
-- Every movement row should classify the driver when possible: market-data,
-  exposure/sensitivity, hierarchy mix, model evidence, eligibility/fallback,
-  source-data, or unsupported/no-data.
-- Top movers should be a mode, not a separate dashboard. It should reuse the
-  same grid and inspector state.
-- Percentage movement should be suppressed or marked unstable when the baseline
-  is near zero.
-- Keep streamlined: show one active baseline at a time. Multi-baseline
-  comparison can be a secondary view.
+The binding movement definitions, percentage suppression rules, baseline state
+taxonomy, driver classes, and display examples live in
+[`CAPITAL_AND_MOVEMENT_SEMANTICS.md`](CAPITAL_AND_MOVEMENT_SEMANTICS.md).
 
 ## 8. Data and Source Contract
 
 The Navigator should treat every capital number as a materialised view over
-source data, not as a loose UI aggregate.
+source data, not as a loose UI aggregate. The UX expectation is simple: every
+material row needs enough lineage, diagnostic state, and source coverage for a
+risk manager to trust or challenge the number without turning the first screen
+into a raw-data browser.
 
-Minimum source fields:
+The detailed source fields, result-store endpoints, mart surfaces, artifact
+routes, availability states, adapter responsibilities, and governed AI snapshot
+fields live in companion contracts:
 
-- `run_id`
-- `baseline_run_id` where applicable
-- `hierarchy_node_id`
-- `framework`
-- `component`
-- `row_id`
-- `source_system`
-- `source_id`
-- `calculation_branch`
-- `capital_amount`
-- `currency`
-- `data_state`
-- `input_hash`
-- `profile_hash`
-- `calculation_timestamp`
-
-Minimum AI explanation fields:
-
-- `explanation_id`
-- `run_id`
-- `baseline_run_id` where applicable
-- `hierarchy_node_id`
-- `analysis_mode`
-- `target_type`
-- `target_id`
-- `prompt_template_id`
-- `input_snapshot_hash`
-- `output_hash`
-- `model_id`
-- `agent_profile`
-- `requested_by`
-- `requested_at`
-- `generated_at`
-- `status`
-- `evidence_refs`
-- `limitations`
-- `next_actions`
-
-Component-specific source fields:
-
-- SBM: risk class, risk measure, bucket, risk factor, tenor, sensitivity,
-  amount currency, scenario values, source line.
-- DRC: issuer, bucket, credit quality, seniority, long/short, gross JTD, net JTD,
-  LGD, hedge benefit, defaulted flag.
-- RRAO: instrument ID, residual category, base amount, add-on rate,
-  classification reason, exclusion state.
-- IMA: desk ID, ES term, liquidity horizon, stress period, PLA metrics,
-  backtesting metrics, RFET observations, NMRF classification, SES amount.
-- CVA: counterparty, netting set, method, EAD, hedge eligibility, spread bucket,
-  exposure date, profile state.
-
-UX detail:
-
-- Source lineage must be visible enough for trust but not dominate the first
-  screen.
-- Every aggregate row needs a source coverage summary: source count, reconciled
-  count, missing count, stale count, unsupported count.
-- Source-row drilldowns should inherit all active state: run, baseline, scope,
-  framework, scenario, mode, filters, selected object.
-- Raw rows should be paged, exportable, and explicitly labelled as sample,
-  bounded page, or complete result.
-- Keep streamlined: the normal user path is aggregate -> driver -> evidence ->
-  source row, not direct raw-source browsing.
+- [`RESULT_STORE_DATA_CONTRACT.md`](RESULT_STORE_DATA_CONTRACT.md) for
+  result-store and adapter boundaries;
+- [`CAPITAL_AND_MOVEMENT_SEMANTICS.md`](CAPITAL_AND_MOVEMENT_SEMANTICS.md) for
+  capital and movement meanings;
+- [`AI_EXPLANATION_CONTRACT.md`](AI_EXPLANATION_CONTRACT.md) for explanation
+  snapshot, evidence-reference, redaction, and audit fields.
 
 ## 9. Interaction State Model
 
 The app should be driven by one explicit state object. The canonical state
-contract is `NAVIGATOR_STATE_AND_ROUTING.md`; this UX contract describes intent
-and must not maintain a divergent field list.
+contract is [`NAVIGATOR_STATE_AND_ROUTING.md`](NAVIGATOR_STATE_AND_ROUTING.md);
+this UX contract describes intent and must not maintain a divergent field list.
 
 High-level reset intent:
 
@@ -1422,13 +1148,8 @@ longer exists.
 URL contract:
 
 Shareable analytical state must be reflected in the URL according to
-`NAVIGATOR_STATE_AND_ROUTING.md`:
-
-```text
-/navigator/:runId?scope=book-rates-fixture&baseline=prev-month&mode=capital&view=framework&framework=SA&scenario=High&row=sa-sbm-girr-delta
-```
-
-This makes findings shareable between risk, finance, and model teams.
+`NAVIGATOR_STATE_AND_ROUTING.md`. This makes findings shareable between risk,
+finance, and model teams without relying on screenshots or local browser state.
 
 ## 10. Visual and Interaction Principles
 
@@ -1482,175 +1203,23 @@ the same evidence, not navigating a collection of unrelated dashboards.
 
 ## 11. Incremental Implementation Plan
 
-### Slice 1: Navigation Rail Ergonomics
+Implementation sequencing is now owned by
+[`IMPLEMENTATION_SLICES.md`](IMPLEMENTATION_SLICES.md). That document breaks the
+Navigator roadmap into PR-sized slices with prerequisites, result-store
+dependencies, likely files, fixture needs, tests, validation commands, and
+explicit non-goals.
 
-Goal: make hierarchy navigation stop dominating the screen.
+This UX contract keeps only the sequencing intent:
 
-Deliver:
-
-- Collapse/expand rail.
-- Compact state with selected-scope breadcrumb in header.
-- Persistent width/collapse setting in local storage.
-- Separate hierarchy search.
-- Basic keyboard tree navigation.
-
-Acceptance:
-
-- User can collapse rail and still see active scope.
-- Selecting scope updates KPIs/grid/inspector.
-- Rail does not consume more than a narrow fixed width in compact mode.
-
-### Slice 2: Selection State Cleanup
-
-Goal: remove drift between scope, framework, scenario, row, and inspector.
-
-Deliver:
-
-- Single `NavigatorState`.
-- Explicit reset rules.
-- URL query parameters for core state.
-- Test state transitions.
-
-Acceptance:
-
-- Changing scope/framework/scenario never leaves inspector showing stale row.
-- Reloading a shared URL restores the same analytical view.
-
-### Slice 3: Honest Controls and No-Data States
-
-Goal: remove fake functionality.
-
-Deliver:
-
-- Hide baseline selector until baseline data exists.
-- Replace disabled run selector with plain run label unless multiple runs exist.
-- Clarify search scope.
-- Add no-data reason taxonomy.
-
-Acceptance:
-
-- Every visible control either works or explains why it is unavailable.
-
-### Slice 4: Movement Analysis MVP
-
-Goal: make the app answer "what changed?"
-
-Deliver:
-
-- Add baseline run fixture.
-- Add movement columns to grid.
-- Add movement summary in capital stack.
-- Add top movers mode.
-
-Acceptance:
-
-- User can rank movements by amount and percentage.
-- Inspector shows current, baseline, and movement evidence for selected row.
-
-### Slice 5: Inspector Redesign
-
-Goal: make evidence review decisive.
-
-Deliver:
-
-- Inspector summary strip.
-- Attribution/source/model/diagnostic tabs with materiality ordering.
-- Row-specific source filtering for all components.
-- Copyable finding summary.
-
-Acceptance:
-
-- For a selected DRC bucket, only that bucket's source rows appear.
-- For an IMA desk, PLA/backtesting/NMRF evidence is visible without JSON diving.
-
-### Slice 6: Component-Specific Deep Dives
-
-Goal: support real risk-manager investigation by component.
-
-Deliver:
-
-- SBM risk-factor drilldown.
-- DRC issuer drilldown.
-- RRAO classification review view.
-- IMA model-evidence view.
-- CVA counterparty/no-data view.
-
-Acceptance:
-
-- Each component has at least one natural drill path from component total to
-  source row.
-
-### Slice 7: Production Query Readiness
-
-Goal: prepare the UI for result-store/OLAP data.
-
-Deliver:
-
-- Bounded paging for source rows.
-- Query cancellation and stale-response guards.
-- Server-side sort/filter contract.
-- Entitlement and data-completeness placeholders.
-
-Acceptance:
-
-- UI contract does not require loading raw detail datasets into browser memory.
-
-### Slice 8: Governed AI Explanation
-
-Goal: let users request prose analysis from a specialised FRTB explanation agent
-without weakening auditability or source discipline.
-
-Deliver:
-
-- `Explain this view` and `Explain selected row` actions.
-- Server-side explanation endpoint with prompt template ID and input snapshot
-  hash.
-- Structured explanation response with findings, evidence references,
-  limitations, confidence, and next actions.
-- Inspector drawer/tab rendering with clickable evidence references.
-- Audit log for requestor, timestamp, model, prompt template, input hash, and
-  output hash.
-
-Acceptance:
-
-- Explanation for a DRC bucket cites only that bucket's evidence rows.
-- Explanation for an RFET/NMRF risk factor links risk-factor evidence, book/desk
-  usage, and SES contribution.
-- Explanation for a PLA desk links PLA/backtesting evidence to eligibility and
-  capital consequence.
-- If baseline, source rows, or RFET evidence are unavailable, the answer states
-  that limitation before any interpretation.
-- The same unchanged view snapshot reuses the same cached explanation unless the
-  user explicitly regenerates.
-
-### Slice 9: Pivot, Hierarchy Aggregation, and Time-Series Drivers
-
-Goal: let risk managers reshape capital, model-evidence, and risk-factor views
-without losing reconciliation or lineage.
-
-Deliver:
-
-- Pivot row/column state for hierarchy, component, risk class, desk, book,
-  issuer/counterparty, risk factor, scenario, model state, and data state.
-- Collapsible hierarchy aggregation with parent subtotals, child counts, warning
-  counts, and mixed-state badges.
-- Time-window selector for previous run, previous business day, month-end,
-  quarter-end, year-on-year, and custom baseline.
-- Risk-factor driver view with value history, sensitivity/exposure proxy,
-  capital contribution, RFET observation state, and SES movement.
-- URL/share-state support for pivot layout, filters, selected object, and time
-  window.
-
-Acceptance:
-
-- Collapsing a desk node shows a reconciled subtotal and does not lose warnings
-  from child books.
-- Filtering to a legal entity or desk subtree changes capital, RFET/NMRF, PLA,
-  and source evidence consistently.
-- Selecting a risk-factor outlier links to books/desks using it and capital rows
-  it affects.
-- Pivoted sign-off totals come from backend/result-store aggregates, not
-  browser-only arithmetic.
+1. Improve the current shell and navigation ergonomics before adding new modes.
+2. Stabilize `NavigatorState`, URL state, cache keys, reset rules, and stale
+   evidence behavior before deeper drilldowns.
+3. Make controls honest and no-data states explicit before showing new analytics.
+4. Add movement, inspector, component, RFET/NMRF, PLA, risk-factor, pivot, and
+   governed AI explanation surfaces as focused implementation PRs.
+5. Keep browser behavior read-only: capital, official subtotals, attribution,
+   RFET/SES, PLA, source-row totals, and governed explanation snapshots must come
+   from backend/result-store evidence.
 
 ## 12. Near-Term Design Target
 

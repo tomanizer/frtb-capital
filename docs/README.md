@@ -33,6 +33,7 @@ model.
 | [Getting started](getting-started/README.md) | Quickstart notebook and first-run path for upstream risk-engine integration. |
 | [Architecture](ARCHITECTURE.md) | Workspace structure, package boundaries, dependency rules, and orchestration ownership. |
 | [Enterprise hierarchy ownership](HIERARCHY_OWNERSHIP.md) | Package ownership rules for scope identifiers, hierarchy traversal, rollup read models, orchestration views, and dashboard consumers. |
+| [Capital Navigator specs](tools/frtb-dashboard/README.md) | Dashboard UX north star, state/routing, result-store boundary, capital semantics, wireframes, implementation slices, and AI explanation contracts. |
 | [Capital attribution methods](CAPITAL_ATTRIBUTION_METHODS.md) | Suite-level guide to Euler attribution, residuals, unsupported branches, standalone contribution, and finite-difference impact. |
 | [Attribution implementation matrix](ATTRIBUTION_IMPLEMENTATION_MATRIX.md) | Package-by-package attribution support, grains, public helpers, unsupported branches, and test evidence. |
 | [Regulatory support evidence](REGULATORY_SUPPORT_EVIDENCE.md) | Plain-English suite-wide standard for supported paths, support boxes/cells, evidence, and fail-closed behavior. |

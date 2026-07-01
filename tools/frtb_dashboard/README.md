@@ -50,8 +50,8 @@ The v2 dashboard is a high-density, read-only viewer for synthetic FRTB capital
 run results across IMA, SA, and CVA. It uses a fixed four-zone layout: command
 ribbon, context bar, aggregate blotter, and audit inspector.
 
-See [`docs/tools/frtb-dashboard/DESIGN.md`](../../docs/tools/frtb-dashboard/DESIGN.md)
-for the design contract and roadmap.
+See [`docs/tools/frtb-dashboard/README.md`](../../docs/tools/frtb-dashboard/README.md)
+for the Capital Navigator specification guide and companion contracts.
 
 ### Quick start
 

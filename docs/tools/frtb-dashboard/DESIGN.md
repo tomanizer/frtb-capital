@@ -5,6 +5,8 @@ supersedes the first-pass P0 dashboard architecture.
 
 Target Navigator contracts:
 
+- Specification guide:
+  [`README.md`](README.md)
 - UX contract:
   [`UX_AUDIT_AND_INTERACTION_CONTRACT.md`](UX_AUDIT_AND_INTERACTION_CONTRACT.md)
 - Mode wireframes:
