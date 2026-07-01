@@ -289,7 +289,7 @@ def _add_non_girr_vega_payload(payload: dict[str, object], profile: SbmRegulator
 def _add_fx_payload(payload: dict[str, object], profile: SbmRegulatoryProfile) -> None:
     if profile not in PROFILE_FX_BUCKETS:
         return
-    fx_delta_parameters = {
+    fx_delta_parameters: dict[str, object] = {
         "risk_weight": FX_DELTA_RISK_WEIGHT,
         "intra_bucket_correlation": FX_INTRA_BUCKET_CORRELATION,
         "inter_bucket_correlation": FX_INTER_BUCKET_CORRELATION,
