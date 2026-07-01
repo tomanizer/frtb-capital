@@ -1,0 +1,15 @@
+OpenReg FRTB Capital
+Copyright 2026 OpenReg and the frtb-capital contributors
+
+This product is part of the OpenReg initiative — open-source, benchmark-grade
+reference implementations of banking and financial regulation
+(https://github.com/openreg-finance).
+
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use
+these files except in compliance with the License. A copy of the License is
+provided in the LICENSE file and at http://www.apache.org/licenses/LICENSE-2.0.
+
+This software is a reference implementation optimised for clarity, correctness,
+and auditability. It is NOT a production regulatory calculator and is NOT a
+substitute for independent model validation, legal review, or supervisory
+approval.
