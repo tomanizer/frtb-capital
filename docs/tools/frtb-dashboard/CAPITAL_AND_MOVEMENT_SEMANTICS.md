@@ -9,6 +9,7 @@ semantics for capital, movement, hierarchy, contribution, and attribution.
 Related:
 
 - UX contract: [`UX_AUDIT_AND_INTERACTION_CONTRACT.md`](UX_AUDIT_AND_INTERACTION_CONTRACT.md)
+- Implementation slices: [`IMPLEMENTATION_SLICES.md`](IMPLEMENTATION_SLICES.md)
 - Mode wireframes: [`MODE_WIREFRAMES.md`](MODE_WIREFRAMES.md)
 - State and routing contract: [`NAVIGATOR_STATE_AND_ROUTING.md`](NAVIGATOR_STATE_AND_ROUTING.md)
 - Result-store data contract: [`RESULT_STORE_DATA_CONTRACT.md`](RESULT_STORE_DATA_CONTRACT.md)
