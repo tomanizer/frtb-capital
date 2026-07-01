@@ -1,0 +1,177 @@
+{
+  "context": {
+    "base_currency": "GBP",
+    "calculation_date": "2026-05-29",
+    "profile_id": "PRA_UK_CRR",
+    "run_id": "run-drc-pra-nonsec-v1"
+  },
+  "fixture_id": "drc_pra_nonsec_v1",
+  "positions": [
+    {
+      "bucket_key": "CORPORATE",
+      "citation_ids": [
+        "PRA_DRC_ARTICLE_325W",
+        "PRA_DRC_ARTICLE_325Y"
+      ],
+      "credit_quality": "BBB",
+      "cumulative_pnl": 0.0,
+      "currency": "GBP",
+      "default_direction": "LONG",
+      "desk_id": "pra-drc-desk",
+      "index_series_id": null,
+      "instrument_type": "BOND",
+      "issuer_id": "issuer-alpha",
+      "legal_entity": "bank-uk",
+      "lineage": {
+        "source_column_map": {
+          "bucket": "bucket_key",
+          "position": "position_id"
+        },
+        "source_file": "drc_pra_nonsec_v1.csv",
+        "source_row_id": "row-pra-corp-alpha-long",
+        "source_system": "synthetic"
+      },
+      "market_value": 100.0,
+      "maturity_years": 1.0,
+      "notional": 100.0,
+      "position_id": "pra-corp-alpha-long",
+      "risk_class": "NON_SECURITISATION",
+      "seniority": "SENIOR_DEBT",
+      "source_row_id": "row-pra-corp-alpha-long",
+      "tranche_id": null
+    },
+    {
+      "bucket_key": "CORPORATE",
+      "citation_ids": [
+        "PRA_DRC_ARTICLE_325W",
+        "PRA_DRC_ARTICLE_325Y"
+      ],
+      "credit_quality": "BBB",
+      "cumulative_pnl": 0.0,
+      "currency": "GBP",
+      "default_direction": "SHORT",
+      "desk_id": "pra-drc-desk",
+      "index_series_id": null,
+      "instrument_type": "BOND",
+      "issuer_id": "issuer-alpha",
+      "legal_entity": "bank-uk",
+      "lineage": {
+        "source_column_map": {
+          "bucket": "bucket_key",
+          "position": "position_id"
+        },
+        "source_file": "drc_pra_nonsec_v1.csv",
+        "source_row_id": "row-pra-corp-alpha-short",
+        "source_system": "synthetic"
+      },
+      "market_value": 40.0,
+      "maturity_years": 1.0,
+      "notional": 40.0,
+      "position_id": "pra-corp-alpha-short",
+      "risk_class": "NON_SECURITISATION",
+      "seniority": "SENIOR_DEBT",
+      "source_row_id": "row-pra-corp-alpha-short",
+      "tranche_id": null
+    },
+    {
+      "bucket_key": "CORPORATE",
+      "citation_ids": [
+        "PRA_DRC_ARTICLE_325W",
+        "PRA_DRC_ARTICLE_325Y"
+      ],
+      "credit_quality": "BBB",
+      "cumulative_pnl": 0.0,
+      "currency": "GBP",
+      "default_direction": "SHORT",
+      "desk_id": "pra-drc-desk",
+      "index_series_id": null,
+      "instrument_type": "BOND",
+      "issuer_id": "issuer-beta",
+      "legal_entity": "bank-uk",
+      "lineage": {
+        "source_column_map": {
+          "bucket": "bucket_key",
+          "position": "position_id"
+        },
+        "source_file": "drc_pra_nonsec_v1.csv",
+        "source_row_id": "row-pra-corp-beta-short",
+        "source_system": "synthetic"
+      },
+      "market_value": 20.0,
+      "maturity_years": 1.0,
+      "notional": 20.0,
+      "position_id": "pra-corp-beta-short",
+      "risk_class": "NON_SECURITISATION",
+      "seniority": "SENIOR_DEBT",
+      "source_row_id": "row-pra-corp-beta-short",
+      "tranche_id": null
+    },
+    {
+      "bucket_key": "SOVEREIGN",
+      "citation_ids": [
+        "PRA_DRC_ARTICLE_325W",
+        "PRA_DRC_ARTICLE_325Y"
+      ],
+      "credit_quality": "AA",
+      "cumulative_pnl": 0.0,
+      "currency": "GBP",
+      "default_direction": "LONG",
+      "desk_id": "pra-drc-desk",
+      "index_series_id": null,
+      "instrument_type": "BOND",
+      "issuer_id": "sovereign-a",
+      "legal_entity": "bank-uk",
+      "lineage": {
+        "source_column_map": {
+          "bucket": "bucket_key",
+          "position": "position_id"
+        },
+        "source_file": "drc_pra_nonsec_v1.csv",
+        "source_row_id": "row-pra-sovereign-long",
+        "source_system": "synthetic"
+      },
+      "market_value": 100.0,
+      "maturity_years": 1.0,
+      "notional": 100.0,
+      "position_id": "pra-sovereign-long",
+      "risk_class": "NON_SECURITISATION",
+      "seniority": "SENIOR_DEBT",
+      "source_row_id": "row-pra-sovereign-long",
+      "tranche_id": null
+    },
+    {
+      "bucket_key": "LOCAL_GOVERNMENT_MUNICIPAL",
+      "citation_ids": [
+        "PRA_DRC_ARTICLE_325W",
+        "PRA_DRC_ARTICLE_325X",
+        "PRA_DRC_ARTICLE_325Y"
+      ],
+      "credit_quality": "A",
+      "cumulative_pnl": 0.0,
+      "currency": "GBP",
+      "default_direction": "LONG",
+      "desk_id": "pra-drc-desk",
+      "index_series_id": null,
+      "instrument_type": "BOND",
+      "issuer_id": "municipality-a",
+      "legal_entity": "bank-uk",
+      "lineage": {
+        "source_column_map": {
+          "bucket": "bucket_key",
+          "position": "position_id"
+        },
+        "source_file": "drc_pra_nonsec_v1.csv",
+        "source_row_id": "row-pra-muni-short-maturity",
+        "source_system": "synthetic"
+      },
+      "market_value": 80.0,
+      "maturity_years": 0.1,
+      "notional": 80.0,
+      "position_id": "pra-muni-short-maturity",
+      "risk_class": "NON_SECURITISATION",
+      "seniority": "SENIOR_DEBT",
+      "source_row_id": "row-pra-muni-short-maturity",
+      "tranche_id": null
+    }
+  ]
+}

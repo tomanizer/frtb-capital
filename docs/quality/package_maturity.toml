@@ -89,7 +89,7 @@ package = "frtb-drc"
 import_name = "frtb_drc"
 path = "packages/frtb-drc"
 module_docs = "docs/modules/frtb-drc"
-maturity = "partial_runtime"
+maturity = "implemented"
 component_type = "capital"
 metadata_object = "frtb_drc:PACKAGE_METADATA"
 calculation_entrypoint = "frtb_drc:calculate_drc_capital"
@@ -102,6 +102,30 @@ path = "packages/frtb-drc/tests/test_drc_public_api.py"
 [[packages.required_tests]]
 id = "unsupported-runtime-paths"
 path = "packages/frtb-drc/tests/test_drc_public_api.py"
+
+[[packages.required_tests]]
+id = "support-matrix"
+path = "packages/frtb-drc/tests/test_drc_regimes.py"
+
+[[packages.required_tests]]
+id = "arrow-batch-parity"
+path = "packages/frtb-drc/tests/test_drc_arrow_batch.py"
+
+[[packages.required_tests]]
+id = "reference-data-citations"
+path = "packages/frtb-drc/tests/test_drc_reference_data.py"
+
+[[packages.required_tests]]
+id = "securitisation-fixtures"
+path = "packages/frtb-drc/tests/test_drc_securitisation.py"
+
+[[packages.required_tests]]
+id = "ctp-fixtures"
+path = "packages/frtb-drc/tests/test_drc_ctp.py"
+
+[[packages.required_tests]]
+id = "pra-nonsec-fixture"
+path = "packages/frtb-drc/tests/test_drc_pra_nonsec_fixture.py"
 
 [[packages.required_tests]]
 id = "attribution"

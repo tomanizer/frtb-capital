@@ -2,6 +2,7 @@
 
 | Date | Change | Evidence |
 | --- | --- | --- |
+| 2026-07-01 | Promoted `frtb-drc` to implemented multi-profile DRC after EU CRR3 and PRA UK CRR securitisation non-CTP and CTP paths gained fixture-backed row, batch, Arrow, citation, and attribution evidence. | Issues #1000-#1007; `docs/modules/frtb-drc/PROFILE_SUPPORT_MATRIX.md`; `docs/regulatory/crosswalk/frtb-drc.yml`; package tests under `packages/frtb-drc/tests/`. |
 | 2026-06-03 | Completed DRC model-documentation sections for conceptual soundness, derivation, assumptions/limitations, validation evidence, monitoring, and change history. | Issue #410; `docs/modules/MODEL_DOCUMENTATION_PROMOTION_PLAN.md`. |
 | 2026-05 to 2026-06 | Expanded partial runtime beyond the original non-securitisation slice to include U.S. NPR 2.0 securitisation non-CTP and CTP row/batch paths plus Basel MAR22 non-securitisation row/batch paths. | `docs/modules/frtb-drc/DECISIONS_AND_PLAN.md`; package tests under `packages/frtb-drc/tests/`. |
 | Earlier phase | Established the DRC planning pack, public API, requirements registry, synthetic fixtures, audit/replay, and explicit unsupported gates. | `docs/modules/frtb-drc/README.md`; `packages/frtb-drc/docs/requirements/BASEL_FRTB_DRC.yml`. |

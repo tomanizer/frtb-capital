@@ -19,6 +19,7 @@ from frtb_drc.data_models import (
 from frtb_drc.regimes import (
     BASEL_MAR22_PROFILE_ID,
     EU_CRR3_PROFILE_ID,
+    PRA_UK_CRR_PROFILE_ID,
     US_NPR_2_0_PROFILE_ID,
     ensure_risk_class_supported,
     get_rule_profile,
@@ -28,6 +29,7 @@ from frtb_drc.validation import DrcInputError
 _US_NPR_NETTING_CITATION = "US_NPR_210_B_2"
 _BASEL_NETTING_CITATION = "BASEL_MAR22_19"
 _EU_CRR3_NETTING_CITATION = "EU_CRR3_ARTICLE_325X"
+_PRA_NETTING_CITATION = "PRA_DRC_ARTICLE_325X"
 
 _SENIORITY_RANK: dict[DrcSeniority, int] = {
     DrcSeniority.COVERED_BOND: 0,
@@ -354,4 +356,6 @@ def _netting_citation(profile_id: str) -> str:
         return _BASEL_NETTING_CITATION
     if profile_id == EU_CRR3_PROFILE_ID:
         return _EU_CRR3_NETTING_CITATION
+    if profile_id == PRA_UK_CRR_PROFILE_ID:
+        return _PRA_NETTING_CITATION
     return _US_NPR_NETTING_CITATION

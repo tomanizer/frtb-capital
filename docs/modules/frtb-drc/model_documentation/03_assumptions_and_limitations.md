@@ -14,6 +14,20 @@ The current capital-producing scope is:
   evidence;
 - EU CRR3 non-securitisation row/batch paths using Article 325w, Article 325x,
   Article 325y, and ECAI/CQS mapping evidence;
+- EU CRR3 securitisation non-CTP row/batch paths using Article 325z,
+  Article 325aa, typed banking-book securitisation risk-weight evidence,
+  fair-value-cap evidence, and explicit offset-group evidence;
+- EU CRR3 CTP row/batch paths using Article 325ab, Article 325ac, Article
+  325ad, typed banking-book securitisation risk-weight evidence, decomposition
+  evidence, and explicit offset-group evidence;
+- PRA UK CRR non-securitisation row/batch paths using Article 325w, Article
+  325x, Article 325y, and deterministic fixture evidence;
+- PRA UK CRR securitisation non-CTP row/batch paths using Article 325z,
+  Article 325aa, typed risk-weight evidence, fair-value-cap evidence, and
+  explicit offset-group evidence;
+- PRA UK CRR CTP row/batch paths using Article 325ab, Article 325ac, Article
+  325ad, typed risk-weight evidence, decomposition evidence, and explicit
+  offset-group evidence;
 - class-specific Arrow batches for non-securitisation, securitisation non-CTP,
   and CTP under ADR 0023.
 
@@ -34,9 +48,8 @@ before capital is emitted.
 
 The following paths remain unsupported and fail closed:
 
-- EU CRR3 securitisation non-CTP and CTP paths pending Articles 325z-325ad and
-  related securitisation/CTP mappings;
-- PRA UK CRR DRC paths pending PRA PS1/26 Chapter 3 and Appendix 1 mappings;
+- unknown DRC rule profiles or risk classes not listed as `SUPPORTED` in
+  `PROFILE_SUPPORT_MATRIX.md`;
 - internal derivation of banking-book securitisation risk weights;
 - final regulatory reporting and firm-level capital consolidation.
 

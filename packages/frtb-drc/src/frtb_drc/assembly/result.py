@@ -21,7 +21,13 @@ from frtb_drc.data_models import (
 )
 from frtb_drc.kernel.nonsec import nonsec_netting_citation
 from frtb_drc.reference_data import get_risk_weight_rule
-from frtb_drc.regimes import BASEL_MAR22_PROFILE_ID, US_NPR_2_0_PROFILE_ID, DrcRuleProfile
+from frtb_drc.regimes import (
+    BASEL_MAR22_PROFILE_ID,
+    EU_CRR3_PROFILE_ID,
+    PRA_UK_CRR_PROFILE_ID,
+    US_NPR_2_0_PROFILE_ID,
+    DrcRuleProfile,
+)
 from frtb_drc.risk_weight_evidence import effective_risk_weights
 
 
@@ -66,14 +72,11 @@ def _collect_citations(
         for record in net_jtds
     ):
         citation_ids.update(_securitisation_non_ctp_public_api_citations(profile_id))
-    if (
-        any(
-            DrcRiskClass(record.risk_class) == DrcRiskClass.CORRELATION_TRADING_PORTFOLIO
-            for record in net_jtds
-        )
-        and profile_id == US_NPR_2_0_PROFILE_ID
+    if any(
+        DrcRiskClass(record.risk_class) == DrcRiskClass.CORRELATION_TRADING_PORTFOLIO
+        for record in net_jtds
     ):
-        citation_ids.add("US_NPR_210_D_2")
+        citation_ids.update(_ctp_public_api_citations(profile_id))
     for gross_jtd in gross_jtds:
         citation_ids.update(gross_jtd.citations)
         citation_ids.update(_branch_citations(gross_jtd.branch_metadata))
@@ -208,7 +211,7 @@ def _run_branch_metadata(
                     "risk weights and offset-group evidence; Euler attribution "
                     "is not calculated"
                 ),
-                citations=("US_NPR_210_D_1", "US_NPR_210_D_2", "US_NPR_210_D_3_V"),
+                citations=_ctp_public_api_citations(profile_id),
             )
         )
     return tuple(branches)
@@ -230,7 +233,29 @@ def _securitisation_non_ctp_public_api_citations(profile_id: str) -> tuple[str, 
             "BASEL_MAR22_30",
             "BASEL_MAR22_35",
         )
+    if profile_id == EU_CRR3_PROFILE_ID:
+        return ("EU_CRR3_ARTICLE_325Z", "EU_CRR3_ARTICLE_325AA")
+    if profile_id == PRA_UK_CRR_PROFILE_ID:
+        return ("PRA_DRC_ARTICLE_325Z", "PRA_DRC_ARTICLE_325AA")
     return ("US_NPR_210_C_1", "US_NPR_210_C_2", "US_NPR_210_C_3_IV")
+
+
+def _ctp_public_api_citations(profile_id: str) -> tuple[str, ...]:
+    if profile_id == BASEL_MAR22_PROFILE_ID:
+        return ("BASEL_MAR22_36", "BASEL_MAR22_39", "BASEL_MAR22_45")
+    if profile_id == EU_CRR3_PROFILE_ID:
+        return (
+            "EU_CRR3_ARTICLE_325AB",
+            "EU_CRR3_ARTICLE_325AC",
+            "EU_CRR3_ARTICLE_325AD",
+        )
+    if profile_id == PRA_UK_CRR_PROFILE_ID:
+        return (
+            "PRA_DRC_ARTICLE_325AB",
+            "PRA_DRC_ARTICLE_325AC",
+            "PRA_DRC_ARTICLE_325AD",
+        )
+    return ("US_NPR_210_D_1", "US_NPR_210_D_2", "US_NPR_210_D_3_V")
 
 
 __all__ = [

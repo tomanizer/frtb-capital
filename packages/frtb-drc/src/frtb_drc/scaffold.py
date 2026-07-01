@@ -56,8 +56,8 @@ PACKAGE_METADATA = CapitalComponentMetadata(
     package_name="frtb-drc",
     import_name="frtb_drc",
     component_name="Standardised Approach default risk charge",
-    implementation_status=ImplementationStatus.PARTIAL,
-    validation_status=ValidationStatus.PENDING,
+    implementation_status=ImplementationStatus.IMPLEMENTED,
+    validation_status=ValidationStatus.AVAILABLE,
 )
 
 
