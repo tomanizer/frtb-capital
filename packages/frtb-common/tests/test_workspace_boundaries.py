@@ -114,8 +114,7 @@ def test_enterprise_hierarchy_read_model_stays_outside_component_packages() -> N
         for path in src_root.rglob("*.py"):
             if path.name in forbidden_module_names:
                 offenders.append(str(path.relative_to(REPO_ROOT)))
-                continue
-            if "frtb_result_store" in imported_top_level_modules(path):
+            elif "frtb_result_store" in imported_top_level_modules(path):
                 offenders.append(str(path.relative_to(REPO_ROOT)))
 
     assert offenders == []
