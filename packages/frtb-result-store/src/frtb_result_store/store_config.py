@@ -10,7 +10,7 @@ from types import MappingProxyType
 from frtb_result_store.model import ResultStoreContractError, StorageBackend
 from frtb_result_store.store_paths import _normalize_s3_uri, _validated_duckdb_name
 
-RESULT_STORE_SCHEMA_VERSION = 2
+RESULT_STORE_SCHEMA_VERSION = 3
 RUN_TABLE_NAMES = (
     "runs",
     "hierarchy_definitions",
@@ -24,6 +24,9 @@ RUN_TABLE_NAMES = (
     "lineage_refs",
     "capital_attributions",
     "movement_results",
+    "risk_factor_metadata_snapshots",
+    "risk_factor_metadata",
+    "risk_factor_source_mappings",
     "result_events",
     "run_telemetry",
 )

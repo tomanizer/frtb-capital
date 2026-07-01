@@ -8,6 +8,7 @@
 | `CapitalMeasure` | Scalar capital and intermediate measures. |
 | `ArtifactRef` | URI-backed large drillthrough artifacts. |
 | `CapitalAttributionRecord` | Attribution rows for Euler, residual, and unsupported methods. |
+| `RiskFactorMetadataSnapshot`, `RiskFactorMetadataRecord`, `RiskFactorSourceMapping` | Fixture-backed canonical risk-factor metadata read model. |
 | `LineageRef` | Result-to-source lineage references. |
 | `ResultBundle` | Append-only payload written for one run. |
 | `DuckDbParquetResultStore` | Local Parquet writer and DuckDB query facade. |
@@ -29,12 +30,21 @@ runs = store.list_runs()
 The API is FRTB-specific. Consumers should query capital trees, node measures,
 artifact references, lineage, attribution records, and attribution explain
 projections rather than treating the store as a generic table dump.
+Risk-factor metadata is exposed through domain query methods such as
+`risk_factor_snapshots`, `risk_factor_metadata`,
+`get_risk_factor_metadata`, `risk_factor_metadata_by_classification`, and
+`risk_factor_source_mappings`; these methods serve fixture-backed viewer read
+models and do not provide production reference-data management or calculation
+logic.
 
 Base-table row assembly is split across internal IO stages:
 `frtb_result_store.store_bundle_rows` assembles one `ResultBundle` into table
 row groups, and `frtb_result_store.store_status_rows` owns lifecycle status row
 serialization. The older `frtb_result_store.store_row_io` module remains an
 internal compatibility path for existing row helper imports.
+Risk-factor metadata row serialization lives in
+`frtb_result_store.risk_factor_metadata_rows` with compatibility aliases in
+`store_row_io`.
 
 Reporting mart generation is also stage-split internally: component-breakdown
 rows live in `frtb_result_store.mart_component_breakdown_rows`, movement-summary

@@ -1052,7 +1052,7 @@ requires-dist = [
 
 [[package]]
 name = "frtb-result-store"
-version = "0.1.0"
+version = "0.1.1"
 source = { editable = "packages/frtb-result-store" }
 dependencies = [
     { name = "frtb-common" },

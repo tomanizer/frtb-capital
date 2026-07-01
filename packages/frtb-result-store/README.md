@@ -37,6 +37,9 @@ Current runtime support is deliberately narrow:
 - fixture-backed organisational hierarchy read-model contracts for
   top-of-house, legal entity, business division, business line, desk, Volcker
   desk, and book rollups;
+- fixture-backed canonical risk-factor metadata snapshots for viewer read
+  models, including no-data states for RFET, modellability, liquidity horizon,
+  NMRF, and stress-period evidence;
 - manifest-gated local and S3-layout Parquet files queried through independent
   DuckDB connections;
 - best-effort read-only SQL helper and admin CLI for inspection, disposable

@@ -7,11 +7,17 @@ from typing import Any, cast
 
 from frtb_result_store._io_capital_queries import StoreCapitalQueryMixin
 from frtb_result_store._io_mart_queries import StoreMartQueryMixin
+from frtb_result_store._io_risk_factor_queries import StoreRiskFactorQueryMixin
 from frtb_result_store._io_run_queries import StoreRunQueryMixin
 from frtb_result_store.store_paths import _sql_literal
 
 
-class StoreQueryMixin(StoreRunQueryMixin, StoreMartQueryMixin, StoreCapitalQueryMixin):
+class StoreQueryMixin(
+    StoreRunQueryMixin,
+    StoreRiskFactorQueryMixin,
+    StoreMartQueryMixin,
+    StoreCapitalQueryMixin,
+):
     def _fetchall(
         self: Any,
         table_name: str,

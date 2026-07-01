@@ -12,6 +12,7 @@ This package's dataset contract is therefore a storage-result contract:
 - input snapshot manifests,
 - lineage references,
 - attribution records,
+- fixture-backed canonical risk-factor metadata snapshots,
 - movement records,
 - large artifact references and strict artifact Parquet payloads,
 - status events, result events, telemetry, and derived dashboard marts.
@@ -55,6 +56,9 @@ marts. The store is not a generic table dump API.
 - `InputSnapshotManifest` rows
 - `LineageRef` rows
 - `CapitalAttributionRecord` rows
+- `RiskFactorMetadataSnapshot` rows
+- `RiskFactorMetadataRecord` rows
+- `RiskFactorSourceMapping` rows
 - `MovementResult` rows
 - `ResultEvent` rows
 - `RunTelemetry` rows
@@ -82,6 +86,9 @@ The durable base table schemas are defined in
 - `input_snapshot_manifests`
 - `lineage_refs`
 - `capital_attributions`
+- `risk_factor_metadata_snapshots`
+- `risk_factor_metadata`
+- `risk_factor_source_mappings`
 - `movement_results`
 - `result_events`
 - `run_telemetry`
@@ -185,6 +192,28 @@ artifact writes must use a registered schema id.
 `frtb_common.CapitalContribution`. Supported attribution targets include
 positions, sensitivities, risk factors, issuers, counterparties, desks,
 portfolios, books, residual branches, and unsupported branches.
+
+## Risk-Factor Metadata
+
+`RiskFactorMetadataSnapshot`, `RiskFactorMetadataRecord`, and
+`RiskFactorSourceMapping` provide the fixture-backed viewer/read-model contract
+for canonical risk-factor metadata. The result store owns these persisted rows
+so Navigator and other read surfaces can resolve stable risk-factor identifiers,
+display labels, classifications, buckets, source-row links, and optional
+evidence states without querying capital kernels.
+
+These rows are not a production reference-data master and are not calculation
+logic. Records are tied to a run, snapshot id, mapping version, effective date,
+and source system. Within a snapshot, duplicate risk-factor ids are rejected and
+source mappings must reference an existing record.
+
+`RiskFactorMetadataRecord` carries canonical dimensions such as risk-factor id,
+display label, risk class, risk-factor type, bucket id/label, sensitivity type,
+currency, curve, tenor, issuer, obligor, counterparty, commodity, equity,
+source system, and source row id. IMA-adjacent evidence fields use explicit
+states for RFET evidence, modellability, liquidity horizon, NMRF, and stress
+period. Missing fixture evidence is represented as `no_data`; the store does
+not fabricate evidence ids or stress-period datasets.
 
 `MovementResult` stores run-to-run movement explanations and links to optional
 artifact drillthrough. The store persists movement evidence; it does not decide

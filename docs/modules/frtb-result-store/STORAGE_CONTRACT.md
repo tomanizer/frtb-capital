@@ -25,6 +25,7 @@ whether a run is official for submission.
 | Immutable run identity and canonical identity payloads | Whether capital numbers are regulatory-correct |
 | Capital graph shape, scalar measures, and lineage refs | Whether inputs were complete or approved |
 | Artifact references, checksums, and schema fingerprints | Whether attribution is exact Euler decomposition |
+| Fixture-backed canonical risk-factor metadata read models | Whether source reference data is production-approved |
 | Append-only status history and non-lifecycle events | Whether a run supersedes another for reporting |
 | Dashboard marts derived from committed bundle content | Whether marts match an external reporting cube |
 
@@ -81,7 +82,7 @@ match the reader's current schema definitions.
 
 ## Schema evolution
 
-`RESULT_STORE_SCHEMA_VERSION` (currently `2`) is stored in each manifest as
+`RESULT_STORE_SCHEMA_VERSION` (currently `3`) is stored in each manifest as
 `schema_version` and `result_store_schema_version`.
 
 Compatible evolution within a version:
@@ -159,7 +160,7 @@ Three read surfaces exist:
 
 1. **Domain query methods** on `DuckDbParquetResultStore` — preferred programmatic
    access to runs, graphs, measures, artifacts, attribution, lineage, events,
-   and marts.
+   risk-factor metadata, and marts.
 2. **Optional FastAPI app** (`create_result_store_app`) — read-only HTTP
    endpoints over the same domain queries; no write routes; no raw table dump
    endpoints as the primary contract.

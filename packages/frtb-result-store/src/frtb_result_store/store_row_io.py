@@ -6,6 +6,7 @@ import frtb_result_store.store_bundle_rows as _store_bundle_rows
 import frtb_result_store.store_capital_rows as _store_capital_rows
 import frtb_result_store.store_hierarchy_rows as _store_hierarchy_rows
 import frtb_result_store.store_status_rows as _store_status_rows
+from frtb_result_store import risk_factor_metadata_rows as _risk_factor_metadata_rows
 
 _run_row = _store_capital_rows._run_row
 _node_row = _store_capital_rows._node_row
@@ -16,6 +17,9 @@ _artifact_expectation_row = _store_capital_rows._artifact_expectation_row
 _lineage_row = _store_capital_rows._lineage_row
 _attribution_row = _store_capital_rows._attribution_row
 _movement_row = _store_capital_rows._movement_row
+_risk_factor_snapshot_row = _risk_factor_metadata_rows._risk_factor_snapshot_row
+_risk_factor_metadata_row = _risk_factor_metadata_rows._risk_factor_metadata_row
+_risk_factor_source_mapping_row = _risk_factor_metadata_rows._risk_factor_source_mapping_row
 _run_from_row = _store_capital_rows._run_from_row
 _node_from_row = _store_capital_rows._node_from_row
 _edge_from_row = _store_capital_rows._edge_from_row
@@ -24,6 +28,11 @@ _artifact_from_row = _store_capital_rows._artifact_from_row
 _lineage_from_row = _store_capital_rows._lineage_from_row
 _attribution_from_row = _store_capital_rows._attribution_from_row
 _movement_from_row = _store_capital_rows._movement_from_row
+_risk_factor_snapshot_from_row = _risk_factor_metadata_rows._risk_factor_snapshot_from_row
+_risk_factor_metadata_from_row = _risk_factor_metadata_rows._risk_factor_metadata_from_row
+_risk_factor_source_mapping_from_row = (
+    _risk_factor_metadata_rows._risk_factor_source_mapping_from_row
+)
 _hierarchy_definition_from_row = _store_hierarchy_rows._hierarchy_definition_from_row
 _hierarchy_definition_row = _store_hierarchy_rows._hierarchy_definition_row
 _hierarchy_level_from_mapping = _store_hierarchy_rows._hierarchy_level_from_mapping
