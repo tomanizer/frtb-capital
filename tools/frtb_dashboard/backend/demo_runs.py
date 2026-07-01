@@ -322,6 +322,23 @@ def _sa_component_from_drc(result: frtb_drc.DrcCapitalResult) -> SaComponentView
     )
 
 
+def _drc_bucket_attribution(
+    result: frtb_drc.DrcCapitalResult, *, bucket_key: str
+) -> list[AttributionRowView]:
+    """Attribution rows scoped to one DRC bucket, not the whole DRC component.
+
+    ``CapitalContribution.bucket_key`` is the DRC package's own bucket
+    identifier (see ``frtb_drc.attribution``); filtering on it, rather than
+    reusing the DRC-component-wide records, keeps a bucket node's attribution
+    table and reconciliation strip consistent with the bucket's own capital
+    total shown in the tree.
+    """
+
+    records = [record for record in result.attribution_records if record.bucket_key == bucket_key]
+    top = sorted(records, key=lambda item: abs(item.contribution or 0.0), reverse=True)[:8]
+    return _contributions_to_rows(top, component="frtb_drc")
+
+
 def _sa_component_from_rrao(result: frtb_rrao.RraoCapitalResult) -> SaComponentView:
     records = frtb_rrao.calculate_rrao_attribution(result)
     top = sorted(records, key=lambda item: abs(item.contribution or 0.0), reverse=True)[:8]
@@ -519,8 +536,10 @@ def _measures_for_node(run: DashboardRun, node_id: str) -> list[MeasureView]:
 def _attributions_for_node(run: DashboardRun, node_id: str) -> list[AttributionRowView]:
     if node_id.startswith("ima-desk") or node_id.startswith("ima-"):
         return ima_desk_view(run, run.desk_record.desk_id).attributions
-    if node_id == "sa-drc" or node_id.startswith("sa-drc-"):
+    if node_id == "sa-drc":
         return _sa_component_from_drc(run.drc_result).top_attribution
+    if node_id.startswith("sa-drc-"):
+        return _drc_bucket_attribution(run.drc_result, bucket_key=node_id.removeprefix("sa-drc-"))
     if node_id == "sa-sbm":
         return _sa_component_from_sbm(run.sbm_result).top_attribution
     if node_id == "sa-rrao":

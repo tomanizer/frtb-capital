@@ -26,15 +26,18 @@ type TreeRow = { node: CapitalNode; depth: number; pctOfParent: number | null };
 const DEFAULT_RUN_ID = "demo-suite-001";
 
 // Selections that render dedicated panels and therefore do not need the
-// generic node-detail payload fetched.
+// generic node-detail payload fetched. DRC bucket nodes (e.g. "sa-drc-CORPORATE")
+// are deliberately excluded: the SA-component panel only has DRC-wide totals and
+// breakdown, so routing a bucket there would show the whole DRC component's
+// capital instead of the bucket's own — the generic node-detail payload has the
+// correct bucket-scoped figures.
 function usesDedicatedPanel(nodeId: string): boolean {
   return (
     nodeId.startsWith("ima-desk") ||
     nodeId === "sa" ||
     nodeId === "sa-sbm" ||
     nodeId === "sa-rrao" ||
-    nodeId === "sa-drc" ||
-    nodeId.startsWith("sa-drc-")
+    nodeId === "sa-drc"
   );
 }
 
@@ -859,9 +862,7 @@ export default function App() {
   const selectedSaComponent = useMemo(() => {
     if (!saOverview) return null;
     if (selectedNodeId === "sa-sbm") return saOverview.components.find((component) => component.component === "SBM") ?? null;
-    if (selectedNodeId === "sa-drc" || selectedNodeId.startsWith("sa-drc-")) {
-      return saOverview.components.find((component) => component.component === "DRC") ?? null;
-    }
+    if (selectedNodeId === "sa-drc") return saOverview.components.find((component) => component.component === "DRC") ?? null;
     if (selectedNodeId === "sa-rrao") return saOverview.components.find((component) => component.component === "RRAO") ?? null;
     return null;
   }, [selectedNodeId, saOverview]);

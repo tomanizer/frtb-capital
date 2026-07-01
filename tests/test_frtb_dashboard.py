@@ -62,6 +62,29 @@ def test_api_drc_node_detail_has_attribution() -> None:
     assert payload["attributions"]
 
 
+def test_api_drc_bucket_node_is_scoped_to_its_own_bucket() -> None:
+    # A DRC bucket node must not be aliased to the whole DRC component: its
+    # capital and attribution rows must reflect only that bucket.
+    client = TestClient(app)
+    overview = client.get("/api/runs/demo-suite-001").json()
+    drc = next(node for node in overview["nodes"] if node["node_id"] == "sa-drc")
+    bucket_node = next(node for node in overview["nodes"] if node["node_type"] == "BUCKET")
+
+    detail = client.get(f"/api/runs/demo-suite-001/nodes/{bucket_node['node_id']}").json()
+    assert detail["node"]["amount"] == bucket_node["amount"]
+    assert detail["node"]["amount"] < drc["amount"]
+
+    assert detail["attributions"]
+    bucket_attribution_total = sum(
+        abs(row["contribution"] or 0.0) for row in detail["attributions"]
+    )
+    drc_detail = client.get("/api/runs/demo-suite-001/nodes/sa-drc").json()
+    drc_attribution_total = sum(
+        abs(row["contribution"] or 0.0) for row in drc_detail["attributions"]
+    )
+    assert bucket_attribution_total < drc_attribution_total
+
+
 def test_api_unknown_route_returns_json_404() -> None:
     # The SPA fallback must not swallow unmatched API routes with the HTML shell.
     client = TestClient(app)
