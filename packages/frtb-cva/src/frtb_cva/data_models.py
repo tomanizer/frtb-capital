@@ -11,6 +11,8 @@ from dataclasses import dataclass
 from datetime import date
 from enum import StrEnum
 
+from frtb_common import CalculationScope
+
 
 class CvaMethod(StrEnum):
     """Supported and planned CVA calculation methods."""
@@ -158,6 +160,7 @@ class CvaCounterparty:
     region: str
     source_row_id: str
     lineage: CvaSourceLineage | None = None
+    org_scope: CalculationScope | None = None
 
 
 @dataclass(frozen=True)
@@ -176,6 +179,7 @@ class CvaNettingSet:
     carved_out_to_ba_cva: bool = False
     discount_factor_explicit: bool = False
     lineage: CvaSourceLineage | None = None
+    org_scope: CalculationScope | None = None
 
 
 @dataclass(frozen=True)
@@ -270,6 +274,7 @@ class CvaCalculationContext:
     legal_entity: str = ""
     citation_policy: str = "strict"
     run_controls: CvaRunControls | None = None
+    calculation_scope: CalculationScope | None = None
 
 
 @dataclass(frozen=True)
@@ -291,6 +296,7 @@ class BaCvaStandAloneLine:
     citations: tuple[str, ...]
     uses_imm_ead: bool = False
     discount_factor_supplied: bool = True
+    org_scope: CalculationScope | None = None
 
 
 # Public audit alias retained for netting-set line records in orchestration docs.
@@ -308,6 +314,7 @@ class BaCvaCounterpartyCapital:
     credit_quality: CreditQuality
     region: str
     citations: tuple[str, ...]
+    org_scope: CalculationScope | None = None
 
 
 @dataclass(frozen=True)
@@ -438,6 +445,7 @@ class CvaCapitalResult:
     warnings: tuple[str, ...] = ()
     unsupported_flags: tuple[str, ...] = ()
     audit_metadata: tuple[tuple[str, str], ...] = ()
+    calculation_scope: CalculationScope | None = None
 
     def as_dict(self) -> dict[str, object]:
         """Return the deterministic audit payload for this result.

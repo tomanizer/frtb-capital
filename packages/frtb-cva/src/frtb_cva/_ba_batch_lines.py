@@ -12,6 +12,7 @@ from frtb_cva.data_models import (
     CvaRegulatoryProfile,
     CvaSector,
 )
+from frtb_cva.org_scope import scope_at
 from frtb_cva.reference_data import (
     ba_cva_alpha,
     ba_cva_risk_weight,
@@ -76,4 +77,5 @@ def _netting_set_line_from_batch(
         citations=_unique_citations(risk_weight_citation, alpha_citation, df_citation),
         uses_imm_ead=bool(netting_sets.uses_imm_eads[netting_index]),
         discount_factor_supplied=discount_factor_supplied,
+        org_scope=scope_at(netting_sets.org_scopes, netting_index),
     )

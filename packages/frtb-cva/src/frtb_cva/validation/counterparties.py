@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from frtb_cva.data_models import CvaCounterparty, CvaNettingSet
+from frtb_cva.org_scope import validate_scope_metadata
 from frtb_cva.validation.common import (
     VALID_EAD_SIGN_CONVENTIONS,
     CvaInputError,
@@ -116,6 +117,7 @@ def _validate_counterparty(counterparty: CvaCounterparty, seen_ids: set[str]) ->
     _require_text(counterparty.legal_entity, "legal_entity", record_id)
     _require_text(counterparty.region, "region", record_id)
     _validate_lineage(counterparty.lineage, record_id)
+    validate_scope_metadata(counterparty.org_scope, field="org_scope")
 
 
 def _validate_netting_set(
@@ -177,6 +179,7 @@ def _validate_netting_set(
             record_id=record_id,
         )
     _validate_lineage(netting_set.lineage, record_id)
+    validate_scope_metadata(netting_set.org_scope, field="org_scope")
 
 
 __all__ = [

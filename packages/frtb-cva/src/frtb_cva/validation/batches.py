@@ -27,6 +27,7 @@ from frtb_cva.data_models import (
     SaCvaRiskMeasure,
     SensitivityTag,
 )
+from frtb_cva.org_scope import validate_scope_metadata
 from frtb_cva.scope import (
     ScopeResolution,
     mixed_sensitivity_scope_metadata,
@@ -43,6 +44,7 @@ from frtb_cva.validation import (
 
 
 def _validate_netting_set_batch(batch: CvaNettingSetBatch) -> None:
+    _validate_batch_org_scopes(batch.org_scopes, batch.row_count, field="org_scopes")
     _require_unique(batch.netting_set_ids, field="netting_set_id")
     for index in range(batch.row_count):
         record_id = cast(str, batch.netting_set_ids[index])
@@ -151,6 +153,12 @@ def _validate_ba_relationships(
     counterparties: CvaCounterpartyBatch,
     netting_sets: CvaNettingSetBatch,
 ) -> None:
+    _validate_batch_org_scopes(
+        counterparties.org_scopes,
+        counterparties.row_count,
+        field="org_scopes",
+    )
+    _validate_batch_org_scopes(netting_sets.org_scopes, netting_sets.row_count, field="org_scopes")
     if netting_sets.row_count == 0:
         return
     missing_mask = ~np.isin(netting_sets.counterparty_ids, counterparties.counterparty_ids)
@@ -181,6 +189,20 @@ def _netting_indices_by_counterparty(
         grouped[counterparty_id] = tuple(order[start:end].tolist())
         start = end
     return grouped
+
+
+def _validate_batch_org_scopes(
+    org_scopes: tuple[object, ...] | None,
+    row_count: int,
+    *,
+    field: str,
+) -> None:
+    if org_scopes is None:
+        return
+    if len(org_scopes) != row_count:
+        raise CvaInputError(f"{field} length does not match row count", field=field)
+    for index, scope in enumerate(org_scopes):
+        validate_scope_metadata(scope, field=f"{field}[{index}]")
 
 
 def _resolve_scope_for_batches(

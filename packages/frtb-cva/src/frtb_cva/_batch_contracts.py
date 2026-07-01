@@ -5,6 +5,8 @@ from __future__ import annotations
 from collections.abc import Mapping
 from dataclasses import dataclass
 
+from frtb_common import CalculationScope
+
 from frtb_cva._batch_columns import (
     BoolArray,
     FloatArray,
@@ -33,6 +35,7 @@ class CvaCounterpartyBatch:
     source_hash: str | None = None
     handoff_hash: str | None = None
     diagnostics: tuple[Mapping[str, object], ...] = ()
+    org_scopes: tuple[CalculationScope | None, ...] | None = None
 
     @property
     def row_count(self) -> int:
@@ -68,6 +71,7 @@ class CvaNettingSetBatch:
     source_hash: str | None = None
     handoff_hash: str | None = None
     diagnostics: tuple[Mapping[str, object], ...] = ()
+    org_scopes: tuple[CalculationScope | None, ...] | None = None
 
     @property
     def row_count(self) -> int:

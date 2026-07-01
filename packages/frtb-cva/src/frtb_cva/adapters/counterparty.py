@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 
+from frtb_common import CalculationScope
+
 from frtb_cva._batch_columns import (
     ColumnInput,
     _enum_array,
@@ -15,6 +17,7 @@ from frtb_cva._batch_columns import (
 )
 from frtb_cva._batch_contracts import CvaCounterpartyBatch
 from frtb_cva.data_models import CreditQuality, CvaSector
+from frtb_cva.org_scope import scopes_from_columns
 from frtb_cva.validation import CvaInputError
 
 
@@ -34,6 +37,7 @@ def build_cva_counterparty_batch_from_columns(
     source_hash: str | None = None,
     handoff_hash: str | None = None,
     diagnostics: Sequence[Mapping[str, object]] = (),
+    org_scopes: Sequence[CalculationScope | None] | None = None,
     copy_arrays: bool = True,
 ) -> CvaCounterpartyBatch:
     """Build a validated counterparty batch from aligned column inputs.
@@ -70,6 +74,7 @@ def build_cva_counterparty_batch_from_columns(
         row_count,
         lineage_source_row_ids=lineage_source_row_ids,
         source_column_maps=source_column_maps,
+        org_scopes=org_scopes,
     )
     batch = CvaCounterpartyBatch(
         counterparty_ids=_required_text_array(
@@ -98,6 +103,7 @@ def build_cva_counterparty_batch_from_columns(
         source_hash=source_hash,
         handoff_hash=handoff_hash,
         diagnostics=tuple(dict(item) for item in diagnostics),
+        org_scopes=scopes_from_columns(org_scopes, row_count, field="org_scopes"),
     )
     _require_unique(batch.counterparty_ids, field="counterparty_id")
     return batch

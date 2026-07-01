@@ -24,6 +24,7 @@ from frtb_cva.data_models import (
     CvaSourceLineage,
     SaCvaSensitivity,
 )
+from frtb_cva.org_scope import scope_at, scope_payload
 from frtb_cva.validation import CvaInputError
 
 hash_payload = stable_json_hash
@@ -136,7 +137,7 @@ def context_payload(context: CvaCalculationContext) -> dict[str, object]:
         JSON-compatible context mapping including nested ``run_controls``.
     """
     run_controls = context.run_controls or CvaRunControls()
-    return {
+    payload: dict[str, object] = {
         "run_id": context.run_id,
         "calculation_date": context.calculation_date.isoformat(),
         "base_currency": context.base_currency,
@@ -155,6 +156,10 @@ def context_payload(context: CvaCalculationContext) -> dict[str, object]:
             "unsupported_feature_behaviour": run_controls.unsupported_feature_behaviour,
         },
     }
+    calculation_scope = scope_payload(context.calculation_scope)
+    if calculation_scope is not None:
+        payload["calculation_scope"] = calculation_scope
+    return payload
 
 
 def counterparty_payload(counterparty: CvaCounterparty) -> dict[str, object]:
@@ -170,7 +175,7 @@ def counterparty_payload(counterparty: CvaCounterparty) -> dict[str, object]:
     dict[str, object]
         Counterparty fields with enum values exported as strings.
     """
-    return {
+    payload: dict[str, object] = {
         "counterparty_id": counterparty.counterparty_id,
         "desk_id": counterparty.desk_id,
         "legal_entity": counterparty.legal_entity,
@@ -180,6 +185,10 @@ def counterparty_payload(counterparty: CvaCounterparty) -> dict[str, object]:
         "source_row_id": counterparty.source_row_id,
         "lineage": lineage_payload(counterparty.lineage),
     }
+    org_scope = scope_payload(counterparty.org_scope)
+    if org_scope is not None:
+        payload["org_scope"] = org_scope
+    return payload
 
 
 def netting_set_payload(netting_set: CvaNettingSet) -> dict[str, object]:
@@ -195,7 +204,7 @@ def netting_set_payload(netting_set: CvaNettingSet) -> dict[str, object]:
     dict[str, object]
         Netting-set fields including sign convention and carve-out flags.
     """
-    return {
+    payload: dict[str, object] = {
         "netting_set_id": netting_set.netting_set_id,
         "counterparty_id": netting_set.counterparty_id,
         "ead": netting_set.ead,
@@ -209,6 +218,10 @@ def netting_set_payload(netting_set: CvaNettingSet) -> dict[str, object]:
         "source_row_id": netting_set.source_row_id,
         "lineage": lineage_payload(netting_set.lineage),
     }
+    org_scope = scope_payload(netting_set.org_scope)
+    if org_scope is not None:
+        payload["org_scope"] = org_scope
+    return payload
 
 
 def hedge_payload(hedge: CvaHedge) -> dict[str, object]:
@@ -336,7 +349,7 @@ def batch_counterparty_payload(batch: Any, index: int) -> dict[str, object]:
     dict[str, object]
         Row payload matching :func:`counterparty_payload` field names.
     """
-    return {
+    payload: dict[str, object] = {
         "counterparty_id": batch.counterparty_ids[index],
         "desk_id": batch.desk_ids[index],
         "legal_entity": batch.legal_entities[index],
@@ -346,6 +359,10 @@ def batch_counterparty_payload(batch: Any, index: int) -> dict[str, object]:
         "source_row_id": batch.source_row_ids[index],
         "lineage": batch_lineage_payload(batch, index),
     }
+    org_scope = scope_payload(scope_at(batch.org_scopes, index))
+    if org_scope is not None:
+        payload["org_scope"] = org_scope
+    return payload
 
 
 def batch_netting_set_payload(batch: Any, index: int) -> dict[str, object]:
@@ -363,7 +380,7 @@ def batch_netting_set_payload(batch: Any, index: int) -> dict[str, object]:
     dict[str, object]
         Row payload matching :func:`netting_set_payload` field names.
     """
-    return {
+    payload: dict[str, object] = {
         "netting_set_id": batch.netting_set_ids[index],
         "counterparty_id": batch.counterparty_ids[index],
         "ead": float(batch.eads[index]),
@@ -377,6 +394,10 @@ def batch_netting_set_payload(batch: Any, index: int) -> dict[str, object]:
         "source_row_id": batch.source_row_ids[index],
         "lineage": batch_lineage_payload(batch, index),
     }
+    org_scope = scope_payload(scope_at(batch.org_scopes, index))
+    if org_scope is not None:
+        payload["org_scope"] = org_scope
+    return payload
 
 
 def batch_hedge_payload(batch: Any, index: int) -> dict[str, object]:
