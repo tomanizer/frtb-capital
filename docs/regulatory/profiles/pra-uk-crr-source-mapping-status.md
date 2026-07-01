@@ -26,7 +26,7 @@ by `mapped_and_cited` entries and fixture-backed tests.
 | Package | Profile enum | Policy retrieval | Capital runtime | Primary guard |
 | --- | --- | --- | --- | --- |
 | `frtb-ima` | `PRA_UK_CRR` | Allowed (`get_policy`) | `mapped_and_cited` partial runtime | `tests/fixtures/ima_pra` replay; RFET/NMRF/IMCC capital for supported synthetic inputs |
-| `frtb-sbm` | `PRA_UK_CRR` | Fail-closed (`resolve_sbm_profile`) | `unsupported_fail_closed` | Source mapped to PS1/26 Appendix 1 / PRA2026/1 Articles 325c-325ay for planning; no PRA SBM runtime cell has profile-owned reference data or fixtures. |
+| `frtb-sbm` | `PRA_UK_CRR` | Allowed (`resolve_sbm_profile`) | `mapped_and_cited` partial runtime | GIRR delta supported with PRA-owned Articles 325c, 325h, and 325ae-325ag citation ids plus `girr_delta_pra_uk_crr_v1`; all other PRA SBM cells remain fail-closed. |
 | `frtb-rrao` | `PRA_UK_CRR` | Allowed (`resolve_rrao_profile`) | `mapped_and_cited` partial runtime | `tests/fixtures/rrao_pra` replay; investment-fund paths remain fail-closed |
 
 Do not implement PRA capital by silently reusing Basel, U.S. NPR, or EU defaults.
@@ -59,9 +59,10 @@ component.
 
 | Location | Classification | Notes |
 | --- | --- | --- |
-| `packages/frtb-sbm/docs/regulatory_sources.yml` `uk_pra_ps1_26_sbm_asa` | `comparison_only` planning source | PS1/26 Appendix 1 / PRA2026/1 Articles 325c-325ay mapped to SBM planning topics; runtime remains fail-closed until profile-owned reference data and fixtures land. |
-| `packages/frtb-sbm/docs/REGULATORY_TRACEABILITY.md` PRA rows | `unsupported_fail_closed` | All 21 PRA SBM profile/risk-class/measure cells remain runtime fail-closed. |
-| `src/frtb_sbm/regimes.py` `PRA_UK_CRR` unsupported reason | `unsupported_fail_closed` | Profile resolution and capital routing remain closed until exact-cell citation ids, reference data, and fixtures land. |
+| `packages/frtb-sbm/docs/regulatory_sources.yml` `uk_pra_ps1_26_sbm_asa` | `mapped_and_cited` partial | PS1/26 Appendix 1 / PRA2026/1 Articles 325c-325ay mapped to SBM planning topics; Articles 325c, 325h, and 325ae-325ag are used by the GIRR delta runtime slice. |
+| `packages/frtb-sbm/docs/REGULATORY_TRACEABILITY.md` PRA rows | `mapped_and_cited` partial | `PRA_UK_CRR` GIRR delta is implemented under audit; PRA vega, curvature, and non-GIRR cells remain runtime fail-closed. |
+| `src/frtb_sbm/regimes.py` `PRA_UK_CRR` metadata | `mapped_and_cited` partial | Profile resolution succeeds with 2027-01-01 effective date and GIRR delta only in `PROFILE_SUPPORTED_MEASURES`. |
+| `packages/frtb-sbm/tests/fixtures/girr_delta_pra_uk_crr_v1/` | `mapped_and_cited` | Deterministic PRA_UK_CRR GIRR delta row/batch/Arrow replay pack. |
 
 ## Follow-up implementation issues (not in #507 scope)
 

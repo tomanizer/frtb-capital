@@ -72,8 +72,9 @@ the import-shadowing guardrail before adding `adapters/`, `validation/`,
 ## Profile boundaries
 
 `SbmRegulatoryProfile` includes `US_NPR_2_0`, `EU_CRR3`, and `PRA_UK_CRR`.
-`US_NPR_2_0` is capital-producing only for GIRR delta as proposed-rule
-comparison material. `EU_CRR3` and `PRA_UK_CRR` remain runtime fail-closed.
-`PRA_UK_CRR` is source-mapped to PS1/26 Appendix 1 / PRA2026/1 for planning
-only; do not open a PRA runtime gate without exact-cell PRA citations,
-profile-owned reference data, and deterministic fixtures.
+`US_NPR_2_0` and `PRA_UK_CRR` are capital-producing only for GIRR delta as
+comparison material. `EU_CRR3` remains runtime fail-closed, and all PRA cells
+outside GIRR delta fail closed. `PRA_UK_CRR` GIRR delta uses PS1/26 Appendix 1 /
+PRA2026/1 Articles 325c, 325h, and 325ae-325ag; do not open another PRA runtime
+gate without exact-cell PRA citations, profile-owned reference data, and
+deterministic fixtures.

@@ -23,10 +23,11 @@ NON_BASEL_PROFILES = (
 )
 
 US_NPR_EXPECTED_PATHS = frozenset({(SbmRiskClass.GIRR, SbmRiskMeasure.DELTA)})
+PRA_UK_CRR_EXPECTED_PATHS = frozenset({(SbmRiskClass.GIRR, SbmRiskMeasure.DELTA)})
 COMPARISON_PROFILE_EXPECTED_PATHS = {
     SbmRegulatoryProfile.US_NPR_2_0: US_NPR_EXPECTED_PATHS,
     SbmRegulatoryProfile.EU_CRR3: frozenset(),
-    SbmRegulatoryProfile.PRA_UK_CRR: frozenset(),
+    SbmRegulatoryProfile.PRA_UK_CRR: PRA_UK_CRR_EXPECTED_PATHS,
 }
 
 RISK_CLASS_LABELS = {
@@ -74,6 +75,28 @@ def test_us_npr_profile_supports_only_girr_delta() -> None:
                 )
 
 
+def test_pra_uk_crr_profile_supports_only_girr_delta() -> None:
+    assert phase1_capital_supported_paths(SbmRegulatoryProfile.PRA_UK_CRR.value) == (
+        PRA_UK_CRR_EXPECTED_PATHS
+    )
+    ensure_sbm_risk_class_measure_supported(
+        SbmRegulatoryProfile.PRA_UK_CRR.value,
+        SbmRiskClass.GIRR,
+        SbmRiskMeasure.DELTA,
+    )
+
+    for risk_class in SbmRiskClass:
+        for risk_measure in SbmRiskMeasure:
+            if (risk_class, risk_measure) in PRA_UK_CRR_EXPECTED_PATHS:
+                continue
+            with pytest.raises(UnsupportedRegulatoryFeatureError, match="PRA_UK_CRR"):
+                ensure_sbm_risk_class_measure_supported(
+                    SbmRegulatoryProfile.PRA_UK_CRR.value,
+                    risk_class,
+                    risk_measure,
+                )
+
+
 @pytest.mark.parametrize("profile", NON_BASEL_PROFILES)
 def test_comparison_profile_support_matrix_classifies_every_cell(
     profile: SbmRegulatoryProfile,
@@ -101,12 +124,9 @@ def test_comparison_profile_support_matrix_classifies_every_cell(
 
 @pytest.mark.parametrize(
     "profile",
-    (
-        SbmRegulatoryProfile.EU_CRR3,
-        SbmRegulatoryProfile.PRA_UK_CRR,
-    ),
+    (SbmRegulatoryProfile.EU_CRR3,),
 )
-def test_non_basel_profiles_without_implemented_cells_fail_closed(
+def test_comparison_profiles_without_implemented_cells_fail_closed(
     profile: SbmRegulatoryProfile,
 ) -> None:
     assert phase1_capital_supported_paths(profile.value) == frozenset()
@@ -131,10 +151,12 @@ def test_traceability_support_matrix_lists_every_basel_path() -> None:
         assert row in traceability
 
     assert "| `US_NPR_2_0` | partial (1 / 21 cells) |" in traceability
-    for profile in (SbmRegulatoryProfile.EU_CRR3, SbmRegulatoryProfile.PRA_UK_CRR):
-        assert f"| `{profile.value}` | unsupported fail-closed" in traceability
+    assert "| `PRA_UK_CRR` | partial (1 / 21 cells) |" in traceability
+    assert f"| `{SbmRegulatoryProfile.EU_CRR3.value}` | unsupported fail-closed" in traceability
     assert (
         "| GIRR | implemented under audit | unsupported fail-closed | unsupported fail-closed |"
+        " unsupported fail-closed | unsupported fail-closed | unsupported fail-closed |"
+        " implemented under audit | unsupported fail-closed | unsupported fail-closed |"
         in traceability
     )
     assert (
@@ -143,6 +165,7 @@ def test_traceability_support_matrix_lists_every_basel_path() -> None:
     )
     assert "ADR 0048" in traceability
     assert "girr_delta_us_npr_v1" in traceability
+    assert "girr_delta_pra_uk_crr_v1" in traceability
 
     for issue_number in ("#160", "#161", "#166", "#169", "#226", "#244"):
         assert issue_number in traceability
@@ -175,5 +198,5 @@ def test_pra_source_map_is_final_rule_reference_not_runtime_support() -> None:
     assert "PRA mirroring policy" in traceability
     assert "numerical identity is not implementation" in traceability
     assert "2027-01-01 effective date" in traceability
-    assert "unsupported fail-closed (0 / 21 cells)" in traceability
-    assert "all PRA UK CRR runtime cells fail closed" in traceability
+    assert "partial (1 / 21 cells)" in traceability
+    assert "PRA_UK_CRR` GIRR delta" in traceability
