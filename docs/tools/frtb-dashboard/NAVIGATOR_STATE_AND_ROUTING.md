@@ -52,8 +52,9 @@ NavigatorState
   runId: string
   baselineRunId: string | null
   hierarchyNodeId: string
-  analysisMode: capital | hierarchy | desk | sa | ima | cva | pla | rfet_nmrf | risk_factor | pivot
-  framework: Binding | SA | IMA | CVA
+  analysisMode: capital | hierarchy | desk | pla | rfet_nmrf | risk_factor | pivot
+  framework: SA | IMA | CVA
+  capitalView: binding | framework
   scenario: Binding | Base | High | Low
   timeWindow: current | prior_run | prior_business_day | month_end | quarter_end | year_on_year | custom
   gridMode: capital_stack | drivers | evidence | source_rows | eligibility | rfet_register | time_series | pivot
@@ -102,6 +103,7 @@ PageSpec
 | `hierarchyNodeId` | yes | yes | last-used optional | no |
 | `analysisMode` | yes | yes | last-used optional | no |
 | `framework` | yes | yes | last-used optional | no |
+| `capitalView` | yes | yes | last-used optional | no |
 | `scenario` | yes | yes | no | no |
 | `timeWindow` | yes | yes | last-used optional | no |
 | `gridMode` | yes | yes | last-used optional | no |
@@ -115,7 +117,7 @@ PageSpec
 | `pivotColumns` | yes | yes | last-used optional | no |
 | `filters` | yes | yes | no | no |
 | `hierarchySearch` | no | no | no | yes |
-| `gridSearch` | optional | yes if server-side | no | no |
+| `gridSearch` | yes when server-side, no when local-only | yes when server-side | no | no |
 | `sort` | yes | yes | last-used optional | no |
 | `columnPreset` | yes | yes | yes | no |
 | hierarchy rail collapsed/width | no | no | yes | no |
@@ -127,6 +129,16 @@ Rules:
 - Local storage may improve ergonomics, but it must not change query semantics
   silently.
 - Ephemeral state must never be required to reproduce a finding.
+- State precedence is strict:
+  1. explicit URL state;
+  2. route defaults, such as `runId` from `/navigator/:runId`;
+  3. safe local preferences for fields absent from the URL;
+  4. product defaults.
+- Local preferences must never override an explicit URL parameter.
+- Search ownership must be explicit per grid mode. Client-side search is a local
+  convenience and is excluded from share links, exports, and explanation
+  snapshots. Server-side search changes the result set and must be represented
+  in URL state, cache keys, exports, and explanation snapshots.
 
 ## 5. URL Contract
 
@@ -143,6 +155,7 @@ Core query parameters:
 | `baseline` | `baselineRunId` or baseline alias | `prev-month` |
 | `scope` | `hierarchyNodeId` | `book-rates-fixture` |
 | `mode` | `analysisMode` | `rfet_nmrf` |
+| `view` | `capitalView` | `binding` |
 | `framework` | `framework` | `SA` |
 | `scenario` | `scenario` | `High` |
 | `window` | `timeWindow` | `month_end` |
@@ -155,14 +168,21 @@ Core query parameters:
 | `explanation` | `explanationId` | `exp-123` |
 | `rows` | `pivotRows` | `hierarchy,component` |
 | `cols` | `pivotColumns` | `scenario` |
-| `filter` | repeated filter specs | `component=SBM` |
+| `filter` | repeated filter specs | `component:eq:SBM` |
 | `sort` | sort specs | `movement:desc` |
 | `columns` | `columnPreset` | `movement` |
 
-Filter syntax in URLs should stay simple:
+Filter syntax in URLs should stay simple and consistent:
 
 ```text
 filter=<field>:<op>:<value>
+```
+
+For example:
+
+```text
+filter=component:eq:SBM
+filter=eligibility:in:amber,red
 ```
 
 Examples:
@@ -170,7 +190,7 @@ Examples:
 Top-of-house capital:
 
 ```text
-/navigator/demo-suite-001?scope=toh&mode=capital&framework=Binding&window=prior_run&columns=movement
+/navigator/demo-suite-001?scope=toh&mode=capital&view=binding&framework=SA&window=prior_run&columns=movement
 ```
 
 Desk capital:
@@ -206,7 +226,41 @@ AI explanation:
 An `explanation` parameter is valid only if the explanation's
 `inputSnapshotHash` still matches the current state-derived snapshot.
 
-## 6. Default State
+## 6. State Normalization
+
+`analysisMode`, `capitalView`, and `framework` have different jobs:
+
+- `analysisMode` selects the analytical workflow and screen shape.
+- `capitalView` selects whether the capital strip and top-level grid emphasise
+  binding capital or a specific framework.
+- `framework` selects the framework-specific data family accepted by backend and
+  result-store adapters: `SA`, `IMA`, or `CVA`.
+
+Compatibility:
+
+| `analysisMode` | Valid `capitalView` | Valid `framework` | Normalization |
+| --- | --- | --- | --- |
+| `capital` | `binding`, `framework` | `SA`, `IMA`, `CVA` | `view=binding` may still query SA/IMA/CVA summaries. |
+| `hierarchy` | `binding`, `framework` | `SA`, `IMA`, `CVA` | Preserve framework for component filtering. |
+| `desk` | `binding`, `framework` | `SA`, `IMA`, `CVA` | Preserve framework if desk has matching data; otherwise fallback to `SA`. |
+| `pla` | `framework` | `IMA` | Force `framework=IMA`, `scenario=Binding`. |
+| `rfet_nmrf` | `framework` | `IMA` | Force `framework=IMA`, `scenario=Binding`. |
+| `risk_factor` | `framework` | `SA`, `IMA` | Preserve `SA` or `IMA`; reject/normalize `CVA` to `IMA`. |
+| `pivot` | `binding`, `framework` | `SA`, `IMA`, `CVA` | Pivot dimensions determine which framework rows are returned. |
+
+Normalization rules:
+
+- Never serialize `framework=Binding`; binding is represented by `view=binding`.
+- If URL state contains an invalid combination, preserve the route but normalize
+  to the closest valid state and emit a `link_restore_warning` diagnostic.
+- If a mode forces `framework=IMA`, also force `scenario=Binding`.
+- If `framework` is not `SA`, force `scenario=Binding`.
+- If `capitalView=framework`, the selected framework controls the capital strip
+  emphasis and grid data family.
+- If `capitalView=binding`, the app may query multiple framework summaries, but
+  framework-specific drilldowns still use `framework`.
+
+## 7. Default State
 
 Initial load should use:
 
@@ -215,7 +269,8 @@ runId: latest visible run or explicit route run
 baselineRunId: null
 hierarchyNodeId: toh
 analysisMode: capital
-framework: Binding
+framework: SA
+capitalView: binding
 scenario: Binding
 timeWindow: current
 gridMode: capital_stack
@@ -242,14 +297,30 @@ If URL state is invalid:
 - select the first valid row/object after data load;
 - show a non-blocking diagnostic that the shared link was partially restored.
 
-## 7. Reset Rules
+The app should expose any URL normalization or partial restoration as a
+diagnostic:
+
+```text
+Diagnostic
+  code: link_restore_warning
+  severity: info | warning
+  message
+  originalParameter
+  normalizedValue
+```
+
+This diagnostic belongs in the header/context diagnostics and in the inspector
+limitations if an explanation is generated from the restored view.
+
+## 8. Reset Rules
 
 | Change | Preserve | Reset | Notes |
 | --- | --- | --- | --- |
-| `runId` | `analysisMode`, `framework` if valid | baseline, row, desk, risk factor, artifact, inspector tab, explanation | Reload metadata and all result data. |
-| `baselineRunId` | scope, mode, framework, selected object if still valid | explanation if snapshot hash changes | Recompute movement and driver columns. |
-| `hierarchyNodeId` | mode, framework, scenario if valid | row, artifact, inspector tab, explanation | Select first valid row/object in new scope. |
+| `runId` | `analysisMode`, `capitalView`, `framework` if valid | baseline, row, desk, risk factor, artifact, inspector tab, explanation | Reload metadata and all result data. |
+| `baselineRunId` | scope, mode, view, framework, selected object if still valid | explanation if snapshot hash changes | Recompute movement and driver columns. |
+| `hierarchyNodeId` | mode, view, framework, scenario if valid | row, artifact, inspector tab, explanation | Select first valid row/object in new scope. |
 | `analysisMode` | run, baseline, scope | row, desk/risk factor if incompatible, artifact, inspector tab, explanation | Switch grid and query family. |
+| `capitalView` | run, baseline, scope, mode, framework | row if no longer present, explanation | Changes top-level capital emphasis. |
 | `framework` | run, baseline, scope, mode | row, artifact, inspector tab, explanation | Set `scenario=Binding` when framework is not `SA`. |
 | `scenario` | row if still present | artifact, explanation | Applies to SBM/SA scenario-sensitive rows. |
 | `timeWindow` | selected object if still present | explanation | Recompute movement/outlier/time-series panels. |
@@ -268,7 +339,7 @@ Invariant: an inspector or explanation must never show evidence for a row,
 desk, risk factor, artifact, scenario, hierarchy node, or run that is no longer
 selected.
 
-## 8. State-to-Query Mapping
+## 9. State-to-Query Mapping
 
 The frontend should not query raw data directly. It should call a dashboard
 adapter or result-store API with explicit state-derived parameters.
@@ -281,6 +352,7 @@ baselineRunId
 hierarchyNodeId
 analysisMode
 framework
+capitalView
 timeWindow
 ```
 
@@ -292,12 +364,14 @@ baselineRunId
 hierarchyNodeId
 analysisMode
 framework
+capitalView
 scenario
 timeWindow
 gridMode
 pivotRows
 pivotColumns
 filters
+gridSearch if server-side
 sort
 columnPreset
 limit/offset where server-paged
@@ -311,6 +385,7 @@ baselineRunId
 hierarchyNodeId
 analysisMode
 framework
+capitalView
 scenario
 timeWindow
 rowId | deskId | riskFactorId | artifactId
@@ -336,6 +411,7 @@ baselineRunId
 hierarchyNodeId
 analysisMode
 framework
+capitalView
 scenario
 timeWindow
 gridMode
@@ -343,6 +419,7 @@ rowId | deskId | riskFactorId | artifactId
 pivotRows
 pivotColumns
 filters
+gridSearch if server-side
 sort
 columnPreset
 visible aggregate row IDs
@@ -350,9 +427,10 @@ visible diagnostic IDs
 bounded source-row sample parameters
 ```
 
-## 9. Cache Keys
+## 10. Cache Keys
 
-Cache keys must include every state field that can change the response.
+Cache keys must include every state field that can change the response and must
+be isolated by user/session entitlement context in production deployments.
 
 Format:
 
@@ -364,26 +442,28 @@ Resource families:
 
 | Resource | Required key fields |
 | --- | --- |
-| `runs` | user entitlement context, environment |
-| `metadata` | `runId` |
-| `overview` | `runId`, `baselineRunId`, `hierarchyNodeId`, `analysisMode`, `framework`, `timeWindow` |
-| `grid` | `runId`, `baselineRunId`, `hierarchyNodeId`, `analysisMode`, `framework`, `scenario`, `timeWindow`, `gridMode`, `pivotRows`, `pivotColumns`, `filters`, `sort`, `columnPreset`, page |
-| `inspector` | `runId`, `baselineRunId`, `hierarchyNodeId`, `analysisMode`, `framework`, `scenario`, `timeWindow`, selected object, `inspectorTab` |
-| `artifactPage` | `runId`, `artifactId`, `columns`, `filters`, `limit`, `offset` |
-| `explanationSnapshot` | all snapshot query fields plus visible row IDs |
-| `explanationResult` | `explanationId`, `inputSnapshotHash` |
+| `runs` | environment, entitlement context |
+| `metadata` | environment, entitlement context, `runId` |
+| `overview` | environment, entitlement context, `runId`, `baselineRunId`, `hierarchyNodeId`, `analysisMode`, `capitalView`, `framework`, `timeWindow` |
+| `grid` | environment, entitlement context, `runId`, `baselineRunId`, `hierarchyNodeId`, `analysisMode`, `capitalView`, `framework`, `scenario`, `timeWindow`, `gridMode`, `pivotRows`, `pivotColumns`, `filters`, server-side `gridSearch`, `sort`, `columnPreset`, page |
+| `inspector` | environment, entitlement context, `runId`, `baselineRunId`, `hierarchyNodeId`, `analysisMode`, `capitalView`, `framework`, `scenario`, `timeWindow`, selected object, `inspectorTab` |
+| `artifactPage` | environment, entitlement context, `runId`, `artifactId`, `columns`, `filters`, `limit`, `offset` |
+| `explanationSnapshot` | environment, entitlement context, all snapshot query fields plus visible row IDs |
+| `explanationResult` | environment, entitlement context, `explanationId`, `inputSnapshotHash` |
 
 Do not reuse a cache entry if:
 
 - the run changed;
 - baseline changed;
 - hierarchy scope changed;
+- capital view changed;
 - scenario changed for scenario-sensitive data;
 - selected row/object changed;
 - filters or pivots changed;
+- server-side search changed;
 - the explanation snapshot hash no longer matches.
 
-## 10. Loading and Cancellation
+## 11. Loading and Cancellation
 
 Each query family needs an independent loading state:
 
@@ -411,13 +491,14 @@ Rules:
 - Errors must be attached to the resource that failed, not a global ambiguous
   banner unless the whole app cannot load.
 
-## 11. Browser Persistence
+## 12. Browser Persistence
 
 Local storage may store:
 
 - hierarchy rail collapsed/expanded state and width;
 - last selected `analysisMode`;
 - last selected `framework`;
+- last selected `capitalView`;
 - last selected `timeWindow`;
 - column presets;
 - density preference;
@@ -440,7 +521,15 @@ frtbNavigator.preferences.v1
 
 If preference parsing fails, discard preferences and continue with defaults.
 
-## 12. Result-Store Adapter Notes
+Preference application order:
+
+- Apply product defaults first.
+- Apply safe local preferences only for state fields absent from the URL.
+- Apply route and URL state last.
+- Normalize the merged state and emit `link_restore_warning` diagnostics for
+  discarded or normalized URL values. Do not warn for ignored local preferences.
+
+## 13. Result-Store Adapter Notes
 
 Current demo endpoints use:
 
@@ -465,26 +554,29 @@ Adapter requirements:
 - Include a response key or snapshot hash when data is suitable for explanation
   or export.
 
-## 13. Test Expectations
+## 14. Test Expectations
 
 When implementing this state contract, tests should cover:
 
 - URL parsing and serialization round trips.
 - Default state creation.
+- State normalization and compatibility matrix cases.
 - Reset rules for run, baseline, scope, framework, scenario, mode, row, desk,
   risk factor, pivot, and filters.
+- URL/local-storage precedence.
 - Cache-key changes for every query-affecting state field.
+- Entitlement/environment isolation in cache keys.
+- Client-side versus server-side search behavior.
 - Stale inspector prevention after scope, row, scenario, and mode changes.
 - Explanation invalidation when `inputSnapshotHash` changes.
 - Local-storage preference migration and parse failure.
 - Aborted/stale request handling.
 - Shared-link recovery when some referenced state is invalid.
 
-## 14. Implementation Non-Goals
+## 15. Implementation Non-Goals
 
 - Do not implement a full state-management library just to satisfy this spec.
 - Do not choose final router technology here.
 - Do not duplicate result-store schemas.
 - Do not store source rows or explanations in local storage.
 - Do not let browser-computed grouping become an official subtotal.
-
