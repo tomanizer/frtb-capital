@@ -60,7 +60,8 @@ def scope_payload(scope: CalculationScope | None) -> dict[str, object] | None:
     if scope is None:
         return None
     payload = scope.as_dict()
-    return {key: value for key, value in payload.items() if value not in (None, {})}
+    filtered = {key: value for key, value in payload.items() if value not in (None, {})}
+    return filtered if filtered else None
 
 
 def scope_at(

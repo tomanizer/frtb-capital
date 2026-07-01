@@ -735,7 +735,7 @@ def _concat_org_scopes(
     rows: list[CalculationScope | None] = []
     for batch in batches:
         if batch.org_scopes is None:
-            rows.extend(None for _ in range(batch.row_count))
+            rows.extend([None] * batch.row_count)
         else:
             rows.extend(batch.org_scopes)
     return tuple(rows)
