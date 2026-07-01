@@ -10,6 +10,8 @@ Related:
 - Epic: #1106
 - UX north star:
   [`UX_AUDIT_AND_INTERACTION_CONTRACT.md`](UX_AUDIT_AND_INTERACTION_CONTRACT.md)
+- AI explanation contract:
+  [`AI_EXPLANATION_CONTRACT.md`](AI_EXPLANATION_CONTRACT.md)
 - Capital and movement semantics:
   [`CAPITAL_AND_MOVEMENT_SEMANTICS.md`](CAPITAL_AND_MOVEMENT_SEMANTICS.md)
 - Mode wireframes:
