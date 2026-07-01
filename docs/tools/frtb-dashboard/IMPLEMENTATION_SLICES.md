@@ -19,6 +19,8 @@ Related:
   [`CAPITAL_AND_MOVEMENT_SEMANTICS.md`](CAPITAL_AND_MOVEMENT_SEMANTICS.md)
 - Mode wireframes:
   [`MODE_WIREFRAMES.md`](MODE_WIREFRAMES.md)
+- AI explanation contract:
+  [`AI_EXPLANATION_CONTRACT.md`](AI_EXPLANATION_CONTRACT.md)
 
 This document turns the Capital Navigator contracts into reviewable delivery
 slices. It is not a project-management chart and it does not implement runtime

@@ -18,6 +18,8 @@ Companion implementation contracts:
   [`MODE_WIREFRAMES.md`](MODE_WIREFRAMES.md)
 - Implementation slices:
   [`IMPLEMENTATION_SLICES.md`](IMPLEMENTATION_SLICES.md)
+- AI explanation contract:
+  [`AI_EXPLANATION_CONTRACT.md`](AI_EXPLANATION_CONTRACT.md)
 - State and routing:
   [`NAVIGATOR_STATE_AND_ROUTING.md`](NAVIGATOR_STATE_AND_ROUTING.md)
 - Result-store data boundary:
