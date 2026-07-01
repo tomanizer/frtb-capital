@@ -99,10 +99,30 @@ def test_get_sbm_rule_profile_returns_partial_us_npr_profile() -> None:
     assert "us_npr_91_fr_14952_va7a_girr_delta_weights" in profile.citations
 
 
+def test_get_sbm_rule_profile_returns_partial_eu_crr3_profile() -> None:
+    profile = get_sbm_rule_profile(SbmRegulatoryProfile.EU_CRR3)
+
+    assert resolve_sbm_profile(SbmRegulatoryProfile.EU_CRR3) is SbmRegulatoryProfile.EU_CRR3
+    assert profile.profile_id == SbmRegulatoryProfile.EU_CRR3.value
+    assert profile.publication_date == date(2024, 6, 19)
+    assert profile.supported_risk_classes == frozenset(
+        {SbmRiskClass.GIRR, SbmRiskClass.FX, SbmRiskClass.EQUITY, SbmRiskClass.COMMODITY}
+    )
+    assert profile.supported_measures[SbmRiskClass.GIRR] == frozenset(
+        {SbmRiskMeasure.DELTA, SbmRiskMeasure.VEGA, SbmRiskMeasure.CURVATURE}
+    )
+    assert profile.supported_measures[SbmRiskClass.FX] == frozenset(
+        {SbmRiskMeasure.DELTA, SbmRiskMeasure.VEGA, SbmRiskMeasure.CURVATURE}
+    )
+    assert profile.supported_measures[SbmRiskClass.EQUITY] == frozenset({SbmRiskMeasure.DELTA})
+    assert profile.supported_measures[SbmRiskClass.COMMODITY] == frozenset({SbmRiskMeasure.DELTA})
+    assert "eu_crr3_42" in profile.citations
+    assert "eu_crr3_87" in profile.citations
+
+
 @pytest.mark.parametrize(
     "profile",
     [
-        SbmRegulatoryProfile.EU_CRR3,
         SbmRegulatoryProfile.PRA_UK_CRR,
     ],
 )

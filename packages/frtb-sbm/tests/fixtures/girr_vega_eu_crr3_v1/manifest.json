@@ -1,0 +1,20 @@
+{
+  "calculation_date": "2026-07-01",
+  "files": {
+    "expected_outputs.json": {
+      "sha256": "2b8f8867cd623006ca2772031da30fde49d1919011135fa2d720c01f3fdcf2ed"
+    },
+    "invalid_cases.json": {
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+    },
+    "sensitivities.json": {
+      "sha256": "06a797829b6ed253df722a533824a99db1f765fe3f46248837789adb578fecb5"
+    }
+  },
+  "profile": "EU_CRR3",
+  "risk_class": "GIRR",
+  "risk_measure": "VEGA",
+  "schema_version": "girr_vega_eu_crr3_v1_fixture_v1",
+  "sensitivity_count": 3,
+  "total_capital": 547722.5575051662
+}

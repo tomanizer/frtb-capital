@@ -1,0 +1,585 @@
+{
+  "total_capital": 1510949.951603295,
+  "profile_id": "EU_CRR3",
+  "profile_hash": "9c95e893aed59b42b2da1d04504068aafcf7acdd81836d7318aef5378856f736",
+  "input_hash": "d4ff3dec1abf0c42c1de3cdaaf1f98bad15206af8f056d66f281825b3142207b",
+  "input_hash_algorithm": "json-row-v1",
+  "warnings": [],
+  "unsupported_flags": [],
+  "risk_classes": [
+    {
+      "risk_class": "EQUITY",
+      "selected_capital": 1510949.951603295,
+      "citation_ids": [
+        "eu_crr3_6_correlation_scenarios",
+        "eu_crr3_7_scenario_selection",
+        "eu_crr3_4_intra_bucket",
+        "eu_crr3_4_inter_bucket"
+      ],
+      "buckets": [
+        {
+          "bucket_id": "11",
+          "risk_class": "EQUITY",
+          "risk_measure": "DELTA",
+          "kb": 1260000.0,
+          "citation_ids": [
+            "eu_crr3_79"
+          ],
+          "weighted_sensitivities": [
+            {
+              "sensitivity_id": "equity-delta-eu-crr3-v1-005",
+              "risk_class": "EQUITY",
+              "risk_measure": "DELTA",
+              "bucket": "11",
+              "raw_amount": 1000000.0,
+              "risk_weight": 0.7,
+              "scaled_amount": 700000.0,
+              "citation_ids": [
+                "eu_crr3_77"
+              ],
+              "qualifier": "ISS-X"
+            },
+            {
+              "sensitivity_id": "equity-delta-eu-crr3-v1-006",
+              "risk_class": "EQUITY",
+              "risk_measure": "DELTA",
+              "bucket": "11",
+              "raw_amount": -800000.0,
+              "risk_weight": 0.7,
+              "scaled_amount": -560000.0,
+              "citation_ids": [
+                "eu_crr3_77"
+              ],
+              "qualifier": "ISS-Y"
+            }
+          ],
+          "floor_applied": false,
+          "sb": 140000.0,
+          "scenario": "LOW"
+        },
+        {
+          "bucket_id": "5",
+          "risk_class": "EQUITY",
+          "risk_measure": "DELTA",
+          "kb": 619782.2752789886,
+          "citation_ids": [
+            "eu_crr3_4_intra_bucket"
+          ],
+          "weighted_sensitivities": [
+            {
+              "sensitivity_id": "equity-delta-eu-crr3-v1-001",
+              "risk_class": "EQUITY",
+              "risk_measure": "DELTA",
+              "bucket": "5",
+              "raw_amount": 2000000.0,
+              "risk_weight": 0.3,
+              "scaled_amount": 600000.0,
+              "citation_ids": [
+                "eu_crr3_77"
+              ],
+              "qualifier": "ISS-A"
+            },
+            {
+              "sensitivity_id": "equity-delta-eu-crr3-v1-002",
+              "risk_class": "EQUITY",
+              "risk_measure": "DELTA",
+              "bucket": "5",
+              "raw_amount": 500000.0,
+              "risk_weight": 0.003,
+              "scaled_amount": 1500.0,
+              "citation_ids": [
+                "eu_crr3_77"
+              ],
+              "qualifier": "ISS-A"
+            },
+            {
+              "sensitivity_id": "equity-delta-eu-crr3-v1-003",
+              "risk_class": "EQUITY",
+              "risk_measure": "DELTA",
+              "bucket": "5",
+              "raw_amount": -1000000.0,
+              "risk_weight": 0.3,
+              "scaled_amount": -300000.0,
+              "citation_ids": [
+                "eu_crr3_77"
+              ],
+              "qualifier": "ISS-B"
+            }
+          ],
+          "floor_applied": false,
+          "sb": 301500.0,
+          "scenario": "LOW"
+        },
+        {
+          "bucket_id": "6",
+          "risk_class": "EQUITY",
+          "risk_measure": "DELTA",
+          "kb": 525000.0,
+          "citation_ids": [
+            "eu_crr3_4_intra_bucket"
+          ],
+          "weighted_sensitivities": [
+            {
+              "sensitivity_id": "equity-delta-eu-crr3-v1-004",
+              "risk_class": "EQUITY",
+              "risk_measure": "DELTA",
+              "bucket": "6",
+              "raw_amount": 1500000.0,
+              "risk_weight": 0.35,
+              "scaled_amount": 525000.0,
+              "citation_ids": [
+                "eu_crr3_77"
+              ],
+              "qualifier": "ISS-C"
+            }
+          ],
+          "floor_applied": false,
+          "sb": 525000.0,
+          "scenario": "LOW"
+        }
+      ],
+      "risk_measure": "DELTA",
+      "scenario_totals": {
+        "HIGH": 1503863.056847265,
+        "LOW": 1510949.951603295,
+        "MEDIUM": 1507410.6689950153
+      },
+      "selected_scenario": "LOW",
+      "scenario_details": [
+        {
+          "scenario": "LOW",
+          "capital": 1510949.951603295,
+          "alternative_sb_used": false,
+          "inter_bucket_correlations": [
+            {
+              "bucket_a": "5",
+              "bucket_b": "11",
+              "correlation": 0.0
+            },
+            {
+              "bucket_a": "5",
+              "bucket_b": "6",
+              "correlation": 0.11249999999999999
+            },
+            {
+              "bucket_a": "6",
+              "bucket_b": "11",
+              "correlation": 0.0
+            }
+          ],
+          "intra_buckets": [
+            {
+              "bucket_id": "11",
+              "kb": 1260000.0,
+              "sb": 140000.0,
+              "floor_applied": false,
+              "citation_ids": [
+                "eu_crr3_79"
+              ],
+              "pairwise_correlations": [],
+              "pairwise_correlation_summary": {
+                "evidence_mode": "AUTO",
+                "total_count": 0,
+                "materialized_count": 0,
+                "omitted_count": 0,
+                "factor_ids": [
+                  "equity-delta-eu-crr3-v1-005",
+                  "equity-delta-eu-crr3-v1-006"
+                ]
+              }
+            },
+            {
+              "bucket_id": "5",
+              "kb": 619782.2752789886,
+              "sb": 301500.0,
+              "floor_applied": false,
+              "citation_ids": [
+                "eu_crr3_4_intra_bucket"
+              ],
+              "pairwise_correlations": [
+                {
+                  "sensitivity_a": "equity-delta-eu-crr3-v1-001",
+                  "sensitivity_b": "equity-delta-eu-crr3-v1-001",
+                  "correlation": 1.0
+                },
+                {
+                  "sensitivity_a": "equity-delta-eu-crr3-v1-001",
+                  "sensitivity_b": "equity-delta-eu-crr3-v1-002",
+                  "correlation": 0.998
+                },
+                {
+                  "sensitivity_a": "equity-delta-eu-crr3-v1-001",
+                  "sensitivity_b": "equity-delta-eu-crr3-v1-003",
+                  "correlation": 0.1875
+                },
+                {
+                  "sensitivity_a": "equity-delta-eu-crr3-v1-002",
+                  "sensitivity_b": "equity-delta-eu-crr3-v1-002",
+                  "correlation": 1.0
+                },
+                {
+                  "sensitivity_a": "equity-delta-eu-crr3-v1-002",
+                  "sensitivity_b": "equity-delta-eu-crr3-v1-003",
+                  "correlation": 0.1873125
+                },
+                {
+                  "sensitivity_a": "equity-delta-eu-crr3-v1-003",
+                  "sensitivity_b": "equity-delta-eu-crr3-v1-003",
+                  "correlation": 1.0
+                }
+              ],
+              "pairwise_correlation_summary": {
+                "evidence_mode": "AUTO",
+                "total_count": 6,
+                "materialized_count": 6,
+                "omitted_count": 0,
+                "factor_ids": [
+                  "equity-delta-eu-crr3-v1-001",
+                  "equity-delta-eu-crr3-v1-002",
+                  "equity-delta-eu-crr3-v1-003"
+                ]
+              }
+            },
+            {
+              "bucket_id": "6",
+              "kb": 525000.0,
+              "sb": 525000.0,
+              "floor_applied": false,
+              "citation_ids": [
+                "eu_crr3_4_intra_bucket"
+              ],
+              "pairwise_correlations": [
+                {
+                  "sensitivity_a": "equity-delta-eu-crr3-v1-004",
+                  "sensitivity_b": "equity-delta-eu-crr3-v1-004",
+                  "correlation": 1.0
+                }
+              ],
+              "pairwise_correlation_summary": {
+                "evidence_mode": "AUTO",
+                "total_count": 1,
+                "materialized_count": 1,
+                "omitted_count": 0,
+                "factor_ids": [
+                  "equity-delta-eu-crr3-v1-004"
+                ]
+              }
+            }
+          ],
+          "citation_ids": [
+            "eu_crr3_6_correlation_scenarios",
+            "eu_crr3_7_scenario_selection"
+          ]
+        },
+        {
+          "scenario": "MEDIUM",
+          "capital": 1507410.6689950153,
+          "alternative_sb_used": false,
+          "inter_bucket_correlations": [
+            {
+              "bucket_a": "5",
+              "bucket_b": "11",
+              "correlation": 0.0
+            },
+            {
+              "bucket_a": "5",
+              "bucket_b": "6",
+              "correlation": 0.15
+            },
+            {
+              "bucket_a": "6",
+              "bucket_b": "11",
+              "correlation": 0.0
+            }
+          ],
+          "intra_buckets": [
+            {
+              "bucket_id": "11",
+              "kb": 1260000.0,
+              "sb": 140000.0,
+              "floor_applied": false,
+              "citation_ids": [
+                "eu_crr3_79"
+              ],
+              "pairwise_correlations": [],
+              "pairwise_correlation_summary": {
+                "evidence_mode": "AUTO",
+                "total_count": 0,
+                "materialized_count": 0,
+                "omitted_count": 0,
+                "factor_ids": [
+                  "equity-delta-eu-crr3-v1-005",
+                  "equity-delta-eu-crr3-v1-006"
+                ]
+              }
+            },
+            {
+              "bucket_id": "5",
+              "kb": 601311.6288581154,
+              "sb": 301500.0,
+              "floor_applied": false,
+              "citation_ids": [
+                "eu_crr3_4_intra_bucket"
+              ],
+              "pairwise_correlations": [
+                {
+                  "sensitivity_a": "equity-delta-eu-crr3-v1-001",
+                  "sensitivity_b": "equity-delta-eu-crr3-v1-001",
+                  "correlation": 1.0
+                },
+                {
+                  "sensitivity_a": "equity-delta-eu-crr3-v1-001",
+                  "sensitivity_b": "equity-delta-eu-crr3-v1-002",
+                  "correlation": 0.999
+                },
+                {
+                  "sensitivity_a": "equity-delta-eu-crr3-v1-001",
+                  "sensitivity_b": "equity-delta-eu-crr3-v1-003",
+                  "correlation": 0.25
+                },
+                {
+                  "sensitivity_a": "equity-delta-eu-crr3-v1-002",
+                  "sensitivity_b": "equity-delta-eu-crr3-v1-002",
+                  "correlation": 1.0
+                },
+                {
+                  "sensitivity_a": "equity-delta-eu-crr3-v1-002",
+                  "sensitivity_b": "equity-delta-eu-crr3-v1-003",
+                  "correlation": 0.24975
+                },
+                {
+                  "sensitivity_a": "equity-delta-eu-crr3-v1-003",
+                  "sensitivity_b": "equity-delta-eu-crr3-v1-003",
+                  "correlation": 1.0
+                }
+              ],
+              "pairwise_correlation_summary": {
+                "evidence_mode": "AUTO",
+                "total_count": 6,
+                "materialized_count": 6,
+                "omitted_count": 0,
+                "factor_ids": [
+                  "equity-delta-eu-crr3-v1-001",
+                  "equity-delta-eu-crr3-v1-002",
+                  "equity-delta-eu-crr3-v1-003"
+                ]
+              }
+            },
+            {
+              "bucket_id": "6",
+              "kb": 525000.0,
+              "sb": 525000.0,
+              "floor_applied": false,
+              "citation_ids": [
+                "eu_crr3_4_intra_bucket"
+              ],
+              "pairwise_correlations": [
+                {
+                  "sensitivity_a": "equity-delta-eu-crr3-v1-004",
+                  "sensitivity_b": "equity-delta-eu-crr3-v1-004",
+                  "correlation": 1.0
+                }
+              ],
+              "pairwise_correlation_summary": {
+                "evidence_mode": "AUTO",
+                "total_count": 1,
+                "materialized_count": 1,
+                "omitted_count": 0,
+                "factor_ids": [
+                  "equity-delta-eu-crr3-v1-004"
+                ]
+              }
+            }
+          ],
+          "citation_ids": [
+            "eu_crr3_6_correlation_scenarios",
+            "eu_crr3_7_scenario_selection"
+          ]
+        },
+        {
+          "scenario": "HIGH",
+          "capital": 1503863.056847265,
+          "alternative_sb_used": false,
+          "inter_bucket_correlations": [
+            {
+              "bucket_a": "5",
+              "bucket_b": "11",
+              "correlation": 0.0
+            },
+            {
+              "bucket_a": "5",
+              "bucket_b": "6",
+              "correlation": 0.1875
+            },
+            {
+              "bucket_a": "6",
+              "bucket_b": "11",
+              "correlation": 0.0
+            }
+          ],
+          "intra_buckets": [
+            {
+              "bucket_id": "11",
+              "kb": 1260000.0,
+              "sb": 140000.0,
+              "floor_applied": false,
+              "citation_ids": [
+                "eu_crr3_79"
+              ],
+              "pairwise_correlations": [],
+              "pairwise_correlation_summary": {
+                "evidence_mode": "AUTO",
+                "total_count": 0,
+                "materialized_count": 0,
+                "omitted_count": 0,
+                "factor_ids": [
+                  "equity-delta-eu-crr3-v1-005",
+                  "equity-delta-eu-crr3-v1-006"
+                ]
+              }
+            },
+            {
+              "bucket_id": "5",
+              "kb": 582255.3402503063,
+              "sb": 301500.0,
+              "floor_applied": false,
+              "citation_ids": [
+                "eu_crr3_4_intra_bucket"
+              ],
+              "pairwise_correlations": [
+                {
+                  "sensitivity_a": "equity-delta-eu-crr3-v1-001",
+                  "sensitivity_b": "equity-delta-eu-crr3-v1-001",
+                  "correlation": 1.0
+                },
+                {
+                  "sensitivity_a": "equity-delta-eu-crr3-v1-001",
+                  "sensitivity_b": "equity-delta-eu-crr3-v1-002",
+                  "correlation": 1.0
+                },
+                {
+                  "sensitivity_a": "equity-delta-eu-crr3-v1-001",
+                  "sensitivity_b": "equity-delta-eu-crr3-v1-003",
+                  "correlation": 0.3125
+                },
+                {
+                  "sensitivity_a": "equity-delta-eu-crr3-v1-002",
+                  "sensitivity_b": "equity-delta-eu-crr3-v1-002",
+                  "correlation": 1.0
+                },
+                {
+                  "sensitivity_a": "equity-delta-eu-crr3-v1-002",
+                  "sensitivity_b": "equity-delta-eu-crr3-v1-003",
+                  "correlation": 0.3121875
+                },
+                {
+                  "sensitivity_a": "equity-delta-eu-crr3-v1-003",
+                  "sensitivity_b": "equity-delta-eu-crr3-v1-003",
+                  "correlation": 1.0
+                }
+              ],
+              "pairwise_correlation_summary": {
+                "evidence_mode": "AUTO",
+                "total_count": 6,
+                "materialized_count": 6,
+                "omitted_count": 0,
+                "factor_ids": [
+                  "equity-delta-eu-crr3-v1-001",
+                  "equity-delta-eu-crr3-v1-002",
+                  "equity-delta-eu-crr3-v1-003"
+                ]
+              }
+            },
+            {
+              "bucket_id": "6",
+              "kb": 525000.0,
+              "sb": 525000.0,
+              "floor_applied": false,
+              "citation_ids": [
+                "eu_crr3_4_intra_bucket"
+              ],
+              "pairwise_correlations": [
+                {
+                  "sensitivity_a": "equity-delta-eu-crr3-v1-004",
+                  "sensitivity_b": "equity-delta-eu-crr3-v1-004",
+                  "correlation": 1.0
+                }
+              ],
+              "pairwise_correlation_summary": {
+                "evidence_mode": "AUTO",
+                "total_count": 1,
+                "materialized_count": 1,
+                "omitted_count": 0,
+                "factor_ids": [
+                  "equity-delta-eu-crr3-v1-004"
+                ]
+              }
+            }
+          ],
+          "citation_ids": [
+            "eu_crr3_6_correlation_scenarios",
+            "eu_crr3_7_scenario_selection"
+          ]
+        }
+      ],
+      "scenario_selection": {
+        "branch_id": "equity_delta_scenario_selection",
+        "branch_type": "SCENARIO_SELECTION",
+        "source_id": "mar21_7_2",
+        "selected": true,
+        "reason": "selected LOW scenario with capital 1510949.951603295 as the maximum across correlation scenarios",
+        "citation_ids": [
+          "eu_crr3_6_correlation_scenarios",
+          "eu_crr3_7_scenario_selection"
+        ]
+      }
+    }
+  ],
+  "reconciliation": {
+    "input_count": 6,
+    "rejected_input_count": 0,
+    "requirement_ids": [
+      "SBM-WS-001",
+      "SBM-AGG-001",
+      "SBM-AGG-002",
+      "SBM-AUDIT-001",
+      "SBM-FUNC-017",
+      "SBM-FUNC-018",
+      "SBM-FUNC-019",
+      "SBM-FUNC-014",
+      "SBM-FUNC-015",
+      "SBM-FUNC-016",
+      "SBM-CURV-001"
+    ],
+    "citation_ids": [
+      "eu_crr3_6_correlation_scenarios",
+      "eu_crr3_7_scenario_selection",
+      "eu_crr3_4_intra_bucket",
+      "eu_crr3_4_inter_bucket",
+      "eu_crr3_79",
+      "eu_crr3_77"
+    ]
+  },
+  "run_context": {
+    "run_id": "sbm-equity_delta_eu_crr3_v1",
+    "calculation_date": "2026-07-01",
+    "base_currency": "USD",
+    "reporting_currency": "USD"
+  },
+  "portfolio_scenario_totals": {
+    "HIGH": 1503863.056847265,
+    "LOW": 1510949.951603295,
+    "MEDIUM": 1507410.6689950153
+  },
+  "selected_portfolio_scenario": "LOW",
+  "portfolio_scenario_selection": {
+    "branch_id": "portfolio_scenario_selection",
+    "branch_type": "SCENARIO_SELECTION",
+    "source_id": "mar21_7_2",
+    "selected": true,
+    "reason": "selected LOW scenario with capital 1510949.951603295 as the maximum across correlation scenarios",
+    "citation_ids": [
+      "eu_crr3_7_scenario_selection"
+    ]
+  }
+}

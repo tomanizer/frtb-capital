@@ -1,0 +1,20 @@
+{
+  "calculation_date": "2026-07-01",
+  "files": {
+    "expected_outputs.json": {
+      "sha256": "7d89f99c98e69eb3c8d7b2e5473dbb4f6d088f76baae733890447ae09680cbb1"
+    },
+    "invalid_cases.json": {
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+    },
+    "sensitivities.json": {
+      "sha256": "441209c496fb10943c340145e61e61b9e4e114b9e7626412421fa64e9599176c"
+    }
+  },
+  "profile": "EU_CRR3",
+  "risk_class": "GIRR",
+  "risk_measure": "DELTA",
+  "schema_version": "girr_delta_eu_crr3_v1_fixture_v1",
+  "sensitivity_count": 3,
+  "total_capital": 19700.12690314456
+}

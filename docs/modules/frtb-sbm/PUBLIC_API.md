@@ -92,10 +92,12 @@ every documented input_table symbol to remain importable.
 | 3 - Canonical dataclasses | `tuple[SbmSensitivity, ...]` plus `SbmCalculationContext` | `calculate_sbm_capital` | Small books, tests, and notebooks only. |
 
 Supported runtime profiles: `BASEL_MAR21` for implemented delta, vega, and
-curvature paths, plus `US_NPR_2_0` for GIRR delta only, as described in
+curvature paths, `US_NPR_2_0` for GIRR delta only, and `EU_CRR3` for GIRR
+delta/vega/curvature, FX delta/vega/curvature, equity delta, and commodity
+delta, as described in
 [`packages/frtb-sbm/docs/REGULATORY_TRACEABILITY.md`](../../../packages/frtb-sbm/docs/REGULATORY_TRACEABILITY.md).
-All other U.S. NPR 2.0 cells, and the EU CRR3 and PRA UK CRR comparison
-profiles, fail closed until separately implemented and cited.
+All other U.S. NPR 2.0, EU CRR3, and PRA UK CRR comparison-profile cells fail
+closed until separately implemented and cited.
 PRA UK CRR is source-mapped to PS1/26 Appendix 1 / PRA2026/1, but that source
 map does not open runtime gates without exact-cell citations, reference data,
 and deterministic fixtures.

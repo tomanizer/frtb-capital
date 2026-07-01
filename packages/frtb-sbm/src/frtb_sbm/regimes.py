@@ -42,12 +42,16 @@ SUPPORTED_PROFILE_METADATA: dict[SbmRegulatoryProfile, dict[str, object]] = {
             "effective_date": None,
         }
     ),
+    SbmRegulatoryProfile.EU_CRR3: {
+        "regulator": "European Parliament and Council of the European Union",
+        "version": "Regulation (EU) 2024/1623 CRR3 market-risk amendments",
+        "publication_date": date(2024, 6, 19),
+        "status": "supported_eu_crr3_sbm_comparison_slice",
+        "effective_date": None,
+    },
 }
 
 UNSUPPORTED_PROFILE_REASONS: dict[SbmRegulatoryProfile, str] = {
-    SbmRegulatoryProfile.EU_CRR3: (
-        "EU CRR3 SBM profile is unsupported until cited reference data and fixtures are added."
-    ),
     SbmRegulatoryProfile.PRA_UK_CRR: (
         "PRA UK CRR SBM profile is unsupported until UK-specific source mapping "
         "and fixtures are added."
@@ -82,6 +86,16 @@ PROFILE_SUPPORTED_MEASURES: dict[
     },
     SbmRegulatoryProfile.US_NPR_2_0: {
         SbmRiskClass.GIRR: frozenset({SbmRiskMeasure.DELTA}),
+    },
+    SbmRegulatoryProfile.EU_CRR3: {
+        SbmRiskClass.GIRR: frozenset(
+            {SbmRiskMeasure.DELTA, SbmRiskMeasure.VEGA, SbmRiskMeasure.CURVATURE}
+        ),
+        SbmRiskClass.FX: frozenset(
+            {SbmRiskMeasure.DELTA, SbmRiskMeasure.VEGA, SbmRiskMeasure.CURVATURE}
+        ),
+        SbmRiskClass.EQUITY: frozenset({SbmRiskMeasure.DELTA}),
+        SbmRiskClass.COMMODITY: frozenset({SbmRiskMeasure.DELTA}),
     },
 }
 

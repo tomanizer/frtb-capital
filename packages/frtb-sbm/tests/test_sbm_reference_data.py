@@ -590,7 +590,7 @@ def test_curvature_reference_weights_include_paragraph_citations() -> None:
 @pytest.mark.parametrize(
     "profile",
     [
-        SbmRegulatoryProfile.EU_CRR3,
+        SbmRegulatoryProfile.PRA_UK_CRR,
     ],
 )
 def test_unsupported_profiles_fail_reference_data_lookup(profile: SbmRegulatoryProfile) -> None:

@@ -23,9 +23,21 @@ NON_BASEL_PROFILES = (
 )
 
 US_NPR_EXPECTED_PATHS = frozenset({(SbmRiskClass.GIRR, SbmRiskMeasure.DELTA)})
+EU_CRR3_EXPECTED_PATHS = frozenset(
+    {
+        (SbmRiskClass.GIRR, SbmRiskMeasure.DELTA),
+        (SbmRiskClass.GIRR, SbmRiskMeasure.VEGA),
+        (SbmRiskClass.GIRR, SbmRiskMeasure.CURVATURE),
+        (SbmRiskClass.FX, SbmRiskMeasure.DELTA),
+        (SbmRiskClass.FX, SbmRiskMeasure.VEGA),
+        (SbmRiskClass.FX, SbmRiskMeasure.CURVATURE),
+        (SbmRiskClass.EQUITY, SbmRiskMeasure.DELTA),
+        (SbmRiskClass.COMMODITY, SbmRiskMeasure.DELTA),
+    }
+)
 COMPARISON_PROFILE_EXPECTED_PATHS = {
     SbmRegulatoryProfile.US_NPR_2_0: US_NPR_EXPECTED_PATHS,
-    SbmRegulatoryProfile.EU_CRR3: frozenset(),
+    SbmRegulatoryProfile.EU_CRR3: EU_CRR3_EXPECTED_PATHS,
     SbmRegulatoryProfile.PRA_UK_CRR: frozenset(),
 }
 
@@ -101,10 +113,7 @@ def test_comparison_profile_support_matrix_classifies_every_cell(
 
 @pytest.mark.parametrize(
     "profile",
-    (
-        SbmRegulatoryProfile.EU_CRR3,
-        SbmRegulatoryProfile.PRA_UK_CRR,
-    ),
+    (SbmRegulatoryProfile.PRA_UK_CRR,),
 )
 def test_non_basel_profiles_without_implemented_cells_fail_closed(
     profile: SbmRegulatoryProfile,
@@ -131,18 +140,31 @@ def test_traceability_support_matrix_lists_every_basel_path() -> None:
         assert row in traceability
 
     assert "| `US_NPR_2_0` | partial (1 / 21 cells) |" in traceability
-    for profile in (SbmRegulatoryProfile.EU_CRR3, SbmRegulatoryProfile.PRA_UK_CRR):
-        assert f"| `{profile.value}` | unsupported fail-closed" in traceability
-    assert (
-        "| GIRR | implemented under audit | unsupported fail-closed | unsupported fail-closed |"
-        in traceability
+    assert "| `EU_CRR3` | partial (8 / 21 cells) |" in traceability
+    assert "| `PRA_UK_CRR` | unsupported fail-closed" in traceability
+    expected_profile_rows = (
+        "| GIRR | implemented under audit | unsupported fail-closed | "
+        "unsupported fail-closed | implemented under audit | "
+        "implemented under audit | implemented under audit | unsupported fail-closed | "
+        "unsupported fail-closed | unsupported fail-closed |",
+        "| FX | unsupported fail-closed | unsupported fail-closed | "
+        "unsupported fail-closed | implemented under audit | "
+        "implemented under audit | implemented under audit | unsupported fail-closed | "
+        "unsupported fail-closed | unsupported fail-closed |",
+        "| Equity | unsupported fail-closed | unsupported fail-closed | "
+        "unsupported fail-closed | implemented under audit | unsupported fail-closed | "
+        "unsupported fail-closed | unsupported fail-closed | unsupported fail-closed | "
+        "unsupported fail-closed |",
+        "| Commodity | unsupported fail-closed | unsupported fail-closed | "
+        "unsupported fail-closed | implemented under audit | unsupported fail-closed | "
+        "unsupported fail-closed | unsupported fail-closed | unsupported fail-closed | "
+        "unsupported fail-closed |",
     )
-    assert (
-        "| FX | unsupported fail-closed | unsupported fail-closed | unsupported fail-closed |"
-        in traceability
-    )
+    for row in expected_profile_rows:
+        assert row in traceability
     assert "ADR 0048" in traceability
     assert "girr_delta_us_npr_v1" in traceability
+    assert "girr_delta_eu_crr3_v1" in traceability
 
     for issue_number in ("#160", "#161", "#166", "#169", "#226", "#244"):
         assert issue_number in traceability

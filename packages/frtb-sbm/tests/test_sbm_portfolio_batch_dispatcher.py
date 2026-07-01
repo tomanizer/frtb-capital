@@ -241,7 +241,7 @@ def test_batch_dispatcher_fails_closed_for_unsupported_profile() -> None:
         calculation_date=date(2026, 5, 30),
         base_currency="USD",
         reporting_currency="USD",
-        profile_id=SbmRegulatoryProfile.EU_CRR3.value,
+        profile_id=SbmRegulatoryProfile.PRA_UK_CRR.value,
     )
 
     with pytest.raises(UnsupportedRegulatoryFeatureError, match="unsupported"):

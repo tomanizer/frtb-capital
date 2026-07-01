@@ -1,0 +1,95 @@
+{
+  "context": {
+    "run_id": "sbm-equity_delta_eu_crr3_v1",
+    "calculation_date": "2026-07-01",
+    "base_currency": "USD",
+    "reporting_currency": "USD",
+    "profile_id": "EU_CRR3"
+  },
+  "sensitivities": [
+    {
+      "sensitivity_id": "equity-delta-eu-crr3-v1-001",
+      "source_row_id": "row-001",
+      "desk_id": "eu-comparison-desk",
+      "legal_entity": "EU-LE-001",
+      "risk_class": "EQUITY",
+      "risk_measure": "DELTA",
+      "bucket": "5",
+      "risk_factor": "SPOT",
+      "qualifier": "ISS-A",
+      "amount": 2000000.0,
+      "amount_currency": "USD",
+      "sign_convention": "LONG"
+    },
+    {
+      "sensitivity_id": "equity-delta-eu-crr3-v1-002",
+      "source_row_id": "row-002",
+      "desk_id": "eu-comparison-desk",
+      "legal_entity": "EU-LE-001",
+      "risk_class": "EQUITY",
+      "risk_measure": "DELTA",
+      "bucket": "5",
+      "risk_factor": "REPO",
+      "qualifier": "ISS-A",
+      "amount": 500000.0,
+      "amount_currency": "USD",
+      "sign_convention": "LONG"
+    },
+    {
+      "sensitivity_id": "equity-delta-eu-crr3-v1-003",
+      "source_row_id": "row-003",
+      "desk_id": "eu-comparison-desk",
+      "legal_entity": "EU-LE-001",
+      "risk_class": "EQUITY",
+      "risk_measure": "DELTA",
+      "bucket": "5",
+      "risk_factor": "SPOT",
+      "qualifier": "ISS-B",
+      "amount": -1000000.0,
+      "amount_currency": "USD",
+      "sign_convention": "SHORT"
+    },
+    {
+      "sensitivity_id": "equity-delta-eu-crr3-v1-004",
+      "source_row_id": "row-004",
+      "desk_id": "eu-comparison-desk",
+      "legal_entity": "EU-LE-001",
+      "risk_class": "EQUITY",
+      "risk_measure": "DELTA",
+      "bucket": "6",
+      "risk_factor": "SPOT",
+      "qualifier": "ISS-C",
+      "amount": 1500000.0,
+      "amount_currency": "USD",
+      "sign_convention": "LONG"
+    },
+    {
+      "sensitivity_id": "equity-delta-eu-crr3-v1-005",
+      "source_row_id": "row-005",
+      "desk_id": "eu-comparison-desk",
+      "legal_entity": "EU-LE-001",
+      "risk_class": "EQUITY",
+      "risk_measure": "DELTA",
+      "bucket": "11",
+      "risk_factor": "SPOT",
+      "qualifier": "ISS-X",
+      "amount": 1000000.0,
+      "amount_currency": "USD",
+      "sign_convention": "LONG"
+    },
+    {
+      "sensitivity_id": "equity-delta-eu-crr3-v1-006",
+      "source_row_id": "row-006",
+      "desk_id": "eu-comparison-desk",
+      "legal_entity": "EU-LE-001",
+      "risk_class": "EQUITY",
+      "risk_measure": "DELTA",
+      "bucket": "11",
+      "risk_factor": "SPOT",
+      "qualifier": "ISS-Y",
+      "amount": -800000.0,
+      "amount_currency": "USD",
+      "sign_convention": "SHORT"
+    }
+  ]
+}
