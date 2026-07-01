@@ -1395,33 +1395,11 @@ and must not maintain a divergent field list.
 
 High-level reset intent:
 
-The exact reset matrix is owned by `NAVIGATOR_STATE_AND_ROUTING.md`. The UX
-intent is:
-
-- `runId` change: reset baseline, row, inspector tab; keep framework if valid.
-- `baselineRunId` change: keep scope/framework/row if row still exists.
-- `hierarchyNodeId` change: reset row to first valid row; keep framework and
-  scenario if valid.
-- `framework` change: reset row; reset scenario to binding unless framework is
-  SA.
-- `analysisMode` change: reset row, desk, risk factor, inspector tab, and active
-  explanation.
-- `timeWindow` change: keep selected scope/object if present, recompute movement,
-  outlier, and time-series panels, and clear active explanation unless the
-  snapshot hash still matches.
-- `scenario` change: keep row if row exists in refreshed grid; otherwise select
-  first row.
-- `gridMode` change: reset row and inspector tab.
-- `pivotRows`, `pivotColumns`, or `filters` change: refresh grid, keep selected
-  object only if still present in the result set, and clear active explanation
-  unless the snapshot hash still matches.
-- `rowId` change: reset inspector tab to summary/attribution.
-- `deskId` change: reset row/risk factor where incompatible and clear active
-  explanation unless the explanation snapshot still matches.
-- `riskFactorId` change: reset row/desk where incompatible and clear active
-  explanation unless the explanation snapshot still matches.
-- `explanationId` is valid only while its `inputSnapshotHash` matches the current
-  view snapshot.
+The exact reset matrix is owned by `NAVIGATOR_STATE_AND_ROUTING.md`. UX behavior
+should follow three principles: preserve valid context where possible, clear
+evidence panels as soon as their selected object or resolved evidence target is
+stale, and restore to the first useful row/object when the previous selection no
+longer exists.
 
 URL contract:
 

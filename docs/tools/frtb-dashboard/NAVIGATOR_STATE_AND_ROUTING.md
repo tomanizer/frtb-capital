@@ -510,6 +510,7 @@ timeWindow
 customWindow if timeWindow=custom
 gridMode
 rowId | deskId | riskFactorId
+selectedDrilldownTarget when selected row provides one
 artifactId
 artifactPage.columns
 state filters
@@ -545,6 +546,7 @@ timeWindow
 customWindow if timeWindow=custom
 gridMode
 rowId | deskId | riskFactorId | artifactId
+selectedDrilldownTarget when selected row provides one
 pivotRows
 pivotColumns
 filters
@@ -576,8 +578,8 @@ Resource families:
 | `overview` | environment, entitlement context, `runId`, `baselineRunId`, `hierarchyNodeId`, `analysisMode`, `capitalView`, `framework`, `timeWindow`, `customWindow` when custom |
 | `grid` | environment, entitlement context, `runId`, `baselineRunId`, `hierarchyNodeId`, `analysisMode`, `capitalView`, `framework`, `scenario`, `timeWindow`, `customWindow` when custom, `gridMode`, `pivotRows`, `pivotColumns`, `filters`, server-side `gridSearch`, `sort`, `columnPreset`, page |
 | `inspector` | environment, entitlement context, `runId`, `baselineRunId`, `hierarchyNodeId`, `analysisMode`, `capitalView`, `framework`, `scenario`, `timeWindow`, `customWindow` when custom, selected object, `selectedDrilldownTarget` when present, `inspectorTab` |
-| `artifactPage` | environment, entitlement context, `runId`, `baselineRunId`, `hierarchyNodeId`, `analysisMode`, `capitalView`, `framework`, `scenario`, `timeWindow`, `customWindow` when custom, `gridMode`, selected object, `artifactId`, `columns`, page filters, state filters, server-side `gridSearch`, `limit`, `offset` |
-| `explanationSnapshot` | environment, entitlement context, all snapshot query fields plus visible row IDs |
+| `artifactPage` | environment, entitlement context, `runId`, `baselineRunId`, `hierarchyNodeId`, `analysisMode`, `capitalView`, `framework`, `scenario`, `timeWindow`, `customWindow` when custom, `gridMode`, selected object, `selectedDrilldownTarget` when present, `artifactId`, `columns`, page filters, state filters, server-side `gridSearch`, `limit`, `offset` |
+| `explanationSnapshot` | environment, entitlement context, all snapshot query fields, `selectedDrilldownTarget` when present, plus visible row IDs |
 | `explanationResult` | environment, entitlement context, `explanationId`, `inputSnapshotHash` |
 
 Do not reuse a cache entry if:
