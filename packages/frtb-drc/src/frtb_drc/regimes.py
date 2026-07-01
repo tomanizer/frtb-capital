@@ -286,19 +286,18 @@ _EU_CRR3_PROFILE = DrcRuleProfile(
     version="Regulation (EU) 2024/1623",
     publication_date=date(2024, 5, 31),
     effective_date=None,
-    status="partial_nonsec_supported",
-    supported_risk_classes=frozenset({DrcRiskClass.NON_SECURITISATION}),
+    status="supported",
+    supported_risk_classes=frozenset(
+        {
+            DrcRiskClass.NON_SECURITISATION,
+            DrcRiskClass.SECURITISATION_NON_CTP,
+            DrcRiskClass.CORRELATION_TRADING_PORTFOLIO,
+        }
+    ),
     citations=EU_CRR3_CITATIONS,
-    unsupported_features={
-        DrcRiskClass.SECURITISATION_NON_CTP: (
-            "EU_CRR3 securitisation non-CTP DRC because Articles 325z and 325aa and related "
-            "banking-book securitisation mappings have not been implemented"
-        ),
-        DrcRiskClass.CORRELATION_TRADING_PORTFOLIO: (
-            "EU_CRR3 CTP DRC because Articles 325ab to 325ad and related CTP mappings have not "
-            "been implemented"
-        ),
-    },
+    securitisation_non_ctp_fair_value_cap_allowed=True,
+    securitisation_non_ctp_fair_value_cap_citation_ids=("EU_CRR3_ARTICLE_325AA",),
+    unsupported_features={},
 )
 
 _PRA_UK_CRR_PROFILE = DrcRuleProfile(
@@ -307,23 +306,18 @@ _PRA_UK_CRR_PROFILE = DrcRuleProfile(
     version="Basel 3.1 PS1/26",
     publication_date=date(2026, 1, 20),
     effective_date=date(2027, 1, 1),
-    status="final_rule_mapping_pending",
-    supported_risk_classes=frozenset(),
+    status="supported",
+    supported_risk_classes=frozenset(
+        {
+            DrcRiskClass.NON_SECURITISATION,
+            DrcRiskClass.SECURITISATION_NON_CTP,
+            DrcRiskClass.CORRELATION_TRADING_PORTFOLIO,
+        }
+    ),
     citations=PRA_UK_CRR_CITATIONS,
-    unsupported_features={
-        DrcRiskClass.NON_SECURITISATION: (
-            "PRA_UK_CRR non-securitisation DRC because PS1/26 Chapter 3 and "
-            "Appendix 1 rulebook paragraph mappings have not been implemented"
-        ),
-        DrcRiskClass.SECURITISATION_NON_CTP: (
-            "PRA_UK_CRR securitisation non-CTP DRC because PS1/26 Chapter 3 and "
-            "Appendix 1 securitisation mappings have not been implemented"
-        ),
-        DrcRiskClass.CORRELATION_TRADING_PORTFOLIO: (
-            "PRA_UK_CRR CTP DRC because PS1/26 Chapter 3 and Appendix 1 CTP mappings "
-            "have not been implemented"
-        ),
-    },
+    securitisation_non_ctp_fair_value_cap_allowed=True,
+    securitisation_non_ctp_fair_value_cap_citation_ids=("PRA_DRC_ARTICLE_325AA",),
+    unsupported_features={},
 )
 
 _PROFILES: Mapping[str, DrcRuleProfile] = MappingProxyType(
@@ -465,8 +459,95 @@ _SUPPORTED_CELL_DETAILS: Mapping[tuple[str, DrcRiskClass], tuple[str, tuple[str,
                 ),
                 "Maintain EU CRR3 non-securitisation fixture and CQS mapping evidence.",
             ),
+            (
+                EU_CRR3_PROFILE_ID,
+                DrcRiskClass.SECURITISATION_NON_CTP,
+            ): (
+                (
+                    "EU CRR3 securitisation non-CTP row and batch capital supported "
+                    "with typed Article 325aa banking-book risk-weight and fair-value "
+                    "cap evidence."
+                ),
+                (
+                    "EU_CRR3_ARTICLE_325Z",
+                    "EU_CRR3_ARTICLE_325AA",
+                ),
+                "Maintain EU CRR3 securitisation non-CTP fixture and typed evidence coverage.",
+            ),
+            (
+                EU_CRR3_PROFILE_ID,
+                DrcRiskClass.CORRELATION_TRADING_PORTFOLIO,
+            ): (
+                (
+                    "EU CRR3 CTP row and batch capital supported with typed Article "
+                    "325ad banking-book risk-weight and decomposition evidence."
+                ),
+                (
+                    "EU_CRR3_ARTICLE_325AB",
+                    "EU_CRR3_ARTICLE_325AC",
+                    "EU_CRR3_ARTICLE_325AD",
+                ),
+                "Maintain EU CRR3 CTP fixture and typed decomposition evidence coverage.",
+            ),
+            (
+                PRA_UK_CRR_PROFILE_ID,
+                DrcRiskClass.SECURITISATION_NON_CTP,
+            ): (
+                (
+                    "PRA UK CRR securitisation non-CTP row and batch capital supported "
+                    "with Article 325z maturity, gross JTD, netting, and Article 325aa "
+                    "bucket, risk-weight, HBR, category, and fair-value-cap evidence."
+                ),
+                (
+                    "PRA_DRC_ARTICLE_325V",
+                    "PRA_DRC_ARTICLE_325Z",
+                    "PRA_DRC_ARTICLE_325AA",
+                ),
+                "Maintain PRA UK CRR securitisation non-CTP fixture and typed evidence coverage.",
+            ),
+            (
+                PRA_UK_CRR_PROFILE_ID,
+                DrcRiskClass.NON_SECURITISATION,
+            ): (
+                (
+                    "PRA UK CRR non-securitisation row and batch capital supported "
+                    "with Article 325w/x/y LGD, maturity, netting, bucket, risk-weight, "
+                    "HBR, and category evidence."
+                ),
+                (
+                    "PRA_DRC_ARTICLE_325V",
+                    "PRA_DRC_ARTICLE_325W",
+                    "PRA_DRC_ARTICLE_325X",
+                    "PRA_DRC_ARTICLE_325Y",
+                ),
+                (
+                    "Maintain PRA UK CRR non-securitisation fixture and article-level "
+                    "citation coverage."
+                ),
+            ),
+            (
+                PRA_UK_CRR_PROFILE_ID,
+                DrcRiskClass.CORRELATION_TRADING_PORTFOLIO,
+            ): (
+                (
+                    "PRA UK CRR CTP row and batch capital supported with Article 325ab "
+                    "maturity/gross JTD, Article 325ac netting/decomposition, and Article "
+                    "325ad bucket, risk-weight, HBR, and category evidence."
+                ),
+                (
+                    "PRA_DRC_ARTICLE_325V",
+                    "PRA_DRC_ARTICLE_325AB",
+                    "PRA_DRC_ARTICLE_325AC",
+                    "PRA_DRC_ARTICLE_325AD",
+                ),
+                "Maintain PRA UK CRR CTP fixture and typed decomposition evidence coverage.",
+            ),
         }
     )
+)
+
+_PLANNED_CELL_DETAILS: Mapping[tuple[str, DrcRiskClass], tuple[tuple[str, ...], str]] = (
+    MappingProxyType({})
 )
 
 
@@ -487,8 +568,12 @@ def _profile_support_cell(
             risk_class,
             f"{profile.profile_id} {risk_class.value} is unsupported until mapped.",
         )
-        citations = tuple(sorted(profile.citations))
-        next_step = "Add cited profile-specific mappings and deterministic fixtures."
+        planned = _PLANNED_CELL_DETAILS.get((profile.profile_id, risk_class))
+        if planned is None:
+            citations = tuple(sorted(profile.citations))
+            next_step = "Add cited profile-specific mappings and deterministic fixtures."
+        else:
+            citations, next_step = planned
     return DrcProfileSupportCell(
         profile_id=profile.profile_id,
         risk_class=risk_class,

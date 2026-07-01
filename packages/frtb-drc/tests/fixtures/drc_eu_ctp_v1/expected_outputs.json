@@ -1,0 +1,11 @@
+{
+  "buckets": {
+    "CDX_HY": -7.304347826086957,
+    "CDX_NA_IG": 7.0
+  },
+  "category_capital": 3.3478260869565215,
+  "ctp_hbr": 0.30434782608695654,
+  "fixture_id": "drc_eu_ctp_v1",
+  "input_count": 4,
+  "total_drc": 3.3478260869565215
+}

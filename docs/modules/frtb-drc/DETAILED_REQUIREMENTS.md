@@ -213,9 +213,16 @@ uses the MAR22.31 asset-class/region taxonomy. Basel MAR22 CTP bucket
 assignment uses the MAR22.40-MAR22.41 CTP bucket taxonomy and typed MAR22.42
 risk-weight evidence. EU CRR3 non-securitisation uses Article 325y bucket and
 risk-weight mappings with Article 325y(6) CQS assignment evidence. EU CRR3
-securitisation non-CTP, EU CRR3 CTP, and PRA UK CRR bucket mappings remain
-fail-closed until their cited bucket, risk-weight, and decomposition mappings
-are implemented with deterministic tests.
+securitisation non-CTP uses Article 325aa bucket/risk-weight evidence and
+Article 325z/325aa securitisation mechanics. EU CRR3 CTP uses Article
+325ab-325ad scope, netting, decomposition, bucket, risk-weight, HBR, and
+category evidence. PRA UK CRR non-securitisation uses Article 325w, Article
+325x, and Article 325y LGD, maturity, netting, bucket, risk-weight, HBR, and
+category evidence. PRA UK CRR securitisation non-CTP uses Article 325z and
+Article 325aa gross/net JTD, bucket, risk-weight, HBR, fair-value-cap, and
+category evidence. PRA UK CRR CTP uses Article 325ab, Article 325ac, and
+Article 325ad scope, netting, decomposition, bucket, risk-weight, HBR, and
+category evidence.
 
 ### DRC-FUNC-009: Risk weights
 
@@ -478,8 +485,20 @@ conditions remain true:
   mechanics and typed MAR22.42 risk-weight evidence.
 - EU CRR3 non-securitisation row and batch paths use cited Article 325w,
   Article 325x, Article 325y, and ECAI/CQS mapping evidence.
-- EU CRR3 securitisation non-CTP, EU CRR3 CTP, and PRA UK CRR paths fail
-  explicitly until cited rule mappings and tests are added.
+- EU CRR3 securitisation non-CTP row and batch paths use cited Article 325z,
+  Article 325aa, typed risk-weight, fair-value-cap, offset, fixture, and
+  attribution evidence.
+- EU CRR3 CTP row and batch paths use cited Article 325ab, Article 325ac,
+  Article 325ad, typed risk-weight, decomposition, offset, fixture, and
+  attribution evidence.
+- PRA UK CRR non-securitisation row and batch paths use cited Article 325w,
+  Article 325x, Article 325y, fixture, and attribution evidence.
+- PRA UK CRR securitisation non-CTP row and batch paths use cited Article
+  325z, Article 325aa, typed risk-weight, fair-value-cap, offset, fixture, and
+  attribution evidence.
+- PRA UK CRR CTP row and batch paths use cited Article 325ab, Article 325ac,
+  Article 325ad, typed risk-weight, decomposition, offset, fixture, and
+  attribution evidence.
 - Results are frozen, serialisable, carry rule-profile/input hashes, and emit
   attribution records that reconcile to total capital through analytical,
   residual, or unsupported methods.

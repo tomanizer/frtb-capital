@@ -1,7 +1,7 @@
 from datetime import date
 
 import pytest
-from frtb_common import ImplementationStatus
+from frtb_common import ImplementationStatus, ValidationStatus
 from frtb_drc import (
     PACKAGE_METADATA,
     US_NPR_2_0_PROFILE_ID,
@@ -12,11 +12,12 @@ from frtb_drc import (
 )
 
 
-def test_drc_package_imports_with_scaffold_status() -> None:
+def test_drc_package_imports_with_implemented_status() -> None:
     assert isinstance(__version__, str)
     assert PACKAGE_METADATA.package_name == "frtb-drc"
     assert PACKAGE_METADATA.import_name == "frtb_drc"
-    assert PACKAGE_METADATA.implementation_status is ImplementationStatus.PARTIAL
+    assert PACKAGE_METADATA.implementation_status is ImplementationStatus.IMPLEMENTED
+    assert PACKAGE_METADATA.validation_status is ValidationStatus.AVAILABLE
 
 
 def test_drc_calculation_requires_positions() -> None:
