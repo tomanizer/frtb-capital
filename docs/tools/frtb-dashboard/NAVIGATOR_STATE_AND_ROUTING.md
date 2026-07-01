@@ -133,7 +133,7 @@ DrilldownTarget
 | `deskId` | yes | yes | no | no |
 | `riskFactorId` | yes | yes | no | no |
 | `artifactId` | yes | yes | no | no |
-| `selectedDrilldownTarget` | no, derived from selected row | yes for inspector when present | no | no |
+| `selectedDrilldownTarget` | no, derived from selected row | yes for evidence queries when present | no | no |
 | `artifactPage` | yes when artifact/source tab is open | yes | no | no |
 | `inspectorTab` | yes | no | no | no |
 | `explanationId` | yes, if snapshot-valid | yes | no | no |
@@ -698,6 +698,8 @@ When implementing this state contract, tests should cover:
   output-floor-driven binding rows.
 - Deferred inspector requests while a restored selected row is waiting for its
   server-resolved `selectedDrilldownTarget`.
+- Artifact/source pages and explanation snapshots include
+  `selectedDrilldownTarget` when present.
 - `window=custom` parsing, serialization, invalid-window diagnostics, and cache
   invalidation.
 - Reset rules for run, baseline, scope, framework, scenario, mode, row, desk,
