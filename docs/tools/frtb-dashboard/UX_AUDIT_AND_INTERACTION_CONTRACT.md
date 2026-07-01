@@ -1148,8 +1148,9 @@ longer exists.
 URL contract:
 
 Shareable analytical state must be reflected in the URL according to
-`NAVIGATOR_STATE_AND_ROUTING.md`. This makes findings shareable between risk,
-finance, and model teams without relying on screenshots or local browser state.
+[`NAVIGATOR_STATE_AND_ROUTING.md`](NAVIGATOR_STATE_AND_ROUTING.md). This makes
+findings shareable between risk, finance, and model teams without relying on
+screenshots or local browser state.
 
 ## 10. Visual and Interaction Principles
 
