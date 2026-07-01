@@ -25,7 +25,9 @@ requirements:
     status: partial
     modules: [src/frtb_sbm/reference_data.py]
     tests: [tests/test_sbm_reference_data.py]
-    notes: GIRR, FX, equity, commodity, and CSR delta, vega, and curvature tables are cited for BASEL_MAR21; non-Basel profiles remain planned and runtime fail-closed.
+    notes: GIRR, FX, equity, commodity, and CSR delta, vega, and curvature tables
+      are cited for BASEL_MAR21; EU_CRR3 is partially runtime-supported with
+      explicit citations; PRA_UK_CRR remains planned and runtime fail-closed.
   - id: SBM-RISK-001
     title: Seven-risk-class coverage
     source: Basel MAR21; 91 FR 15037

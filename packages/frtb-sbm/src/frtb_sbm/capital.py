@@ -12,7 +12,7 @@ Regulatory traceability:
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import fields, is_dataclass, replace
 from typing import Any, TypedDict
 
@@ -690,34 +690,71 @@ def _translate_eu_crr3_result_citations(value: Any) -> Any:
         changes: dict[str, object] = {}
         for field in fields(value):
             field_value = getattr(value, field.name)
-        if field.name == "citation_ids":
-            if isinstance(field_value, (tuple, list)):
-                try:
-                    translated = translate_basel_citation_ids_to_eu(field_value)
-                except KeyError as exc:
-                    raise UnsupportedRegulatoryFeatureError(
-                        "EU_CRR3 result contains an unsupported Basel citation id: "
-                        f"{field_value!r}"
-                    ) from exc
+            if field.name == "citation_ids":
+                if isinstance(field_value, (tuple, list)):
+                    try:
+                        translated = translate_basel_citation_ids_to_eu(field_value)
+                    except KeyError as exc:
+                        raise UnsupportedRegulatoryFeatureError(
+                            "EU_CRR3 result contains an unsupported Basel citation id: "
+                            f"{field_value!r}"
+                        ) from exc
+                else:
+                    translated = field_value
             else:
-                translated = field_value
-        else:
-            translated = _translate_eu_crr3_result_citations(field_value)
+                if isinstance(field_value, (tuple, list)):
+                    translated = _translate_eu_crr3_result_citations_in_collection(field_value)
+                elif is_dataclass(field_value):
+                    translated = _translate_eu_crr3_result_citations(field_value)
+                elif isinstance(field_value, Mapping):
+                    translated = _translate_eu_crr3_result_citations_in_mapping(field_value)
+                else:
+                    translated = field_value
             if translated != field_value:
                 changes[field.name] = translated
         if not changes:
             return value
         return replace(value, **changes)
-    if isinstance(value, tuple):
-        return tuple(_translate_eu_crr3_result_citations(item) for item in value)
-    if isinstance(value, list):
-        return [_translate_eu_crr3_result_citations(item) for item in value]
-    if isinstance(value, dict):
-        return {
-            key: _translate_eu_crr3_result_citations(item)
-            for key, item in value.items()
-        }
     return value
+
+
+def _translate_eu_crr3_result_citations_in_collection(values: Sequence[Any]) -> Sequence[Any]:
+    if not values:
+        return values
+
+    first = values[0]
+    if not (is_dataclass(first) or isinstance(first, (tuple, list, Mapping))):
+        return values
+
+    translated = []
+    changed = False
+    for item in values:
+        if is_dataclass(item) or isinstance(item, (tuple, list, Mapping)):
+            translated_item = _translate_eu_crr3_result_citations(item)
+            changed = changed or (translated_item is not item)
+            translated.append(translated_item)
+        else:
+            translated.append(item)
+    if not changed:
+        return values
+    if isinstance(values, tuple):
+        return tuple(translated)
+    return translated
+
+
+def _translate_eu_crr3_result_citations_in_mapping(value: Mapping[str, Any]) -> dict[str, Any]:
+    translated = {}
+    changed = False
+    for key, item in value.items():
+        if is_dataclass(item) or isinstance(item, (tuple, list, Mapping)):
+            translated_item = _translate_eu_crr3_result_citations(item)
+            changed = changed or (translated_item is not item)
+            translated[key] = translated_item
+        else:
+            translated[key] = item
+    if not changed:
+        return dict(value)
+    return translated
 
 
 def _ordered_supported_paths(
