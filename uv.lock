@@ -942,7 +942,7 @@ dev = [
 
 [[package]]
 name = "frtb-common"
-version = "0.1.1"
+version = "0.1.2"
 source = { editable = "packages/frtb-common" }
 dependencies = [
     { name = "numpy" },

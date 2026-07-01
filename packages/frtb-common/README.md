@@ -25,6 +25,16 @@ Current contents:
   - `CalculationScopeLevel` and frozen `CalculationScope` for carrying the
     selected scope on package inputs, outputs, and audit records without
     hierarchy traversal or rollup logic;
+- risk-factor metadata carrier primitives:
+  - `RiskFactorId`, `RiskFactorMappingVersion`, and `RiskFactorLineageId`
+    for stable cross-package identifiers and mapping provenance;
+  - `RiskFactorRiskClassCode`, `RiskFactorTypeCode`, `SensitivityTypeCode`,
+    `BucketId`, `Tenor`, and `CurrencyCode` for calculation-ready metadata
+    values supplied by the owning taxonomy, result-store snapshot, or upstream
+    adapter;
+  - these are immutable value primitives, not a canonical risk-factor master,
+    RFET evidence store, regulatory mapping table, or frontend classification
+    mechanism.
 - Arrow-backed normalized tabular primitives:
   - `ColumnSpec`, aliases, package-neutral logical types, null/chunk/dictionary
     policies;
