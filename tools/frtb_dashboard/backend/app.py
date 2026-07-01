@@ -163,10 +163,6 @@ if FRONTEND_DIST.exists():
         if full_path == "api" or full_path.startswith("api/"):
             raise HTTPException(status_code=404, detail="Not Found")
         candidate = (FRONTEND_DIST / full_path).resolve()
-        if (
-            str(candidate).startswith(str(FRONTEND_DIST))
-            and candidate.exists()
-            and candidate.is_file()
-        ):
+        if candidate.is_relative_to(FRONTEND_DIST) and candidate.exists() and candidate.is_file():
             return FileResponse(candidate)
         return FileResponse(FRONTEND_DIST / "index.html")

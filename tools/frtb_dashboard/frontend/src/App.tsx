@@ -36,7 +36,7 @@ function formatCell(row: GridRow, column: GridColumn): ReactNode {
   if (column.kind === "percent") return formatPercent(typeof value === "number" ? value : null);
   if (column.kind === "decimal") return typeof value === "number" ? value.toFixed(2) : "—";
   if (column.kind === "signed") {
-    if (typeof value !== "number") return <span className="muted-cell">—</span>;
+    if (typeof value !== "number" || !Number.isFinite(value)) return <span className="muted-cell">—</span>;
     return <span className={signClass(value)}>{formatMoney(value, row.currency)}</span>;
   }
   if (typeof value === "number") return formatMoney(value, row.currency);
