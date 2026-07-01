@@ -216,6 +216,62 @@ _TABLE_SCHEMAS: dict[str, Any] = {
             ("metadata_json", pa.string()),
         ]
     ),
+    "risk_factor_metadata_snapshots": pa.schema(
+        [
+            ("run_id", pa.string()),
+            ("snapshot_id", pa.string()),
+            ("mapping_version", pa.string()),
+            ("effective_date", pa.string()),
+            ("source_system", pa.string()),
+            ("created_at", pa.string()),
+            ("metadata_json", pa.string()),
+        ]
+    ),
+    "risk_factor_metadata": pa.schema(
+        [
+            ("run_id", pa.string()),
+            ("snapshot_id", pa.string()),
+            ("risk_factor_id", pa.string()),
+            ("display_name", pa.string()),
+            ("risk_class", pa.string()),
+            ("risk_factor_type", pa.string()),
+            ("mapping_version", pa.string()),
+            ("bucket_id", pa.string()),
+            ("bucket_label", pa.string()),
+            ("sensitivity_type", pa.string()),
+            ("currency", pa.string()),
+            ("curve_id", pa.string()),
+            ("tenor", pa.string()),
+            ("issuer_id", pa.string()),
+            ("obligor_id", pa.string()),
+            ("counterparty_id", pa.string()),
+            ("commodity_id", pa.string()),
+            ("equity_id", pa.string()),
+            ("status", pa.string()),
+            ("rfet_evidence_state", pa.string()),
+            ("rfet_evidence_id", pa.string()),
+            ("modellability_state", pa.string()),
+            ("liquidity_horizon_days", pa.int64()),
+            ("nmrf_state", pa.string()),
+            ("stress_period_id", pa.string()),
+            ("source_system", pa.string()),
+            ("source_row_id", pa.string()),
+            ("metadata_json", pa.string()),
+        ]
+    ),
+    "risk_factor_source_mappings": pa.schema(
+        [
+            ("run_id", pa.string()),
+            ("snapshot_id", pa.string()),
+            ("risk_factor_id", pa.string()),
+            ("source_system", pa.string()),
+            ("source_row_id", pa.string()),
+            ("mapping_version", pa.string()),
+            ("relationship", pa.string()),
+            ("source_hash", pa.string()),
+            ("metadata_json", pa.string()),
+        ]
+    ),
     "result_events": pa.schema(
         [
             ("event_id", pa.string()),

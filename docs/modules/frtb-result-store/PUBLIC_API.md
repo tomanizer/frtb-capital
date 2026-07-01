@@ -8,6 +8,7 @@
 | `CapitalMeasure` | Scalar capital and intermediate measures. |
 | `ArtifactRef` | URI-backed large drillthrough artifacts. |
 | `CapitalAttributionRecord` | Attribution rows for Euler, residual, and unsupported methods. |
+| `RiskFactorMetadataSnapshot`, `RiskFactorMetadataRecord`, `RiskFactorSourceMapping` | Fixture-backed canonical risk-factor metadata read model. |
 | `LineageRef` | Result-to-source lineage references. |
 | `ResultBundle` | Append-only payload written for one run. |
 | `DuckDbParquetResultStore` | Local Parquet writer and DuckDB query facade. |
@@ -29,12 +30,29 @@ runs = store.list_runs()
 The API is FRTB-specific. Consumers should query capital trees, node measures,
 artifact references, lineage, attribution records, and attribution explain
 projections rather than treating the store as a generic table dump.
+Risk-factor metadata is exposed through domain query methods such as
+`risk_factor_snapshots`, `risk_factor_metadata`,
+`get_risk_factor_metadata`, `risk_factor_metadata_by_classification`, and
+`risk_factor_source_mappings`; these methods serve fixture-backed viewer read
+models and do not provide production reference-data management or calculation
+logic.
+Risk-factor drilldown is exposed through bounded UI/API contracts:
+`list_risk_factors`, `get_risk_factor`, `risk_factor_lineage`,
+`risk_factor_capital`, and `risk_factor_source_rows`. These methods return
+explicit `available` or `no_data` states. Capital drilldown aggregates only
+persisted attribution rows that identify the selected risk factor; missing
+RFET, UPL, CRIF, stress-vector, or contribution evidence is not reconstructed.
+Future OLAP-backed implementations should preserve these aggregate/detail
+payload shapes and pagination limits while replacing only the query engine.
 
 Base-table row assembly is split across internal IO stages:
 `frtb_result_store.store_bundle_rows` assembles one `ResultBundle` into table
 row groups, and `frtb_result_store.store_status_rows` owns lifecycle status row
 serialization. The older `frtb_result_store.store_row_io` module remains an
 internal compatibility path for existing row helper imports.
+Risk-factor metadata row serialization lives in
+`frtb_result_store.risk_factor_metadata_rows` with compatibility aliases in
+`store_row_io`.
 
 Reporting mart generation is also stage-split internally: component-breakdown
 rows live in `frtb_result_store.mart_component_breakdown_rows`, movement-summary
@@ -65,7 +83,13 @@ workflow management are out of scope for the CLI.
 The optional FastAPI service is available through the `api` extra. It exposes
 read-only domain endpoints for runs, run groups, capital trees, artifacts,
 attribution, top contributor attribution, residual attribution, unsupported
-attribution, lineage, events, movements, and regime comparison. Artifact
+attribution, risk-factor metadata/drilldown, lineage, events, movements, and
+regime comparison. Risk-factor routes include
+`GET /runs/{run_id}/risk-factors`,
+`GET /runs/{run_id}/risk-factors/{risk_factor_id}`,
+`GET /runs/{run_id}/risk-factors/{risk_factor_id}/lineage`,
+`GET /runs/{run_id}/risk-factors/{risk_factor_id}/capital`, and
+`GET /runs/{run_id}/risk-factors/{risk_factor_id}/source-rows`. Artifact
 drillthrough is served through deterministic paged Parquet reads with optional
 column selection and simple equality filters, plus local Parquet download or
 S3 URI handoff. The service does not share the writer catalog or expose generic

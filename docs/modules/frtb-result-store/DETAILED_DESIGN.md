@@ -79,6 +79,9 @@ result-store-root/
       artifact_refs/
       lineage_refs/
       capital_attributions/
+      risk_factor_metadata_snapshots/
+      risk_factor_metadata/
+      risk_factor_source_mappings/
       movement_results/
       result_events/
       run_telemetry/

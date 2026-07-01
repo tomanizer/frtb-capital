@@ -200,6 +200,9 @@ class SbmSensitivity:
     maturity: str | None = None
     up_shock_amount: float | None = None
     down_shock_amount: float | None = None
+    risk_factor_id: str | None = None
+    risk_factor_mapping_version: str | None = None
+    bucket_label: str | None = None
     mapping_citation_ids: tuple[str, ...] = ()
     org_scope: CalculationScope | None = None
 
@@ -225,6 +228,11 @@ class WeightedSensitivity:
     contributing_source_row_ids: tuple[str, ...] = ()
     org_scope: CalculationScope | None = None
     contributing_org_scopes: tuple[CalculationScope, ...] = ()
+    risk_factor_id: str | None = None
+    risk_factor_mapping_version: str | None = None
+    bucket_label: str | None = None
+    source_system: str | None = None
+    source_row_id: str | None = None
 
 
 @dataclass(frozen=True)

@@ -65,7 +65,9 @@
               ],
               "contributing_source_row_ids": [
                 "row-001"
-              ]
+              ],
+              "source_system": "synthetic-sbm-fixture",
+              "source_row_id": "row-001"
             }
           ],
           "floor_applied": false,

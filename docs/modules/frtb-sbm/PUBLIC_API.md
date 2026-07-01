@@ -166,6 +166,7 @@ these axes:
 | Amount | Required | Sensitivity or curvature amount with client-side sign convention already applied. |
 | Axis fields | Path-specific | Tenor, option tenor, maturity, up/down curvature branch values, and mapping citation ids as required by the path. |
 | Lineage | Required for audit-ready runs | Source system, file, row id, and citation identifiers where supported. |
+| Risk-factor metadata | Optional | Upstream-supplied `risk_factor_id`, mapping/taxonomy version, bucket label, and source provenance are preserved in weighted-sensitivity audit records. SBM does not infer missing metadata or own the canonical mapping table. |
 
 Generated JSON schemas from these specs are tracked by
 [#423](https://github.com/tomanizer/frtb-capital/issues/423).

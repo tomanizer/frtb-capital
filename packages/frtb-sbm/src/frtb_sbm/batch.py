@@ -80,6 +80,9 @@ class SbmSensitivityBatch:
     maturities: ObjectArray | None = None
     up_shock_amounts: ObjectArray | None = None
     down_shock_amounts: ObjectArray | None = None
+    risk_factor_ids: ObjectArray | None = None
+    risk_factor_mapping_versions: ObjectArray | None = None
+    bucket_labels: ObjectArray | None = None
     source_column_maps: tuple[tuple[tuple[str, str], ...], ...] | None = None
     mapping_citation_ids: tuple[tuple[str, ...], ...] | None = None
     org_scopes: tuple[CalculationScope | None, ...] | None = None
@@ -199,6 +202,9 @@ def build_sbm_batch_from_sensitivities(
         maturities=optional_arrays["maturities"],
         up_shock_amounts=optional_arrays["up_shock_amounts"],
         down_shock_amounts=optional_arrays["down_shock_amounts"],
+        risk_factor_ids=optional_arrays["risk_factor_ids"],
+        risk_factor_mapping_versions=optional_arrays["risk_factor_mapping_versions"],
+        bucket_labels=optional_arrays["bucket_labels"],
     )
     return replace(batch, accepted_row_dataclasses_materialized=len(validated))
 
@@ -310,6 +316,11 @@ def concatenate_sbm_batches(batches: object) -> SbmSensitivityBatch:
         maturities=_concat_optional_arrays(validated, "maturities"),
         up_shock_amounts=_concat_optional_arrays(validated, "up_shock_amounts"),
         down_shock_amounts=_concat_optional_arrays(validated, "down_shock_amounts"),
+        risk_factor_ids=_concat_optional_arrays(validated, "risk_factor_ids"),
+        risk_factor_mapping_versions=_concat_optional_arrays(
+            validated, "risk_factor_mapping_versions"
+        ),
+        bucket_labels=_concat_optional_arrays(validated, "bucket_labels"),
         source_column_maps=_concat_source_column_maps(validated),
         mapping_citation_ids=_concat_mapping_citation_ids(validated),
         org_scopes=_concat_org_scopes(validated),
@@ -567,6 +578,11 @@ def _optional_arrays_from_sensitivities(
         "maturities": tuple(item.maturity for item in sensitivities),
         "up_shock_amounts": tuple(item.up_shock_amount for item in sensitivities),
         "down_shock_amounts": tuple(item.down_shock_amount for item in sensitivities),
+        "risk_factor_ids": tuple(item.risk_factor_id for item in sensitivities),
+        "risk_factor_mapping_versions": tuple(
+            item.risk_factor_mapping_version for item in sensitivities
+        ),
+        "bucket_labels": tuple(item.bucket_label for item in sensitivities),
     }
     return {
         field_name: values if any(value is not None for value in values) else None

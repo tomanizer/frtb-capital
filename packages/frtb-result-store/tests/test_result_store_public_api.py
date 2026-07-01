@@ -9,6 +9,7 @@ import frtb_result_store.mart_capital_tree_rows as mart_capital_tree_rows
 import frtb_result_store.mart_component_breakdown_rows as mart_component_breakdown_rows
 import frtb_result_store.mart_movement_rows as mart_movement_rows
 import frtb_result_store.marts as marts
+import frtb_result_store.risk_factor_metadata_rows as risk_factor_metadata_rows
 import frtb_result_store.store_bundle_rows as store_bundle_rows
 import frtb_result_store.store_row_io as store_row_io
 import frtb_result_store.store_status_rows as store_status_rows
@@ -38,6 +39,11 @@ from frtb_result_store import (
     RequiredArtifactExpectation,
     ResultBundle,
     ResultStoreContractError,
+    RiskFactorEvidenceState,
+    RiskFactorMetadataRecord,
+    RiskFactorMetadataSnapshot,
+    RiskFactorRecordStatus,
+    RiskFactorSourceMapping,
     RunStatus,
     RunStatusEvent,
     artifact_schema_for,
@@ -88,6 +94,33 @@ def test_store_status_rows_preserve_row_io_compatibility_path() -> None:
 
 def test_store_bundle_rows_preserve_row_io_compatibility_path() -> None:
     assert store_row_io._rows_for_bundle is store_bundle_rows._rows_for_bundle
+
+
+def test_risk_factor_metadata_rows_preserve_row_io_compatibility_path() -> None:
+    assert (
+        store_row_io._risk_factor_snapshot_row
+        is risk_factor_metadata_rows._risk_factor_snapshot_row
+    )
+    assert (
+        store_row_io._risk_factor_metadata_row
+        is risk_factor_metadata_rows._risk_factor_metadata_row
+    )
+    assert (
+        store_row_io._risk_factor_source_mapping_row
+        is risk_factor_metadata_rows._risk_factor_source_mapping_row
+    )
+    assert (
+        store_row_io._risk_factor_snapshot_from_row
+        is risk_factor_metadata_rows._risk_factor_snapshot_from_row
+    )
+    assert (
+        store_row_io._risk_factor_metadata_from_row
+        is risk_factor_metadata_rows._risk_factor_metadata_from_row
+    )
+    assert (
+        store_row_io._risk_factor_source_mapping_from_row
+        is risk_factor_metadata_rows._risk_factor_source_mapping_from_row
+    )
 
 
 def test_mart_movement_rows_preserve_marts_compatibility_path() -> None:
@@ -611,6 +644,109 @@ def test_result_bundle_reports_duplicate_node_ids_deterministically() -> None:
         match="duplicate node ids: a-duplicate, z-duplicate",
     ):
         ResultBundle(run=run, nodes=nodes)
+
+
+def _risk_factor_bundle_parts() -> tuple[
+    CalculationRun,
+    CapitalNode,
+    RiskFactorMetadataSnapshot,
+    RiskFactorMetadataRecord,
+    RiskFactorSourceMapping,
+]:
+    run = _run()
+    root = CapitalNode(
+        run_id=run.run_id,
+        node_id="total",
+        node_type=NodeType.ROOT,
+        component=FrtbComponent.TOP_OF_HOUSE,
+        label="Total capital",
+    )
+    snapshot = RiskFactorMetadataSnapshot(
+        run_id=run.run_id,
+        snapshot_id="rf-snapshot-001",
+        mapping_version="synthetic-taxonomy-v1",
+        effective_date=run.as_of_date,
+        source_system="fixture-risk-engine",
+        created_at=run.created_at,
+    )
+    record = RiskFactorMetadataRecord(
+        run_id=run.run_id,
+        snapshot_id=snapshot.snapshot_id,
+        risk_factor_id="rf-girr-usd-5y",
+        display_name="USD OIS 5Y",
+        risk_class="GIRR",
+        risk_factor_type="curve",
+        mapping_version=snapshot.mapping_version,
+        bucket_id="USD",
+        sensitivity_type="delta",
+        currency="USD",
+        tenor="5Y",
+        status=RiskFactorRecordStatus.NO_DATA,
+        rfet_evidence_state=RiskFactorEvidenceState.NO_DATA,
+        modellability_state=RiskFactorEvidenceState.NO_DATA,
+        nmrf_state=RiskFactorEvidenceState.NO_DATA,
+    )
+    mapping = RiskFactorSourceMapping(
+        run_id=run.run_id,
+        snapshot_id=snapshot.snapshot_id,
+        risk_factor_id=record.risk_factor_id,
+        source_system="fixture-risk-engine",
+        source_row_id="row-001",
+        mapping_version=snapshot.mapping_version,
+    )
+    return run, root, snapshot, record, mapping
+
+
+def test_result_bundle_validates_risk_factor_metadata_snapshots() -> None:
+    run, root, snapshot, record, mapping = _risk_factor_bundle_parts()
+    valid_bundle = ResultBundle(
+        run=run,
+        nodes=(root,),
+        risk_factor_snapshots=(snapshot,),
+        risk_factor_metadata=(record,),
+        risk_factor_source_mappings=(mapping,),
+    )
+    assert valid_bundle.risk_factor_metadata[0].status is RiskFactorRecordStatus.NO_DATA
+    assert valid_bundle.risk_factor_metadata[0].rfet_evidence_state is (
+        RiskFactorEvidenceState.NO_DATA
+    )
+
+    duplicate_record = RiskFactorMetadataRecord(
+        run_id=run.run_id,
+        snapshot_id=snapshot.snapshot_id,
+        risk_factor_id=record.risk_factor_id,
+        display_name="Duplicate USD OIS 5Y",
+        risk_class="GIRR",
+        risk_factor_type="curve",
+        mapping_version=snapshot.mapping_version,
+    )
+    with pytest.raises(ResultStoreContractError, match="duplicate risk-factor metadata records"):
+        ResultBundle(
+            run=run,
+            nodes=(root,),
+            risk_factor_snapshots=(snapshot,),
+            risk_factor_metadata=(record, duplicate_record),
+        )
+
+    orphan_mapping = RiskFactorSourceMapping(
+        run_id=run.run_id,
+        snapshot_id=snapshot.snapshot_id,
+        risk_factor_id="rf-girr-usd-orphan",
+        source_system="fixture-risk-engine",
+        source_row_id="row-orphan",
+        mapping_version=snapshot.mapping_version,
+    )
+    with pytest.raises(
+        ResultStoreContractError,
+        match="source mapping references unknown risk_factor_id",
+    ):
+        ResultBundle(
+            run=run,
+            nodes=(root,),
+            risk_factor_snapshots=(snapshot,),
+            risk_factor_metadata=(record,),
+            risk_factor_source_mappings=(orphan_mapping,),
+        )
 
 
 def test_attribution_record_reuses_common_capital_contribution_contract() -> None:

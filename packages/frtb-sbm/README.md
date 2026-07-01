@@ -120,6 +120,14 @@ batches by that metadata and concatenates split batches for the same path before
 capital aggregation, preserving cross-row correlations without falling back to
 input-row dataclasses.
 
+SBM accepts risk-factor metadata that has already been classified by upstream
+owners. `SbmSensitivity` and `SbmSensitivityBatch` can carry supplied
+`risk_factor_id`, `risk_factor_mapping_version`, `bucket_label`, and source
+lineage fields through material weighted-sensitivity and audit records. The
+package does not own a canonical risk-factor mapping table, infer missing
+metadata, or query `frtb-result-store`; missing optional metadata remains
+absent while capital amounts and scenario selection are unchanged.
+
 For FX curvature rows that use the optional MAR21.98 non-reporting-currency
 pair scalar, set `FX_CURVATURE_SCALAR_1_5_FLAG` in `mapping_citation_ids` and
 provide the two-currency pair in `qualifier`, for example `EUR/GBP`.

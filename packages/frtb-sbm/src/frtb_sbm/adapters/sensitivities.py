@@ -7,7 +7,12 @@ from dataclasses import replace
 from types import MappingProxyType
 from typing import TYPE_CHECKING, Any, cast
 
-from frtb_common import CalculationScope
+from frtb_common import (
+    CalculationScope,
+    RiskFactorId,
+    RiskFactorMappingVersion,
+    RiskFactorPrimitiveError,
+)
 
 from frtb_sbm.assembly.hashes import INPUT_HASH_ALGORITHM_JSON_ROW_V1
 from frtb_sbm.data_models import SbmCalculationContext, SbmRiskClass, SbmRiskMeasure
@@ -106,6 +111,9 @@ def build_sbm_batch_from_columns(
     maturities: Iterable[object] | None = None,
     up_shock_amounts: Iterable[object] | None = None,
     down_shock_amounts: Iterable[object] | None = None,
+    risk_factor_ids: Iterable[object] | None = None,
+    risk_factor_mapping_versions: Iterable[object] | None = None,
+    bucket_labels: Iterable[object] | None = None,
     source_column_maps: tuple[tuple[tuple[str, str], ...], ...] | None = None,
     mapping_citation_ids: tuple[tuple[str, ...], ...] | None = None,
     org_scopes: Iterable[object] | None = None,
@@ -121,8 +129,9 @@ def build_sbm_batch_from_columns(
     legal_entities, risk_classes, risk_measures, buckets, risk_factors, amounts,
     amount_currencies, sign_conventions, tenors, lineage_source_systems, lineage_source_files,
     source_hash, handoff_hash, diagnostics, position_ids, qualifiers, option_tenors,
-    liquidity_horizon_days, maturities, up_shock_amounts, down_shock_amounts, source_column_maps,
-    mapping_citation_ids, copy_arrays
+    liquidity_horizon_days, maturities, up_shock_amounts, down_shock_amounts, risk_factor_ids,
+    risk_factor_mapping_versions, bucket_labels, source_column_maps, mapping_citation_ids,
+    copy_arrays
         See function signature for types and defaults.
 
     Returns
@@ -235,6 +244,9 @@ def _optional_arrays_from_columns(
         ("maturities", "maturity"),
         ("up_shock_amounts", "up_shock_amount"),
         ("down_shock_amounts", "down_shock_amount"),
+        ("risk_factor_ids", "risk_factor_id"),
+        ("risk_factor_mapping_versions", "risk_factor_mapping_version"),
+        ("bucket_labels", "bucket_label"),
     )
     return {
         name: optional_array(
@@ -257,6 +269,7 @@ def _validate_batch_arrays(
 ) -> None:
     validate_source_column_maps(source_column_maps, row_count)
     validate_mapping_citations(mapping_citation_ids, row_count)
+    _validate_risk_factor_metadata_arrays(optional, arrays["sensitivity_ids"])
     validate_homogeneous_batch_arrays(
         arrays,
         amount_array,
@@ -309,6 +322,9 @@ def _batch_with_hash(
         maturities=optional["maturities"],
         up_shock_amounts=optional["up_shock_amounts"],
         down_shock_amounts=optional["down_shock_amounts"],
+        risk_factor_ids=optional["risk_factor_ids"],
+        risk_factor_mapping_versions=optional["risk_factor_mapping_versions"],
+        bucket_labels=optional["bucket_labels"],
         source_column_maps=source_column_maps,
         mapping_citation_ids=mapping_citation_ids,
         org_scopes=org_scopes,
@@ -347,6 +363,74 @@ def _scope_metadata_from_columns(
     if not any(scope is not None for scope in validated):
         return None
     return validated
+
+
+def _validate_risk_factor_metadata_arrays(
+    optional: Mapping[str, ObjectArray | None],
+    sensitivity_ids: ObjectArray,
+) -> None:
+    _validate_risk_factor_id_array(optional["risk_factor_ids"], sensitivity_ids)
+    _validate_mapping_version_array(
+        optional["risk_factor_mapping_versions"],
+        sensitivity_ids,
+    )
+    _validate_optional_text_array(optional["bucket_labels"], "bucket_label", sensitivity_ids)
+
+
+def _validate_risk_factor_id_array(
+    values: ObjectArray | None,
+    sensitivity_ids: ObjectArray,
+) -> None:
+    if values is None:
+        return
+    for row_index, value in enumerate(values):
+        if value is None:
+            continue
+        try:
+            RiskFactorId(cast(str, value))
+        except (AttributeError, RiskFactorPrimitiveError, TypeError) as exc:
+            raise SbmInputError(
+                "invalid risk_factor_id",
+                field="risk_factor_id",
+                sensitivity_id=cast(str, sensitivity_ids[row_index]),
+            ) from exc
+
+
+def _validate_mapping_version_array(
+    values: ObjectArray | None,
+    sensitivity_ids: ObjectArray,
+) -> None:
+    if values is None:
+        return
+    for row_index, value in enumerate(values):
+        if value is None:
+            continue
+        try:
+            RiskFactorMappingVersion(cast(str, value))
+        except (AttributeError, RiskFactorPrimitiveError, TypeError) as exc:
+            raise SbmInputError(
+                "invalid risk_factor_mapping_version",
+                field="risk_factor_mapping_version",
+                sensitivity_id=cast(str, sensitivity_ids[row_index]),
+            ) from exc
+
+
+def _validate_optional_text_array(
+    values: ObjectArray | None,
+    field: str,
+    sensitivity_ids: ObjectArray,
+) -> None:
+    if values is None:
+        return
+    for row_index, value in enumerate(values):
+        if value is None:
+            continue
+        if not isinstance(value, str) or not value.strip():
+            raise SbmInputError(
+                f"{field} must be a non-empty string",
+                field=field,
+                sensitivity_id=cast(str, sensitivity_ids[row_index]),
+            )
 
 
 __all__ = [

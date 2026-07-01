@@ -41,7 +41,9 @@
                 "eu_crr3_42",
                 "eu_crr3_44"
               ],
-              "qualifier": "1y"
+              "qualifier": "1y",
+              "source_system": "synthetic-sbm-fixture",
+              "source_row_id": "row-001"
             },
             {
               "sensitivity_id": "girr-delta-eu-crr3-v1-002",
@@ -55,7 +57,9 @@
                 "eu_crr3_42",
                 "eu_crr3_44"
               ],
-              "qualifier": "5y"
+              "qualifier": "5y",
+              "source_system": "synthetic-sbm-fixture",
+              "source_row_id": "row-002"
             }
           ],
           "floor_applied": false,
@@ -84,7 +88,9 @@
                 "eu_crr3_42",
                 "eu_crr3_44"
               ],
-              "qualifier": "5y"
+              "qualifier": "5y",
+              "source_system": "synthetic-sbm-fixture",
+              "source_row_id": "row-003"
             }
           ],
           "floor_applied": false,

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
+from dataclasses import replace
 from datetime import UTC, date, datetime
 from pathlib import Path
 
@@ -26,6 +27,11 @@ from frtb_result_store import (
     ResultEvent,
     ResultEventSeverity,
     ResultEventType,
+    RiskFactorEvidenceState,
+    RiskFactorMetadataRecord,
+    RiskFactorMetadataSnapshot,
+    RiskFactorRecordStatus,
+    RiskFactorSourceMapping,
     artifact_schema_for,
     canonical_run_group_identity_payload,
     create_result_store_app,
@@ -185,6 +191,150 @@ def test_top_contributors_api_validates_limit(tmp_path: Path) -> None:
         client.get(f"/runs/{run.run_id}/top-contributors", params={"limit": 1001}).status_code
         == 422
     )
+
+
+def test_risk_factor_api_serves_metadata_lineage_and_drilldown_states(tmp_path: Path) -> None:
+    run = _run("US_NPR_2_0", None, None)
+    snapshot, records, mappings = _risk_factor_metadata_fixture(run)
+    attributions = (
+        CapitalAttributionRecord.from_contribution(
+            run_id=run.run_id,
+            node_id="ima",
+            contribution=CapitalContribution(
+                contribution_id="rf-1-capital",
+                source_id="rf-1",
+                source_level="RISK_FACTOR",
+                bucket_key="GIRR:USD",
+                category="IMA_RISK_FACTOR",
+                base_amount=4.0,
+                marginal_multiplier=0.25,
+                contribution=1.0,
+                method=AttributionMethod.ANALYTICAL_EULER,
+            ),
+        ),
+    )
+    store = DuckDbParquetResultStore(tmp_path / "result-store")
+    store.write_bundle(
+        _bundle(
+            run,
+            attributions=attributions,
+            risk_factor_snapshots=(snapshot,),
+            risk_factor_metadata=records,
+            risk_factor_source_mappings=mappings,
+        )
+    )
+    client = TestClient(create_result_store_app(store))
+
+    listing = client.get(
+        f"/runs/{run.run_id}/risk-factors",
+        params={"search": "usd", "risk_class": "girr", "limit": 1},
+    ).json()
+    assert listing["state"] == "available"
+    assert listing["total_count"] == 2
+    assert listing["next_offset"] == 1
+    assert listing["items"][0]["risk_factor_id"] == "rf-1"
+
+    detail = client.get(f"/runs/{run.run_id}/risk-factors/rf-1").json()
+    assert detail["state"] == "available"
+    assert detail["metadata"]["mapping_version"] == "synthetic-taxonomy-v1"
+    assert detail["lineage_count"] == 2
+
+    lineage = client.get(f"/runs/{run.run_id}/risk-factors/rf-1/lineage").json()
+    assert [row["source_row_id"] for row in lineage["lineage"]] == ["row-1", "row-1-rfet"]
+
+    source_page = client.get(
+        f"/runs/{run.run_id}/risk-factors/rf-1/source-rows",
+        params={"limit": 1, "offset": 1},
+    ).json()
+    assert source_page["rows"][0]["source_system"] == "rfet-vendor"
+    assert source_page["next_offset"] is None
+
+    capital = client.get(
+        f"/runs/{run.run_id}/risk-factors/rf-1/capital",
+        params={"framework": "IMA"},
+    ).json()
+    assert capital["state"] == "available"
+    assert capital["contribution"] == 1.0
+    assert capital["attribution_count"] == 1
+
+    missing_capital = client.get(f"/runs/{run.run_id}/risk-factors/rf-2/capital").json()
+    assert missing_capital["state"] == "no_data"
+    assert missing_capital["contribution"] is None
+    invalid_framework = client.get(
+        f"/runs/{run.run_id}/risk-factors/rf-1/capital",
+        params={"framework": "NOT_A_COMPONENT"},
+    )
+    assert invalid_framework.status_code == 422
+
+    bad_limit = client.get(
+        f"/runs/{run.run_id}/risk-factors/rf-1/source-rows",
+        params={"limit": 0},
+    )
+    assert bad_limit.status_code == 422
+
+
+def test_risk_factor_api_defaults_to_latest_snapshot_and_preserves_metadata(
+    tmp_path: Path,
+) -> None:
+    run = _run("US_NPR_2_0", None, None)
+    snapshot, records, mappings = _risk_factor_metadata_fixture(run)
+    latest_records = (
+        replace(
+            records[0],
+            metadata={"vendor_payload": {"value": "preserve-as-metadata"}},
+        ),
+        records[1],
+    )
+    older_snapshot = replace(
+        snapshot,
+        snapshot_id="risk-factor-snapshot-previous",
+        mapping_version="synthetic-taxonomy-v0",
+        effective_date=date(2026, 6, 2),
+    )
+    older_records = (
+        replace(
+            records[0],
+            snapshot_id=older_snapshot.snapshot_id,
+            mapping_version=older_snapshot.mapping_version,
+            display_name="Previous USD OIS 5Y",
+            source_row_id="previous-row-1",
+        ),
+    )
+    older_mappings = (
+        replace(
+            mappings[0],
+            snapshot_id=older_snapshot.snapshot_id,
+            mapping_version=older_snapshot.mapping_version,
+            source_row_id="previous-row-1",
+        ),
+    )
+    store = DuckDbParquetResultStore(tmp_path / "result-store")
+    store.write_bundle(
+        _bundle(
+            run,
+            risk_factor_snapshots=(older_snapshot, snapshot),
+            risk_factor_metadata=(*older_records, *latest_records),
+            risk_factor_source_mappings=(*older_mappings, *mappings),
+        )
+    )
+    client = TestClient(create_result_store_app(store))
+
+    listing = client.get(
+        f"/runs/{run.run_id}/risk-factors",
+        params={"search": "usd", "risk_class": "girr", "limit": 10},
+    ).json()
+    assert listing["total_count"] == 2
+    assert {item["mapping_version"] for item in listing["items"]} == {"synthetic-taxonomy-v1"}
+
+    detail = client.get(f"/runs/{run.run_id}/risk-factors/rf-1").json()
+    assert detail["metadata"]["display_name"] == "USD OIS 5Y"
+    assert detail["metadata"]["metadata"]["vendor_payload"] == {"value": "preserve-as-metadata"}
+
+    lineage = client.get(f"/runs/{run.run_id}/risk-factors/rf-1/lineage").json()
+    assert [row["source_row_id"] for row in lineage["lineage"]] == ["row-1", "row-1-rfet"]
+
+    source_rows = client.get(f"/runs/{run.run_id}/risk-factors/rf-1/source-rows").json()
+    assert [row["source_row_id"] for row in source_rows["rows"]] == ["row-1", "row-1-rfet"]
 
 
 def test_attribution_explain_projection_api_serves_residual_and_unsupported(
@@ -423,6 +573,9 @@ def _bundle(
     baseline_run_id: str | None = None,
     artifacts: tuple[ArtifactRef, ...] | None = None,
     attributions: tuple[CapitalAttributionRecord, ...] | None = None,
+    risk_factor_snapshots: tuple[RiskFactorMetadataSnapshot, ...] = (),
+    risk_factor_metadata: tuple[RiskFactorMetadataRecord, ...] = (),
+    risk_factor_source_mappings: tuple[RiskFactorSourceMapping, ...] = (),
 ) -> ResultBundle:
     return ResultBundle(
         run=run,
@@ -432,8 +585,113 @@ def _bundle(
         artifacts=_artifacts(run) if artifacts is None else artifacts,
         lineage=_lineage(run),
         attributions=_attributions(run) if attributions is None else attributions,
+        risk_factor_snapshots=risk_factor_snapshots,
+        risk_factor_metadata=risk_factor_metadata,
+        risk_factor_source_mappings=risk_factor_source_mappings,
         movement_results=_movement_results(run, baseline_run_id),
         events=_events(run),
+    )
+
+
+def _risk_factor_metadata_fixture(
+    run: CalculationRun,
+) -> tuple[
+    RiskFactorMetadataSnapshot,
+    tuple[RiskFactorMetadataRecord, ...],
+    tuple[RiskFactorSourceMapping, ...],
+]:
+    snapshot = _risk_factor_snapshot(run)
+    return snapshot, _risk_factor_records(run, snapshot), _risk_factor_mappings(run, snapshot)
+
+
+def _risk_factor_snapshot(run: CalculationRun) -> RiskFactorMetadataSnapshot:
+    return RiskFactorMetadataSnapshot(
+        run_id=run.run_id,
+        snapshot_id="risk-factor-snapshot",
+        mapping_version="synthetic-taxonomy-v1",
+        effective_date=run.as_of_date,
+        source_system="fixture-risk-engine",
+        created_at=run.created_at,
+    )
+
+
+def _risk_factor_records(
+    run: CalculationRun,
+    snapshot: RiskFactorMetadataSnapshot,
+) -> tuple[RiskFactorMetadataRecord, ...]:
+    common = {
+        "run_id": run.run_id,
+        "snapshot_id": snapshot.snapshot_id,
+        "risk_class": "GIRR",
+        "risk_factor_type": "curve",
+        "mapping_version": snapshot.mapping_version,
+        "bucket_id": "USD",
+        "bucket_label": "US dollar",
+        "sensitivity_type": "delta",
+        "currency": "USD",
+        "curve_id": "USD-OIS",
+        "source_system": "fixture-risk-engine",
+    }
+    return (
+        RiskFactorMetadataRecord(
+            **common,
+            risk_factor_id="rf-1",
+            display_name="USD OIS 5Y",
+            tenor="5Y",
+            status=RiskFactorRecordStatus.ACTIVE,
+            rfet_evidence_state=RiskFactorEvidenceState.AVAILABLE,
+            rfet_evidence_id="rfet-rf-1",
+            modellability_state=RiskFactorEvidenceState.AVAILABLE,
+            liquidity_horizon_days=20,
+            nmrf_state=RiskFactorEvidenceState.NO_DATA,
+            source_row_id="row-1",
+        ),
+        RiskFactorMetadataRecord(
+            **common,
+            risk_factor_id="rf-2",
+            display_name="USD OIS 10Y",
+            tenor="10Y",
+            status=RiskFactorRecordStatus.NO_DATA,
+            rfet_evidence_state=RiskFactorEvidenceState.NO_DATA,
+            modellability_state=RiskFactorEvidenceState.NO_DATA,
+            nmrf_state=RiskFactorEvidenceState.NO_DATA,
+            source_row_id="row-2",
+        ),
+    )
+
+
+def _risk_factor_mappings(
+    run: CalculationRun,
+    snapshot: RiskFactorMetadataSnapshot,
+) -> tuple[RiskFactorSourceMapping, ...]:
+    mapping_args = {
+        "run_id": run.run_id,
+        "snapshot_id": snapshot.snapshot_id,
+        "mapping_version": snapshot.mapping_version,
+    }
+    return (
+        RiskFactorSourceMapping(
+            **mapping_args,
+            risk_factor_id="rf-1",
+            source_system="fixture-risk-engine",
+            source_row_id="row-1",
+            source_hash="source-hash-1",
+        ),
+        RiskFactorSourceMapping(
+            **mapping_args,
+            risk_factor_id="rf-1",
+            source_system="rfet-vendor",
+            source_row_id="row-1-rfet",
+            relationship="rfet-evidence",
+            source_hash="source-hash-rfet-1",
+        ),
+        RiskFactorSourceMapping(
+            **mapping_args,
+            risk_factor_id="rf-2",
+            source_system="fixture-risk-engine",
+            source_row_id="row-2",
+            source_hash="source-hash-2",
+        ),
     )
 
 

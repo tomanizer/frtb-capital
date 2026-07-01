@@ -146,6 +146,9 @@ def _tuple_bundle_sequences(bundle: ResultBundle) -> None:
         "lineage",
         "attributions",
         "movement_results",
+        "risk_factor_snapshots",
+        "risk_factor_metadata",
+        "risk_factor_source_mappings",
         "events",
         "telemetry",
     ):
@@ -252,6 +255,71 @@ def _validate_bundle_movements(
         raise ResultStoreContractError(
             f"duplicate movement ids: {', '.join(duplicate_movements)}",
             field="movement_results",
+        )
+
+
+def _validate_bundle_risk_factor_metadata(bundle: ResultBundle) -> None:
+    run_id = bundle.run.run_id
+    snapshot_ids: list[str] = []
+    for snapshot in bundle.risk_factor_snapshots:
+        _require_run_id(snapshot.run_id, run_id, "risk_factor_snapshots")
+        snapshot_ids.append(snapshot.snapshot_id)
+    duplicate_snapshots = _duplicate_values(snapshot_ids)
+    if duplicate_snapshots:
+        raise ResultStoreContractError(
+            f"duplicate risk-factor snapshot ids: {', '.join(duplicate_snapshots)}",
+            field="risk_factor_snapshots",
+        )
+    known_snapshots = set(snapshot_ids)
+    record_keys: list[str] = []
+    known_record_keys: set[tuple[str, str]] = set()
+    for record in bundle.risk_factor_metadata:
+        _require_run_id(record.run_id, run_id, "risk_factor_metadata")
+        if record.snapshot_id not in known_snapshots:
+            raise ResultStoreContractError(
+                f"risk-factor metadata references unknown snapshot: {record.snapshot_id}",
+                field="risk_factor_metadata",
+            )
+        key = (record.snapshot_id, str(record.risk_factor_id))
+        record_keys.append("\x1f".join(key))
+        known_record_keys.add(key)
+    duplicate_records = _duplicate_values(record_keys)
+    if duplicate_records:
+        formatted = ", ".join(value.replace("\x1f", "/") for value in duplicate_records)
+        raise ResultStoreContractError(
+            f"duplicate risk-factor metadata records: {formatted}",
+            field="risk_factor_metadata",
+        )
+    source_keys: list[str] = []
+    for mapping in bundle.risk_factor_source_mappings:
+        _require_run_id(mapping.run_id, run_id, "risk_factor_source_mappings")
+        if mapping.snapshot_id not in known_snapshots:
+            raise ResultStoreContractError(
+                f"risk-factor source mapping references unknown snapshot: {mapping.snapshot_id}",
+                field="risk_factor_source_mappings",
+            )
+        if (mapping.snapshot_id, str(mapping.risk_factor_id)) not in known_record_keys:
+            raise ResultStoreContractError(
+                "risk-factor source mapping references unknown risk_factor_id: "
+                f"{mapping.risk_factor_id}",
+                field="risk_factor_source_mappings",
+            )
+        source_keys.append(
+            "\x1f".join(
+                (
+                    mapping.snapshot_id,
+                    mapping.source_system,
+                    mapping.source_row_id,
+                    mapping.relationship,
+                )
+            )
+        )
+    duplicate_sources = _duplicate_values(source_keys)
+    if duplicate_sources:
+        formatted = ", ".join(value.replace("\x1f", "/") for value in duplicate_sources)
+        raise ResultStoreContractError(
+            f"duplicate risk-factor source mappings: {formatted}",
+            field="risk_factor_source_mappings",
         )
 
 

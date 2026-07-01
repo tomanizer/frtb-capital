@@ -40,7 +40,9 @@
               "citation_ids": [
                 "eu_crr3_87",
                 "eu_crr3_88"
-              ]
+              ],
+              "source_system": "synthetic-sbm-fixture",
+              "source_row_id": "row-001"
             }
           ],
           "floor_applied": false,
@@ -68,7 +70,9 @@
               "citation_ids": [
                 "eu_crr3_87",
                 "eu_crr3_88"
-              ]
+              ],
+              "source_system": "synthetic-sbm-fixture",
+              "source_row_id": "row-002"
             }
           ],
           "floor_applied": false,
@@ -95,7 +99,9 @@
               "scaled_amount": 75000.0,
               "citation_ids": [
                 "eu_crr3_87"
-              ]
+              ],
+              "source_system": "synthetic-sbm-fixture",
+              "source_row_id": "row-003"
             }
           ],
           "floor_applied": false,

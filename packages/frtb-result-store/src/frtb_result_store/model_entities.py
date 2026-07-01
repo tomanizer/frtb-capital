@@ -24,6 +24,13 @@ from frtb_result_store._model_mart_rows import (
     CapitalTreeMartRow,
     ComponentBreakdownRow,
 )
+from frtb_result_store._model_risk_factor_metadata import (
+    RiskFactorEvidenceState,
+    RiskFactorMetadataRecord,
+    RiskFactorMetadataSnapshot,
+    RiskFactorRecordStatus,
+    RiskFactorSourceMapping,
+)
 from frtb_result_store._model_run_records import (
     CalculationRun,
     InputSnapshotManifest,
@@ -52,6 +59,11 @@ __all__ = [
     "MovementSummaryRow",
     "ResultBundle",
     "ResultEvent",
+    "RiskFactorEvidenceState",
+    "RiskFactorMetadataRecord",
+    "RiskFactorMetadataSnapshot",
+    "RiskFactorRecordStatus",
+    "RiskFactorSourceMapping",
     "RunStatusEvent",
     "RunTelemetry",
 ]

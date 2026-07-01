@@ -14,6 +14,11 @@ from frtb_result_store._model_capital_records import (
     MovementResult,
 )
 from frtb_result_store._model_hierarchy import HierarchyDefinition, HierarchyNode
+from frtb_result_store._model_risk_factor_metadata import (
+    RiskFactorMetadataRecord,
+    RiskFactorMetadataSnapshot,
+    RiskFactorSourceMapping,
+)
 from frtb_result_store._model_run_records import (
     CalculationRun,
     InputSnapshotManifest,
@@ -31,6 +36,7 @@ from frtb_result_store.model_validation import (
     _validate_bundle_hierarchy,
     _validate_bundle_measures,
     _validate_bundle_movements,
+    _validate_bundle_risk_factor_metadata,
 )
 
 
@@ -49,6 +55,9 @@ class ResultBundle:
     lineage: tuple[LineageRef, ...] = ()
     attributions: tuple[CapitalAttributionRecord, ...] = ()
     movement_results: tuple[MovementResult, ...] = ()
+    risk_factor_snapshots: tuple[RiskFactorMetadataSnapshot, ...] = ()
+    risk_factor_metadata: tuple[RiskFactorMetadataRecord, ...] = ()
+    risk_factor_source_mappings: tuple[RiskFactorSourceMapping, ...] = ()
     events: tuple[ResultEvent, ...] = ()
     telemetry: tuple[RunTelemetry, ...] = ()
 
@@ -86,6 +95,7 @@ class ResultBundle:
             _require_run_id(lineage.run_id, run_id, "lineage")
         _validate_bundle_attributions(self.attributions, run_id, known_nodes)
         _validate_bundle_movements(self.movement_results, run_id, known_nodes)
+        _validate_bundle_risk_factor_metadata(self)
         for event in self.events:
             _require_run_id(event.run_id, run_id, "events")
         for telemetry in self.telemetry:

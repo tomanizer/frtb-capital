@@ -8,6 +8,11 @@ import frtb_result_store.store_capital_rows as _store_capital_rows
 import frtb_result_store.store_hierarchy_rows as _store_hierarchy_rows
 from frtb_result_store.artifacts import RequiredArtifactExpectation
 from frtb_result_store.model import ArtifactRef, ResultBundle
+from frtb_result_store.risk_factor_metadata_rows import (
+    _risk_factor_metadata_row,
+    _risk_factor_snapshot_row,
+    _risk_factor_source_mapping_row,
+)
 from frtb_result_store.run_metadata_io import (
     input_manifest_row as _input_manifest_row,
 )
@@ -61,6 +66,16 @@ def _rows_for_bundle(
         ],
         "movement_results": [
             _store_capital_rows._movement_row(movement) for movement in bundle.movement_results
+        ],
+        "risk_factor_metadata_snapshots": [
+            _risk_factor_snapshot_row(snapshot) for snapshot in bundle.risk_factor_snapshots
+        ],
+        "risk_factor_metadata": [
+            _risk_factor_metadata_row(record) for record in bundle.risk_factor_metadata
+        ],
+        "risk_factor_source_mappings": [
+            _risk_factor_source_mapping_row(mapping)
+            for mapping in bundle.risk_factor_source_mappings
         ],
         "result_events": [_result_event_row(event) for event in bundle.events],
         "run_telemetry": [_telemetry_row(telemetry) for telemetry in bundle.telemetry],
