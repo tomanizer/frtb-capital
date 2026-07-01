@@ -49,14 +49,21 @@ SUPPORTED_PROFILE_METADATA: dict[SbmRegulatoryProfile, dict[str, object]] = {
         "status": "supported_eu_crr3_sbm_comparison_slice",
         "effective_date": None,
     },
-}
-
-UNSUPPORTED_PROFILE_REASONS: dict[SbmRegulatoryProfile, str] = {
     SbmRegulatoryProfile.PRA_UK_CRR: (
-        "PRA UK CRR SBM profile is unsupported until UK-specific source mapping "
-        "and fixtures are added."
+        {
+            "regulator": "Prudential Regulation Authority",
+            "version": (
+                "PRA PS1/26 Appendix 1 / PRA2026/1 Market Risk: Advanced "
+                "Standardised Approach (CRR) Part"
+            ),
+            "publication_date": date(2026, 1, 20),
+            "status": "supported_pra_uk_crr_girr_delta_comparison_slice",
+            "effective_date": date(2027, 1, 1),
+        }
     ),
 }
+
+UNSUPPORTED_PROFILE_REASONS: dict[SbmRegulatoryProfile, str] = {}
 
 PROFILE_SUPPORTED_MEASURES: dict[
     SbmRegulatoryProfile, dict[SbmRiskClass, frozenset[SbmRiskMeasure]]
@@ -96,6 +103,9 @@ PROFILE_SUPPORTED_MEASURES: dict[
         ),
         SbmRiskClass.EQUITY: frozenset({SbmRiskMeasure.DELTA}),
         SbmRiskClass.COMMODITY: frozenset({SbmRiskMeasure.DELTA}),
+    },
+    SbmRegulatoryProfile.PRA_UK_CRR: {
+        SbmRiskClass.GIRR: frozenset({SbmRiskMeasure.DELTA}),
     },
 }
 

@@ -120,17 +120,20 @@ def test_get_sbm_rule_profile_returns_partial_eu_crr3_profile() -> None:
     assert "eu_crr3_87" in profile.citations
 
 
-@pytest.mark.parametrize(
-    "profile",
-    [
-        SbmRegulatoryProfile.PRA_UK_CRR,
-    ],
-)
-def test_unsupported_profiles_fail_before_calculation(profile: SbmRegulatoryProfile) -> None:
-    with pytest.raises(UnsupportedRegulatoryFeatureError, match="unsupported"):
-        resolve_sbm_profile(profile)
-    with pytest.raises(UnsupportedRegulatoryFeatureError, match="unsupported"):
-        get_sbm_rule_profile(profile)
+def test_get_sbm_rule_profile_returns_partial_pra_uk_crr_profile() -> None:
+    profile = get_sbm_rule_profile(SbmRegulatoryProfile.PRA_UK_CRR)
+
+    assert resolve_sbm_profile(SbmRegulatoryProfile.PRA_UK_CRR) is SbmRegulatoryProfile.PRA_UK_CRR
+    assert profile.profile_id == SbmRegulatoryProfile.PRA_UK_CRR.value
+    assert profile.regulator == "Prudential Regulation Authority"
+    assert profile.publication_date == date(2026, 1, 20)
+    assert profile.effective_date == date(2027, 1, 1)
+    assert profile.supported_risk_classes == frozenset({SbmRiskClass.GIRR})
+    assert profile.supported_measures == {
+        SbmRiskClass.GIRR: frozenset({SbmRiskMeasure.DELTA}),
+    }
+    assert "pra_uk_crr_325ae_girr_delta_weights" in profile.citations
+    assert "basel_mar21_42" not in profile.citations
 
 
 def test_unknown_profile_fails_as_input_error() -> None:

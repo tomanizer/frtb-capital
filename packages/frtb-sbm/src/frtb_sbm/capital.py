@@ -112,6 +112,7 @@ _PROFILE_PORTFOLIO_SCENARIO_CITATIONS = {
     SbmRegulatoryProfile.EU_CRR3.value: (
         translate_basel_citation_ids_to_eu(("basel_mar21_7_scenario_selection",))[0],
     ),
+    SbmRegulatoryProfile.PRA_UK_CRR.value: ("pra_uk_crr_325h_correlation_scenarios",),
 }
 _SBM_CAPITAL_PATH_ORDER = SBM_BATCH_PATH_ORDER
 

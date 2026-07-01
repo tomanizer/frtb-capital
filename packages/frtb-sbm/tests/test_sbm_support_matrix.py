@@ -23,6 +23,7 @@ NON_BASEL_PROFILES = (
 )
 
 US_NPR_EXPECTED_PATHS = frozenset({(SbmRiskClass.GIRR, SbmRiskMeasure.DELTA)})
+PRA_UK_CRR_EXPECTED_PATHS = frozenset({(SbmRiskClass.GIRR, SbmRiskMeasure.DELTA)})
 EU_CRR3_EXPECTED_PATHS = frozenset(
     {
         (SbmRiskClass.GIRR, SbmRiskMeasure.DELTA),
@@ -38,7 +39,7 @@ EU_CRR3_EXPECTED_PATHS = frozenset(
 COMPARISON_PROFILE_EXPECTED_PATHS = {
     SbmRegulatoryProfile.US_NPR_2_0: US_NPR_EXPECTED_PATHS,
     SbmRegulatoryProfile.EU_CRR3: EU_CRR3_EXPECTED_PATHS,
-    SbmRegulatoryProfile.PRA_UK_CRR: frozenset(),
+    SbmRegulatoryProfile.PRA_UK_CRR: PRA_UK_CRR_EXPECTED_PATHS,
 }
 
 RISK_CLASS_LABELS = {
@@ -109,23 +110,6 @@ def test_comparison_profile_support_matrix_classifies_every_cell(
                     risk_class,
                     risk_measure,
                 )
-
-
-@pytest.mark.parametrize(
-    "profile",
-    (SbmRegulatoryProfile.PRA_UK_CRR,),
-)
-def test_non_basel_profiles_without_implemented_cells_fail_closed(
-    profile: SbmRegulatoryProfile,
-) -> None:
-    assert phase1_capital_supported_paths(profile.value) == frozenset()
-
-    with pytest.raises(UnsupportedRegulatoryFeatureError, match="unsupported"):
-        ensure_sbm_risk_class_measure_supported(
-            profile.value,
-            SbmRiskClass.GIRR,
-            SbmRiskMeasure.DELTA,
-        )
 
 
 def test_traceability_support_matrix_lists_every_basel_path() -> None:

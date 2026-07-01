@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from dataclasses import FrozenInstanceError
+from dataclasses import FrozenInstanceError, replace
 from datetime import date
 
 import pytest
@@ -149,19 +149,22 @@ def test_calculate_sbm_capital_validates_context_shape() -> None:
         calculate_sbm_capital((sensitivity,), context=object())  # type: ignore[arg-type]
 
 
-def test_calculate_sbm_capital_fails_closed_for_unsupported_profiles() -> None:
+def test_calculate_sbm_capital_fails_closed_for_unsupported_profile_cells() -> None:
+    unsupported = replace(
+        sample_sensitivity(
+            sensitivity_id="eur-1y-vega",
+            source_row_id="row-001",
+            bucket="1",
+            risk_factor="EUR",
+            tenor="1y",
+            amount=1_000_000.0,
+        ),
+        risk_measure=SbmRiskMeasure.VEGA,
+        option_tenor="1y",
+    )
     with pytest.raises(UnsupportedRegulatoryFeatureError, match="unsupported"):
         calculate_sbm_capital(
-            (
-                sample_sensitivity(
-                    sensitivity_id="eur-1y",
-                    source_row_id="row-001",
-                    bucket="1",
-                    risk_factor="EUR",
-                    tenor="1y",
-                    amount=1_000_000.0,
-                ),
-            ),
+            (unsupported,),
             context=sample_context(SbmRegulatoryProfile.PRA_UK_CRR),
         )
 

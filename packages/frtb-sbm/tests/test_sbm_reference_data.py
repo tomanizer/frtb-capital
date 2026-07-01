@@ -3,7 +3,6 @@ from __future__ import annotations
 import math
 
 import pytest
-from frtb_common import UnsupportedRegulatoryFeatureError
 from frtb_sbm import (
     SbmInputError,
     SbmRegulatoryProfile,
@@ -587,12 +586,8 @@ def test_curvature_reference_weights_include_paragraph_citations() -> None:
     assert "basel_mar21_98" in equity_citations
 
 
-@pytest.mark.parametrize(
-    "profile",
-    [
-        SbmRegulatoryProfile.PRA_UK_CRR,
-    ],
-)
-def test_unsupported_profiles_fail_reference_data_lookup(profile: SbmRegulatoryProfile) -> None:
-    with pytest.raises(UnsupportedRegulatoryFeatureError, match="unsupported"):
-        citations_for_profile(profile)
+def test_pra_uk_crr_reference_data_uses_profile_owned_citations() -> None:
+    citations = citations_for_profile(SbmRegulatoryProfile.PRA_UK_CRR)
+
+    assert "pra_uk_crr_325ae_girr_delta_weights" in citations
+    assert "basel_mar21_42" not in citations

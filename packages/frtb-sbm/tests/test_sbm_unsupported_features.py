@@ -93,8 +93,9 @@ def test_portfolio_scenario_citations_do_not_fall_back_to_basel() -> None:
     assert _portfolio_scenario_citations(SbmRegulatoryProfile.EU_CRR3.value) == (
         "eu_crr3_7_scenario_selection",
     )
-    with pytest.raises(UnsupportedRegulatoryFeatureError, match="profile=PRA_UK_CRR"):
-        _portfolio_scenario_citations(SbmRegulatoryProfile.PRA_UK_CRR.value)
+    assert _portfolio_scenario_citations(SbmRegulatoryProfile.PRA_UK_CRR.value) == (
+        "pra_uk_crr_325h_correlation_scenarios",
+    )
 
 
 def test_basel_fx_curvature_measure_is_supported() -> None:

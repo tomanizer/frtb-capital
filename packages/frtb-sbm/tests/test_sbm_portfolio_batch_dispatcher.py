@@ -222,16 +222,16 @@ def test_batch_dispatcher_reports_batch_field_for_invalid_batch_inputs() -> None
     assert wrong_member_exc.value.field == "batches"
 
 
-def test_batch_dispatcher_fails_closed_for_unsupported_profile() -> None:
+def test_batch_dispatcher_fails_closed_for_unsupported_profile_cell() -> None:
     handoff = normalize_sbm_path(
         SbmRiskClass.GIRR,
-        SbmRiskMeasure.DELTA,
+        SbmRiskMeasure.VEGA,
         arrow_table(
             (
                 sample_sensitivity(
                     1,
                     risk_class=SbmRiskClass.GIRR,
-                    risk_measure=SbmRiskMeasure.DELTA,
+                    risk_measure=SbmRiskMeasure.VEGA,
                 ),
             )
         ),

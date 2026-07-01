@@ -47,6 +47,10 @@ _PROFILE_GIRR_DELTA_INTRA_CITATIONS = {
     SbmRegulatoryProfile.EU_CRR3.value: translate_basel_citation_ids_to_eu(
         _GIRR_DELTA_INTRA_CITATIONS
     ),
+    SbmRegulatoryProfile.PRA_UK_CRR.value: (
+        "pra_uk_crr_325c_asa_scope",
+        "pra_uk_crr_325af_girr_intra",
+    ),
 }
 _PROFILE_GIRR_DELTA_INTER_CITATIONS = {
     SbmRegulatoryProfile.BASEL_MAR21.value: _GIRR_DELTA_INTER_CITATIONS,
@@ -56,6 +60,10 @@ _PROFILE_GIRR_DELTA_INTER_CITATIONS = {
     ),
     SbmRegulatoryProfile.EU_CRR3.value: translate_basel_citation_ids_to_eu(
         _GIRR_DELTA_INTER_CITATIONS
+    ),
+    SbmRegulatoryProfile.PRA_UK_CRR.value: (
+        "pra_uk_crr_325c_asa_scope",
+        "pra_uk_crr_325ag_girr_inter",
     ),
 }
 _PROFILE_GIRR_DELTA_SCENARIO_CITATIONS = {
@@ -70,6 +78,7 @@ _PROFILE_GIRR_DELTA_SCENARIO_CITATIONS = {
             "basel_mar21_7_scenario_selection",
         )
     ),
+    SbmRegulatoryProfile.PRA_UK_CRR.value: ("pra_uk_crr_325h_correlation_scenarios",),
 }
 
 
