@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from datetime import date
 
-import pytest
 import frtb_orchestration.artifact_evidence as artifact_evidence
+import pytest
 from frtb_common import StandardisedComponent
 from frtb_orchestration import (
     ArtifactEvidenceKind,
