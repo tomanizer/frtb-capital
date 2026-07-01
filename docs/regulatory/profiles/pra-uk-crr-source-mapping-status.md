@@ -59,7 +59,7 @@ component.
 
 | Location | Classification | Notes |
 | --- | --- | --- |
-| `packages/frtb-sbm/docs/regulatory_sources.yml` `uk_pra_ps1_26_sbm_asa` | `mapped_and_cited` planning source | PS1/26 Appendix 1 / PRA2026/1 Articles 325c-325ay mapped to SBM planning topics. |
+| `packages/frtb-sbm/docs/regulatory_sources.yml` `uk_pra_ps1_26_sbm_asa` | `comparison_only` planning source | PS1/26 Appendix 1 / PRA2026/1 Articles 325c-325ay mapped to SBM planning topics; runtime remains fail-closed until profile-owned reference data and fixtures land. |
 | `packages/frtb-sbm/docs/REGULATORY_TRACEABILITY.md` PRA rows | `unsupported_fail_closed` | All 21 PRA SBM profile/risk-class/measure cells remain runtime fail-closed. |
 | `src/frtb_sbm/regimes.py` `PRA_UK_CRR` unsupported reason | `unsupported_fail_closed` | Profile resolution and capital routing remain closed until exact-cell citation ids, reference data, and fixtures land. |
 
