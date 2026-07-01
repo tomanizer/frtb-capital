@@ -52,6 +52,16 @@ BASEL_FX_BUCKETS: tuple[SbmFxBucketDefinition, ...] = tuple(
     for currency in sorted(BASEL_FX_SPECIFIED_CURRENCIES)
 )
 
+US_NPR_FX_SPECIFIED_CURRENCIES = BASEL_FX_SPECIFIED_CURRENCIES
+US_NPR_FX_BUCKETS: tuple[SbmFxBucketDefinition, ...] = tuple(
+    SbmFxBucketDefinition(
+        currency,
+        currency,
+        "us_npr_91_fr_14952_va7a_fx_reporting_currency",
+    )
+    for currency in sorted(US_NPR_FX_SPECIFIED_CURRENCIES)
+)
+
 EU_CRR3_FX_BUCKETS: tuple[SbmFxBucketDefinition, ...] = tuple(
     replace(bucket, citation_id=eu_crr3_citation_id_for_basel(bucket.citation_id))
     for bucket in BASEL_FX_BUCKETS
@@ -59,33 +69,44 @@ EU_CRR3_FX_BUCKETS: tuple[SbmFxBucketDefinition, ...] = tuple(
 
 PROFILE_FX_BUCKETS: dict[SbmRegulatoryProfile, tuple[SbmFxBucketDefinition, ...]] = {
     SbmRegulatoryProfile.BASEL_MAR21: BASEL_FX_BUCKETS,
+    SbmRegulatoryProfile.US_NPR_2_0: US_NPR_FX_BUCKETS,
     SbmRegulatoryProfile.EU_CRR3: EU_CRR3_FX_BUCKETS,
 }
 
 PROFILE_FX_SPECIFIED_CURRENCIES: dict[SbmRegulatoryProfile, frozenset[str]] = {
     SbmRegulatoryProfile.BASEL_MAR21: BASEL_FX_SPECIFIED_CURRENCIES,
+    SbmRegulatoryProfile.US_NPR_2_0: US_NPR_FX_SPECIFIED_CURRENCIES,
     SbmRegulatoryProfile.EU_CRR3: BASEL_FX_SPECIFIED_CURRENCIES,
 }
 
 _PROFILE_FX_BUCKET_CITATION_IDS: dict[SbmRegulatoryProfile, str] = {
     SbmRegulatoryProfile.BASEL_MAR21: "basel_mar21_86",
+    SbmRegulatoryProfile.US_NPR_2_0: "us_npr_91_fr_14952_va7a_fx_delta_intra",
     SbmRegulatoryProfile.EU_CRR3: eu_crr3_citation_id_for_basel("basel_mar21_86"),
 }
 
 _PROFILE_FX_WEIGHT_CITATION_IDS: dict[SbmRegulatoryProfile, str] = {
     SbmRegulatoryProfile.BASEL_MAR21: "basel_mar21_87",
+    SbmRegulatoryProfile.US_NPR_2_0: "us_npr_91_fr_14952_va7a_fx_delta_weights",
     SbmRegulatoryProfile.EU_CRR3: eu_crr3_citation_id_for_basel("basel_mar21_87"),
 }
 
 _PROFILE_FX_SQRT2_CITATION_IDS: dict[SbmRegulatoryProfile, str] = {
     SbmRegulatoryProfile.BASEL_MAR21: "basel_mar21_88",
+    SbmRegulatoryProfile.US_NPR_2_0: "us_npr_91_fr_14952_va7a_fx_delta_sqrt2",
     SbmRegulatoryProfile.EU_CRR3: eu_crr3_citation_id_for_basel("basel_mar21_88"),
 }
 
 _PROFILE_FX_INTER_CITATION_IDS: dict[SbmRegulatoryProfile, str] = {
     SbmRegulatoryProfile.BASEL_MAR21: "basel_mar21_89",
+    SbmRegulatoryProfile.US_NPR_2_0: "us_npr_91_fr_14952_va7a_fx_delta_inter",
     SbmRegulatoryProfile.EU_CRR3: eu_crr3_citation_id_for_basel("basel_mar21_89"),
 }
+
+PROFILE_FX_DELTA_RISK_WEIGHT_CITATION_IDS = _PROFILE_FX_WEIGHT_CITATION_IDS
+PROFILE_FX_DELTA_SQRT2_CITATION_IDS = _PROFILE_FX_SQRT2_CITATION_IDS
+PROFILE_FX_DELTA_INTRA_BUCKET_CITATION_IDS = _PROFILE_FX_BUCKET_CITATION_IDS
+PROFILE_FX_DELTA_INTER_BUCKET_CITATION_IDS = _PROFILE_FX_INTER_CITATION_IDS
 
 
 def fx_buckets_for_profile(
@@ -304,7 +325,13 @@ __all__ = [
     "FX_INTER_BUCKET_CORRELATION",
     "FX_INTRA_BUCKET_CORRELATION",
     "PROFILE_FX_BUCKETS",
+    "PROFILE_FX_DELTA_INTER_BUCKET_CITATION_IDS",
+    "PROFILE_FX_DELTA_INTRA_BUCKET_CITATION_IDS",
+    "PROFILE_FX_DELTA_RISK_WEIGHT_CITATION_IDS",
+    "PROFILE_FX_DELTA_SQRT2_CITATION_IDS",
     "PROFILE_FX_SPECIFIED_CURRENCIES",
+    "US_NPR_FX_BUCKETS",
+    "US_NPR_FX_SPECIFIED_CURRENCIES",
     "fx_bucket_definition",
     "fx_buckets_for_profile",
     "fx_delta_intra_bucket_correlation",

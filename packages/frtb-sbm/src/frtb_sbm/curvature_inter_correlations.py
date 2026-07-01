@@ -22,6 +22,10 @@ from frtb_sbm.equity_reference_data import (
     _require_equity_bucket_number,
     equity_inter_bucket_correlation,
 )
+from frtb_sbm.girr_reference_tables import (
+    PROFILE_GIRR_CURVATURE_INTER_BUCKET_CITATION_IDS,
+    PROFILE_GIRR_CURVATURE_INTRA_BUCKET_CITATION_IDS,
+)
 from frtb_sbm.reference_data import fx_inter_bucket_correlation, girr_inter_bucket_correlation
 from frtb_sbm.reference_profiles import _resolve_supported_profile
 
@@ -123,6 +127,19 @@ def _curvature_intra_citation_ids(
             f"PRA_UK_CRR curvature intra-bucket correlation is unsupported for "
             f"risk_class={risk_class.value}"
         )
+    if profile is SbmRegulatoryProfile.US_NPR_2_0:
+        if risk_class is SbmRiskClass.GIRR:
+            return PROFILE_GIRR_CURVATURE_INTRA_BUCKET_CITATION_IDS[profile]
+        if risk_class is SbmRiskClass.FX:
+            return (
+                "us_npr_91_fr_14952_va7a_sbm_scope",
+                "us_npr_91_fr_14952_va7a_fx_curvature_intra",
+                "us_npr_91_fr_14952_va7a_fx_delta_intra",
+            )
+        raise UnsupportedRegulatoryFeatureError(
+            f"US_NPR_2_0 curvature intra-bucket correlation is unsupported for "
+            f"risk_class={risk_class.value}"
+        )
     if profile not in {SbmRegulatoryProfile.BASEL_MAR21, SbmRegulatoryProfile.EU_CRR3}:
         raise UnsupportedRegulatoryFeatureError(
             f"curvature intra-bucket correlation is unsupported for profile {profile.value}"
@@ -157,6 +174,19 @@ def _curvature_inter_citation_ids(
             )
         raise UnsupportedRegulatoryFeatureError(
             f"PRA_UK_CRR curvature inter-bucket correlation is unsupported for "
+            f"risk_class={risk_class.value}"
+        )
+    if profile is SbmRegulatoryProfile.US_NPR_2_0:
+        if risk_class is SbmRiskClass.GIRR:
+            return PROFILE_GIRR_CURVATURE_INTER_BUCKET_CITATION_IDS[profile]
+        if risk_class is SbmRiskClass.FX:
+            return (
+                "us_npr_91_fr_14952_va7a_sbm_scope",
+                "us_npr_91_fr_14952_va7a_fx_curvature_inter",
+                "us_npr_91_fr_14952_va7a_fx_delta_inter",
+            )
+        raise UnsupportedRegulatoryFeatureError(
+            f"US_NPR_2_0 curvature inter-bucket correlation is unsupported for "
             f"risk_class={risk_class.value}"
         )
     if profile not in {SbmRegulatoryProfile.BASEL_MAR21, SbmRegulatoryProfile.EU_CRR3}:

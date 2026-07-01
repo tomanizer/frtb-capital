@@ -39,14 +39,15 @@ from frtb_sbm.data_models import (
     WeightedSensitivity,
 )
 from frtb_sbm.equity_reference_data import EQUITY_OTHER_SECTOR_BUCKET
+from frtb_sbm.reference_data import (
+    vega_inter_bucket_citation_ids,
+    vega_intra_bucket_citation_ids,
+    vega_scenario_citation_ids,
+)
 from frtb_sbm.risk_classes.csr_sec_nonctp import (
     build_csr_sec_nonctp_inter_bucket_correlation_map,
 )
-from frtb_sbm.risk_classes.vega_correlation_common import (
-    _MAR21_VEGA_INTER_CITATION,
-    _MAR21_VEGA_INTRA_CITATION,
-    _uses_absolute_weight_intra_bucket,
-)
+from frtb_sbm.risk_classes.vega_correlation_common import _uses_absolute_weight_intra_bucket
 from frtb_sbm.risk_classes.vega_correlations import (
     build_non_girr_vega_inter_bucket_correlation_map,
     build_non_girr_vega_intra_bucket_correlation_matrix,
@@ -235,8 +236,9 @@ def aggregate_non_girr_vega_measure_capital(
         inter_bucket_correlations,
         risk_class=risk_class,
         risk_measure=SbmRiskMeasure.VEGA,
-        intra_bucket_citation_ids=_intra_bucket_citations(risk_class),
-        inter_bucket_citation_ids=_inter_bucket_citations(risk_class),
+        citation_ids=vega_scenario_citation_ids(profile_id),
+        intra_bucket_citation_ids=_intra_bucket_citations(profile_id, risk_class),
+        inter_bucket_citation_ids=_inter_bucket_citations(profile_id, risk_class),
         pairwise_evidence_mode=pairwise_evidence_mode,
         pairwise_evidence_limit=pairwise_evidence_limit,
     )
@@ -306,8 +308,14 @@ def _aggregate_csr_sec_nonctp_vega_measure_capital(
                 risk_measure=SbmRiskMeasure.VEGA,
                 scenarios=(scenario,),
                 apply_scenario_adjustment=True,
-                intra_bucket_citation_ids=_intra_bucket_citations(SbmRiskClass.CSR_SEC_NONCTP),
-                inter_bucket_citation_ids=_inter_bucket_citations(SbmRiskClass.CSR_SEC_NONCTP),
+                intra_bucket_citation_ids=_intra_bucket_citations(
+                    profile_id,
+                    SbmRiskClass.CSR_SEC_NONCTP,
+                ),
+                inter_bucket_citation_ids=_inter_bucket_citations(
+                    profile_id,
+                    SbmRiskClass.CSR_SEC_NONCTP,
+                ),
                 pairwise_evidence_mode=pairwise_evidence_mode,
                 pairwise_evidence_limit=pairwise_evidence_limit,
             )
@@ -330,7 +338,10 @@ def _aggregate_csr_sec_nonctp_vega_measure_capital(
                     SbmRiskClass.CSR_SEC_NONCTP,
                     other_spec.bucket_id,
                 ),
-                inter_bucket_citation_ids=_inter_bucket_citations(SbmRiskClass.CSR_SEC_NONCTP),
+                inter_bucket_citation_ids=_inter_bucket_citations(
+                    profile_id,
+                    SbmRiskClass.CSR_SEC_NONCTP,
+                ),
                 pairwise_evidence_mode=pairwise_evidence_mode,
                 pairwise_evidence_limit=pairwise_evidence_limit,
             )
@@ -359,7 +370,7 @@ def _aggregate_csr_sec_nonctp_vega_measure_capital(
                     (core_detail.intra_buckets if core_detail else ())
                     + (other_detail.intra_buckets if other_detail else ())
                 ),
-                citation_ids=_MAR21_SCENARIO_CITATION,
+                citation_ids=vega_scenario_citation_ids(profile_id),
             )
         )
 
@@ -367,7 +378,7 @@ def _aggregate_csr_sec_nonctp_vega_measure_capital(
         scenario_totals,
         risk_class=SbmRiskClass.CSR_SEC_NONCTP,
         risk_measure=SbmRiskMeasure.VEGA,
-        citation_ids=("basel_mar21_7_scenario_selection",),
+        citation_ids=vega_scenario_citation_ids(profile_id),
     )
     return RiskClassCapital(
         risk_class=SbmRiskClass.CSR_SEC_NONCTP,
@@ -375,9 +386,9 @@ def _aggregate_csr_sec_nonctp_vega_measure_capital(
         selected_capital=selection.selected_capital,
         buckets=selected_buckets,
         citation_ids=_merge_citation_ids(
-            _MAR21_SCENARIO_CITATION,
-            _intra_bucket_citations(SbmRiskClass.CSR_SEC_NONCTP),
-            _inter_bucket_citations(SbmRiskClass.CSR_SEC_NONCTP),
+            vega_scenario_citation_ids(profile_id),
+            _intra_bucket_citations(profile_id, SbmRiskClass.CSR_SEC_NONCTP),
+            _inter_bucket_citations(profile_id, SbmRiskClass.CSR_SEC_NONCTP),
         ),
         scenario_totals=selection.scenario_totals,
         selected_scenario=selection.selected_scenario,
@@ -396,34 +407,12 @@ def _absolute_weight_citations(risk_class: SbmRiskClass, bucket_id: str) -> tupl
     return ()
 
 
-def _intra_bucket_citations(risk_class: SbmRiskClass) -> tuple[str, ...]:
-    delta_citation_by_class = {
-        SbmRiskClass.FX: ("basel_mar21_86",),
-        SbmRiskClass.EQUITY: ("basel_mar21_78", "basel_mar21_79"),
-        SbmRiskClass.COMMODITY: ("basel_mar21_83",),
-        SbmRiskClass.CSR_NONSEC: ("basel_mar21_54", "basel_mar21_55", "basel_mar21_56"),
-        SbmRiskClass.CSR_SEC_NONCTP: ("basel_mar21_67", "basel_mar21_68"),
-        SbmRiskClass.CSR_SEC_CTP: ("basel_mar21_58",),
-    }
-    return _merge_citation_ids(
-        _MAR21_VEGA_INTRA_CITATION,
-        delta_citation_by_class.get(risk_class, ()),
-    )
+def _intra_bucket_citations(profile_id: str, risk_class: SbmRiskClass) -> tuple[str, ...]:
+    return vega_intra_bucket_citation_ids(profile_id, risk_class)
 
 
-def _inter_bucket_citations(risk_class: SbmRiskClass) -> tuple[str, ...]:
-    delta_citation_by_class = {
-        SbmRiskClass.FX: ("basel_mar21_89",),
-        SbmRiskClass.EQUITY: ("basel_mar21_80",),
-        SbmRiskClass.COMMODITY: ("basel_mar21_85",),
-        SbmRiskClass.CSR_NONSEC: ("basel_mar21_57",),
-        SbmRiskClass.CSR_SEC_NONCTP: ("basel_mar21_70",),
-        SbmRiskClass.CSR_SEC_CTP: ("basel_mar21_57",),
-    }
-    return _merge_citation_ids(
-        _MAR21_VEGA_INTER_CITATION,
-        delta_citation_by_class.get(risk_class, ()),
-    )
+def _inter_bucket_citations(profile_id: str, risk_class: SbmRiskClass) -> tuple[str, ...]:
+    return vega_inter_bucket_citation_ids(profile_id, risk_class)
 
 
 def _text_by_id(sensitivities: Sequence[SbmSensitivity], field: str) -> dict[str, str]:

@@ -13,6 +13,7 @@ from collections.abc import Sequence
 
 import numpy as np
 import numpy.typing as npt
+from frtb_common import UnsupportedRegulatoryFeatureError
 
 from frtb_sbm.adapters.sensitivities import build_sbm_batch
 from frtb_sbm.aggregation import (
@@ -25,16 +26,52 @@ from frtb_sbm.data_models import (
     DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
     RiskClassCapital,
     SbmPairwiseEvidenceMode,
+    SbmRegulatoryProfile,
     SbmRiskClass,
     SbmRiskMeasure,
     SbmSensitivity,
     WeightedSensitivity,
 )
+from frtb_sbm.reference_citations_eu_crr3 import translate_basel_citation_ids_to_eu
 from frtb_sbm.reference_data import (
     fx_delta_intra_bucket_correlation,
     fx_inter_bucket_correlation,
 )
 from frtb_sbm.risk_classes.fx_weighting import weight_fx_delta_sensitivity_batch
+
+_PROFILE_FX_DELTA_SCENARIO_CITATIONS = {
+    SbmRegulatoryProfile.BASEL_MAR21.value: (
+        "basel_mar21_6_correlation_scenarios",
+        "basel_mar21_7_scenario_selection",
+    ),
+    SbmRegulatoryProfile.US_NPR_2_0.value: ("us_npr_91_fr_14952_va7a_correlation_scenarios",),
+    SbmRegulatoryProfile.EU_CRR3.value: translate_basel_citation_ids_to_eu(
+        (
+            "basel_mar21_6_correlation_scenarios",
+            "basel_mar21_7_scenario_selection",
+        )
+    ),
+}
+_PROFILE_FX_DELTA_INTRA_CITATIONS = {
+    SbmRegulatoryProfile.BASEL_MAR21.value: ("basel_mar21_4_intra_bucket", "basel_mar21_86"),
+    SbmRegulatoryProfile.US_NPR_2_0.value: (
+        "us_npr_91_fr_14952_va7a_sbm_scope",
+        "us_npr_91_fr_14952_va7a_fx_delta_intra",
+    ),
+    SbmRegulatoryProfile.EU_CRR3.value: translate_basel_citation_ids_to_eu(
+        ("basel_mar21_4_intra_bucket", "basel_mar21_86")
+    ),
+}
+_PROFILE_FX_DELTA_INTER_CITATIONS = {
+    SbmRegulatoryProfile.BASEL_MAR21.value: ("basel_mar21_4_inter_bucket", "basel_mar21_89"),
+    SbmRegulatoryProfile.US_NPR_2_0.value: (
+        "us_npr_91_fr_14952_va7a_sbm_scope",
+        "us_npr_91_fr_14952_va7a_fx_delta_inter",
+    ),
+    SbmRegulatoryProfile.EU_CRR3.value: translate_basel_citation_ids_to_eu(
+        ("basel_mar21_4_inter_bucket", "basel_mar21_89")
+    ),
+}
 
 
 def calculate_fx_delta_risk_class_capital(
@@ -143,11 +180,39 @@ def aggregate_fx_delta_measure_capital(
         inter_bucket_correlations,
         risk_class=SbmRiskClass.FX,
         risk_measure=SbmRiskMeasure.DELTA,
-        intra_bucket_citation_ids=("basel_mar21_4_intra_bucket", "basel_mar21_86"),
-        inter_bucket_citation_ids=("basel_mar21_4_inter_bucket", "basel_mar21_89"),
+        citation_ids=_fx_delta_scenario_citations(profile_id),
+        intra_bucket_citation_ids=_fx_delta_intra_citations(profile_id),
+        inter_bucket_citation_ids=_fx_delta_inter_citations(profile_id),
         pairwise_evidence_mode=pairwise_evidence_mode,
         pairwise_evidence_limit=pairwise_evidence_limit,
     )
+
+
+def _fx_delta_scenario_citations(profile_id: str) -> tuple[str, ...]:
+    try:
+        return _PROFILE_FX_DELTA_SCENARIO_CITATIONS[profile_id]
+    except KeyError as exc:
+        raise UnsupportedRegulatoryFeatureError(
+            f"FX delta scenario citations are unsupported for profile={profile_id}"
+        ) from exc
+
+
+def _fx_delta_intra_citations(profile_id: str) -> tuple[str, ...]:
+    try:
+        return _PROFILE_FX_DELTA_INTRA_CITATIONS[profile_id]
+    except KeyError as exc:
+        raise UnsupportedRegulatoryFeatureError(
+            f"FX delta intra-bucket citations are unsupported for profile={profile_id}"
+        ) from exc
+
+
+def _fx_delta_inter_citations(profile_id: str) -> tuple[str, ...]:
+    try:
+        return _PROFILE_FX_DELTA_INTER_CITATIONS[profile_id]
+    except KeyError as exc:
+        raise UnsupportedRegulatoryFeatureError(
+            f"FX delta inter-bucket citations are unsupported for profile={profile_id}"
+        ) from exc
 
 
 def build_fx_delta_intra_bucket_correlation_matrix(

@@ -11,6 +11,11 @@ The committed fixtures currently include:
 - `girr_delta_v1`
 - `girr_delta_us_npr_v1`
 - `girr_vega_v1`
+- `girr_vega_us_npr_v1`
+- `girr_curvature_us_npr_v1`
+- `fx_delta_us_npr_v1`
+- `fx_vega_us_npr_v1`
+- `fx_curvature_us_npr_v1`
 - `non_girr_vega_v1`
 - `fx_delta_v1`
 - `equity_delta_v1`
@@ -78,6 +83,11 @@ generation command for SBM at this time.
 - `profile_id`
 - optional `desk_id`, `legal_entity`, `citation_policy`, and `run_controls`
 
+`base_currency` remains run metadata. FX risk-factor currency basis is selected
+only through `SbmRunControls.fx_risk_factor_basis`; the accepted value today is
+`REPORTING_CURRENCY`. `BASE_CURRENCY_APPROVED` fails closed until U.S. NPR
+supervisory-approval and translation-risk evidence are explicitly modeled.
+
 `SbmSensitivity` is the canonical row shape. Required fields are:
 
 - `sensitivity_id`
@@ -135,9 +145,11 @@ The canonical risk measures are:
 - `CURVATURE`
 
 `BASEL_MAR21` is implemented for supported delta, vega, and curvature paths
-across the seven SBM risk classes. `US_NPR_2_0` is implemented only for the GIRR
-delta comparison fixture. Unsupported profiles or unsupported sub-features must
-fail closed through package errors rather than producing placeholder capital.
+across the seven SBM risk classes. `US_NPR_2_0` is implemented only for GIRR
+delta, GIRR vega, GIRR curvature, reporting-currency FX delta, vega,
+curvature, equity delta, and commodity delta comparison fixtures. Unsupported
+profiles or unsupported sub-features must fail closed through package errors
+before any capital result is emitted.
 
 Path-specific input requirements are enforced by validation and batch builders:
 

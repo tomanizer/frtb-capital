@@ -6,6 +6,7 @@ Importing from ``frtb_sbm.validation`` remains the public compatibility surface.
 
 from frtb_sbm._errors import SbmInputError
 from frtb_sbm.validation.coercion import (
+    coerce_fx_risk_factor_basis,
     coerce_pairwise_evidence_mode,
     coerce_risk_class,
     coerce_risk_measure,
@@ -28,6 +29,7 @@ from frtb_sbm.validation.sensitivity import validate_sbm_sensitivities
 
 __all__ = [
     "SbmInputError",
+    "coerce_fx_risk_factor_basis",
     "coerce_pairwise_evidence_mode",
     "coerce_risk_class",
     "coerce_risk_measure",

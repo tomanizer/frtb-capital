@@ -104,8 +104,8 @@ from frtb_sbm.data_models import (
 from frtb_sbm.equity_reference_data import (
     EQUITY_SPOT_RISK_FACTOR,
 )
+from frtb_sbm.girr_reference_tables import PROFILE_GIRR_CURVATURE_SCENARIO_CITATION_IDS
 from frtb_sbm.org_scope import scope_at, single_scope_metadata, unique_scope_metadata
-from frtb_sbm.reference_citations_eu_crr3 import translate_basel_citation_ids_to_eu
 from frtb_sbm.reference_data import (
     curvature_citation_ids,
     normalise_fx_delta_currency_code,
@@ -125,8 +125,6 @@ _MAR21_CURVATURE_SCENARIO_CITATION = (
     "basel_mar21_6_correlation_scenarios",
     "basel_mar21_7_scenario_selection",
 )
-_PRA_UK_CRR_CURVATURE_FLOOR_CITATION = ("pra_uk_crr_325g_curvature_aggregation",)
-_PRA_UK_CRR_CURVATURE_SCENARIO_CITATION = ("pra_uk_crr_325h_correlation_scenarios",)
 _DEFAULT_SCENARIOS: tuple[SbmScenarioLabel, ...] = (
     SbmScenarioLabel.LOW,
     SbmScenarioLabel.MEDIUM,
@@ -211,32 +209,6 @@ def select_curvature_branches_from_batch(
         up_shocks=up_shocks,
         down_shocks=down_shocks,
         profile_id=profile_id,
-    )
-
-
-def _curvature_floor_citation_ids(profile_id: str) -> tuple[str, ...]:
-    profile = _resolve_supported_profile(profile_id)
-    if profile is SbmRegulatoryProfile.PRA_UK_CRR:
-        return _PRA_UK_CRR_CURVATURE_FLOOR_CITATION
-    if profile is SbmRegulatoryProfile.EU_CRR3:
-        return translate_basel_citation_ids_to_eu(_MAR21_CURVATURE_FLOOR_CITATION)
-    if profile is SbmRegulatoryProfile.BASEL_MAR21:
-        return _MAR21_CURVATURE_FLOOR_CITATION
-    raise UnsupportedRegulatoryFeatureError(
-        f"curvature floor citations are unsupported for profile {profile.value}"
-    )
-
-
-def _curvature_scenario_citation_ids(profile_id: str) -> tuple[str, ...]:
-    profile = _resolve_supported_profile(profile_id)
-    if profile is SbmRegulatoryProfile.PRA_UK_CRR:
-        return _PRA_UK_CRR_CURVATURE_SCENARIO_CITATION
-    if profile is SbmRegulatoryProfile.EU_CRR3:
-        return translate_basel_citation_ids_to_eu(_MAR21_CURVATURE_SCENARIO_CITATION)
-    if profile is SbmRegulatoryProfile.BASEL_MAR21:
-        return _MAR21_CURVATURE_SCENARIO_CITATION
-    raise UnsupportedRegulatoryFeatureError(
-        f"curvature scenario citations are unsupported for profile {profile.value}"
     )
 
 
@@ -715,8 +687,6 @@ def _aggregate_curvature_factors(
     scenario_buckets: dict[SbmScenarioLabel, tuple[_CurvatureBucketScenario, ...]] = {}
     scenario_totals: dict[SbmScenarioLabel, float] = {}
     bucket_branch_records: list[CurvatureBucketBranchRecord] = []
-    scenario_citation_ids = _curvature_scenario_citation_ids(profile_id)
-    floor_citation_ids = _curvature_floor_citation_ids(profile_id)
 
     for scenario in _DEFAULT_SCENARIOS:
         bucket_scenarios = tuple(
@@ -754,7 +724,7 @@ def _aggregate_curvature_factors(
                     for bucket_scenario in bucket_scenarios
                 ),
                 citation_ids=_merge_citation_ids(
-                    scenario_citation_ids,
+                    _curvature_scenario_citation_ids(profile_id, risk_class),
                     _curvature_intra_citation_ids(risk_class, profile_id),
                     _curvature_inter_citation_ids(risk_class, profile_id),
                 ),
@@ -766,7 +736,7 @@ def _aggregate_curvature_factors(
         risk_class=risk_class,
         risk_measure=SbmRiskMeasure.CURVATURE,
         branch_id=f"{risk_class.value.lower()}_curvature_scenario_selection",
-        citation_ids=scenario_citation_ids,
+        citation_ids=_curvature_scenario_citation_ids(profile_id, risk_class),
     )
     selected_bucket_scenarios = scenario_buckets[selection.selected_scenario]
     selected_buckets = tuple(
@@ -774,10 +744,10 @@ def _aggregate_curvature_factors(
         for bucket_scenario in selected_bucket_scenarios
     )
     citations = _merge_citation_ids(
-        scenario_citation_ids,
+        _curvature_scenario_citation_ids(profile_id, risk_class),
         _curvature_intra_citation_ids(risk_class, profile_id),
         _curvature_inter_citation_ids(risk_class, profile_id),
-        floor_citation_ids,
+        _curvature_floor_citation_ids(profile_id, risk_class),
         selection.citation_ids,
     )
     return RiskClassCapital(
@@ -793,6 +763,34 @@ def _aggregate_curvature_factors(
         curvature_branches=curvature_branches,
         curvature_bucket_branches=tuple(bucket_branch_records),
     )
+
+
+def _curvature_scenario_citation_ids(
+    profile_id: str,
+    risk_class: SbmRiskClass,
+) -> tuple[str, ...]:
+    if risk_class is SbmRiskClass.GIRR:
+        return PROFILE_GIRR_CURVATURE_SCENARIO_CITATION_IDS[_resolve_supported_profile(profile_id)]
+    if (
+        _resolve_supported_profile(profile_id) is SbmRegulatoryProfile.US_NPR_2_0
+        and risk_class is SbmRiskClass.FX
+    ):
+        return ("us_npr_91_fr_14952_va7a_fx_curvature_scenarios",)
+    return _MAR21_CURVATURE_SCENARIO_CITATION
+
+
+def _curvature_floor_citation_ids(
+    profile_id: str,
+    risk_class: SbmRiskClass,
+) -> tuple[str, ...]:
+    profile = _resolve_supported_profile(profile_id)
+    if profile is SbmRegulatoryProfile.US_NPR_2_0:
+        return curvature_citation_ids(profile_id, risk_class)
+    if profile in {SbmRegulatoryProfile.EU_CRR3, SbmRegulatoryProfile.PRA_UK_CRR}:
+        return curvature_citation_ids(profile_id, risk_class)[:1]
+    if risk_class is SbmRiskClass.GIRR:
+        return ()
+    return _MAR21_CURVATURE_FLOOR_CITATION
 
 
 __all__ = [

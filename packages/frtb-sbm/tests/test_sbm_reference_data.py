@@ -31,6 +31,7 @@ from frtb_sbm.reference_data import (
     equity_delta_risk_weight,
     equity_inter_bucket_correlation,
     fx_bucket_definition,
+    fx_delta_intra_bucket_correlation,
     fx_delta_risk_weight,
     fx_inter_bucket_correlation,
     girr_bucket_definition,
@@ -67,6 +68,89 @@ def test_reference_data_entries_have_citations() -> None:
         assert bucket.citation_id in citations
     for bucket in commodity_buckets_for_profile(profile):
         assert bucket.citation_id in citations
+
+
+def test_us_npr_fx_policy_citations_are_registered() -> None:
+    citations = citations_for_profile(SbmRegulatoryProfile.US_NPR_2_0)
+
+    assert "us_npr_91_fr_14952_va7a_fx_reporting_currency" in citations
+    assert "us_npr_91_fr_14952_va7a_fx_delta_weights" in citations
+    assert "us_npr_91_fr_14952_va7a_fx_delta_sqrt2" in citations
+    assert "us_npr_91_fr_14952_va7a_fx_delta_intra" in citations
+    assert "us_npr_91_fr_14952_va7a_fx_delta_inter" in citations
+    assert "us_npr_91_fr_14952_va7a_fx_vega_option_tenors" in citations
+    assert "us_npr_91_fr_14952_va7a_fx_vega_lh_rw" in citations
+    assert "us_npr_91_fr_14952_va7a_fx_vega_intra" in citations
+    assert "us_npr_91_fr_14952_va7a_fx_vega_inter" in citations
+    assert "us_npr_91_fr_14952_va7a_fx_curvature_factors" in citations
+    assert "us_npr_91_fr_14952_va7a_fx_curvature_shocks" in citations
+    assert "us_npr_91_fr_14952_va7a_fx_curvature_intra" in citations
+    assert "us_npr_91_fr_14952_va7a_fx_curvature_inter" in citations
+    assert "us_npr_91_fr_14952_va7a_fx_curvature_scenarios" in citations
+    assert "us_npr_91_fr_14952_va7a_fx_base_currency_approval" in citations
+    assert "91 FR 15020" in citations["us_npr_91_fr_14952_va7a_fx_base_currency_approval"].location
+
+
+def test_us_npr_equity_and_commodity_delta_reference_data_uses_profile_owned_citations() -> None:
+    citations = citations_for_profile(SbmRegulatoryProfile.US_NPR_2_0)
+
+    equity_bucket = equity_bucket_definition(SbmRegulatoryProfile.US_NPR_2_0, "5")
+    equity_weight, equity_weight_citations = equity_delta_risk_weight(
+        SbmRegulatoryProfile.US_NPR_2_0,
+        bucket_id="5",
+        risk_factor="SPOT",
+    )
+    equity_intra, equity_intra_citations = equity_delta_intra_bucket_correlation(
+        SbmRegulatoryProfile.US_NPR_2_0,
+        bucket_id="5",
+        risk_factor_a="SPOT",
+        risk_factor_b="SPOT",
+        issuer_a="Issuer A",
+        issuer_b="Issuer B",
+    )
+    equity_inter, equity_inter_citations = equity_inter_bucket_correlation(
+        SbmRegulatoryProfile.US_NPR_2_0,
+        bucket1="5",
+        bucket2="6",
+    )
+    commodity_bucket = commodity_bucket_definition(SbmRegulatoryProfile.US_NPR_2_0, "12")
+    commodity_weight, commodity_weight_citations = commodity_delta_risk_weight(
+        SbmRegulatoryProfile.US_NPR_2_0,
+        bucket_id="12",
+    )
+    commodity_intra, commodity_intra_citations = commodity_delta_intra_bucket_correlation(
+        SbmRegulatoryProfile.US_NPR_2_0,
+        bucket_id="12",
+        commodity_a="INDEX-A",
+        commodity_b="INDEX-B",
+        tenor_a="3m",
+        tenor_b="6m",
+        location_a="Index",
+        location_b="Index",
+    )
+    commodity_inter, commodity_inter_citations = commodity_inter_bucket_correlation(
+        SbmRegulatoryProfile.US_NPR_2_0,
+        bucket1="10",
+        bucket2="12",
+    )
+
+    assert "us_npr_91_fr_14952_va7a_equity_delta_factors" in citations
+    assert "us_npr_91_fr_14952_va7a_commodity_delta_factors" in citations
+    assert equity_bucket.citation_id == "us_npr_91_fr_14952_va7a_equity_delta_buckets"
+    assert equity_weight == pytest.approx(0.30)
+    assert equity_weight_citations == ("us_npr_91_fr_14952_va7a_equity_delta_weights",)
+    assert equity_intra == pytest.approx(0.25)
+    assert equity_intra_citations == ("us_npr_91_fr_14952_va7a_equity_delta_intra",)
+    assert equity_inter == pytest.approx(0.15)
+    assert equity_inter_citations == ("us_npr_91_fr_14952_va7a_equity_delta_inter",)
+    assert commodity_bucket.label == "commodity_index"
+    assert commodity_bucket.citation_id == "us_npr_91_fr_14952_va7a_commodity_delta_buckets"
+    assert commodity_weight == pytest.approx(0.30)
+    assert commodity_weight_citations == ("us_npr_91_fr_14952_va7a_commodity_delta_weights",)
+    assert commodity_intra == pytest.approx(0.50 * 0.99)
+    assert commodity_intra_citations == ("us_npr_91_fr_14952_va7a_commodity_delta_intra",)
+    assert commodity_inter == pytest.approx(0.20)
+    assert commodity_inter_citations == ("us_npr_91_fr_14952_va7a_commodity_delta_inter",)
 
 
 @pytest.mark.parametrize(
@@ -503,6 +587,36 @@ def test_fx_delta_reference_data_matches_basel_mar21() -> None:
     assert inter_citations == ("basel_mar21_89",)
     bucket = fx_bucket_definition(SbmRegulatoryProfile.BASEL_MAR21, "EUR")
     assert bucket.citation_id == "basel_mar21_86"
+
+
+def test_us_npr_fx_delta_reference_data_uses_profile_owned_citations() -> None:
+    reduced, citations = fx_delta_risk_weight(
+        SbmRegulatoryProfile.US_NPR_2_0,
+        currency="EUR",
+        reporting_currency="USD",
+    )
+    intra, intra_citations = fx_delta_intra_bucket_correlation(
+        SbmRegulatoryProfile.US_NPR_2_0,
+        bucket1="EUR",
+        bucket2="EUR",
+    )
+    inter, inter_citations = fx_inter_bucket_correlation(
+        SbmRegulatoryProfile.US_NPR_2_0,
+        bucket1="EUR",
+        bucket2="GBP",
+    )
+    bucket = fx_bucket_definition(SbmRegulatoryProfile.US_NPR_2_0, "EUR")
+
+    assert reduced == pytest.approx(FX_DELTA_RISK_WEIGHT / math.sqrt(2.0))
+    assert citations == (
+        "us_npr_91_fr_14952_va7a_fx_delta_weights",
+        "us_npr_91_fr_14952_va7a_fx_delta_sqrt2",
+    )
+    assert intra == pytest.approx(1.0)
+    assert intra_citations == ("us_npr_91_fr_14952_va7a_fx_delta_intra",)
+    assert inter == pytest.approx(FX_INTER_BUCKET_CORRELATION)
+    assert inter_citations == ("us_npr_91_fr_14952_va7a_fx_delta_inter",)
+    assert bucket.citation_id == "us_npr_91_fr_14952_va7a_fx_reporting_currency"
 
 
 @pytest.mark.parametrize(

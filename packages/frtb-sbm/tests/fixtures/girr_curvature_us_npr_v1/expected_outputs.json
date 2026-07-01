@@ -1,0 +1,234 @@
+{
+  "profile_id": "US_NPR_2_0",
+  "profile_hash": "f1848abb3ec8ca5c177a3062c6ea2c268cf06ae035051f19ecb63a9161d395f3",
+  "input_hash": "bd4415451604435093f7bcc13d5d56ff023bcf605548262633605cd142e171a7",
+  "total_capital": 262.4404694402142,
+  "warnings": [],
+  "selected_portfolio_scenario": "HIGH",
+  "portfolio_scenario_totals": {
+    "HIGH": 262.4404694402142,
+    "LOW": 252.65677271745557,
+    "MEDIUM": 257.59507448707166
+  },
+  "risk_classes": [
+    {
+      "risk_class": "GIRR",
+      "risk_measure": "CURVATURE",
+      "selected_capital": 262.4404694402142,
+      "selected_scenario": "HIGH",
+      "citation_ids": [
+        "us_npr_91_fr_14952_va7a_girr_curvature_scenarios",
+        "us_npr_91_fr_14952_va7a_sbm_scope",
+        "us_npr_91_fr_14952_va7a_girr_curvature_intra",
+        "us_npr_91_fr_14952_va7a_girr_intra",
+        "us_npr_91_fr_14952_va7a_girr_curvature_inter",
+        "us_npr_91_fr_14952_va7a_girr_inter",
+        "us_npr_91_fr_14952_va7a_girr_curvature_factors",
+        "us_npr_91_fr_14952_va7a_girr_curvature_shocks"
+      ]
+    }
+  ],
+  "scenario_totals": {
+    "HIGH": 262.4404694402142,
+    "LOW": 252.65677271745557,
+    "MEDIUM": 257.59507448707166
+  },
+  "buckets": [
+    [
+      {
+        "bucket_id": "1",
+        "kb": 90.0,
+        "sb": 90.0,
+        "citation_ids": [
+          "us_npr_91_fr_14952_va7a_sbm_scope",
+          "us_npr_91_fr_14952_va7a_girr_curvature_intra",
+          "us_npr_91_fr_14952_va7a_girr_intra"
+        ]
+      },
+      {
+        "bucket_id": "2",
+        "kb": 220.0,
+        "sb": 220.0,
+        "citation_ids": [
+          "us_npr_91_fr_14952_va7a_sbm_scope",
+          "us_npr_91_fr_14952_va7a_girr_curvature_intra",
+          "us_npr_91_fr_14952_va7a_girr_intra"
+        ]
+      }
+    ]
+  ],
+  "weighted_sensitivities": [
+    [
+      [
+        {
+          "sensitivity_id": "1|EUR-OIS",
+          "risk_weight": 1.0,
+          "scaled_amount": 90.0,
+          "citation_ids": [
+            "us_npr_91_fr_14952_va7a_sbm_scope",
+            "us_npr_91_fr_14952_va7a_girr_curvature_factors",
+            "us_npr_91_fr_14952_va7a_girr_curvature_shocks",
+            "us_npr_91_fr_14952_va7a_girr_curvature_intra",
+            "us_npr_91_fr_14952_va7a_girr_curvature_inter",
+            "us_npr_91_fr_14952_va7a_girr_curvature_scenarios",
+            "us_npr_91_fr_14952_va7a_girr_delta_weights"
+          ]
+        }
+      ],
+      [
+        {
+          "sensitivity_id": "2|USD-LIBOR",
+          "risk_weight": 1.0,
+          "scaled_amount": 140.0,
+          "citation_ids": [
+            "us_npr_91_fr_14952_va7a_sbm_scope",
+            "us_npr_91_fr_14952_va7a_girr_curvature_factors",
+            "us_npr_91_fr_14952_va7a_girr_curvature_shocks",
+            "us_npr_91_fr_14952_va7a_girr_curvature_intra",
+            "us_npr_91_fr_14952_va7a_girr_curvature_inter",
+            "us_npr_91_fr_14952_va7a_girr_curvature_scenarios",
+            "us_npr_91_fr_14952_va7a_girr_delta_weights"
+          ]
+        },
+        {
+          "sensitivity_id": "2|USD-OIS",
+          "risk_weight": 1.0,
+          "scaled_amount": 80.0,
+          "citation_ids": [
+            "us_npr_91_fr_14952_va7a_sbm_scope",
+            "us_npr_91_fr_14952_va7a_girr_curvature_factors",
+            "us_npr_91_fr_14952_va7a_girr_curvature_shocks",
+            "us_npr_91_fr_14952_va7a_girr_curvature_intra",
+            "us_npr_91_fr_14952_va7a_girr_curvature_inter",
+            "us_npr_91_fr_14952_va7a_girr_curvature_scenarios",
+            "us_npr_91_fr_14952_va7a_girr_delta_weights"
+          ]
+        }
+      ]
+    ]
+  ],
+  "curvature_branches": [
+    {
+      "sensitivity_id": "us-npr-eur-ois-curv",
+      "selected_branch": "down",
+      "up_shock_amount": 90.0,
+      "down_shock_amount": 40.0,
+      "citation_ids": [
+        "us_npr_91_fr_14952_va7a_sbm_scope",
+        "us_npr_91_fr_14952_va7a_girr_curvature_factors",
+        "us_npr_91_fr_14952_va7a_girr_curvature_shocks",
+        "us_npr_91_fr_14952_va7a_girr_curvature_intra",
+        "us_npr_91_fr_14952_va7a_girr_curvature_inter",
+        "us_npr_91_fr_14952_va7a_girr_curvature_scenarios"
+      ]
+    },
+    {
+      "sensitivity_id": "us-npr-usd-libor-curv",
+      "selected_branch": "up",
+      "up_shock_amount": 60.0,
+      "down_shock_amount": 140.0,
+      "citation_ids": [
+        "us_npr_91_fr_14952_va7a_sbm_scope",
+        "us_npr_91_fr_14952_va7a_girr_curvature_factors",
+        "us_npr_91_fr_14952_va7a_girr_curvature_shocks",
+        "us_npr_91_fr_14952_va7a_girr_curvature_intra",
+        "us_npr_91_fr_14952_va7a_girr_curvature_inter",
+        "us_npr_91_fr_14952_va7a_girr_curvature_scenarios"
+      ]
+    },
+    {
+      "sensitivity_id": "us-npr-usd-ois-curv",
+      "selected_branch": "down",
+      "up_shock_amount": 120.0,
+      "down_shock_amount": 80.0,
+      "citation_ids": [
+        "us_npr_91_fr_14952_va7a_sbm_scope",
+        "us_npr_91_fr_14952_va7a_girr_curvature_factors",
+        "us_npr_91_fr_14952_va7a_girr_curvature_shocks",
+        "us_npr_91_fr_14952_va7a_girr_curvature_intra",
+        "us_npr_91_fr_14952_va7a_girr_curvature_inter",
+        "us_npr_91_fr_14952_va7a_girr_curvature_scenarios"
+      ]
+    }
+  ],
+  "curvature_bucket_branches": [
+    {
+      "bucket_id": "1",
+      "scenario": "LOW",
+      "selected_branch": "up",
+      "selected_bucket_capital": 90.0,
+      "rejected_branch": "down",
+      "rejected_bucket_capital": 40.0,
+      "citation_ids": [
+        "us_npr_91_fr_14952_va7a_sbm_scope",
+        "us_npr_91_fr_14952_va7a_girr_curvature_intra",
+        "us_npr_91_fr_14952_va7a_girr_intra"
+      ]
+    },
+    {
+      "bucket_id": "2",
+      "scenario": "LOW",
+      "selected_branch": "down",
+      "selected_bucket_capital": 219.79637121663313,
+      "rejected_branch": "up",
+      "rejected_bucket_capital": 179.84000889679695,
+      "citation_ids": [
+        "us_npr_91_fr_14952_va7a_sbm_scope",
+        "us_npr_91_fr_14952_va7a_girr_curvature_intra",
+        "us_npr_91_fr_14952_va7a_girr_intra"
+      ]
+    },
+    {
+      "bucket_id": "1",
+      "scenario": "MEDIUM",
+      "selected_branch": "up",
+      "selected_bucket_capital": 90.0,
+      "rejected_branch": "down",
+      "rejected_bucket_capital": 40.0,
+      "citation_ids": [
+        "us_npr_91_fr_14952_va7a_sbm_scope",
+        "us_npr_91_fr_14952_va7a_girr_curvature_intra",
+        "us_npr_91_fr_14952_va7a_girr_intra"
+      ]
+    },
+    {
+      "bucket_id": "2",
+      "scenario": "MEDIUM",
+      "selected_branch": "down",
+      "selected_bucket_capital": 219.8982091787016,
+      "rejected_branch": "up",
+      "rejected_bucket_capital": 179.9200222321018,
+      "citation_ids": [
+        "us_npr_91_fr_14952_va7a_sbm_scope",
+        "us_npr_91_fr_14952_va7a_girr_curvature_intra",
+        "us_npr_91_fr_14952_va7a_girr_intra"
+      ]
+    },
+    {
+      "bucket_id": "1",
+      "scenario": "HIGH",
+      "selected_branch": "up",
+      "selected_bucket_capital": 90.0,
+      "rejected_branch": "down",
+      "rejected_bucket_capital": 40.0,
+      "citation_ids": [
+        "us_npr_91_fr_14952_va7a_sbm_scope",
+        "us_npr_91_fr_14952_va7a_girr_curvature_intra",
+        "us_npr_91_fr_14952_va7a_girr_intra"
+      ]
+    },
+    {
+      "bucket_id": "2",
+      "scenario": "HIGH",
+      "selected_branch": "down",
+      "selected_bucket_capital": 220.0,
+      "rejected_branch": "up",
+      "rejected_bucket_capital": 180.0,
+      "citation_ids": [
+        "us_npr_91_fr_14952_va7a_sbm_scope",
+        "us_npr_91_fr_14952_va7a_girr_curvature_intra",
+        "us_npr_91_fr_14952_va7a_girr_intra"
+      ]
+    }
+  ]
+}

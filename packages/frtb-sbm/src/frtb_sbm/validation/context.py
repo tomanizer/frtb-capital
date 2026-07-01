@@ -17,6 +17,7 @@ from frtb_sbm._errors import SbmInputError
 from frtb_sbm._text import require_text as _require_text
 from frtb_sbm.data_models import (
     SbmCalculationContext,
+    SbmFxRiskFactorBasis,
     SbmRegulatoryProfile,
     SbmRiskClass,
     SbmRiskMeasure,
@@ -25,6 +26,7 @@ from frtb_sbm.data_models import (
 )
 from frtb_sbm.org_scope import validate_scope_metadata
 from frtb_sbm.validation.coercion import (
+    coerce_fx_risk_factor_basis,
     coerce_pairwise_evidence_mode,
     coerce_risk_class,
     coerce_risk_measure,
@@ -37,6 +39,13 @@ _PHASE1_SUPPORTED: dict[str, frozenset[tuple[SbmRiskClass, SbmRiskMeasure]]] = {
     SbmRegulatoryProfile.US_NPR_2_0.value: frozenset(
         {
             (SbmRiskClass.GIRR, SbmRiskMeasure.DELTA),
+            (SbmRiskClass.GIRR, SbmRiskMeasure.VEGA),
+            (SbmRiskClass.GIRR, SbmRiskMeasure.CURVATURE),
+            (SbmRiskClass.FX, SbmRiskMeasure.DELTA),
+            (SbmRiskClass.FX, SbmRiskMeasure.VEGA),
+            (SbmRiskClass.FX, SbmRiskMeasure.CURVATURE),
+            (SbmRiskClass.EQUITY, SbmRiskMeasure.DELTA),
+            (SbmRiskClass.COMMODITY, SbmRiskMeasure.DELTA),
         }
     ),
     SbmRegulatoryProfile.BASEL_MAR21.value: frozenset(
@@ -86,6 +95,7 @@ _PHASE1_SUPPORTED: dict[str, frozenset[tuple[SbmRiskClass, SbmRiskMeasure]]] = {
 }
 
 _CURVATURE_CAPITAL_REQUIREMENT_ID = "SBM-CURV-001"
+_US_NPR_FX_BASE_CURRENCY_CITATION_ID = "us_npr_91_fr_14952_va7a_fx_base_currency_approval"
 
 
 def validate_sbm_calculation_context(context: SbmCalculationContext) -> SbmCalculationContext:
@@ -107,6 +117,7 @@ def validate_sbm_calculation_context(context: SbmCalculationContext) -> SbmCalcu
     _validate_citation_policy(context.citation_policy)
     ensure_sbm_profile_known(context.profile_id)
     _validate_run_controls(context.run_controls)
+    _validate_fx_risk_factor_basis(context.run_controls)
     validate_scope_metadata(context.calculation_scope, field="calculation_scope")
     if context.desk_id is not None and context.desk_id != context.desk_id.strip():
         raise SbmInputError(
@@ -127,6 +138,7 @@ def _validate_run_controls(controls: SbmRunControls | None) -> None:
     if not isinstance(controls, SbmRunControls):
         raise SbmInputError("run_controls must be SbmRunControls", field="run_controls")
     coerce_pairwise_evidence_mode(controls.pairwise_evidence_mode)
+    coerce_fx_risk_factor_basis(controls.fx_risk_factor_basis)
     if (
         isinstance(controls.pairwise_evidence_limit, bool)
         or not isinstance(controls.pairwise_evidence_limit, int)
@@ -136,6 +148,32 @@ def _validate_run_controls(controls: SbmRunControls | None) -> None:
             "pairwise_evidence_limit must be a non-negative integer",
             field="pairwise_evidence_limit",
         )
+    if not isinstance(controls.fx_base_currency_approval_ids, tuple):
+        raise SbmInputError(
+            "fx_base_currency_approval_ids must be a tuple of citation or approval ids",
+            field="fx_base_currency_approval_ids",
+        )
+    for approval_id in controls.fx_base_currency_approval_ids:
+        _require_text(approval_id, "fx_base_currency_approval_ids")
+        if approval_id != approval_id.strip():
+            raise SbmInputError(
+                "fx_base_currency_approval_ids must not contain leading or trailing whitespace",
+                field="fx_base_currency_approval_ids",
+            )
+
+
+def _validate_fx_risk_factor_basis(controls: SbmRunControls | None) -> None:
+    if controls is None:
+        return
+    basis = coerce_fx_risk_factor_basis(controls.fx_risk_factor_basis)
+    if basis is SbmFxRiskFactorBasis.REPORTING_CURRENCY:
+        return
+    raise UnsupportedRegulatoryFeatureError(
+        "frtb-sbm FX base-currency risk-factor basis is unsupported until "
+        "supervisory-approval evidence and translation-risk modelling are implemented; "
+        f"received fx_risk_factor_basis={basis.value}; "
+        f"citation_id={_US_NPR_FX_BASE_CURRENCY_CITATION_ID}"
+    )
 
 
 def ensure_sbm_profile_known(profile_id: str) -> SbmRegulatoryProfile:

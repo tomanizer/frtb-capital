@@ -14,6 +14,7 @@ from frtb_sbm import (
     SbmCalculationContext,
     SbmCapitalResult,
     SbmCitation,
+    SbmFxRiskFactorBasis,
     SbmPairwiseEvidenceMode,
     SbmReconciliationMetadata,
     SbmRegulatoryProfile,
@@ -26,6 +27,7 @@ from frtb_sbm import (
     SbmUnsupportedFeature,
     SbmWarning,
     WeightedSensitivity,
+    coerce_fx_risk_factor_basis,
 )
 
 from tests.sbm_fixture_helpers import sample_sbm_lineage as sample_lineage
@@ -194,6 +196,14 @@ def test_calculation_context_carries_run_controls() -> None:
     assert context.run_controls.retain_scenario_detail is True
     assert context.run_controls.pairwise_evidence_mode is SbmPairwiseEvidenceMode.AUTO
     assert context.run_controls.pairwise_evidence_limit == DEFAULT_PAIRWISE_EVIDENCE_LIMIT
+    assert context.run_controls.fx_risk_factor_basis is SbmFxRiskFactorBasis.REPORTING_CURRENCY
+    assert context.run_controls.fx_base_currency_approval_ids == ()
+
+
+def test_fx_risk_factor_basis_is_publicly_coercible() -> None:
+    assert (
+        coerce_fx_risk_factor_basis("REPORTING_CURRENCY") is SbmFxRiskFactorBasis.REPORTING_CURRENCY
+    )
 
 
 def test_unsupported_feature_metadata_is_structured() -> None:

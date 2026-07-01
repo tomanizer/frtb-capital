@@ -1,0 +1,61 @@
+[
+  {
+    "case_id": "missing-down-shock",
+    "expected_error_match": "down_shock_amount",
+    "sensitivity": {
+      "sensitivity_id": "us-npr-curv-missing-down",
+      "source_row_id": "row-invalid-301",
+      "desk_id": "rates-desk",
+      "legal_entity": "LE-001",
+      "risk_class": "GIRR",
+      "risk_measure": "CURVATURE",
+      "bucket": "1",
+      "risk_factor": "EUR-OIS",
+      "amount": 0.0,
+      "amount_currency": "USD",
+      "tenor": "5y",
+      "up_shock_amount": 100000.0,
+      "sign_convention": "RECEIVE"
+    }
+  },
+  {
+    "case_id": "npr-commodity-curvature-unsupported",
+    "expected_error_match": "US_NPR_2_0",
+    "sensitivity": {
+      "sensitivity_id": "us-npr-commodity-curv-unsupported",
+      "source_row_id": "row-invalid-302",
+      "desk_id": "commodity-desk",
+      "legal_entity": "LE-001",
+      "risk_class": "COMMODITY",
+      "risk_measure": "CURVATURE",
+      "bucket": "1",
+      "risk_factor": "Coal",
+      "qualifier": "Location A",
+      "amount": 0.0,
+      "amount_currency": "USD",
+      "up_shock_amount": 100000.0,
+      "down_shock_amount": 50000.0,
+      "sign_convention": "RECEIVE"
+    }
+  },
+  {
+    "case_id": "npr-girr-inflation-curvature-unsupported",
+    "expected_error_match": "inflation",
+    "sensitivity": {
+      "sensitivity_id": "us-npr-girr-infl-curv-unsupported",
+      "source_row_id": "row-invalid-303",
+      "desk_id": "rates-desk",
+      "legal_entity": "LE-001",
+      "risk_class": "GIRR",
+      "risk_measure": "CURVATURE",
+      "bucket": "1",
+      "risk_factor": "INFL",
+      "amount": 0.0,
+      "amount_currency": "USD",
+      "tenor": "INFL",
+      "up_shock_amount": 100000.0,
+      "down_shock_amount": 50000.0,
+      "sign_convention": "RECEIVE"
+    }
+  }
+]

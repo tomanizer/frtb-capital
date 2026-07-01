@@ -76,10 +76,18 @@ def test_profile_content_hash_uses_common_stable_json_hash() -> None:
                 "Office of the Comptroller of the Currency, Board of Governors of the "
                 "Federal Reserve System, and Federal Deposit Insurance Corporation"
             ),
-            "status": "supported_us_npr_girr_delta_comparison_slice",
+            "status": (
+                "supported_us_npr_girr_delta_vega_curvature_fx_delta_vega_curvature_"
+                "equity_commodity_delta_comparison_slice"
+            ),
             "version": "Federal Register 91 FR 14952 proposed market-risk rule",
         },
-        "supported_measures": {"GIRR": ["DELTA"]},
+        "supported_measures": {
+            "COMMODITY": ["DELTA"],
+            "EQUITY": ["DELTA"],
+            "FX": ["CURVATURE", "DELTA", "VEGA"],
+            "GIRR": ["CURVATURE", "DELTA", "VEGA"],
+        },
         "reference_data": profile_reference_payload(SbmRegulatoryProfile.US_NPR_2_0),
     }
 
@@ -111,11 +119,27 @@ def test_get_sbm_rule_profile_returns_partial_us_npr_profile() -> None:
     assert resolve_sbm_profile(SbmRegulatoryProfile.US_NPR_2_0) is SbmRegulatoryProfile.US_NPR_2_0
     assert profile.profile_id == SbmRegulatoryProfile.US_NPR_2_0.value
     assert profile.publication_date == date(2026, 3, 27)
-    assert profile.supported_risk_classes == frozenset({SbmRiskClass.GIRR})
+    assert profile.supported_risk_classes == frozenset(
+        {SbmRiskClass.GIRR, SbmRiskClass.FX, SbmRiskClass.EQUITY, SbmRiskClass.COMMODITY}
+    )
     assert profile.supported_measures == {
-        SbmRiskClass.GIRR: frozenset({SbmRiskMeasure.DELTA}),
+        SbmRiskClass.GIRR: frozenset(
+            {SbmRiskMeasure.DELTA, SbmRiskMeasure.VEGA, SbmRiskMeasure.CURVATURE}
+        ),
+        SbmRiskClass.FX: frozenset(
+            {SbmRiskMeasure.DELTA, SbmRiskMeasure.VEGA, SbmRiskMeasure.CURVATURE}
+        ),
+        SbmRiskClass.EQUITY: frozenset({SbmRiskMeasure.DELTA}),
+        SbmRiskClass.COMMODITY: frozenset({SbmRiskMeasure.DELTA}),
     }
     assert "us_npr_91_fr_14952_va7a_girr_delta_weights" in profile.citations
+    assert "us_npr_91_fr_14952_va7a_girr_vega_lh_rw" in profile.citations
+    assert "us_npr_91_fr_14952_va7a_girr_curvature_shocks" in profile.citations
+    assert "us_npr_91_fr_14952_va7a_fx_delta_weights" in profile.citations
+    assert "us_npr_91_fr_14952_va7a_fx_vega_lh_rw" in profile.citations
+    assert "us_npr_91_fr_14952_va7a_fx_curvature_shocks" in profile.citations
+    assert "us_npr_91_fr_14952_va7a_equity_delta_weights" in profile.citations
+    assert "us_npr_91_fr_14952_va7a_commodity_delta_weights" in profile.citations
 
 
 def test_get_sbm_rule_profile_returns_partial_eu_crr3_profile() -> None:
@@ -253,24 +277,38 @@ def test_supported_risk_class_measures_lists_delta_vega_and_curvature_paths() ->
     )
 
 
-def test_us_npr_profile_support_map_is_girr_delta_only() -> None:
+def test_us_npr_profile_support_map_includes_girr_fx_and_non_girr_delta() -> None:
     supported = supported_risk_class_measures(SbmRegulatoryProfile.US_NPR_2_0)
+    expected = frozenset(
+        {
+            (SbmRiskClass.GIRR, SbmRiskMeasure.DELTA),
+            (SbmRiskClass.GIRR, SbmRiskMeasure.VEGA),
+            (SbmRiskClass.GIRR, SbmRiskMeasure.CURVATURE),
+            (SbmRiskClass.FX, SbmRiskMeasure.DELTA),
+            (SbmRiskClass.FX, SbmRiskMeasure.VEGA),
+            (SbmRiskClass.FX, SbmRiskMeasure.CURVATURE),
+            (SbmRiskClass.EQUITY, SbmRiskMeasure.DELTA),
+            (SbmRiskClass.COMMODITY, SbmRiskMeasure.DELTA),
+        }
+    )
 
-    assert supported == frozenset({(SbmRiskClass.GIRR, SbmRiskMeasure.DELTA)})
-    assert profile_supports_risk_class_measure(
-        SbmRegulatoryProfile.US_NPR_2_0,
-        SbmRiskClass.GIRR,
-        SbmRiskMeasure.DELTA,
-    )
-    ensure_profile_supports_risk_class_measure(
-        SbmRegulatoryProfile.US_NPR_2_0,
-        SbmRiskClass.GIRR,
-        SbmRiskMeasure.DELTA,
-    )
+    assert supported == expected
+    ordered_expected = sorted(expected, key=lambda item: (item[0].value, item[1].value))
+    for risk_class, risk_measure in ordered_expected:
+        assert profile_supports_risk_class_measure(
+            SbmRegulatoryProfile.US_NPR_2_0,
+            risk_class,
+            risk_measure,
+        )
+        ensure_profile_supports_risk_class_measure(
+            SbmRegulatoryProfile.US_NPR_2_0,
+            risk_class,
+            risk_measure,
+        )
     with pytest.raises(UnsupportedRegulatoryFeatureError, match="US_NPR_2_0"):
         ensure_profile_supports_risk_class_measure(
             SbmRegulatoryProfile.US_NPR_2_0,
-            SbmRiskClass.GIRR,
+            SbmRiskClass.EQUITY,
             SbmRiskMeasure.VEGA,
         )
 

@@ -66,7 +66,7 @@ runtime paths are enforced before calculation:
 | Profile | Implemented paths (summary) |
 | --- | --- |
 | `BASEL_MAR21` | Delta, vega, and curvature across all seven SBM risk classes (see support matrix) |
-| `US_NPR_2_0` | GIRR delta only |
+| `US_NPR_2_0` | GIRR delta, GIRR vega, GIRR curvature, reporting-currency FX delta, FX vega, FX curvature, equity delta, and commodity delta |
 | `EU_CRR3` | GIRR delta/vega/curvature, FX delta/vega/curvature, equity delta, and commodity delta |
 | `PRA_UK_CRR` comparison profile | GIRR delta/vega/curvature implemented under audit; all other PRA cells fail closed with `UnsupportedRegulatoryFeatureError` |
 
@@ -120,8 +120,12 @@ canonical classification before capital runs.
 | **CSR sec non-CTP** | MAR21.71 senior-IG vs non-senior / HY multipliers on Table weights | CSR sec non-CTP vega | Same curvature boundary as other CSR paths |
 | **CSR sec CTP** | MAR21.59 Table 6 buckets 1–16; decomposition evidence checks fail closed when required | CSR sec CTP vega | CTP-specific delta/vega/curvature paths |
 
-**US NPR 2.0:** only **GIRR delta** is implemented; all other NPR cells fail closed
-even if Basel paths would succeed under `BASEL_MAR21`.
+**US NPR 2.0:** only **GIRR delta**, **GIRR vega**, **GIRR curvature**,
+**FX delta**, **FX vega**, **FX curvature**, **equity delta**, and
+**commodity delta** are implemented; all other NPR cells fail closed even if
+Basel paths would succeed under `BASEL_MAR21`. The CSR source map in
+[`docs/modules/frtb-sbm/US_NPR_CSR_MAPPING.md`](../../../docs/modules/frtb-sbm/US_NPR_CSR_MAPPING.md)
+does not open CSR runtime support.
 
 ### Choosing the right path in client code
 

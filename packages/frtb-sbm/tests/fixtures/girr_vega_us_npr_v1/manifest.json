@@ -1,0 +1,18 @@
+{
+  "calculation_date": "2026-05-30",
+  "files": {
+    "expected_outputs.json": {
+      "sha256": "0186f335813e8b55f578387431441b4591142aa0bc74dcd1e764f2750ef9aa57"
+    },
+    "invalid_cases.json": {
+      "sha256": "bd3cc20ae69406d88b54de18a1fc9295ecf41c393e7dc6a27647c677c364c0a6"
+    },
+    "sensitivities.json": {
+      "sha256": "f08e16cf780fb781db79370853568645b8bfb392f6f4bb361c23c059cf7d781f"
+    }
+  },
+  "profile": "US_NPR_2_0",
+  "schema_version": "girr_vega_us_npr_fixture_v1",
+  "sensitivity_count": 3,
+  "total_capital": 547722.5575051662
+}

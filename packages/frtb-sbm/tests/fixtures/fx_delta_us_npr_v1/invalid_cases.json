@@ -1,0 +1,105 @@
+[
+  {
+    "case_id": "duplicate_sensitivity_id",
+    "expected_error_match": "duplicate sensitivity id",
+    "sensitivity": {
+      "sensitivity_id": "dup-fx-001",
+      "source_row_id": "row-dup",
+      "desk_id": "fx-desk",
+      "legal_entity": "LE-001",
+      "risk_class": "FX",
+      "risk_measure": "DELTA",
+      "bucket": "EUR",
+      "risk_factor": "EUR",
+      "amount": 1000000.0,
+      "amount_currency": "USD",
+      "sign_convention": "LONG"
+    },
+    "duplicate_of": {
+      "sensitivity_id": "dup-fx-001",
+      "source_row_id": "row-dup-2",
+      "desk_id": "fx-desk",
+      "legal_entity": "LE-001",
+      "risk_class": "FX",
+      "risk_measure": "DELTA",
+      "bucket": "GBP",
+      "risk_factor": "GBP",
+      "amount": 2000000.0,
+      "amount_currency": "USD",
+      "sign_convention": "SHORT"
+    }
+  },
+  {
+    "case_id": "unsupported_equity_vega",
+    "expected_error_match": "US_NPR_2_0",
+    "sensitivity": {
+      "sensitivity_id": "equity-vega-001",
+      "source_row_id": "row-equity-vega",
+      "desk_id": "equity-desk",
+      "legal_entity": "LE-001",
+      "risk_class": "EQUITY",
+      "risk_measure": "VEGA",
+      "bucket": "1",
+      "risk_factor": "SPOT",
+      "qualifier": "Issuer A",
+      "option_tenor": "1y",
+      "amount": 1000000.0,
+      "amount_currency": "USD",
+      "sign_convention": "LONG"
+    }
+  },
+  {
+    "case_id": "unsupported_commodity_curvature",
+    "expected_error_match": "US_NPR_2_0",
+    "sensitivity": {
+      "sensitivity_id": "commodity-curvature-001",
+      "source_row_id": "row-commodity-curvature",
+      "desk_id": "commodity-desk",
+      "legal_entity": "LE-001",
+      "risk_class": "COMMODITY",
+      "risk_measure": "CURVATURE",
+      "bucket": "1",
+      "risk_factor": "Coal",
+      "qualifier": "Location A",
+      "amount": 1000000.0,
+      "amount_currency": "USD",
+      "sign_convention": "LONG",
+      "up_shock_amount": -100000.0,
+      "down_shock_amount": -150000.0
+    }
+  },
+  {
+    "case_id": "missing_bucket_currency_mapping",
+    "expected_error_match": "currency code must be a three-letter alphabetic code",
+    "sensitivity": {
+      "sensitivity_id": "bad-bucket",
+      "source_row_id": "row-bad-bucket",
+      "desk_id": "fx-desk",
+      "legal_entity": "LE-001",
+      "risk_class": "FX",
+      "risk_measure": "DELTA",
+      "bucket": "EURO",
+      "risk_factor": "EURO",
+      "amount": 1000000.0,
+      "amount_currency": "USD",
+      "sign_convention": "LONG"
+    }
+  },
+  {
+    "case_id": "bucket_risk_factor_mismatch",
+    "expected_error_match": "FX delta bucket must match risk_factor currency",
+    "sensitivity": {
+      "sensitivity_id": "mismatch-001",
+      "source_row_id": "row-mismatch",
+      "desk_id": "fx-desk",
+      "legal_entity": "LE-001",
+      "risk_class": "FX",
+      "risk_measure": "DELTA",
+      "bucket": "EUR",
+      "risk_factor": "GBP",
+      "amount": 1000000.0,
+      "amount_currency": "USD",
+      "sign_convention": "LONG"
+    }
+  }
+]

@@ -132,6 +132,7 @@ REMOVED_PATH_BATCH_BUILDERS = (
 )
 
 VALIDATION_SURFACE = (
+    "coerce_fx_risk_factor_basis",
     "coerce_risk_class",
     "coerce_risk_measure",
     "coerce_sign_convention",
@@ -183,6 +184,9 @@ def test_validation_package_reexports_stage_surface() -> None:
         assert name in validation.__all__
 
     assert validation.coerce_risk_class is validation_coercion.coerce_risk_class
+    assert validation.coerce_fx_risk_factor_basis is (
+        validation_coercion.coerce_fx_risk_factor_basis
+    )
     assert validation.validate_sbm_calculation_context is (
         validation_context.validate_sbm_calculation_context
     )

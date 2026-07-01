@@ -107,6 +107,7 @@ from frtb_sbm.data_models import (
     SbmCalculationContext,
     SbmCapitalResult,
     SbmCitation,
+    SbmFxRiskFactorBasis,
     SbmPairwiseEvidenceMode,
     SbmReconciliationMetadata,
     SbmRegulatoryProfile,
@@ -186,6 +187,7 @@ from frtb_sbm.risk_classes.vega import (
 from frtb_sbm.scaffold import PACKAGE_METADATA
 from frtb_sbm.validation import (
     SbmInputError,
+    coerce_fx_risk_factor_basis,
     coerce_pairwise_evidence_mode,
     coerce_risk_class,
     coerce_risk_measure,
@@ -278,6 +280,7 @@ __all__ = [
     "SbmCitation",
     "SbmCorrelationScenarioDefinition",
     "SbmFxBucketDefinition",
+    "SbmFxRiskFactorBasis",
     "SbmGirrBucketDefinition",
     "SbmGirrRiskWeightRule",
     "SbmGirrSpecialRiskFactorRule",
@@ -329,6 +332,7 @@ __all__ = [
     "calculate_sbm_portfolio_capital_from_arrow_tables",
     "calculate_sbm_portfolio_capital_from_batches",
     "citations_for_profile",
+    "coerce_fx_risk_factor_basis",
     "coerce_pairwise_evidence_mode",
     "coerce_risk_class",
     "coerce_risk_measure",

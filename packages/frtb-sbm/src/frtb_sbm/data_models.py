@@ -55,6 +55,13 @@ class SbmPairwiseEvidenceMode(StrEnum):
     SUMMARY = "SUMMARY"
 
 
+class SbmFxRiskFactorBasis(StrEnum):
+    """FX risk-factor currency basis selected for FX delta and curvature paths."""
+
+    REPORTING_CURRENCY = "REPORTING_CURRENCY"
+    BASE_CURRENCY_APPROVED = "BASE_CURRENCY_APPROVED"
+
+
 DEFAULT_PAIRWISE_EVIDENCE_LIMIT = 2500
 
 
@@ -140,6 +147,8 @@ class SbmRunControls:
     retain_scenario_detail: bool = True
     pairwise_evidence_mode: SbmPairwiseEvidenceMode = SbmPairwiseEvidenceMode.AUTO
     pairwise_evidence_limit: int = DEFAULT_PAIRWISE_EVIDENCE_LIMIT
+    fx_risk_factor_basis: SbmFxRiskFactorBasis = SbmFxRiskFactorBasis.REPORTING_CURRENCY
+    fx_base_currency_approval_ids: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)

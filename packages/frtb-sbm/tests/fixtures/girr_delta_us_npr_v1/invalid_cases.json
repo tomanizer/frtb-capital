@@ -1,25 +1,21 @@
 [
   {
-    "case_id": "npr-girr-vega-unsupported",
+    "case_id": "npr-equity-vega-unsupported",
     "expected_error_match": "US_NPR_2_0",
     "sensitivity": {
-      "sensitivity_id": "us-npr-vega-unsupported",
+      "sensitivity_id": "us-npr-equity-vega-unsupported",
       "source_row_id": "row-invalid-001",
-      "desk_id": "rates-desk",
+      "desk_id": "equity-desk",
       "legal_entity": "LE-001",
-      "risk_class": "GIRR",
+      "risk_class": "EQUITY",
       "risk_measure": "VEGA",
-      "bucket": "2",
-      "risk_factor": "USD",
+      "bucket": "1",
+      "risk_factor": "SPOT",
+      "qualifier": "Issuer A",
+      "option_tenor": "1y",
       "amount": 100000.0,
       "amount_currency": "USD",
-      "tenor": "5y",
-      "option_tenor": "1y",
-      "sign_convention": "RECEIVE",
-      "mapping_citation_ids": [
-        "us_npr_91_fr_14952_va7a_girr_buckets"
-      ]
+      "sign_convention": "RECEIVE"
     }
   }
 ]
-

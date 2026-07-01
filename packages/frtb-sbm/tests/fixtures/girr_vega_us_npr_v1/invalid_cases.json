@@ -1,0 +1,63 @@
+[
+  {
+    "case_id": "missing-option-tenor",
+    "expected_error_match": "option_tenor",
+    "sensitivity": {
+      "sensitivity_id": "us-npr-vega-missing-option",
+      "source_row_id": "row-invalid-201",
+      "desk_id": "rates-desk",
+      "legal_entity": "LE-001",
+      "risk_class": "GIRR",
+      "risk_measure": "VEGA",
+      "bucket": "1",
+      "risk_factor": "EUR",
+      "amount": 100000.0,
+      "amount_currency": "USD",
+      "tenor": "1y",
+      "sign_convention": "RECEIVE",
+      "mapping_citation_ids": [
+        "us_npr_91_fr_14952_va7a_girr_buckets"
+      ]
+    }
+  },
+  {
+    "case_id": "npr-equity-curvature-unsupported",
+    "expected_error_match": "US_NPR_2_0",
+    "sensitivity": {
+      "sensitivity_id": "us-npr-equity-curvature-unsupported",
+      "source_row_id": "row-invalid-202",
+      "desk_id": "equity-desk",
+      "legal_entity": "LE-001",
+      "risk_class": "EQUITY",
+      "risk_measure": "CURVATURE",
+      "bucket": "1",
+      "risk_factor": "SPOT",
+      "qualifier": "Issuer A",
+      "amount": 100000.0,
+      "amount_currency": "USD",
+      "up_shock_amount": 100000.0,
+      "down_shock_amount": -100000.0,
+      "sign_convention": "RECEIVE"
+    }
+  },
+  {
+    "case_id": "npr-commodity-curvature-unsupported",
+    "expected_error_match": "US_NPR_2_0",
+    "sensitivity": {
+      "sensitivity_id": "us-npr-commodity-curvature-unsupported",
+      "source_row_id": "row-invalid-203",
+      "desk_id": "commodity-desk",
+      "legal_entity": "LE-001",
+      "risk_class": "COMMODITY",
+      "risk_measure": "CURVATURE",
+      "bucket": "1",
+      "risk_factor": "Coal",
+      "qualifier": "Location A",
+      "amount": 100000.0,
+      "amount_currency": "USD",
+      "up_shock_amount": 100000.0,
+      "down_shock_amount": -100000.0,
+      "sign_convention": "RECEIVE"
+    }
+  }
+]

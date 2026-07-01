@@ -1,0 +1,18 @@
+{
+  "calculation_date": "2026-05-30",
+  "files": {
+    "expected_outputs.json": {
+      "sha256": "c96abae3c260eff56bb7717f3779548bfb48103d58ddae53d6e72b05905bb1e4"
+    },
+    "invalid_cases.json": {
+      "sha256": "9e39b6c75d2420f91ca24b46c057991d35b421a10552ee148b1cfd3f33ebf223"
+    },
+    "sensitivities.json": {
+      "sha256": "3d1a93684e2e7a00650da2e865927112e3b577684784e44571e2225e363d8442"
+    }
+  },
+  "profile": "US_NPR_2_0",
+  "schema_version": "equity_delta_us_npr_fixture_v1",
+  "sensitivity_count": 6,
+  "total_capital": 1510949.951603295
+}

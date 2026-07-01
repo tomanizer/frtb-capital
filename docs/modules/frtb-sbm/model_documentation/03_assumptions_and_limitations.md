@@ -21,7 +21,9 @@ in `REGULATORY_TRACEABILITY.md` capital-producing under audit.
 Unsupported paths raise `UnsupportedRegulatoryFeatureError` or `SbmInputError`
 before capital is emitted:
 
-- `US_NPR_2_0` runtime profile cells outside GIRR delta;
+- `US_NPR_2_0` runtime profile cells outside GIRR delta/vega/curvature,
+  reporting-currency FX delta/vega/curvature, equity delta, and commodity
+  delta;
 - `EU_CRR3` runtime profile cells outside GIRR delta/vega/curvature, FX
   delta/vega/curvature, equity delta, and commodity delta;
 - `PRA_UK_CRR` runtime profile cells outside GIRR delta/vega/curvature, despite

@@ -3,15 +3,18 @@ from __future__ import annotations
 import pytest
 from frtb_common import UnsupportedRegulatoryFeatureError
 from frtb_sbm import (
+    SbmFxRiskFactorBasis,
     SbmInputError,
     SbmRegulatoryProfile,
     SbmRiskClass,
     SbmRiskMeasure,
+    SbmRunControls,
     SbmSensitivity,
     ensure_sbm_capital_paths_supported,
     ensure_sbm_profile_known,
     ensure_sbm_risk_class_measure_supported,
     ensure_sbm_run_supported,
+    validate_sbm_calculation_context,
 )
 from frtb_sbm.capital import _portfolio_scenario_citations
 
@@ -42,9 +45,8 @@ def test_unknown_profile_fails_closed() -> None:
 @pytest.mark.parametrize(
     ("risk_class", "risk_measure"),
     [
-        (SbmRiskClass.GIRR, SbmRiskMeasure.VEGA),
-        (SbmRiskClass.GIRR, SbmRiskMeasure.CURVATURE),
-        (SbmRiskClass.FX, SbmRiskMeasure.DELTA),
+        (SbmRiskClass.EQUITY, SbmRiskMeasure.VEGA),
+        (SbmRiskClass.COMMODITY, SbmRiskMeasure.CURVATURE),
         (SbmRiskClass.CSR_NONSEC, SbmRiskMeasure.DELTA),
     ],
 )
@@ -70,17 +72,43 @@ def test_ensure_sbm_run_supported_rejects_scope_mismatch() -> None:
 
 def test_ensure_sbm_capital_paths_supported_rejects_unsupported_npr_cell() -> None:
     sensitivity = sample_sensitivity(
-        risk_class=SbmRiskClass.FX,
-        risk_measure=SbmRiskMeasure.DELTA,
-        bucket="EUR",
-        risk_factor="EUR",
+        risk_class=SbmRiskClass.COMMODITY,
+        risk_measure=SbmRiskMeasure.CURVATURE,
+        bucket="1",
+        risk_factor="Coal",
         tenor=None,
+        up_shock_amount=10.0,
+        down_shock_amount=-5.0,
     )
     with pytest.raises(UnsupportedRegulatoryFeatureError, match="US_NPR_2_0"):
         ensure_sbm_capital_paths_supported(
             SbmRegulatoryProfile.US_NPR_2_0.value,
             (sensitivity,),
         )
+
+
+def test_npr_fx_base_currency_run_control_fails_closed() -> None:
+    context = sample_context(
+        profile_id=SbmRegulatoryProfile.US_NPR_2_0.value,
+        run_controls=SbmRunControls(
+            fx_risk_factor_basis=SbmFxRiskFactorBasis.BASE_CURRENCY_APPROVED,
+            fx_base_currency_approval_ids=("supervisor-approval-001",),
+        ),
+    )
+
+    with pytest.raises(UnsupportedRegulatoryFeatureError, match="base-currency"):
+        validate_sbm_calculation_context(context)
+
+
+def test_fx_base_currency_approval_ids_are_validated() -> None:
+    context = sample_context(
+        run_controls=SbmRunControls(
+            fx_base_currency_approval_ids=(" approval-has-whitespace ",),
+        ),
+    )
+
+    with pytest.raises(SbmInputError, match="fx_base_currency_approval_ids"):
+        validate_sbm_calculation_context(context)
 
 
 def test_portfolio_scenario_citations_do_not_fall_back_to_basel() -> None:

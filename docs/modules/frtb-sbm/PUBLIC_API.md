@@ -4,7 +4,9 @@ This document defines the stable client integration surface for `frtb_sbm`.
 Symbols listed here are top-level imports unless explicitly marked
 submodule-only. Outputs are not final regulatory capital; package validation
 status remains pending and supported runtime paths are limited to documented
-BASEL_MAR21 slices plus the `US_NPR_2_0` GIRR delta comparison slice.
+BASEL_MAR21 slices plus the `US_NPR_2_0` GIRR delta/vega/curvature,
+reporting-currency FX delta/vega/curvature, equity delta, and commodity delta
+comparison slices.
 
 ## Stable surface
 
@@ -92,7 +94,9 @@ every documented input_table symbol to remain importable.
 | 3 - Canonical dataclasses | `tuple[SbmSensitivity, ...]` plus `SbmCalculationContext` | `calculate_sbm_capital` | Small books, tests, and notebooks only. |
 
 Supported runtime profiles: `BASEL_MAR21` for implemented delta, vega, and
-curvature paths, `US_NPR_2_0` for GIRR delta only, and `EU_CRR3` for GIRR
+curvature paths, `US_NPR_2_0` for GIRR delta/vega/curvature,
+reporting-currency FX delta/vega/curvature, equity delta, and commodity delta,
+and `EU_CRR3` for GIRR
 delta/vega/curvature, FX delta/vega/curvature, equity delta, and commodity
 delta, as described in
 [`packages/frtb-sbm/docs/REGULATORY_TRACEABILITY.md`](../../../packages/frtb-sbm/docs/REGULATORY_TRACEABILITY.md).

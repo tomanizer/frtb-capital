@@ -75,7 +75,13 @@ def _validate_fx_vega_batch_row(
             field="bucket",
             sensitivity_id=sensitivity_id,
         )
-    return (bucket.currency, option_tenor), ("basel_mar21_14", "basel_mar21_86")
+    return (bucket.currency, option_tenor), _fx_vega_factor_citations(bucket.citation_id)
+
+
+def _fx_vega_factor_citations(bucket_citation_id: str) -> tuple[str, ...]:
+    if bucket_citation_id.startswith("us_npr_"):
+        return (bucket_citation_id,)
+    return ("basel_mar21_14", bucket_citation_id)
 
 
 def _validate_equity_vega_batch_row(

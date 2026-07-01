@@ -11,10 +11,13 @@ for all seven SBM risk classes (21 profile/risk-class/measure cells). The
 comparison profiles `US_NPR_2_0`, `EU_CRR3`, and `PRA_UK_CRR` are recognised at
 the type level. Issue #504 implements the first comparison-profile cell,
 `US_NPR_2_0` GIRR delta, with cited profile-owned reference data and fixture
-evidence. Later slices add the delivered `EU_CRR3` cells and `PRA_UK_CRR` GIRR
-delta with cited profile-owned reference data and fixture evidence. Other
-non-Basel cells still fail closed before capital calculation until cited
-reference data and deterministic fixtures exist.
+evidence. Later slices add `US_NPR_2_0` GIRR vega/curvature, reporting-currency
+FX delta/vega/curvature, equity delta, commodity delta, the delivered
+`EU_CRR3` cells, and `PRA_UK_CRR` GIRR delta with cited profile-owned reference
+data and fixture evidence. Issue #1034 source-maps the remaining `US_NPR_2_0`
+CSR cells in [`US_NPR_CSR_MAPPING.md`](US_NPR_CSR_MAPPING.md) without opening
+runtime gates. Other non-Basel cells still fail closed before capital
+calculation until cited reference data and deterministic fixtures exist.
 
 This design records research on the current boundary, defines a normative
 support matrix, and sequences implementation without changing public API
@@ -27,10 +30,10 @@ semantics or Basel fixture hashes.
 | Layer | BASEL_MAR21 | Non-Basel profiles |
 | --- | --- | --- |
 | `SbmRegulatoryProfile` enum | `BASEL_MAR21` | `US_NPR_2_0`, `EU_CRR3`, `PRA_UK_CRR` |
-| `phase1_capital_supported_paths()` | 21 cells (7×3) | `US_NPR_2_0` GIRR delta; `EU_CRR3` 8 cells; `PRA_UK_CRR` GIRR delta/vega/curvature |
-| `resolve_sbm_profile()` / `get_sbm_rule_profile()` | Supported | `US_NPR_2_0` supported for GIRR delta; `EU_CRR3` supported for delivered cells; `PRA_UK_CRR` supported for GIRR delta/vega/curvature |
-| `PROFILE_*` reference-data maps in `reference_data.py` | Populated | NPR GIRR delta, delivered EU CRR3 maps, and PRA GIRR delta populated; other non-Basel lookup paths fail closed |
-| Fixture packs under `tests/fixtures/` | 16 packs (`*_v1`) | `girr_delta_us_npr_v1`, eight `*_eu_crr3_v1` fixture packs, and `girr_delta_pra_uk_crr_v1` |
+| `phase1_capital_supported_paths()` | 21 cells (7×3) | `US_NPR_2_0` 8 cells; `EU_CRR3` 8 cells; `PRA_UK_CRR` GIRR delta/vega/curvature |
+| `resolve_sbm_profile()` / `get_sbm_rule_profile()` | Supported | `US_NPR_2_0` supported for GIRR delta/vega/curvature, FX delta/vega/curvature, equity delta, and commodity delta; `EU_CRR3` supported for delivered cells; `PRA_UK_CRR` supported for GIRR delta/vega/curvature |
+| `PROFILE_*` reference-data maps in `reference_data.py` | Populated | NPR GIRR delta/vega/curvature, FX delta/vega/curvature, equity delta, commodity delta, delivered EU CRR3 maps, and PRA GIRR delta/vega/curvature populated; other non-Basel lookup paths fail closed |
+| Fixture packs under `tests/fixtures/` | 19 non-Basel packs (`*_v1`) | Eight `*_us_npr_v1` packs, eight `*_eu_crr3_v1` fixture packs, and `girr_delta_pra_uk_crr_v1`, `girr_vega_pra_uk_crr_v1`, and `girr_curvature_pra_uk_crr_v1` |
 | `REGULATORY_TRACEABILITY.md` | Full 7×3 matrix | `US_NPR_2_0` partial; `EU_CRR3` partial; `PRA_UK_CRR` partial |
 | Enforcement tests | `test_sbm_support_matrix.py`, `test_sbm_unsupported_features.py` | NPR one-cell support, EU eight-cell support, PRA one-cell support, and fail-closed tests for remaining cells |
 
@@ -96,7 +99,7 @@ Status labels match `REGULATORY_TRACEABILITY.md`:
 | Profile | Cells | Runtime today |
 | --- | ---: | --- |
 | `BASEL_MAR21` | 21 / 21 | 21 implemented under audit |
-| `US_NPR_2_0` | 1 / 21 | GIRR delta implemented under audit; 20 unsupported fail-closed |
+| `US_NPR_2_0` | 8 / 21 | GIRR delta/vega/curvature, FX delta/vega/curvature, equity delta, and commodity delta implemented under audit; 13 unsupported fail-closed |
 | `EU_CRR3` | 8 / 21 | GIRR delta/vega/curvature, FX delta/vega/curvature, equity delta, and commodity delta implemented under audit; 13 unsupported fail-closed |
 | `PRA_UK_CRR` | 3 / 21 | GIRR delta/vega/curvature implemented under audit; 18 unsupported fail-closed |
 
@@ -104,13 +107,13 @@ Per-class detail for non-Basel profiles (all measures share the same status unti
 
 | Risk class | `US_NPR_2_0` | `EU_CRR3` | `PRA_UK_CRR` |
 | --- | --- | --- | --- |
-| GIRR | Delta implemented under audit; vega/curvature unsupported fail-closed | Delta, vega, and curvature implemented under audit | Delta, vega, and curvature implemented under audit |
-| FX | Planned | Delta, vega, and curvature implemented under audit | Planned after PS1/26 source map; runtime fail-closed |
-| Equity | Planned | Delta implemented under audit; vega/curvature unsupported fail-closed | Planned after PS1/26 source map; runtime fail-closed |
-| Commodity | Planned | Delta implemented under audit; vega/curvature unsupported fail-closed | Planned after PS1/26 source map; runtime fail-closed |
-| CSR non-sec | Planned | Planned | Planned after PS1/26 source map; runtime fail-closed |
-| CSR sec non-CTP | Planned | Planned | Planned after PS1/26 source map; runtime fail-closed |
-| CSR sec CTP | Planned | Planned | Planned after PS1/26 source map; runtime fail-closed |
+| GIRR | Delta, vega, and curvature implemented under audit | Delta, vega, and curvature implemented under audit | Delta, vega, and curvature implemented under audit |
+| FX | Delta, vega, and curvature implemented under audit | Delta, vega, and curvature implemented under audit | Planned after PS1/26 source map; runtime fail-closed |
+| Equity | Delta implemented under audit; vega/curvature unsupported fail-closed | Delta implemented under audit; vega/curvature unsupported fail-closed | Planned after PS1/26 source map; runtime fail-closed |
+| Commodity | Delta implemented under audit; vega/curvature unsupported fail-closed | Delta implemented under audit; vega/curvature unsupported fail-closed | Planned after PS1/26 source map; runtime fail-closed |
+| CSR non-sec | Source-mapped planned; runtime fail-closed | Planned | Planned after PS1/26 source map; runtime fail-closed |
+| CSR sec non-CTP | Source-mapped planned; runtime fail-closed | Planned | Planned after PS1/26 source map; runtime fail-closed |
+| CSR sec CTP | Source-mapped planned; runtime fail-closed | Planned | Planned after PS1/26 source map; runtime fail-closed |
 
 `EU_CRR3` CSR planning is source-mapped but not runtime-enabled. The CSR map in
 [NON_BASEL_PROFILE_REQUIREMENTS.md](NON_BASEL_PROFILE_REQUIREMENTS.md#sbm-nbp-022a-eu-crr3-csr-implementation-map)
