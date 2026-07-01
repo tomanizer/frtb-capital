@@ -7,7 +7,7 @@ from frtb_common.hashing import stable_json_hash
 
 __all__ = ["MART_NAMES", "MART_SCHEMAS", "mart_schema_fingerprint"]
 
-MART_SCHEMA_VERSION = 4
+MART_SCHEMA_VERSION = 5
 MART_NAMES = (
     "capital_summary",
     "capital_tree",
@@ -22,6 +22,7 @@ MART_NAMES = (
     "drc_issuer_contributors",
     "cva_counterparty_contributors",
     "rrao_exposure_summary",
+    "rfet_nmrf_ses_evidence",
 )
 MART_SCHEMAS: dict[str, pa.Schema] = {
     "capital_summary": pa.schema(
@@ -214,6 +215,37 @@ MART_SCHEMAS: dict[str, pa.Schema] = {
             ("capital", pa.float64()),
             ("currency", pa.string()),
             ("artifact_id", pa.string()),
+        ]
+    ),
+    "rfet_nmrf_ses_evidence": pa.schema(
+        [
+            ("run_id", pa.string()),
+            ("risk_factor_id", pa.string()),
+            ("display_name", pa.string()),
+            ("risk_class", pa.string()),
+            ("risk_factor_type", pa.string()),
+            ("modellability_state", pa.string()),
+            ("observation_count", pa.int64()),
+            ("latest_observation_date", pa.string()),
+            ("gap_days", pa.int64()),
+            ("stale_state", pa.string()),
+            ("rejected_observation_count", pa.int64()),
+            ("rfet_artifact_id", pa.string()),
+            ("ses_component", pa.string()),
+            ("ses_amount", pa.float64()),
+            ("ses_movement", pa.float64()),
+            ("stress_period_id", pa.string()),
+            ("liquidity_horizon_days", pa.int64()),
+            ("aggregation_bucket", pa.string()),
+            ("capital_node_id", pa.string()),
+            ("book_id", pa.string()),
+            ("desk_id", pa.string()),
+            ("volcker_desk_id", pa.string()),
+            ("business_line_id", pa.string()),
+            ("legal_entity_id", pa.string()),
+            ("usage_count", pa.int64()),
+            ("source_artifact_id", pa.string()),
+            ("metadata_json", pa.string()),
         ]
     ),
 }
