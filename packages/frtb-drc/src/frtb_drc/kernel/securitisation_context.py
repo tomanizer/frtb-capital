@@ -11,11 +11,11 @@ from frtb_drc.fair_value_cap import (
     fair_value_cap_hash_payload,
     validate_fair_value_cap_evidence,
 )
+from frtb_drc.regimes import EU_CRR3_PROFILE_ID, PRA_UK_CRR_PROFILE_ID
 from frtb_drc.risk_weight_evidence import (
     effective_risk_weights,
     risk_weight_evidence_hash_payload,
 )
-from frtb_drc.regimes import EU_CRR3_PROFILE_ID, PRA_UK_CRR_PROFILE_ID
 from frtb_drc.validation import DrcInputError
 
 

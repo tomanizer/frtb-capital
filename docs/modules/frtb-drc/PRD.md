@@ -131,10 +131,10 @@ risk-weight, decomposition, and offset evidence.
 
 ## Risks
 
-- Securitisation and CTP treatment remains profile-sensitive. U.S. NPR 2.0 and
-  Basel MAR22 paths rely on cited upstream risk-weight and decomposition
-  evidence; unsupported EU and PRA mappings must continue to fail closed until implemented
-  with profile-specific citations and tests.
+- Securitisation and CTP treatment remains profile-sensitive. U.S. NPR 2.0,
+  Basel MAR22, EU CRR3, and PRA UK CRR paths rely on cited upstream risk-weight
+  and decomposition evidence. Future profiles or unmapped classes must continue
+  to fail closed until implemented with profile-specific citations and tests.
 - U.S. NPR 2.0 is proposed-rule material. Label all U.S. outputs as proposed
   and keep Basel defaults separately selectable.
 - The reference implementation is reconstructed from video and contains

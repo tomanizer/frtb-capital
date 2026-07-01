@@ -65,9 +65,7 @@ def test_eu_crr3_profile_supports_all_drc_risk_classes() -> None:
         }
     )
     assert profile.securitisation_non_ctp_fair_value_cap_allowed is True
-    assert profile.securitisation_non_ctp_fair_value_cap_citation_ids == (
-        "EU_CRR3_ARTICLE_325AA",
-    )
+    assert profile.securitisation_non_ctp_fair_value_cap_citation_ids == ("EU_CRR3_ARTICLE_325AA",)
     assert "EU_CRR3_ARTICLE_325W" in profile.citations
     assert "EU_CRR3_ARTICLE_325X" in profile.citations
     assert "EU_CRR3_ARTICLE_325Y_1_2" in profile.citations
@@ -93,9 +91,7 @@ def test_pra_profile_supports_all_drc_risk_classes() -> None:
         }
     )
     assert profile.securitisation_non_ctp_fair_value_cap_allowed is True
-    assert profile.securitisation_non_ctp_fair_value_cap_citation_ids == (
-        "PRA_DRC_ARTICLE_325AA",
-    )
+    assert profile.securitisation_non_ctp_fair_value_cap_citation_ids == ("PRA_DRC_ARTICLE_325AA",)
     assert "PRA_PS1_26_MARKET_RISK" in profile.citations
     assert "PRA_DRC_ARTICLE_325V" in profile.citations
     assert "PRA_DRC_ARTICLE_325W" in profile.citations
@@ -173,7 +169,9 @@ def test_profile_support_matrix_marks_eu_crr3_all_paths_supported() -> None:
         "EU_CRR3_ARTICLE_325AC",
         "EU_CRR3_ARTICLE_325AD",
     )
-    assert eu_ctp.next_step == "Maintain EU CRR3 CTP fixture and typed decomposition evidence coverage."
+    assert eu_ctp.next_step == (
+        "Maintain EU CRR3 CTP fixture and typed decomposition evidence coverage."
+    )
 
 
 def test_profile_support_matrix_marks_pra_all_paths_supported() -> None:

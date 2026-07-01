@@ -45,7 +45,11 @@ from frtb_drc.regimes import (
 )
 from frtb_drc.regimes import (
     EU_CRR3_PROFILE_ID as _EU_CRR3_PROFILE_ID,
+)
+from frtb_drc.regimes import (
     PRA_UK_CRR_PROFILE_ID as _PRA_UK_CRR_PROFILE_ID,
+)
+from frtb_drc.regimes import (
     US_NPR_2_0_PROFILE_ID,
     ensure_risk_class_supported,
     get_rule_profile,

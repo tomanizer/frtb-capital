@@ -1,6 +1,6 @@
 schema_version: 1
 component: frtb-drc
-status: partial_runtime
+status: implemented
 source_register: ../sources.yml
 planning_docs:
   - docs/modules/frtb-drc/PROFILE_SUPPORT_MATRIX.md

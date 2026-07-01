@@ -72,11 +72,9 @@ def _collect_citations(
         for record in net_jtds
     ):
         citation_ids.update(_securitisation_non_ctp_public_api_citations(profile_id))
-    if (
-        any(
-            DrcRiskClass(record.risk_class) == DrcRiskClass.CORRELATION_TRADING_PORTFOLIO
-            for record in net_jtds
-        )
+    if any(
+        DrcRiskClass(record.risk_class) == DrcRiskClass.CORRELATION_TRADING_PORTFOLIO
+        for record in net_jtds
     ):
         citation_ids.update(_ctp_public_api_citations(profile_id))
     for gross_jtd in gross_jtds:

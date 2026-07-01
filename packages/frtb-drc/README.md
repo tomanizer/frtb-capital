@@ -27,7 +27,8 @@ capital.
 | PRA_UK_CRR non-sec / sec non-CTP / CTP | Implemented row and Arrow batch paths |
 
 Outputs are engineering and validation evidence, not final regulatory capital.
-`PACKAGE_METADATA.validation_status` remains `PENDING`.
+`PACKAGE_METADATA.validation_status` is `AVAILABLE` for the committed synthetic
+row, batch, fixture, attribution, and support-matrix evidence.
 
 **Integration journey (Arrow per class -> capital -> attribution -> SA/suite/store):**
 [`docs/PACKAGE_JOURNEY.md`](docs/PACKAGE_JOURNEY.md)
@@ -98,6 +99,8 @@ For step-by-step regulatory mechanics with visuals, run the notebooks/:
 - 00_validation_map.ipynb
 - 01_gross_jtd.ipynb ... 05_category_capital.ipynb
 
-See `docs/REGULATORY_TRACEABILITY.md`, `docs/REGULATORY_ASSUMPTIONS.md`, and
-`docs/regulatory_sources.yml` (plus the modules/ planning pack) for citations
-and scope. The package also supports Arrow/batch handoff for high-volume paths.
+See
+[`REGULATORY_TRACEABILITY.md`](../../docs/modules/frtb-drc/REGULATORY_TRACEABILITY.md),
+[`REGULATORY_ASSUMPTIONS.md`](../../docs/modules/frtb-drc/REGULATORY_ASSUMPTIONS.md),
+and the module planning pack for citations and scope. The package also supports
+Arrow/batch handoff for high-volume paths.

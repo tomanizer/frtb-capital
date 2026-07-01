@@ -62,7 +62,7 @@ Supported profile coverage is:
   Article 325ad, typed risk-weight, decomposition, offset, and deterministic
   fixture evidence.
 
-Known fail-closed profile paths are:
+Known fail-closed profile paths for the current rule-profile matrix are:
 
 - None for the known DRC rule profiles listed in
   [`PROFILE_SUPPORT_MATRIX.md`](../PROFILE_SUPPORT_MATRIX.md).
