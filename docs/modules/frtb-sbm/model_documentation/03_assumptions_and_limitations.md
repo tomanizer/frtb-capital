@@ -19,7 +19,8 @@
 Unsupported paths raise `UnsupportedRegulatoryFeatureError` or `SbmInputError`
 before capital is emitted:
 
-- `US_NPR_2_0`, `EU_CRR3`, and `PRA_UK_CRR` runtime profiles;
+- `US_NPR_2_0` runtime profile cells outside GIRR delta;
+- `EU_CRR3` and `PRA_UK_CRR` runtime profiles;
 - risk-class/measure combinations outside the supported matrix;
 - missing curvature up/down shock inputs;
 - missing FX curvature scalar evidence where MAR21.98 requires it;

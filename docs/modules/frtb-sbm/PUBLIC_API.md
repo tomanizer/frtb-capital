@@ -4,7 +4,7 @@ This document defines the stable client integration surface for `frtb_sbm`.
 Symbols listed here are top-level imports unless explicitly marked
 submodule-only. Outputs are not final regulatory capital; package validation
 status remains pending and supported runtime paths are limited to documented
-BASEL_MAR21 slices.
+BASEL_MAR21 slices plus the `US_NPR_2_0` GIRR delta comparison slice.
 
 ## Stable surface
 
@@ -96,6 +96,9 @@ curvature paths, plus `US_NPR_2_0` for GIRR delta only, as described in
 [`packages/frtb-sbm/docs/REGULATORY_TRACEABILITY.md`](../../../packages/frtb-sbm/docs/REGULATORY_TRACEABILITY.md).
 All other U.S. NPR 2.0 cells, and the EU CRR3 and PRA UK CRR comparison
 profiles, fail closed until separately implemented and cited.
+ADR 0048 records the maturity standard: runtime gates open only with
+profile-owned citation metadata and deterministic evidence for the exact cell,
+or an ADR-approved shared-fixture rationale.
 
 Attribution is supported after a capital run through
 `calculate_sbm_attribution(result)`. Delta and vega records use analytical Euler

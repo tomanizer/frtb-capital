@@ -23,6 +23,11 @@ NON_BASEL_PROFILES = (
 )
 
 US_NPR_EXPECTED_PATHS = frozenset({(SbmRiskClass.GIRR, SbmRiskMeasure.DELTA)})
+COMPARISON_PROFILE_EXPECTED_PATHS = {
+    SbmRegulatoryProfile.US_NPR_2_0: US_NPR_EXPECTED_PATHS,
+    SbmRegulatoryProfile.EU_CRR3: frozenset(),
+    SbmRegulatoryProfile.PRA_UK_CRR: frozenset(),
+}
 
 RISK_CLASS_LABELS = {
     SbmRiskClass.GIRR: "GIRR",
@@ -69,6 +74,31 @@ def test_us_npr_profile_supports_only_girr_delta() -> None:
                 )
 
 
+@pytest.mark.parametrize("profile", NON_BASEL_PROFILES)
+def test_comparison_profile_support_matrix_classifies_every_cell(
+    profile: SbmRegulatoryProfile,
+) -> None:
+    supported = phase1_capital_supported_paths(profile.value)
+    expected_supported = COMPARISON_PROFILE_EXPECTED_PATHS[profile]
+
+    assert supported == expected_supported
+    for risk_class in SbmRiskClass:
+        for risk_measure in SbmRiskMeasure:
+            if (risk_class, risk_measure) in expected_supported:
+                ensure_sbm_risk_class_measure_supported(
+                    profile.value,
+                    risk_class,
+                    risk_measure,
+                )
+                continue
+            with pytest.raises(UnsupportedRegulatoryFeatureError, match=profile.value):
+                ensure_sbm_risk_class_measure_supported(
+                    profile.value,
+                    risk_class,
+                    risk_measure,
+                )
+
+
 @pytest.mark.parametrize(
     "profile",
     (
@@ -103,6 +133,16 @@ def test_traceability_support_matrix_lists_every_basel_path() -> None:
     assert "| `US_NPR_2_0` | partial (1 / 21 cells) |" in traceability
     for profile in (SbmRegulatoryProfile.EU_CRR3, SbmRegulatoryProfile.PRA_UK_CRR):
         assert f"| `{profile.value}` | unsupported fail-closed" in traceability
+    assert (
+        "| GIRR | implemented under audit | unsupported fail-closed | unsupported fail-closed |"
+        in traceability
+    )
+    assert (
+        "| FX | unsupported fail-closed | unsupported fail-closed | unsupported fail-closed |"
+        in traceability
+    )
+    assert "ADR 0048" in traceability
+    assert "girr_delta_us_npr_v1" in traceability
 
     for issue_number in ("#160", "#161", "#166", "#169", "#226", "#244"):
         assert issue_number in traceability
