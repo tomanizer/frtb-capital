@@ -164,7 +164,7 @@ Euler for large attribution sets.
 
 A useful complementary result is in Christoph Frei, "A New Approach to Risk
 Attribution and Its Application in Credit Risk Analysis" (2020, *Risks*): for
-nonlinear loss structures, a time-grid linearization of risk-driver slides can be
+nonlinear loss structures, a time-grid linearization of risk-factor shifts can be
 combined with Euler allocation, and the approximation converges as the number of
 time steps grows. The paper also reports that Shapley-style methods become
 computationally expensive as factor count grows, and that simple approximations
