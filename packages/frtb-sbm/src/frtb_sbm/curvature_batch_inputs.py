@@ -137,7 +137,7 @@ def _curvature_input_branch_records_from_batch(
     down_shocks: npt.NDArray[np.float64],
     profile_id: str,
 ) -> tuple[CurvatureBranchRecord, ...]:
-    citations = curvature_citation_ids(profile_id)
+    citations = curvature_citation_ids(profile_id, batch.risk_class)
     records: list[CurvatureBranchRecord] = []
     for row_index in sorted_curvature_batch_indices(batch):
         up_shock = float(up_shocks[row_index])

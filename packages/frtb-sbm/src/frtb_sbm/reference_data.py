@@ -97,9 +97,12 @@ from frtb_sbm.vega_reference_data import (
     girr_vega_liquidity_horizon_days,
     girr_vega_option_tenor_definition,
     girr_vega_option_tenors,
+    vega_inter_bucket_citation_ids,
+    vega_intra_bucket_citation_ids,
     vega_liquidity_horizon_days,
     vega_option_tenor_correlation,
     vega_risk_weight,
+    vega_scenario_citation_ids,
 )
 
 __all__ = [
@@ -177,7 +180,10 @@ __all__ = [
     "girr_vega_option_tenors",
     "normalise_fx_delta_currency_code",
     "profile_reference_payload",
+    "vega_inter_bucket_citation_ids",
+    "vega_intra_bucket_citation_ids",
     "vega_liquidity_horizon_days",
     "vega_option_tenor_correlation",
     "vega_risk_weight",
+    "vega_scenario_citation_ids",
 ]

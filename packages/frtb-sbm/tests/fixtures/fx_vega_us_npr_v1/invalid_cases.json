@@ -1,0 +1,38 @@
+[
+  {
+    "case_id": "unsupported_equity_vega",
+    "expected_error_match": "US_NPR_2_0",
+    "sensitivity": {
+      "sensitivity_id": "invalid-equity-vega",
+      "source_row_id": "invalid-401",
+      "desk_id": "equity-desk",
+      "legal_entity": "LE-001",
+      "risk_class": "EQUITY",
+      "risk_measure": "VEGA",
+      "bucket": "1",
+      "risk_factor": "SPOT",
+      "amount": 100000.0,
+      "amount_currency": "USD",
+      "option_tenor": "1y",
+      "qualifier": "Issuer A",
+      "sign_convention": "LONG"
+    }
+  },
+  {
+    "case_id": "missing_option_tenor",
+    "expected_error_match": "option_tenor",
+    "sensitivity": {
+      "sensitivity_id": "invalid-fx-vega-option-tenor",
+      "source_row_id": "invalid-402",
+      "desk_id": "fx-desk",
+      "legal_entity": "LE-001",
+      "risk_class": "FX",
+      "risk_measure": "VEGA",
+      "bucket": "EUR",
+      "risk_factor": "EUR",
+      "amount": 100000.0,
+      "amount_currency": "USD",
+      "sign_convention": "LONG"
+    }
+  }
+]

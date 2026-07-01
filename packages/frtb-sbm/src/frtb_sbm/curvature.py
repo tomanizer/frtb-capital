@@ -93,6 +93,7 @@ from frtb_sbm.data_models import (
     RiskClassCapital,
     RiskClassScenarioDetail,
     SbmPairwiseEvidenceMode,
+    SbmRegulatoryProfile,
     SbmRiskClass,
     SbmRiskMeasure,
     SbmScenarioLabel,
@@ -761,6 +762,11 @@ def _curvature_scenario_citation_ids(
 ) -> tuple[str, ...]:
     if risk_class is SbmRiskClass.GIRR:
         return PROFILE_GIRR_CURVATURE_SCENARIO_CITATION_IDS[_resolve_supported_profile(profile_id)]
+    if (
+        _resolve_supported_profile(profile_id) is SbmRegulatoryProfile.US_NPR_2_0
+        and risk_class is SbmRiskClass.FX
+    ):
+        return ("us_npr_91_fr_14952_va7a_fx_curvature_scenarios",)
     return _MAR21_CURVATURE_SCENARIO_CITATION
 
 
@@ -769,7 +775,12 @@ def _curvature_floor_citation_ids(
     risk_class: SbmRiskClass,
 ) -> tuple[str, ...]:
     if risk_class is SbmRiskClass.GIRR:
-        return curvature_citation_ids(profile_id)
+        return curvature_citation_ids(profile_id, risk_class)
+    if (
+        _resolve_supported_profile(profile_id) is SbmRegulatoryProfile.US_NPR_2_0
+        and risk_class is SbmRiskClass.FX
+    ):
+        return curvature_citation_ids(profile_id, risk_class)
     return _MAR21_CURVATURE_FLOOR_CITATION
 
 

@@ -29,8 +29,64 @@ from frtb_sbm.reference_profiles import (
     citations_for_profile,
 )
 
+_BASEL_CURVATURE_RISK_CLASSES = (
+    SbmRiskClass.GIRR,
+    SbmRiskClass.FX,
+    SbmRiskClass.EQUITY,
+    SbmRiskClass.COMMODITY,
+    SbmRiskClass.CSR_NONSEC,
+    SbmRiskClass.CSR_SEC_CTP,
+    SbmRiskClass.CSR_SEC_NONCTP,
+)
 
-def curvature_citation_ids(profile: SbmRegulatoryProfile | str) -> tuple[str, ...]:
+PROFILE_CURVATURE_CITATION_IDS: dict[
+    SbmRegulatoryProfile,
+    dict[SbmRiskClass, tuple[str, ...]],
+] = {
+    SbmRegulatoryProfile.BASEL_MAR21: {
+        risk_class: PROFILE_GIRR_CURVATURE_CITATION_IDS[SbmRegulatoryProfile.BASEL_MAR21]
+        for risk_class in _BASEL_CURVATURE_RISK_CLASSES
+    },
+    SbmRegulatoryProfile.US_NPR_2_0: {
+        SbmRiskClass.GIRR: PROFILE_GIRR_CURVATURE_CITATION_IDS[SbmRegulatoryProfile.US_NPR_2_0],
+        SbmRiskClass.FX: (
+            "us_npr_91_fr_14952_va7a_fx_curvature_factors",
+            "us_npr_91_fr_14952_va7a_fx_curvature_shocks",
+            "us_npr_91_fr_14952_va7a_fx_curvature_intra",
+            "us_npr_91_fr_14952_va7a_fx_curvature_inter",
+            "us_npr_91_fr_14952_va7a_fx_curvature_scenarios",
+        ),
+    },
+}
+
+PROFILE_CURVATURE_RISK_WEIGHT_CITATION_IDS: dict[
+    SbmRegulatoryProfile,
+    dict[SbmRiskClass, str],
+] = {
+    SbmRegulatoryProfile.BASEL_MAR21: {
+        SbmRiskClass.GIRR: PROFILE_GIRR_CURVATURE_RISK_WEIGHT_CITATION_IDS[
+            SbmRegulatoryProfile.BASEL_MAR21
+        ],
+        SbmRiskClass.FX: "basel_mar21_98",
+        SbmRiskClass.EQUITY: "basel_mar21_98",
+        SbmRiskClass.COMMODITY: "basel_mar21_99",
+        SbmRiskClass.CSR_NONSEC: "basel_mar21_99",
+        SbmRiskClass.CSR_SEC_CTP: "basel_mar21_99",
+        SbmRiskClass.CSR_SEC_NONCTP: "basel_mar21_99",
+    },
+    SbmRegulatoryProfile.US_NPR_2_0: {
+        SbmRiskClass.GIRR: PROFILE_GIRR_CURVATURE_RISK_WEIGHT_CITATION_IDS[
+            SbmRegulatoryProfile.US_NPR_2_0
+        ],
+        SbmRiskClass.FX: "us_npr_91_fr_14952_va7a_fx_curvature_shocks",
+    },
+}
+
+
+def curvature_citation_ids(
+    profile: SbmRegulatoryProfile | str,
+    risk_class: SbmRiskClass | str = SbmRiskClass.GIRR,
+) -> tuple[str, ...]:
     """Return ordered citation ids for curvature contract validation.
     Parameters
     ----------
@@ -43,11 +99,13 @@ def curvature_citation_ids(profile: SbmRegulatoryProfile | str) -> tuple[str, ..
     """
 
     resolved = _resolve_supported_profile(profile)
+    resolved_class = _coerce_risk_class(risk_class)
     citations = citations_for_profile(resolved)
-    required = PROFILE_GIRR_CURVATURE_CITATION_IDS.get(resolved)
+    required = PROFILE_CURVATURE_CITATION_IDS.get(resolved, {}).get(resolved_class)
     if required is None:
         raise UnsupportedRegulatoryFeatureError(
-            f"curvature citations are unavailable for profile={profile!r}"
+            "curvature citations are unavailable for "
+            f"profile={profile!r} risk_class={resolved_class.value}"
         )
     missing = [citation_id for citation_id in required if citation_id not in citations]
     if missing:
@@ -95,7 +153,10 @@ def curvature_risk_weight(
             currency=currency or risk_factor or bucket_id,
             reporting_currency=reporting_currency,
         )
-        return weight, _merge_citation_ids(("basel_mar21_98",), citations)
+        return weight, _merge_citation_ids(
+            (_curvature_risk_weight_citation_id(profile, resolved_class),),
+            citations,
+        )
     if resolved_class is SbmRiskClass.EQUITY:
         from frtb_sbm.equity_reference_data import EQUITY_SPOT_RISK_FACTOR
 
@@ -131,4 +192,23 @@ def curvature_risk_weight(
     )
 
 
-__all__ = ["curvature_citation_ids", "curvature_risk_weight"]
+def _curvature_risk_weight_citation_id(
+    profile: SbmRegulatoryProfile | str,
+    risk_class: SbmRiskClass,
+) -> str:
+    resolved = _resolve_supported_profile(profile)
+    try:
+        return PROFILE_CURVATURE_RISK_WEIGHT_CITATION_IDS[resolved][risk_class]
+    except KeyError as exc:
+        raise UnsupportedRegulatoryFeatureError(
+            "curvature risk-weight citation is unavailable for "
+            f"profile={resolved.value} risk_class={risk_class.value}"
+        ) from exc
+
+
+__all__ = [
+    "PROFILE_CURVATURE_CITATION_IDS",
+    "PROFILE_CURVATURE_RISK_WEIGHT_CITATION_IDS",
+    "curvature_citation_ids",
+    "curvature_risk_weight",
+]

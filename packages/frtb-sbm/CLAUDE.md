@@ -73,7 +73,7 @@ the import-shadowing guardrail before adding `adapters/`, `validation/`,
 
 `SbmRegulatoryProfile` includes `US_NPR_2_0`, `EU_CRR3`, and `PRA_UK_CRR`.
 `US_NPR_2_0` is capital-producing only for GIRR delta, GIRR vega, GIRR
-curvature, and reporting-currency FX delta; `PRA_UK_CRR` is capital-producing
+curvature, and reporting-currency FX delta, vega, and curvature; `PRA_UK_CRR` is capital-producing
 only for GIRR delta as
 comparison material. `EU_CRR3` remains runtime fail-closed, and all PRA cells
 outside GIRR delta fail closed. `PRA_UK_CRR` GIRR delta uses PS1/26 Appendix 1 /

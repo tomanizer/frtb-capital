@@ -12,9 +12,12 @@ from frtb_sbm.equity_reference_data import (
     EQUITY_SPOT_RISK_FACTOR,
     equity_delta_intra_bucket_correlation,
 )
-from frtb_sbm.reference_data import fx_delta_intra_bucket_correlation, vega_option_tenor_correlation
+from frtb_sbm.reference_data import (
+    fx_delta_intra_bucket_correlation,
+    vega_intra_bucket_citation_ids,
+    vega_option_tenor_correlation,
+)
 from frtb_sbm.risk_classes.vega_correlation_common import (
-    _MAR21_VEGA_INTRA_CITATION,
     _VEGA_NEUTRAL_LOCATION,
     _VEGA_NEUTRAL_TENOR,
 )
@@ -58,10 +61,15 @@ def non_girr_vega_intra_bucket_correlation(
         profile_id,
         option_tenor1=option_tenor_a,
         option_tenor2=option_tenor_b,
+        risk_class=risk_class,
     )
     return (
         min(1.0, delta_correlation * option_correlation),
-        _merge_citation_ids(_MAR21_VEGA_INTRA_CITATION, delta_citations, option_citations),
+        _merge_citation_ids(
+            vega_intra_bucket_citation_ids(profile_id, risk_class),
+            delta_citations,
+            option_citations,
+        ),
     )
 
 

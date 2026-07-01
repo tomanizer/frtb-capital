@@ -19,20 +19,20 @@
     }
   },
   {
-    "case_id": "npr-fx-curvature-unsupported",
+    "case_id": "npr-commodity-curvature-unsupported",
     "expected_error_match": "US_NPR_2_0",
     "sensitivity": {
-      "sensitivity_id": "us-npr-fx-curv-unsupported",
+      "sensitivity_id": "us-npr-commodity-curv-unsupported",
       "source_row_id": "row-invalid-302",
-      "desk_id": "rates-desk",
+      "desk_id": "commodity-desk",
       "legal_entity": "LE-001",
-      "risk_class": "FX",
+      "risk_class": "COMMODITY",
       "risk_measure": "CURVATURE",
-      "bucket": "EUR",
-      "risk_factor": "EUR",
+      "bucket": "1",
+      "risk_factor": "Coal",
+      "qualifier": "Location A",
       "amount": 0.0,
       "amount_currency": "USD",
-      "tenor": "5y",
       "up_shock_amount": 100000.0,
       "down_shock_amount": 50000.0,
       "sign_convention": "RECEIVE"

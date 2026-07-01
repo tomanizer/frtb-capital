@@ -108,7 +108,7 @@ def _curvature_factor_citation_ids(
 ) -> tuple[str, ...]:
     del bucket_id, risk_factor
     return _merge_citation_ids(
-        curvature_citation_ids(profile_id),
+        curvature_citation_ids(profile_id, risk_class),
         _curvature_definition_citation_ids(profile_id, risk_class),
         _curvature_weight_rule_citation_ids(profile_id, risk_class),
     )
@@ -123,6 +123,11 @@ def _curvature_definition_citation_ids(
         and risk_class is SbmRiskClass.GIRR
     ):
         return ("us_npr_91_fr_14952_va7a_girr_curvature_factors",)
+    if (
+        SbmRegulatoryProfile(profile_id) is SbmRegulatoryProfile.US_NPR_2_0
+        and risk_class is SbmRiskClass.FX
+    ):
+        return ("us_npr_91_fr_14952_va7a_fx_curvature_factors",)
     if risk_class is SbmRiskClass.GIRR:
         return ("basel_mar21_8", "basel_mar21_96", "basel_mar21_97")
     if risk_class is SbmRiskClass.FX:
@@ -149,6 +154,12 @@ def _curvature_weight_rule_citation_ids(
         return (
             PROFILE_GIRR_CURVATURE_RISK_WEIGHT_CITATION_IDS[profile],
             "us_npr_91_fr_14952_va7a_girr_delta_weights",
+        )
+    if profile is SbmRegulatoryProfile.US_NPR_2_0 and risk_class is SbmRiskClass.FX:
+        return (
+            "us_npr_91_fr_14952_va7a_fx_curvature_shocks",
+            "us_npr_91_fr_14952_va7a_fx_delta_weights",
+            "us_npr_91_fr_14952_va7a_fx_delta_sqrt2",
         )
     if risk_class is SbmRiskClass.GIRR:
         return ("basel_mar21_99", "basel_mar21_39")

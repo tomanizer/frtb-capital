@@ -87,6 +87,7 @@ def test_us_npr_fx_delta_fixture_matches_expected_outputs() -> None:
     result = calculate_sbm_capital(sensitivities, context=context)
     validate_sbm_result_reconciliation(result)
     payload = serialize_sbm_result(result)
+    risk_class_payload = payload["risk_classes"][0]
 
     assert payload["profile_id"] == expected["profile_id"]
     assert payload["profile_hash"] == expected["profile_hash"]
@@ -95,6 +96,9 @@ def test_us_npr_fx_delta_fixture_matches_expected_outputs() -> None:
     assert payload["warnings"] == expected["warnings"]
     assert payload["selected_portfolio_scenario"] == expected["selected_portfolio_scenario"]
     assert payload["portfolio_scenario_totals"] == expected["portfolio_scenario_totals"]
+    assert risk_class_payload["risk_class"] == "FX"
+    assert risk_class_payload["risk_measure"] == "DELTA"
+    assert risk_class_payload["selected_scenario"] == "LOW"
     assert [_select(item, _CITATION_KEYS) for item in payload["risk_classes"]] == expected[
         "risk_classes"
     ]
@@ -149,6 +153,9 @@ def test_us_npr_fx_delta_unsupported_fixture_cases_fail_closed(
 ) -> None:
     loader = load_fixture_module()
     context = loader.load_fixture_context()
+    allowed_risk_classes = {SbmRiskClass.FX, SbmRiskClass.EQUITY, SbmRiskClass.COMMODITY}
+
+    assert all(sensitivity.risk_class in allowed_risk_classes for sensitivity in sensitivities)
 
     with pytest.raises(
         (SbmInputError, UnsupportedRegulatoryFeatureError),

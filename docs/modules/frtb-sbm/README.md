@@ -8,13 +8,14 @@
 - Import name: `frtb_sbm`
 - Implementation status: partial runtime — BASEL_MAR21 delta, vega, and
   curvature paths implemented under audit across all seven SBM risk classes,
-  plus `US_NPR_2_0` GIRR delta, GIRR vega, GIRR curvature, and FX delta and
+  plus `US_NPR_2_0` GIRR delta, GIRR vega, GIRR curvature, and FX delta, vega, curvature and
   `PRA_UK_CRR` GIRR delta comparison slices
 - Validation status: deterministic fixture, audit, replay, and public API tests available
 
 The package is importable and exposes `calculate_sbm_capital` for supported
 Basel MAR21 delta, vega, and curvature canonical inputs and for the cited
 `US_NPR_2_0` GIRR delta, GIRR vega, GIRR curvature, FX delta, and
+FX vega and FX curvature, and
 `PRA_UK_CRR` GIRR delta comparison slices. Row-wise, package-owned batch, and Arrow batch
 paths are available for the supported matrix. All other U.S. NPR 2.0 cells, all
 EU CRR3 cells, all PRA UK CRR cells outside GIRR delta, and unmapped

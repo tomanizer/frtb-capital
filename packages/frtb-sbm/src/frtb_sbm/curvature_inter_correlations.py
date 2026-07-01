@@ -17,7 +17,7 @@ from frtb_sbm.commodity_reference_data import (
 from frtb_sbm.csr_nonsec_reference_data import csr_nonsec_inter_bucket_correlation
 from frtb_sbm.csr_sec_ctp_reference_data import csr_sec_ctp_inter_bucket_correlation
 from frtb_sbm.csr_sec_nonctp_reference_data import csr_sec_nonctp_inter_bucket_correlation
-from frtb_sbm.data_models import SbmRiskClass
+from frtb_sbm.data_models import SbmRegulatoryProfile, SbmRiskClass
 from frtb_sbm.equity_reference_data import (
     _require_equity_bucket_number,
     equity_inter_bucket_correlation,
@@ -117,6 +117,12 @@ def _curvature_intra_citation_ids(
             _resolve_supported_profile(profile_id)
         ]
     if risk_class is SbmRiskClass.FX:
+        if _resolve_supported_profile(profile_id) is SbmRegulatoryProfile.US_NPR_2_0:
+            return (
+                "us_npr_91_fr_14952_va7a_sbm_scope",
+                "us_npr_91_fr_14952_va7a_fx_curvature_intra",
+                "us_npr_91_fr_14952_va7a_fx_delta_intra",
+            )
         return (*_MAR21_CURVATURE_INTRA_CITATION, "basel_mar21_86")
     if risk_class is SbmRiskClass.EQUITY:
         return (*_MAR21_CURVATURE_INTRA_CITATION, "basel_mar21_78", "basel_mar21_79")
@@ -140,6 +146,12 @@ def _curvature_inter_citation_ids(
             _resolve_supported_profile(profile_id)
         ]
     if risk_class is SbmRiskClass.FX:
+        if _resolve_supported_profile(profile_id) is SbmRegulatoryProfile.US_NPR_2_0:
+            return (
+                "us_npr_91_fr_14952_va7a_sbm_scope",
+                "us_npr_91_fr_14952_va7a_fx_curvature_inter",
+                "us_npr_91_fr_14952_va7a_fx_delta_inter",
+            )
         return (*_MAR21_CURVATURE_INTER_CITATION, "basel_mar21_89")
     if risk_class is SbmRiskClass.EQUITY:
         return (*_MAR21_CURVATURE_INTER_CITATION, "basel_mar21_80")

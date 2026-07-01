@@ -97,7 +97,7 @@ def parse_curvature_input(
             down_shock_amount,
             sensitivity_id=sensitivity.sensitivity_id,
         ),
-        citation_ids=curvature_citation_ids(profile_id),
+        citation_ids=curvature_citation_ids(profile_id, sensitivity.risk_class),
     )
 
 
@@ -223,9 +223,9 @@ def _curvature_input_branch_records(
     *,
     profile_id: str,
 ) -> tuple[CurvatureBranchRecord, ...]:
-    citations = curvature_citation_ids(profile_id)
     records: list[CurvatureBranchRecord] = []
     for sensitivity in sensitivities:
+        citations = curvature_citation_ids(profile_id, sensitivity.risk_class)
         up_shock = _required_curvature_shock(sensitivity, field="up_shock_amount")
         down_shock = _required_curvature_shock(sensitivity, field="down_shock_amount")
         records.append(

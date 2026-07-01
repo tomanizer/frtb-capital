@@ -14,9 +14,16 @@ from frtb_common import UnsupportedRegulatoryFeatureError
 
 from frtb_sbm._citations import merge_citation_ids as _merge_citation_ids
 from frtb_sbm.batch import SbmSensitivityBatch, sorted_sbm_batch_indices
-from frtb_sbm.data_models import SbmRiskClass, SbmRiskMeasure, SbmSensitivity, WeightedSensitivity
+from frtb_sbm.data_models import (
+    SbmRegulatoryProfile,
+    SbmRiskClass,
+    SbmRiskMeasure,
+    SbmSensitivity,
+    WeightedSensitivity,
+)
 from frtb_sbm.kernel.weighting import _liquidity_horizon_at, _optional_axis_value
 from frtb_sbm.reference_data import vega_liquidity_horizon_days, vega_risk_weight
+from frtb_sbm.reference_profiles import _resolve_supported_profile
 from frtb_sbm.regimes import ensure_profile_supports_risk_class_measure
 from frtb_sbm.risk_classes.vega_validation import (
     _validate_non_girr_vega_batch_row,
@@ -88,9 +95,10 @@ def weight_non_girr_vega_sensitivities(
         risk_weight, weight_citations = vega_risk_weight(
             profile_id,
             liquidity_horizon_days=horizon,
+            risk_class=sensitivity.risk_class,
         )
         citation_ids = _merge_citation_ids(
-            ("basel_mar21_90", "basel_mar21_91"),
+            _weighted_sensitivity_citation_ids(profile_id, sensitivity.risk_class),
             risk_factor_citations,
             weight_citations,
         )
@@ -168,9 +176,10 @@ def weight_non_girr_vega_sensitivity_batch(
         risk_weight, weight_citations = vega_risk_weight(
             profile_id,
             liquidity_horizon_days=horizon,
+            risk_class=risk_class,
         )
         citation_ids = _merge_citation_ids(
-            ("basel_mar21_90", "basel_mar21_91"),
+            _weighted_sensitivity_citation_ids(profile_id, risk_class),
             risk_factor_citations,
             weight_citations,
         )
@@ -191,6 +200,19 @@ def weight_non_girr_vega_sensitivity_batch(
             )
         )
     return tuple(weighted)
+
+
+def _weighted_sensitivity_citation_ids(
+    profile_id: str,
+    risk_class: SbmRiskClass,
+) -> tuple[str, ...]:
+    profile = _resolve_supported_profile(profile_id)
+    if profile is SbmRegulatoryProfile.US_NPR_2_0 and risk_class is SbmRiskClass.FX:
+        return (
+            "us_npr_91_fr_14952_va7a_sbm_scope",
+            "us_npr_91_fr_14952_va7a_fx_vega_lh_rw",
+        )
+    return ("basel_mar21_90", "basel_mar21_91")
 
 
 __all__ = [

@@ -1,0 +1,68 @@
+{
+  "context": {
+    "run_id": "sbm-fx-curvature-us-npr-v1",
+    "calculation_date": "2026-07-01",
+    "base_currency": "USD",
+    "reporting_currency": "USD",
+    "profile_id": "US_NPR_2_0"
+  },
+  "sensitivities": [
+    {
+      "sensitivity_id": "us-npr-eur-fx-curv",
+      "source_row_id": "row-501",
+      "desk_id": "fx-desk",
+      "legal_entity": "LE-001",
+      "risk_class": "FX",
+      "risk_measure": "CURVATURE",
+      "bucket": "EUR",
+      "risk_factor": "EUR",
+      "amount": 0.0,
+      "amount_currency": "USD",
+      "up_shock_amount": 70000.0,
+      "down_shock_amount": -120000.0,
+      "sign_convention": "LONG",
+      "mapping_citation_ids": [
+        "us_npr_91_fr_14952_va7a_fx_reporting_currency",
+        "us_npr_91_fr_14952_va7a_fx_curvature_factors"
+      ]
+    },
+    {
+      "sensitivity_id": "us-npr-gbp-fx-curv",
+      "source_row_id": "row-502",
+      "desk_id": "fx-desk",
+      "legal_entity": "LE-001",
+      "risk_class": "FX",
+      "risk_measure": "CURVATURE",
+      "bucket": "GBP",
+      "risk_factor": "GBP",
+      "amount": 0.0,
+      "amount_currency": "USD",
+      "up_shock_amount": -40000.0,
+      "down_shock_amount": 90000.0,
+      "sign_convention": "SHORT",
+      "mapping_citation_ids": [
+        "us_npr_91_fr_14952_va7a_fx_reporting_currency",
+        "us_npr_91_fr_14952_va7a_fx_curvature_factors"
+      ]
+    },
+    {
+      "sensitivity_id": "us-npr-myr-fx-curv",
+      "source_row_id": "row-503",
+      "desk_id": "fx-desk",
+      "legal_entity": "LE-001",
+      "risk_class": "FX",
+      "risk_measure": "CURVATURE",
+      "bucket": "MYR",
+      "risk_factor": "MYR",
+      "amount": 0.0,
+      "amount_currency": "USD",
+      "up_shock_amount": -20000.0,
+      "down_shock_amount": -60000.0,
+      "sign_convention": "LONG",
+      "mapping_citation_ids": [
+        "us_npr_91_fr_14952_va7a_fx_reporting_currency",
+        "us_npr_91_fr_14952_va7a_fx_curvature_factors"
+      ]
+    }
+  ]
+}

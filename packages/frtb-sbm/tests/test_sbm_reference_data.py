@@ -79,6 +79,15 @@ def test_us_npr_fx_policy_citations_are_registered() -> None:
     assert "us_npr_91_fr_14952_va7a_fx_delta_sqrt2" in citations
     assert "us_npr_91_fr_14952_va7a_fx_delta_intra" in citations
     assert "us_npr_91_fr_14952_va7a_fx_delta_inter" in citations
+    assert "us_npr_91_fr_14952_va7a_fx_vega_option_tenors" in citations
+    assert "us_npr_91_fr_14952_va7a_fx_vega_lh_rw" in citations
+    assert "us_npr_91_fr_14952_va7a_fx_vega_intra" in citations
+    assert "us_npr_91_fr_14952_va7a_fx_vega_inter" in citations
+    assert "us_npr_91_fr_14952_va7a_fx_curvature_factors" in citations
+    assert "us_npr_91_fr_14952_va7a_fx_curvature_shocks" in citations
+    assert "us_npr_91_fr_14952_va7a_fx_curvature_intra" in citations
+    assert "us_npr_91_fr_14952_va7a_fx_curvature_inter" in citations
+    assert "us_npr_91_fr_14952_va7a_fx_curvature_scenarios" in citations
     assert "us_npr_91_fr_14952_va7a_fx_base_currency_approval" in citations
     assert "91 FR 15020" in citations["us_npr_91_fr_14952_va7a_fx_base_currency_approval"].location
 

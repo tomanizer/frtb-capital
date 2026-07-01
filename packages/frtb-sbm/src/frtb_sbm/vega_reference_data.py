@@ -46,6 +46,7 @@ PROFILE_VEGA_LIQUIDITY_HORIZON_DAYS: dict[
     },
     SbmRegulatoryProfile.US_NPR_2_0: {
         SbmRiskClass.GIRR: 60,
+        SbmRiskClass.FX: 40,
     },
 }
 
@@ -79,6 +80,140 @@ PROFILE_GIRR_VEGA_LIQUIDITY_HORIZON_CITATION_IDS: dict[SbmRegulatoryProfile, str
 PROFILE_GIRR_VEGA_INTRA_BUCKET_CITATION_IDS: dict[SbmRegulatoryProfile, str] = {
     SbmRegulatoryProfile.BASEL_MAR21: "basel_mar21_93",
     SbmRegulatoryProfile.US_NPR_2_0: "us_npr_91_fr_14952_va7a_girr_vega_intra",
+}
+
+PROFILE_VEGA_RISK_WEIGHT_CITATION_IDS: dict[
+    SbmRegulatoryProfile,
+    dict[SbmRiskClass, str],
+] = {
+    SbmRegulatoryProfile.BASEL_MAR21: {
+        risk_class: "basel_mar21_92"
+        for risk_class in (
+            SbmRiskClass.GIRR,
+            SbmRiskClass.CSR_NONSEC,
+            SbmRiskClass.CSR_SEC_CTP,
+            SbmRiskClass.CSR_SEC_NONCTP,
+            SbmRiskClass.COMMODITY,
+            SbmRiskClass.EQUITY,
+            SbmRiskClass.FX,
+        )
+    },
+    SbmRegulatoryProfile.US_NPR_2_0: {
+        SbmRiskClass.GIRR: "us_npr_91_fr_14952_va7a_girr_vega_lh_rw",
+        SbmRiskClass.FX: "us_npr_91_fr_14952_va7a_fx_vega_lh_rw",
+    },
+}
+
+PROFILE_VEGA_OPTION_TENOR_CITATION_IDS: dict[
+    SbmRegulatoryProfile,
+    dict[SbmRiskClass, str],
+] = {
+    SbmRegulatoryProfile.BASEL_MAR21: {
+        risk_class: "basel_mar21_93"
+        for risk_class in (
+            SbmRiskClass.GIRR,
+            SbmRiskClass.CSR_NONSEC,
+            SbmRiskClass.CSR_SEC_CTP,
+            SbmRiskClass.CSR_SEC_NONCTP,
+            SbmRiskClass.COMMODITY,
+            SbmRiskClass.EQUITY,
+            SbmRiskClass.FX,
+        )
+    },
+    SbmRegulatoryProfile.US_NPR_2_0: {
+        SbmRiskClass.GIRR: "us_npr_91_fr_14952_va7a_girr_vega_intra",
+        SbmRiskClass.FX: "us_npr_91_fr_14952_va7a_fx_vega_option_tenors",
+    },
+}
+
+PROFILE_VEGA_INTRA_BUCKET_CITATION_IDS: dict[
+    SbmRegulatoryProfile,
+    dict[SbmRiskClass, tuple[str, ...]],
+] = {
+    SbmRegulatoryProfile.BASEL_MAR21: {
+        SbmRiskClass.FX: ("basel_mar21_4_intra_bucket", "basel_mar21_94", "basel_mar21_86"),
+        SbmRiskClass.EQUITY: (
+            "basel_mar21_4_intra_bucket",
+            "basel_mar21_94",
+            "basel_mar21_78",
+            "basel_mar21_79",
+        ),
+        SbmRiskClass.COMMODITY: (
+            "basel_mar21_4_intra_bucket",
+            "basel_mar21_94",
+            "basel_mar21_83",
+        ),
+        SbmRiskClass.CSR_NONSEC: (
+            "basel_mar21_4_intra_bucket",
+            "basel_mar21_94",
+            "basel_mar21_54",
+            "basel_mar21_55",
+            "basel_mar21_56",
+        ),
+        SbmRiskClass.CSR_SEC_NONCTP: (
+            "basel_mar21_4_intra_bucket",
+            "basel_mar21_94",
+            "basel_mar21_67",
+            "basel_mar21_68",
+        ),
+        SbmRiskClass.CSR_SEC_CTP: (
+            "basel_mar21_4_intra_bucket",
+            "basel_mar21_94",
+            "basel_mar21_58",
+        ),
+    },
+    SbmRegulatoryProfile.US_NPR_2_0: {
+        SbmRiskClass.FX: (
+            "us_npr_91_fr_14952_va7a_sbm_scope",
+            "us_npr_91_fr_14952_va7a_fx_vega_intra",
+            "us_npr_91_fr_14952_va7a_fx_delta_intra",
+        ),
+    },
+}
+
+PROFILE_VEGA_INTER_BUCKET_CITATION_IDS: dict[
+    SbmRegulatoryProfile,
+    dict[SbmRiskClass, tuple[str, ...]],
+] = {
+    SbmRegulatoryProfile.BASEL_MAR21: {
+        SbmRiskClass.FX: ("basel_mar21_4_inter_bucket", "basel_mar21_95", "basel_mar21_89"),
+        SbmRiskClass.EQUITY: ("basel_mar21_4_inter_bucket", "basel_mar21_95", "basel_mar21_80"),
+        SbmRiskClass.COMMODITY: (
+            "basel_mar21_4_inter_bucket",
+            "basel_mar21_95",
+            "basel_mar21_85",
+        ),
+        SbmRiskClass.CSR_NONSEC: (
+            "basel_mar21_4_inter_bucket",
+            "basel_mar21_95",
+            "basel_mar21_57",
+        ),
+        SbmRiskClass.CSR_SEC_NONCTP: (
+            "basel_mar21_4_inter_bucket",
+            "basel_mar21_95",
+            "basel_mar21_70",
+        ),
+        SbmRiskClass.CSR_SEC_CTP: (
+            "basel_mar21_4_inter_bucket",
+            "basel_mar21_95",
+            "basel_mar21_57",
+        ),
+    },
+    SbmRegulatoryProfile.US_NPR_2_0: {
+        SbmRiskClass.FX: (
+            "us_npr_91_fr_14952_va7a_sbm_scope",
+            "us_npr_91_fr_14952_va7a_fx_vega_inter",
+            "us_npr_91_fr_14952_va7a_fx_delta_inter",
+        ),
+    },
+}
+
+PROFILE_VEGA_SCENARIO_CITATION_IDS: dict[SbmRegulatoryProfile, tuple[str, ...]] = {
+    SbmRegulatoryProfile.BASEL_MAR21: (
+        "basel_mar21_6_correlation_scenarios",
+        "basel_mar21_7_scenario_selection",
+    ),
+    SbmRegulatoryProfile.US_NPR_2_0: ("us_npr_91_fr_14952_va7a_correlation_scenarios",),
 }
 
 
@@ -146,6 +281,7 @@ def vega_risk_weight(
     profile: SbmRegulatoryProfile | str,
     *,
     liquidity_horizon_days: int,
+    risk_class: SbmRiskClass | str = SbmRiskClass.GIRR,
 ) -> tuple[float, tuple[str, ...]]:
     """Return the cited vega risk weight min(100%, 55% * sqrt(LH/10)).
     Parameters
@@ -162,12 +298,19 @@ def vega_risk_weight(
 
     resolved = _resolve_supported_profile(profile)
     _ensure_vega_supported(profile)
+    resolved_class = _coerce_risk_class(risk_class)
     horizon = require_positive_int(liquidity_horizon_days, "liquidity_horizon_days")
     risk_weight = min(
         GIRR_VEGA_RISK_WEIGHT_CAP,
         GIRR_VEGA_RISK_WEIGHT_FACTOR * math.sqrt(horizon / 10.0),
     )
-    return risk_weight, (PROFILE_GIRR_VEGA_LIQUIDITY_HORIZON_CITATION_IDS[resolved],)
+    try:
+        citation_id = PROFILE_VEGA_RISK_WEIGHT_CITATION_IDS[resolved][resolved_class]
+    except KeyError as exc:
+        raise UnsupportedRegulatoryFeatureError(
+            f"vega risk-weight citation is unsupported for risk_class={resolved_class.value}"
+        ) from exc
+    return risk_weight, (citation_id,)
 
 
 def girr_vega_option_tenors(
@@ -258,6 +401,7 @@ def vega_option_tenor_correlation(
     *,
     option_tenor1: str,
     option_tenor2: str,
+    risk_class: SbmRiskClass | str = SbmRiskClass.GIRR,
 ) -> tuple[float, tuple[str, ...]]:
     """Return the MAR21.93 option-tenor correlation term used by vega paths.
     Parameters
@@ -276,8 +420,15 @@ def vega_option_tenor_correlation(
 
     resolved = _resolve_supported_profile(profile)
     _ensure_vega_supported(profile)
+    resolved_class = _coerce_risk_class(risk_class)
     option_maturity1 = girr_vega_option_tenor_definition(profile, option_tenor1).maturity_years
     option_maturity2 = girr_vega_option_tenor_definition(profile, option_tenor2).maturity_years
+    try:
+        citation_id = PROFILE_VEGA_OPTION_TENOR_CITATION_IDS[resolved][resolved_class]
+    except KeyError as exc:
+        raise UnsupportedRegulatoryFeatureError(
+            f"vega option-tenor citation is unsupported for risk_class={resolved_class.value}"
+        ) from exc
     return (
         _exponential_tenor_correlation(
             option_maturity1,
@@ -285,8 +436,104 @@ def vega_option_tenor_correlation(
             constant=GIRR_VEGA_INTRA_BUCKET_CONSTANT,
             floor=None,
         ),
-        (PROFILE_GIRR_VEGA_INTRA_BUCKET_CITATION_IDS[resolved],),
+        (citation_id,),
     )
+
+
+def vega_intra_bucket_citation_ids(
+    profile: SbmRegulatoryProfile | str,
+    risk_class: SbmRiskClass | str,
+) -> tuple[str, ...]:
+    """Return profile-owned non-GIRR vega intra-bucket citation ids.
+
+    Parameters
+    ----------
+    profile : SbmRegulatoryProfile | str
+        Regulatory profile that owns the vega correlation rule citation.
+    risk_class : SbmRiskClass | str
+        Risk class for the non-GIRR vega branch.
+
+    Returns
+    -------
+    tuple[str, ...]
+        Citation identifiers used on the intra-bucket vega aggregation branch.
+
+    Raises
+    ------
+    UnsupportedRegulatoryFeatureError
+        If the profile/risk-class pair does not have implemented vega citations.
+    """
+
+    resolved = _resolve_supported_profile(profile)
+    resolved_class = _coerce_risk_class(risk_class)
+    try:
+        return PROFILE_VEGA_INTRA_BUCKET_CITATION_IDS[resolved][resolved_class]
+    except KeyError as exc:
+        raise UnsupportedRegulatoryFeatureError(
+            f"vega intra-bucket citations are unsupported for risk_class={resolved_class.value}"
+        ) from exc
+
+
+def vega_inter_bucket_citation_ids(
+    profile: SbmRegulatoryProfile | str,
+    risk_class: SbmRiskClass | str,
+) -> tuple[str, ...]:
+    """Return profile-owned non-GIRR vega inter-bucket citation ids.
+
+    Parameters
+    ----------
+    profile : SbmRegulatoryProfile | str
+        Regulatory profile that owns the vega correlation rule citation.
+    risk_class : SbmRiskClass | str
+        Risk class for the non-GIRR vega branch.
+
+    Returns
+    -------
+    tuple[str, ...]
+        Citation identifiers used on the inter-bucket vega aggregation branch.
+
+    Raises
+    ------
+    UnsupportedRegulatoryFeatureError
+        If the profile/risk-class pair does not have implemented vega citations.
+    """
+
+    resolved = _resolve_supported_profile(profile)
+    resolved_class = _coerce_risk_class(risk_class)
+    try:
+        return PROFILE_VEGA_INTER_BUCKET_CITATION_IDS[resolved][resolved_class]
+    except KeyError as exc:
+        raise UnsupportedRegulatoryFeatureError(
+            f"vega inter-bucket citations are unsupported for risk_class={resolved_class.value}"
+        ) from exc
+
+
+def vega_scenario_citation_ids(profile: SbmRegulatoryProfile | str) -> tuple[str, ...]:
+    """Return profile-owned vega correlation-scenario citation ids.
+
+    Parameters
+    ----------
+    profile : SbmRegulatoryProfile | str
+        Regulatory profile that owns the vega correlation-scenario rule.
+
+    Returns
+    -------
+    tuple[str, ...]
+        Citation identifiers for high, medium, and low vega correlation scenarios.
+
+    Raises
+    ------
+    UnsupportedRegulatoryFeatureError
+        If the profile does not have implemented vega scenario citations.
+    """
+
+    resolved = _resolve_supported_profile(profile)
+    try:
+        return PROFILE_VEGA_SCENARIO_CITATION_IDS[resolved]
+    except KeyError as exc:
+        raise UnsupportedRegulatoryFeatureError(
+            f"vega scenario citations are unsupported for profile={resolved.value}"
+        ) from exc
 
 
 def _ensure_vega_supported(profile: SbmRegulatoryProfile | str) -> None:
@@ -320,12 +567,20 @@ __all__ = [
     "PROFILE_GIRR_VEGA_LIQUIDITY_HORIZON_CITATION_IDS",
     "PROFILE_GIRR_VEGA_LIQUIDITY_HORIZON_DAYS",
     "PROFILE_GIRR_VEGA_OPTION_TENORS",
+    "PROFILE_VEGA_INTER_BUCKET_CITATION_IDS",
+    "PROFILE_VEGA_INTRA_BUCKET_CITATION_IDS",
     "PROFILE_VEGA_LIQUIDITY_HORIZON_DAYS",
+    "PROFILE_VEGA_OPTION_TENOR_CITATION_IDS",
+    "PROFILE_VEGA_RISK_WEIGHT_CITATION_IDS",
+    "PROFILE_VEGA_SCENARIO_CITATION_IDS",
     "girr_vega_intra_bucket_correlation",
     "girr_vega_liquidity_horizon_days",
     "girr_vega_option_tenor_definition",
     "girr_vega_option_tenors",
+    "vega_inter_bucket_citation_ids",
+    "vega_intra_bucket_citation_ids",
     "vega_liquidity_horizon_days",
     "vega_option_tenor_correlation",
     "vega_risk_weight",
+    "vega_scenario_citation_ids",
 ]

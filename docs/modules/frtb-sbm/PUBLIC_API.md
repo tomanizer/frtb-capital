@@ -5,7 +5,7 @@ Symbols listed here are top-level imports unless explicitly marked
 submodule-only. Outputs are not final regulatory capital; package validation
 status remains pending and supported runtime paths are limited to documented
 BASEL_MAR21 slices plus the `US_NPR_2_0` GIRR delta, GIRR vega, GIRR
-curvature, and reporting-currency FX delta comparison slices.
+curvature, and reporting-currency FX delta, vega, and curvature comparison slices.
 
 ## Stable surface
 
@@ -94,7 +94,7 @@ every documented input_table symbol to remain importable.
 
 Supported runtime profiles: `BASEL_MAR21` for implemented delta, vega, and
 curvature paths, plus `US_NPR_2_0` for GIRR delta, GIRR vega, GIRR
-curvature, and reporting-currency FX delta and `PRA_UK_CRR` for GIRR delta only, as described in
+curvature, and reporting-currency FX delta, vega, and curvature and `PRA_UK_CRR` for GIRR delta only, as described in
 [`packages/frtb-sbm/docs/REGULATORY_TRACEABILITY.md`](../../../packages/frtb-sbm/docs/REGULATORY_TRACEABILITY.md).
 All other U.S. NPR 2.0 cells, all EU CRR3 cells, and all PRA UK CRR cells
 outside GIRR delta fail closed until separately implemented and cited.

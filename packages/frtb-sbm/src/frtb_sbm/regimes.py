@@ -38,7 +38,10 @@ SUPPORTED_PROFILE_METADATA: dict[SbmRegulatoryProfile, dict[str, object]] = {
             ),
             "version": "Federal Register 91 FR 14952 proposed market-risk rule",
             "publication_date": date(2026, 3, 27),
-            "status": "supported_us_npr_girr_delta_vega_curvature_fx_delta_comparison_slice",
+            "status": (
+                "supported_us_npr_girr_delta_vega_curvature_"
+                "fx_delta_vega_curvature_comparison_slice"
+            ),
             "effective_date": None,
         }
     ),
@@ -90,7 +93,9 @@ PROFILE_SUPPORTED_MEASURES: dict[
         SbmRiskClass.GIRR: frozenset(
             {SbmRiskMeasure.DELTA, SbmRiskMeasure.VEGA, SbmRiskMeasure.CURVATURE}
         ),
-        SbmRiskClass.FX: frozenset({SbmRiskMeasure.DELTA}),
+        SbmRiskClass.FX: frozenset(
+            {SbmRiskMeasure.DELTA, SbmRiskMeasure.VEGA, SbmRiskMeasure.CURVATURE}
+        ),
     },
     SbmRegulatoryProfile.PRA_UK_CRR: {
         SbmRiskClass.GIRR: frozenset({SbmRiskMeasure.DELTA}),

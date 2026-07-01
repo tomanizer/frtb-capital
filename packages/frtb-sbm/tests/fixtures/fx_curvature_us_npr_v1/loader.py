@@ -35,12 +35,11 @@ def load_invalid_cases() -> tuple[tuple[str, str, tuple[SbmSensitivity, ...]], .
 def _sensitivity_from_payload(payload: dict[str, Any]) -> SbmSensitivity:
     return sbm_sensitivity_from_payload(
         payload,
-        text_fields=("option_tenor", "tenor", "qualifier"),
-        int_fields=(),
+        text_fields=("tenor", "option_tenor", "maturity", "qualifier"),
         float_fields=("up_shock_amount", "down_shock_amount"),
     )
 
 
-def _load_json(name: str) -> dict[str, object]:
+def _load_json(name: str) -> Any:
     with (FIXTURE_DIR / name).open(encoding="utf-8") as handle:
         return json.load(handle)

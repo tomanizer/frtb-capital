@@ -12,7 +12,8 @@ comparison profiles `US_NPR_2_0`, `EU_CRR3`, and `PRA_UK_CRR` are recognised at
 the type level. Issue #504 implements the first comparison-profile cell,
 `US_NPR_2_0` GIRR delta, #1031 adds `US_NPR_2_0` GIRR vega, #1030 adds
 `US_NPR_2_0` GIRR curvature, and #1033 adds `US_NPR_2_0` reporting-currency
-FX delta, with cited profile-owned reference data and fixture evidence. All
+FX delta. Issue #1036 adds `US_NPR_2_0` reporting-currency FX vega and FX
+curvature, with cited profile-owned reference data and fixture evidence. All
 other non-Basel cells still fail closed before capital
 calculation until cited reference data and deterministic fixtures exist.
 
@@ -27,10 +28,10 @@ semantics or Basel fixture hashes.
 | Layer | BASEL_MAR21 | Non-Basel profiles |
 | --- | --- | --- |
 | `SbmRegulatoryProfile` enum | `BASEL_MAR21` | `US_NPR_2_0`, `EU_CRR3`, `PRA_UK_CRR` |
-| `phase1_capital_supported_paths()` | 21 cells (7×3) | `US_NPR_2_0` GIRR delta, vega, curvature, and FX delta; `PRA_UK_CRR` GIRR delta; EU empty frozenset |
-| `resolve_sbm_profile()` / `get_sbm_rule_profile()` | Supported | `US_NPR_2_0` supported for GIRR delta/vega/curvature/FX delta and `PRA_UK_CRR` supported for GIRR delta; EU fails closed via `UNSUPPORTED_PROFILE_REASONS` |
-| `PROFILE_*` reference-data maps in `reference_data.py` | Populated | NPR GIRR delta/vega/curvature/FX delta and PRA GIRR delta populated; other non-Basel lookup paths fail closed |
-| Fixture packs under `tests/fixtures/` | 7 packs (`*_v1`) | `girr_delta_us_npr_v1`, `girr_vega_us_npr_v1`, `girr_curvature_us_npr_v1`, `fx_delta_us_npr_v1`, `girr_delta_pra_uk_crr_v1` |
+| `phase1_capital_supported_paths()` | 21 cells (7×3) | `US_NPR_2_0` GIRR delta, vega, curvature, and FX delta, vega, curvature; `PRA_UK_CRR` GIRR delta; EU empty frozenset |
+| `resolve_sbm_profile()` / `get_sbm_rule_profile()` | Supported | `US_NPR_2_0` supported for GIRR delta/vega/curvature and FX delta/vega/curvature and `PRA_UK_CRR` supported for GIRR delta; EU fails closed via `UNSUPPORTED_PROFILE_REASONS` |
+| `PROFILE_*` reference-data maps in `reference_data.py` | Populated | NPR GIRR delta/vega/curvature and FX delta/vega/curvature and PRA GIRR delta populated; other non-Basel lookup paths fail closed |
+| Fixture packs under `tests/fixtures/` | 7 non-Basel packs (`*_v1`) | `girr_delta_us_npr_v1`, `girr_vega_us_npr_v1`, `girr_curvature_us_npr_v1`, `fx_delta_us_npr_v1`, `fx_vega_us_npr_v1`, `fx_curvature_us_npr_v1`, `girr_delta_pra_uk_crr_v1` |
 | `REGULATORY_TRACEABILITY.md` | Full 7×3 matrix | `US_NPR_2_0` and `PRA_UK_CRR` partial; EU unsupported fail-closed |
 | Enforcement tests | `test_sbm_support_matrix.py`, `test_sbm_unsupported_features.py` | NPR/PRA supported-cell coverage + fail-closed tests for remaining cells |
 
@@ -94,7 +95,7 @@ Status labels match `REGULATORY_TRACEABILITY.md`:
 | Profile | Cells | Runtime today |
 | --- | ---: | --- |
 | `BASEL_MAR21` | 21 / 21 | 21 implemented under audit |
-| `US_NPR_2_0` | 4 / 21 | GIRR delta, vega, curvature, and FX delta implemented under audit; 17 unsupported fail-closed |
+| `US_NPR_2_0` | 6 / 21 | GIRR delta, vega, curvature, and FX delta, vega, curvature implemented under audit; 15 unsupported fail-closed |
 | `EU_CRR3` | 0 / 21 | 21 unsupported fail-closed |
 | `PRA_UK_CRR` | 1 / 21 | GIRR delta implemented under audit; 20 unsupported fail-closed |
 
@@ -103,7 +104,7 @@ Per-class detail for non-Basel profiles (all measures share the same status unti
 | Risk class | `US_NPR_2_0` | `EU_CRR3` | `PRA_UK_CRR` |
 | --- | --- | --- | --- |
 | GIRR | Delta, vega, and curvature implemented under audit | Planned | Delta implemented under audit; vega/curvature unsupported fail-closed |
-| FX | Delta implemented under audit; vega/curvature unsupported fail-closed | Planned | Planned after PS1/26 source map; runtime fail-closed |
+| FX | Delta, vega, and curvature implemented under audit | Planned | Planned after PS1/26 source map; runtime fail-closed |
 | Equity | Planned | Planned | Planned after PS1/26 source map; runtime fail-closed |
 | Commodity | Planned | Planned | Planned after PS1/26 source map; runtime fail-closed |
 | CSR non-sec | Planned | Planned | Planned after PS1/26 source map; runtime fail-closed |
@@ -243,8 +244,8 @@ NPR-labelled** — never by reusing Basel profile id or silent alias.
 | Phase | Scope | Maturity impact |
 | --- | --- | --- |
 | **0 (this issue)** | Design + requirements + matrix in docs; tests reference matrix | Documentation only |
-| **1** | `US_NPR_2_0` GIRR delta, GIRR vega, GIRR curvature, and FX delta: reference data, fixtures, fail-closed tests for other NPR cells | First non-Basel cells; still `partial_runtime` unless governance promotes |
-| **2** | NPR FX policy, then FX delta | FX policy selects reporting-currency-only runtime and fail-closed base-currency treatment before any FX delta gate opens |
+| **1** | `US_NPR_2_0` GIRR delta, GIRR vega, GIRR curvature, and FX delta/vega/curvature: reference data, fixtures, fail-closed tests for other NPR cells | First non-Basel cells; still `partial_runtime` unless governance promotes |
+| **2** | NPR FX policy, then FX delta/vega/curvature | FX policy selects reporting-currency-only runtime and fail-closed base-currency treatment before any FX gate opens |
 | **3** | NPR FX / equity / commodity / CSR (delta → vega → curvature per class) | Comparison-profile coverage |
 | **4** | `EU_CRR3` — start with GIRR delta after article mapping | EU comparison |
 | **5** | `PRA_UK_CRR` — source mapped to PS1/26 Appendix 1; implement one cell at a time after exact-cell citations and fixtures | UK comparison |
@@ -274,7 +275,7 @@ citations, `PRA_UK_CRR` output identity, a PRA profile hash, and deterministic
 | `test_sbm_support_matrix.py` | Doc ↔ `phase1_capital_supported_paths()` parity |
 | `test_sbm_regimes.py` | Profile hash stability when NPR tables added |
 | `test_sbm_reference_data.py` | NPR lookup keys and citation ids |
-| Fixture workflow | `girr_delta_us_npr_v1`, `girr_vega_us_npr_v1`, `girr_curvature_us_npr_v1`, and `fx_delta_us_npr_v1` manifest hashes |
+| Fixture workflow | `girr_delta_us_npr_v1`, `girr_vega_us_npr_v1`, `girr_curvature_us_npr_v1`, `fx_delta_us_npr_v1`, `fx_vega_us_npr_v1`, and `fx_curvature_us_npr_v1` manifest hashes |
 | Fail-closed | All non-GIRR NPR cells still raise |
 | Batch/Arrow parity | Row vs batch vs Arrow for the new cell only |
 | Regression | `girr_delta_v1` SHA256 unchanged |
@@ -299,7 +300,7 @@ citations, `PRA_UK_CRR` output identity, a PRA profile hash, and deterministic
 | Criterion | Phase 0 (design) | Phase 1+ (implementation) |
 | --- | --- | --- |
 | Support matrix in docs | This doc + requirements + traceability cross-link | Per-cell updates |
-| ≥1 non-Basel cell implemented or blocked | First cells implemented with `girr_delta_us_npr_v1`, `girr_vega_us_npr_v1`, `girr_curvature_us_npr_v1`, and `fx_delta_us_npr_v1` fixture evidence | Continue with remaining NPR cells or blocked issue |
+| ≥1 non-Basel cell implemented or blocked | First cells implemented with `girr_delta_us_npr_v1`, `girr_vega_us_npr_v1`, `girr_curvature_us_npr_v1`, `fx_delta_us_npr_v1`, `fx_vega_us_npr_v1`, and `fx_curvature_us_npr_v1` fixture evidence | Continue with remaining NPR cells or blocked issue |
 | Unsupported cells fail closed | Documented | Tested (existing + extended) |
 | Basel hashes unchanged | N/A (docs only) | Enforced in CI |
 | `make quality-control` + SBM tests | Docs-only PR: QC unchanged | Required on implementation PR |
