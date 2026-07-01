@@ -313,6 +313,92 @@ def test_us_npr_girr_delta_reference_data_uses_profile_owned_citations() -> None
     assert inter_citations == ("us_npr_91_fr_14952_va7a_girr_inter",)
 
 
+def test_pra_uk_crr_girr_delta_reference_data_uses_profile_owned_citations() -> None:
+    citations = citations_for_profile(SbmRegulatoryProfile.PRA_UK_CRR)
+    bucket = girr_bucket_definition(SbmRegulatoryProfile.PRA_UK_CRR, "2")
+    adjusted, weight_citations = girr_delta_risk_weight(
+        SbmRegulatoryProfile.PRA_UK_CRR,
+        tenor="5y",
+        currency="USD",
+        reporting_currency="USD",
+    )
+    intra_correlation, intra_citations = girr_delta_intra_bucket_correlation(
+        SbmRegulatoryProfile.PRA_UK_CRR,
+        tenor1="1y",
+        tenor2="5y",
+        same_curve=True,
+    )
+    inter_correlation, inter_citations = girr_inter_bucket_correlation(
+        SbmRegulatoryProfile.PRA_UK_CRR,
+        bucket1="1",
+        bucket2="2",
+    )
+    scenario = correlation_scenario_definition(
+        SbmRegulatoryProfile.PRA_UK_CRR,
+        SbmScenarioLabel.HIGH,
+    )
+
+    assert "pra_uk_crr_325ae_girr_delta_weights" in citations
+    assert "pra_uk_crr_325h_correlation_scenarios" in citations
+    assert bucket.currency == "USD"
+    assert bucket.citation_id == "pra_uk_crr_325ae_girr_buckets"
+    assert adjusted == pytest.approx(0.011 / math.sqrt(2.0))
+    assert weight_citations == (
+        "pra_uk_crr_325ae_girr_delta_weights",
+        "pra_uk_crr_325ae_girr_sqrt2",
+    )
+    assert intra_correlation == pytest.approx(math.exp(-0.03 * 4.0))
+    assert intra_citations == ("pra_uk_crr_325af_girr_intra",)
+    assert inter_correlation == GIRR_INTER_BUCKET_CORRELATION
+    assert inter_citations == ("pra_uk_crr_325ag_girr_inter",)
+    assert scenario.citation_id == "pra_uk_crr_325h_correlation_scenarios"
+
+
+def test_pra_uk_crr_girr_vega_reference_data_uses_profile_owned_citations() -> None:
+    horizon = girr_vega_liquidity_horizon_days(SbmRegulatoryProfile.PRA_UK_CRR)
+    risk_weight, weight_citations = vega_risk_weight(
+        SbmRegulatoryProfile.PRA_UK_CRR,
+        liquidity_horizon_days=horizon,
+    )
+    intra_correlation, intra_citations = girr_vega_intra_bucket_correlation(
+        SbmRegulatoryProfile.PRA_UK_CRR,
+        option_tenor1="1y",
+        option_tenor2="5y",
+        tenor1="1y",
+        tenor2="5y",
+    )
+    option_correlation, option_citations = vega_option_tenor_correlation(
+        SbmRegulatoryProfile.PRA_UK_CRR,
+        option_tenor1="1y",
+        option_tenor2="5y",
+    )
+
+    assert horizon == 60
+    assert risk_weight == 1.0
+    assert weight_citations == ("pra_uk_crr_325ax_vega_risk_weights",)
+    assert intra_correlation == pytest.approx(math.exp(-0.01 * 4.0) ** 2)
+    assert intra_citations == ("pra_uk_crr_325ay_vega_correlations",)
+    assert option_correlation == pytest.approx(math.exp(-0.01 * 4.0))
+    assert option_citations == ("pra_uk_crr_325ay_vega_correlations",)
+    assert all(
+        tenor.citation_id == "pra_uk_crr_325ae_girr_delta_weights"
+        for tenor in girr_vega_option_tenors(SbmRegulatoryProfile.PRA_UK_CRR)
+    )
+
+
+def test_pra_uk_crr_girr_curvature_reference_data_uses_profile_owned_citations() -> None:
+    weight, citations = curvature_risk_weight(
+        SbmRegulatoryProfile.PRA_UK_CRR,
+        risk_class=SbmRiskClass.GIRR,
+    )
+
+    assert weight == pytest.approx(0.017)
+    assert citations == (
+        "pra_uk_crr_325ax_curvature_risk_weights",
+        "pra_uk_crr_325ae_girr_delta_weights",
+    )
+
+
 def test_girr_delta_intra_bucket_correlation_uses_exponential_tenor_formula() -> None:
     correlation, citation_ids = girr_delta_intra_bucket_correlation(
         SbmRegulatoryProfile.BASEL_MAR21,

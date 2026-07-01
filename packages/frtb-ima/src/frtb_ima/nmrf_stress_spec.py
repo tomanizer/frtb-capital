@@ -23,10 +23,12 @@ from typing import ClassVar
 
 import numpy as np
 import numpy.typing as npt
+from frtb_common import CalculationScope
 
 from frtb_ima.data_models import LiquidityHorizon, ModellabilityStatus, RiskClass
 from frtb_ima.nmrf import NMRFStressMethod
 from frtb_ima.nmrf_method_selection import NMRFValuationInstruction
+from frtb_ima.org_scope import add_scope_payload, validate_scope_metadata
 from frtb_ima.regimes import RegulatoryPolicy
 
 
@@ -51,6 +53,7 @@ class NMRFStressPeriodSpec:
     start_date: date | None = None
     end_date: date | None = None
     notes: str = ""
+    org_scope: CalculationScope | None = None
 
     def __post_init__(self) -> None:
         if not self.stress_period_id:
@@ -67,6 +70,11 @@ class NMRFStressPeriodSpec:
             and self.start_date > self.end_date
         ):
             raise ValueError("start_date cannot be after end_date")
+        object.__setattr__(
+            self,
+            "org_scope",
+            validate_scope_metadata(self.org_scope, field="NMRFStressPeriodSpec.org_scope"),
+        )
 
     def as_dict(self) -> dict[str, object]:
         """Return a serialisable dictionary for reporting and audit trails.
@@ -75,13 +83,16 @@ class NMRFStressPeriodSpec:
         dict[str, object]
             Result of the operation.
         """
-        return {
-            "stress_period_id": self.stress_period_id,
-            "calibration_source": self.calibration_source,
-            "start_date": self.start_date.isoformat() if self.start_date is not None else None,
-            "end_date": self.end_date.isoformat() if self.end_date is not None else None,
-            "notes": self.notes,
-        }
+        return add_scope_payload(
+            {
+                "stress_period_id": self.stress_period_id,
+                "calibration_source": self.calibration_source,
+                "start_date": self.start_date.isoformat() if self.start_date is not None else None,
+                "end_date": self.end_date.isoformat() if self.end_date is not None else None,
+                "notes": self.notes,
+            },
+            self.org_scope,
+        )
 
 
 @dataclass(frozen=True)
@@ -271,6 +282,7 @@ class NMRFValuationSpec:
     max_loss_fallback: NMRFMaxLossFallbackSpec | None = None
     source: str = ""
     notes: str = ""
+    org_scope: CalculationScope | None = None
 
     def __post_init__(self) -> None:
         if not self.risk_factor_name:
@@ -292,6 +304,11 @@ class NMRFValuationSpec:
             raise TypeError("stress_period must be an NMRFStressPeriodSpec")
         if not self.source:
             raise ValueError("source must be non-empty")
+        object.__setattr__(
+            self,
+            "org_scope",
+            validate_scope_metadata(self.org_scope, field="NMRFValuationSpec.org_scope"),
+        )
         self._validate_method_payload()
 
     def _validate_method_payload(self) -> None:
@@ -325,26 +342,31 @@ class NMRFValuationSpec:
         dict[str, object]
             Result of the operation.
         """
-        return {
-            "risk_factor_name": self.risk_factor_name,
-            "modellability_status": self.modellability_status.value,
-            "risk_class": self.risk_class.value,
-            "method": self.method.value,
-            "required_liquidity_horizon": self.required_liquidity_horizon.value,
-            "stress_period": self.stress_period.as_dict(),
-            "direct_shock": self.direct_shock.as_dict() if self.direct_shock is not None else None,
-            "stepwise_grid": self.stepwise_grid.as_dict()
-            if self.stepwise_grid is not None
-            else None,
-            "full_revaluation": self.full_revaluation.as_dict()
-            if self.full_revaluation is not None
-            else None,
-            "max_loss_fallback": self.max_loss_fallback.as_dict()
-            if self.max_loss_fallback is not None
-            else None,
-            "source": self.source,
-            "notes": self.notes,
-        }
+        return add_scope_payload(
+            {
+                "risk_factor_name": self.risk_factor_name,
+                "modellability_status": self.modellability_status.value,
+                "risk_class": self.risk_class.value,
+                "method": self.method.value,
+                "required_liquidity_horizon": self.required_liquidity_horizon.value,
+                "stress_period": self.stress_period.as_dict(),
+                "direct_shock": self.direct_shock.as_dict()
+                if self.direct_shock is not None
+                else None,
+                "stepwise_grid": self.stepwise_grid.as_dict()
+                if self.stepwise_grid is not None
+                else None,
+                "full_revaluation": self.full_revaluation.as_dict()
+                if self.full_revaluation is not None
+                else None,
+                "max_loss_fallback": self.max_loss_fallback.as_dict()
+                if self.max_loss_fallback is not None
+                else None,
+                "source": self.source,
+                "notes": self.notes,
+            },
+            self.org_scope,
+        )
 
 
 def _as_finite_tuple(

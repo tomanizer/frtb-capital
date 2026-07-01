@@ -18,10 +18,12 @@ from typing import Literal, cast
 
 import numpy as np
 import numpy.typing as npt
+from frtb_common import CalculationScope
 
 from frtb_ima.data_models import RiskClass
 from frtb_ima.expected_shortfall import ESEstimator
 from frtb_ima.nmrf_stress_spec import NMRFStressPeriodSpec
+from frtb_ima.org_scope import add_scope_payload, validate_scope_metadata
 from frtb_ima.validation.observation_windows import (
     require_positive_observation_count as _require_positive_observation_count,
 )
@@ -72,6 +74,7 @@ class HistoricalStressSeries:
     name: str = ""
     risk_factor_set: StressRiskFactorSet = "FULL"
     minimum_start_date: date | None = None
+    org_scope: CalculationScope | None = None
 
     def __post_init__(self) -> None:
         if not isinstance(self.risk_class, RiskClass):
@@ -102,6 +105,11 @@ class HistoricalStressSeries:
         object.__setattr__(self, "scenario_ids", scenario_ids)
         object.__setattr__(self, "risk_factor_set", risk_factor_set)
         object.__setattr__(self, "minimum_start_date", minimum_start_date)
+        object.__setattr__(
+            self,
+            "org_scope",
+            validate_scope_metadata(self.org_scope, field="HistoricalStressSeries.org_scope"),
+        )
 
     @property
     def observation_count(self) -> int:
@@ -145,18 +153,21 @@ class HistoricalStressSeries:
             Audit summary with risk class, source, provenance, observation
             count, and date range.
         """
-        return {
-            "risk_class": self.risk_class.value,
-            "name": self.name,
-            "source": self.source,
-            "risk_factor_set": self.risk_factor_set,
-            "observation_count": self.observation_count,
-            "start_date": self.start_date.isoformat(),
-            "end_date": self.end_date.isoformat(),
-            "minimum_start_date": (
-                None if self.minimum_start_date is None else self.minimum_start_date.isoformat()
-            ),
-        }
+        return add_scope_payload(
+            {
+                "risk_class": self.risk_class.value,
+                "name": self.name,
+                "source": self.source,
+                "risk_factor_set": self.risk_factor_set,
+                "observation_count": self.observation_count,
+                "start_date": self.start_date.isoformat(),
+                "end_date": self.end_date.isoformat(),
+                "minimum_start_date": (
+                    None if self.minimum_start_date is None else self.minimum_start_date.isoformat()
+                ),
+            },
+            self.org_scope,
+        )
 
 
 @dataclass(frozen=True)
@@ -184,6 +195,7 @@ class StressPeriodCandidate:
     end_scenario_id: str
     notes: str = ""
     risk_factor_set: StressRiskFactorSet = "FULL"
+    org_scope: CalculationScope | None = None
 
     def __post_init__(self) -> None:
         if not isinstance(self.risk_class, RiskClass):
@@ -214,6 +226,11 @@ class StressPeriodCandidate:
         risk_factor_set = _validated_risk_factor_set(self.risk_factor_set)
         object.__setattr__(self, "es_estimator", es_estimator)
         object.__setattr__(self, "risk_factor_set", risk_factor_set)
+        object.__setattr__(
+            self,
+            "org_scope",
+            validate_scope_metadata(self.org_scope, field="StressPeriodCandidate.org_scope"),
+        )
 
     def as_dict(self) -> dict[str, object]:
         """Return a serialisable dictionary for reporting and audit trails.
@@ -224,24 +241,27 @@ class StressPeriodCandidate:
             Candidate stress-window attributes, severity score, scenario ids,
             and risk-factor-set provenance.
         """
-        return {
-            "risk_class": self.risk_class.value,
-            "period_id": self.period_id,
-            "start_date": self.start_date.isoformat(),
-            "end_date": self.end_date.isoformat(),
-            "start_index": self.start_index,
-            "end_index_exclusive": self.end_index_exclusive,
-            "observation_count": self.observation_count,
-            "severity_score": self.severity_score,
-            "severity_metric": self.severity_metric.value,
-            "confidence_level": self.confidence_level,
-            "es_estimator": self.es_estimator.value,
-            "source": self.source,
-            "start_scenario_id": self.start_scenario_id,
-            "end_scenario_id": self.end_scenario_id,
-            "risk_factor_set": self.risk_factor_set,
-            "notes": self.notes,
-        }
+        return add_scope_payload(
+            {
+                "risk_class": self.risk_class.value,
+                "period_id": self.period_id,
+                "start_date": self.start_date.isoformat(),
+                "end_date": self.end_date.isoformat(),
+                "start_index": self.start_index,
+                "end_index_exclusive": self.end_index_exclusive,
+                "observation_count": self.observation_count,
+                "severity_score": self.severity_score,
+                "severity_metric": self.severity_metric.value,
+                "confidence_level": self.confidence_level,
+                "es_estimator": self.es_estimator.value,
+                "source": self.source,
+                "start_scenario_id": self.start_scenario_id,
+                "end_scenario_id": self.end_scenario_id,
+                "risk_factor_set": self.risk_factor_set,
+                "notes": self.notes,
+            },
+            self.org_scope,
+        )
 
     def to_nmrf_stress_period_spec(self) -> NMRFStressPeriodSpec:
         """Convert this selected window into an NMRF valuation stress-period spec.
@@ -258,6 +278,7 @@ class StressPeriodCandidate:
             start_date=self.start_date,
             end_date=self.end_date,
             notes=self.notes,
+            org_scope=self.org_scope,
         )
 
 

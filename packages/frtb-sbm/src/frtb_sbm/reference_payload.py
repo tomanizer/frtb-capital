@@ -368,6 +368,17 @@ def _add_basel_curvature_and_non_girr_payloads(
     payload: dict[str, object],
     profile: SbmRegulatoryProfile,
 ) -> None:
+    if profile is SbmRegulatoryProfile.PRA_UK_CRR:
+        payload["curvature_parameters"] = {
+            "citation_ids": list(curvature_citation_ids(profile)),
+            "girr_parallel_shift_risk_weight": max(
+                rule.risk_weight for rule in PROFILE_GIRR_DELTA_RISK_WEIGHTS[profile]
+            ),
+            "parallel_shift_rule_citation_id": "pra_uk_crr_325ax_curvature_risk_weights",
+            "intra_bucket_correlation_citation_id": ("pra_uk_crr_325ay_curvature_correlations"),
+            "inter_bucket_correlation_citation_id": ("pra_uk_crr_325ay_curvature_correlations"),
+        }
+        return
     if profile not in {SbmRegulatoryProfile.BASEL_MAR21, SbmRegulatoryProfile.EU_CRR3}:
         _add_us_npr_equity_commodity_delta_payload(payload, profile)
         return

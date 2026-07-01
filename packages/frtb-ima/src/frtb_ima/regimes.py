@@ -23,10 +23,12 @@ from enum import StrEnum
 from types import MappingProxyType
 from typing import Any
 
+from frtb_common import CalculationScope
 from frtb_common import UnsupportedRegulatoryFeatureError as CommonUnsupportedRegulatoryFeatureError
 
 from frtb_ima.data_models import LiquidityHorizon
 from frtb_ima.expected_shortfall import ESEstimator
+from frtb_ima.org_scope import validate_scope_metadata
 
 
 class RegulatoryRegime(StrEnum):
@@ -427,6 +429,17 @@ class CalculationContext:
     legal_entity: str | None = None
     desk: str | None = None
     run_id: str | None = None
+    calculation_scope: CalculationScope | None = None
+
+    def __post_init__(self) -> None:
+        object.__setattr__(
+            self,
+            "calculation_scope",
+            validate_scope_metadata(
+                self.calculation_scope,
+                field="CalculationContext.calculation_scope",
+            ),
+        )
 
 
 def get_policy(regime: RegulatoryRegime = RegulatoryRegime.FED_NPR_2_0) -> RegulatoryPolicy:

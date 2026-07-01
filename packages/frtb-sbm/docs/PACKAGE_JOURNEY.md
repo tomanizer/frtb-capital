@@ -68,7 +68,7 @@ runtime paths are enforced before calculation:
 | `BASEL_MAR21` | Delta, vega, and curvature across all seven SBM risk classes (see support matrix) |
 | `US_NPR_2_0` | GIRR delta, GIRR vega, GIRR curvature, reporting-currency FX delta, FX vega, FX curvature, equity delta, and commodity delta |
 | `EU_CRR3` | GIRR delta/vega/curvature, FX delta/vega/curvature, equity delta, and commodity delta |
-| `PRA_UK_CRR` comparison profile | GIRR delta implemented under audit; all other PRA cells fail closed with `UnsupportedRegulatoryFeatureError` |
+| `PRA_UK_CRR` comparison profile | GIRR delta/vega/curvature implemented under audit; all other PRA cells fail closed with `UnsupportedRegulatoryFeatureError` |
 
 Each Arrow table handed to the portfolio dispatcher must be **homogeneous**: every
 row shares the same `risk_class` and `risk_measure`. Mixed GIRR delta + FX vega in

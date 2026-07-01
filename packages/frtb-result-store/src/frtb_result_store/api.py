@@ -7,7 +7,7 @@ from dataclasses import fields, is_dataclass
 from datetime import date, datetime
 from enum import Enum
 from pathlib import Path
-from typing import Any, Protocol, cast
+from typing import Any, NoReturn, Protocol, cast
 
 from frtb_common import jsonable
 
@@ -22,6 +22,15 @@ from frtb_result_store.model import (
     CalculationRun,
     CapitalAttributionRecord,
     CapitalNode,
+    ResultStoreContractError,
+)
+from frtb_result_store.org_hierarchy import (
+    aggregate_org_node,
+    list_org_hierarchy,
+    org_node_children,
+    sample_org_capital_rows,
+    sample_org_hierarchy,
+    source_rows_for_org_node,
 )
 
 __all__ = ["create_result_store_app"]
@@ -37,6 +46,7 @@ _OPENAPI_TAGS = (
     "CVA",
     "Movements",
     "Regime Comparison",
+    "Org Hierarchy",
     "Artifacts",
     "Attribution",
     "Lineage",
@@ -98,6 +108,7 @@ def create_result_store_app(
 
     routes = cast(_RouteRegistrar, app)
     _register_run_routes(routes, result_store, HTTPException)
+    _register_org_hierarchy_routes(routes, result_store, HTTPException, Query)
     _register_capital_tree_routes(routes, result_store, HTTPException)
     _register_attribution_projection_routes(routes, result_store, HTTPException)
     _register_artifact_routes(routes, result_store, HTTPException, Query, FileResponse)
@@ -263,6 +274,126 @@ def _register_capital_tree_routes(
         return {"lineage": _to_jsonable(result_store.lineage_for_result(run_id, node_id))}
 
 
+def _register_org_hierarchy_routes(
+    app: _RouteRegistrar,
+    result_store: DuckDbParquetResultStore,
+    http_exception_type: type[Exception],
+    query: Any,
+) -> None:
+    _register_org_hierarchy_snapshot_routes(app, result_store, http_exception_type, query)
+    _register_org_hierarchy_node_routes(app, result_store, http_exception_type, query)
+
+
+def _register_org_hierarchy_snapshot_routes(
+    app: _RouteRegistrar,
+    result_store: DuckDbParquetResultStore,
+    http_exception_type: type[Exception],
+    query: Any,
+) -> None:
+    @app.get(
+        "/runs/{run_id:path}/org-hierarchy",
+        tags=["Org Hierarchy"],
+        summary="Return effective organisation hierarchy nodes and edges for a run",
+    )
+    def org_hierarchy_snapshot(
+        run_id: str,
+        as_of_date: date | None = query(default=None),
+    ) -> dict[str, object]:
+        run = _require_run(result_store, run_id, http_exception_type)
+        try:
+            snapshot = list_org_hierarchy(
+                sample_org_hierarchy(),
+                as_of_date=as_of_date or run.as_of_date,
+            )
+        except ResultStoreContractError as exc:
+            _raise_org_query_error(exc, http_exception_type)
+        return cast(dict[str, object], _to_jsonable(snapshot))
+
+
+def _register_org_hierarchy_node_routes(
+    app: _RouteRegistrar,
+    result_store: DuckDbParquetResultStore,
+    http_exception_type: type[Exception],
+    query: Any,
+) -> None:
+    @app.get(
+        "/runs/{run_id:path}/org-hierarchy/nodes/{node_id}/children",
+        tags=["Org Hierarchy"],
+        summary="Return direct organisation hierarchy child nodes",
+    )
+    def org_hierarchy_children(
+        run_id: str,
+        node_id: str,
+        as_of_date: date | None = query(default=None),
+    ) -> dict[str, object]:
+        run = _require_run(result_store, run_id, http_exception_type)
+        try:
+            children = org_node_children(
+                sample_org_hierarchy(),
+                node_id,
+                as_of_date=as_of_date or run.as_of_date,
+            )
+        except ResultStoreContractError as exc:
+            _raise_org_query_error(exc, http_exception_type)
+        return {"nodes": _to_jsonable(children)}
+
+    @app.get(
+        "/runs/{run_id:path}/org-hierarchy/nodes/{node_id}/aggregate",
+        tags=["Org Hierarchy"],
+        summary="Return capital aggregate for one organisation hierarchy node",
+    )
+    def org_hierarchy_node_aggregate(
+        run_id: str,
+        node_id: str,
+        as_of_date: date | None = query(default=None),
+        framework: str | None = query(default=None),
+        measure: str = query(default="capital"),
+    ) -> dict[str, object]:
+        run = _require_run(result_store, run_id, http_exception_type)
+        try:
+            result = aggregate_org_node(
+                sample_org_capital_rows(run_id=run_id),
+                sample_org_hierarchy(),
+                run_id=run_id,
+                node_id=node_id,
+                as_of_date=as_of_date or run.as_of_date,
+                framework=framework,
+                measure=measure,
+            )
+        except ResultStoreContractError as exc:
+            _raise_org_query_error(exc, http_exception_type)
+        return cast(dict[str, object], _to_jsonable(result))
+
+    @app.get(
+        "/runs/{run_id:path}/org-hierarchy/nodes/{node_id}/source-rows",
+        tags=["Org Hierarchy"],
+        summary="Return paginated source rows backing an organisation hierarchy node",
+    )
+    def org_hierarchy_node_source_rows(
+        run_id: str,
+        node_id: str,
+        as_of_date: date | None = query(default=None),
+        framework: str | None = query(default=None),
+        limit: int = query(default=100, ge=1, le=1000),
+        offset: int = query(default=0, ge=0),
+    ) -> dict[str, object]:
+        run = _require_run(result_store, run_id, http_exception_type)
+        try:
+            page = source_rows_for_org_node(
+                sample_org_capital_rows(run_id=run_id),
+                sample_org_hierarchy(),
+                run_id=run_id,
+                node_id=node_id,
+                as_of_date=as_of_date or run.as_of_date,
+                framework=framework,
+                limit=limit,
+                offset=offset,
+            )
+        except ResultStoreContractError as exc:
+            _raise_org_query_error(exc, http_exception_type)
+        return cast(dict[str, object], _to_jsonable(page))
+
+
 def _register_artifact_routes(
     app: _RouteRegistrar,
     result_store: DuckDbParquetResultStore,
@@ -407,6 +538,14 @@ def _find_node(nodes: Sequence[CapitalNode], node_id: str) -> CapitalNode | None
         if node.node_id == node_id:
             return node
     return None
+
+
+def _raise_org_query_error(
+    exc: ResultStoreContractError,
+    http_exception_type: type[Exception],
+) -> NoReturn:
+    status_code = 404 if exc.field == "node_id" else 422
+    raise http_exception_type(status_code=status_code, detail=str(exc)) from exc  # type: ignore[call-arg]
 
 
 def _run_payload(store: DuckDbParquetResultStore, run: CalculationRun) -> dict[str, object]:

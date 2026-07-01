@@ -17,7 +17,8 @@
         "eu_crr3_100",
         "eu_crr3_45_49",
         "eu_crr3_101",
-        "eu_crr3_50"
+        "eu_crr3_50",
+        "eu_crr3_curvature"
       ],
       "buckets": [
         {

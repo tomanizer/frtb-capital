@@ -16,6 +16,10 @@ from datetime import date, datetime
 from enum import Enum, StrEnum
 from types import MappingProxyType
 
+from frtb_common import CalculationScope
+
+from frtb_ima.org_scope import add_scope_payload, validate_scope_metadata
+
 
 class RiskClass(StrEnum):
     """IMA risk-class labels for desk and factor grouping."""
@@ -108,6 +112,7 @@ class ScenarioPnL:
     vectors: Mapping[RiskClass, Mapping[LiquidityHorizon, tuple[float, ...]]] = field(
         default_factory=dict
     )
+    org_scope: CalculationScope | None = None
 
     def __post_init__(self) -> None:
         frozen_vectors: dict[RiskClass, Mapping[LiquidityHorizon, tuple[float, ...]]] = {}
@@ -119,6 +124,11 @@ class ScenarioPnL:
                 }
             )
         object.__setattr__(self, "vectors", MappingProxyType(frozen_vectors))
+        object.__setattr__(
+            self,
+            "org_scope",
+            validate_scope_metadata(self.org_scope, field="ScenarioPnL.org_scope"),
+        )
 
     def add_vector(
         self,
@@ -143,7 +153,7 @@ class ScenarioPnL:
         """
         vectors = {existing_class: dict(lh_map) for existing_class, lh_map in self.vectors.items()}
         vectors.setdefault(risk_class, {})[lh_subset] = tuple(losses)
-        return ScenarioPnL(desk=self.desk, vectors=vectors)
+        return ScenarioPnL(desk=self.desk, vectors=vectors, org_scope=self.org_scope)
 
 
 @dataclass(frozen=True)
@@ -158,6 +168,14 @@ class DeskCapitalResult:
     backtesting_apl_exceptions: int
     backtesting_hpl_exceptions: int
     notes: str = ""
+    org_scope: CalculationScope | None = None
+
+    def __post_init__(self) -> None:
+        object.__setattr__(
+            self,
+            "org_scope",
+            validate_scope_metadata(self.org_scope, field="DeskCapitalResult.org_scope"),
+        )
 
     def as_dict(self) -> dict[str, object]:
         """Return a serialisable dictionary for reporting and audit trails.
@@ -166,13 +184,16 @@ class DeskCapitalResult:
         dict[str, object]
             Result of the operation.
         """
-        return {
-            "desk": self.desk,
-            "imcc": self.imcc,
-            "ses": self.ses,
-            "models_based_capital": self.models_based_capital,
-            "pla_ks_statistic": self.pla_ks_statistic,
-            "backtesting_apl_exceptions": self.backtesting_apl_exceptions,
-            "backtesting_hpl_exceptions": self.backtesting_hpl_exceptions,
-            "notes": self.notes,
-        }
+        return add_scope_payload(
+            {
+                "desk": self.desk,
+                "imcc": self.imcc,
+                "ses": self.ses,
+                "models_based_capital": self.models_based_capital,
+                "pla_ks_statistic": self.pla_ks_statistic,
+                "backtesting_apl_exceptions": self.backtesting_apl_exceptions,
+                "backtesting_hpl_exceptions": self.backtesting_hpl_exceptions,
+                "notes": self.notes,
+            },
+            self.org_scope,
+        )

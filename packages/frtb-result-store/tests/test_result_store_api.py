@@ -118,6 +118,56 @@ def test_result_store_api_serves_committed_runs_without_catalog_access(
     }
 
 
+def test_result_store_api_serves_org_hierarchy_queries_with_slash_run_id(
+    tmp_path: Path,
+) -> None:
+    run = _run("US_NPR_2_0", None, None)
+    store = DuckDbParquetResultStore(tmp_path / "result-store")
+    store.write_bundle(_bundle(run))
+    client = TestClient(create_result_store_app(store))
+
+    org_hierarchy = client.get(f"/runs/{run.run_id}/org-hierarchy").json()
+    assert org_hierarchy["version_id"] == "2026-01"
+    assert org_hierarchy["nodes"][0]["node_id"] == "GLOBAL_GROUP"
+    assert ("GLOBAL_GROUP", "US_BANK_NA") in {
+        (edge["parent_node_id"], edge["child_node_id"]) for edge in org_hierarchy["edges"]
+    }
+
+    org_children = client.get(f"/runs/{run.run_id}/org-hierarchy/nodes/MARKETS/children").json()[
+        "nodes"
+    ]
+    org_aggregate = client.get(
+        f"/runs/{run.run_id}/org-hierarchy/nodes/GLOBAL_GROUP/aggregate"
+    ).json()
+    org_sources = client.get(
+        f"/runs/{run.run_id}/org-hierarchy/nodes/USD_RATES_VOLCKER/source-rows",
+        params={"limit": 1},
+    ).json()
+
+    assert [node["node_id"] for node in org_children] == ["EQUITIES", "FICC", "FX"]
+    assert org_aggregate["status"] == "OK"
+    assert org_aggregate["aggregate"]["capital"] == 114.0
+    assert org_sources["total_row_count"] == 2
+    assert org_sources["next_offset"] == 1
+    assert org_sources["rows"][0]["source_row_id"] == "org-row-ima-rates-desk"
+    assert (
+        client.get(
+            f"/runs/{run.run_id}/org-hierarchy/nodes/USD_RATES_VOLCKER/aggregate",
+            params={"framework": "CVA"},
+        ).json()["status"]
+        == "NO_DATA"
+    )
+    assert (
+        client.get(
+            f"/runs/{run.run_id}/org-hierarchy/nodes/GLOBAL_GROUP/source-rows",
+            params={"framework": "RFET"},
+        ).json()["status"]
+        == "UNSUPPORTED"
+    )
+    missing = client.get(f"/runs/{run.run_id}/org-hierarchy/nodes/MISSING/aggregate")
+    assert missing.status_code == 404
+
+
 def test_top_contributors_api_validates_limit(tmp_path: Path) -> None:
     run = _run("US_NPR_2_0", None, None)
     store = DuckDbParquetResultStore(tmp_path / "result-store")
@@ -234,6 +284,7 @@ def test_result_store_api_is_read_only_and_has_domain_openapi_tags(tmp_path: Pat
         "Events",
         "Movements",
         "Regime Comparison",
+        "Org Hierarchy",
     }
     assert expected_tags <= {tag["name"] for tag in openapi["tags"]}
     path_methods = {
