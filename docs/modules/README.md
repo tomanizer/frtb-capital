@@ -135,6 +135,10 @@ bit-identical output drift, use raw numeric hashes rather than rounded
 floating-point outputs. Document the control intent and any platform or BLAS
 limits.
 
+For the suite-wide meaning of supported paths, support boxes/cells, evidence,
+and fail-closed behavior, see
+[`../REGULATORY_SUPPORT_EVIDENCE.md`](../REGULATORY_SUPPORT_EVIDENCE.md).
+
 ## Research Sources
 
 The documents use these primary references:

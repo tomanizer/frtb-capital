@@ -5,6 +5,10 @@ This document is the implemented-maturity traceability entrypoint for
 fixtures, and tests. It is not legal advice and does not present outputs as
 final regulatory capital.
 
+For a plain-English description of supported paths, evidence, support boxes,
+and fail-closed behavior, see
+[`REGULATORY_SUPPORT_EVIDENCE.md`](REGULATORY_SUPPORT_EVIDENCE.md).
+
 ## Coverage Summary
 
 | Requirement area | Regulatory anchors | Code refs | Evidence |

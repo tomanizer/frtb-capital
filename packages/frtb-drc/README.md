@@ -41,6 +41,7 @@ row, batch, fixture, attribution, and support-matrix evidence.
 | [ATTRIBUTION.md](ATTRIBUTION.md) | Capital attribution, contributor summaries, baseline impact analysis, inputs, supported grains, and limitations |
 | [PUBLIC_API.md](../../docs/modules/frtb-drc/PUBLIC_API.md) | Stable client integration surface and Arrow paths |
 | [PROFILE_SUPPORT_MATRIX.md](../../docs/modules/frtb-drc/PROFILE_SUPPORT_MATRIX.md) | Profile and risk-class support status |
+| [REGULATORY_SUPPORT_EVIDENCE.md](../../docs/modules/frtb-drc/REGULATORY_SUPPORT_EVIDENCE.md) | Plain-English support/evidence model, fail-closed behavior, and audit checklist |
 | [Module README](../../docs/modules/frtb-drc/README.md) | Planning pack, model documentation, requirements |
 | [REGULATORY_REQUIREMENTS.md](../../docs/modules/frtb-drc/REGULATORY_REQUIREMENTS.md) | Regulatory requirement mapping (module docs) |
 | [Requirement registry](docs/requirements/BASEL_FRTB_DRC.yml) | Package-local machine-readable implementation status |
