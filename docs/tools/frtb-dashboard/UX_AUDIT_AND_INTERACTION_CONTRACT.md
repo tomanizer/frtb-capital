@@ -16,6 +16,8 @@ Companion implementation contracts:
   [`CAPITAL_AND_MOVEMENT_SEMANTICS.md`](CAPITAL_AND_MOVEMENT_SEMANTICS.md)
 - Mode wireframes:
   [`MODE_WIREFRAMES.md`](MODE_WIREFRAMES.md)
+- Implementation slices:
+  [`IMPLEMENTATION_SLICES.md`](IMPLEMENTATION_SLICES.md)
 - State and routing:
   [`NAVIGATOR_STATE_AND_ROUTING.md`](NAVIGATOR_STATE_AND_ROUTING.md)
 - Result-store data boundary:
