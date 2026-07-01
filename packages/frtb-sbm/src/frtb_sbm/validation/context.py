@@ -2,7 +2,8 @@
 
 Regulatory traceability:
     Basel MAR21.1 scope validation, U.S. NPR 2.0 section V.A.7.a profile
-    gating, and SBM-NFR-004 fail-closed unsupported-feature handling.
+    gating, PRA PS1/26 Appendix 1 Articles 325c, 325h, and 325ae-325ag, and
+    SBM-NFR-004 fail-closed unsupported-feature handling.
 """
 
 from __future__ import annotations
@@ -62,7 +63,11 @@ _PHASE1_SUPPORTED: dict[str, frozenset[tuple[SbmRiskClass, SbmRiskMeasure]]] = {
         }
     ),
     SbmRegulatoryProfile.EU_CRR3.value: frozenset(),
-    SbmRegulatoryProfile.PRA_UK_CRR.value: frozenset(),
+    SbmRegulatoryProfile.PRA_UK_CRR.value: frozenset(
+        {
+            (SbmRiskClass.GIRR, SbmRiskMeasure.DELTA),
+        }
+    ),
 }
 
 _CURVATURE_CAPITAL_REQUIREMENT_ID = "SBM-CURV-001"

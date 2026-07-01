@@ -21,12 +21,15 @@ non-authoritative evidence for this decision.
   under Basel MAR21.1-MAR21.101.
 - `US_NPR_2_0`: GIRR delta only, as proposed-rule comparison material under
   Federal Register 91 FR 14952 section V.A.7.a.
+- `PRA_UK_CRR`: GIRR delta only, under PRA PS1/26 Appendix 1 / PRA2026/1
+  Articles 325c, 325h, and 325ae-325ag, with 2027-01-01 effective-date
+  metadata.
 
 `EU_CRR3` is source-mapped only at the article-family level for Regulation (EU)
 2024/1623 Articles 325e-325az. `PRA_UK_CRR` is source-mapped for planning to
-PRA PS1/26 Appendix 1 / PRA2026/1 Articles 325c-325ay, but no PRA SBM runtime
-cell has exact-cell citations, profile-owned reference data, or fixture
-evidence yet.
+PRA PS1/26 Appendix 1 / PRA2026/1 Articles 325c-325ay; only the GIRR delta
+runtime cell has exact-cell citations, profile-owned reference data, and fixture
+evidence today.
 
 ## Decision
 
@@ -65,7 +68,8 @@ The current comparison-profile support matrix is:
 | `US_NPR_2_0` GIRR | implemented under audit | unsupported fail-closed | unsupported fail-closed | Keep only GIRR delta capital-producing. |
 | `US_NPR_2_0` non-GIRR classes | unsupported fail-closed | unsupported fail-closed | unsupported fail-closed | Add cells one at a time with profile-owned evidence. |
 | `EU_CRR3` all classes | unsupported fail-closed | unsupported fail-closed | unsupported fail-closed | Add cells only after article-level mapping and fixtures. |
-| `PRA_UK_CRR` all classes | unsupported fail-closed | unsupported fail-closed | unsupported fail-closed | Source mapped to PS1/26 Appendix 1; add cells only with exact-cell citations, reference data, and fixtures. |
+| `PRA_UK_CRR` GIRR | implemented under audit | unsupported fail-closed | unsupported fail-closed | Keep only GIRR delta capital-producing until GIRR vega/curvature have exact-cell PRA evidence. |
+| `PRA_UK_CRR` non-GIRR classes | unsupported fail-closed | unsupported fail-closed | unsupported fail-closed | Source mapped to PS1/26 Appendix 1; add cells only with exact-cell citations, reference data, and fixtures. |
 
 ## Consequences
 

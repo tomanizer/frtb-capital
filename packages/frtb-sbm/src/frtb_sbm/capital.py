@@ -107,6 +107,7 @@ _SBM_REQUIREMENT_IDS = (
 _PROFILE_PORTFOLIO_SCENARIO_CITATIONS = {
     SbmRegulatoryProfile.BASEL_MAR21.value: ("basel_mar21_7_scenario_selection",),
     SbmRegulatoryProfile.US_NPR_2_0.value: ("us_npr_91_fr_14952_va7a_correlation_scenarios",),
+    SbmRegulatoryProfile.PRA_UK_CRR.value: ("pra_uk_crr_325h_correlation_scenarios",),
 }
 _SBM_CAPITAL_PATH_ORDER = SBM_BATCH_PATH_ORDER
 

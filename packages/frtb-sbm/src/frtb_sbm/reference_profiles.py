@@ -14,6 +14,7 @@ from frtb_common import UnsupportedRegulatoryFeatureError
 from frtb_sbm.data_models import SbmCitation, SbmRegulatoryProfile, SbmRiskClass, SbmScenarioLabel
 from frtb_sbm.reference_citations_basel_core import BASEL_CORE_CITATIONS
 from frtb_sbm.reference_citations_basel_risk_classes import BASEL_RISK_CLASS_CITATIONS
+from frtb_sbm.reference_citations_pra_uk_crr import PRA_UK_CRR_CITATIONS, PRA_UK_CRR_URL
 from frtb_sbm.reference_citations_us_npr import US_NPR_2_0_CITATIONS
 from frtb_sbm.reference_types import SbmCorrelationScenarioDefinition
 from frtb_sbm.validation import SbmInputError
@@ -29,6 +30,7 @@ BASEL_CITATIONS: dict[str, SbmCitation] = {
 PROFILE_CITATIONS: dict[SbmRegulatoryProfile, dict[str, SbmCitation]] = {
     SbmRegulatoryProfile.BASEL_MAR21: BASEL_CITATIONS,
     SbmRegulatoryProfile.US_NPR_2_0: US_NPR_2_0_CITATIONS,
+    SbmRegulatoryProfile.PRA_UK_CRR: PRA_UK_CRR_CITATIONS,
 }
 
 BASEL_CORRELATION_SCENARIOS: tuple[SbmCorrelationScenarioDefinition, ...] = (
@@ -79,12 +81,37 @@ US_NPR_CORRELATION_SCENARIOS: tuple[SbmCorrelationScenarioDefinition, ...] = (
     ),
 )
 
+PRA_UK_CRR_CORRELATION_SCENARIOS: tuple[SbmCorrelationScenarioDefinition, ...] = (
+    SbmCorrelationScenarioDefinition(
+        SbmScenarioLabel.LOW,
+        multiplier=0.75,
+        floor_factor=0.75,
+        cap=None,
+        citation_id="pra_uk_crr_325h_correlation_scenarios",
+    ),
+    SbmCorrelationScenarioDefinition(
+        SbmScenarioLabel.MEDIUM,
+        multiplier=1.0,
+        floor_factor=None,
+        cap=None,
+        citation_id="pra_uk_crr_325h_correlation_scenarios",
+    ),
+    SbmCorrelationScenarioDefinition(
+        SbmScenarioLabel.HIGH,
+        multiplier=1.25,
+        floor_factor=None,
+        cap=1.0,
+        citation_id="pra_uk_crr_325h_correlation_scenarios",
+    ),
+)
+
 PROFILE_CORRELATION_SCENARIOS: dict[
     SbmRegulatoryProfile,
     tuple[SbmCorrelationScenarioDefinition, ...],
 ] = {
     SbmRegulatoryProfile.BASEL_MAR21: BASEL_CORRELATION_SCENARIOS,
     SbmRegulatoryProfile.US_NPR_2_0: US_NPR_CORRELATION_SCENARIOS,
+    SbmRegulatoryProfile.PRA_UK_CRR: PRA_UK_CRR_CORRELATION_SCENARIOS,
 }
 
 
@@ -253,6 +280,9 @@ __all__ = [
     "BASEL_CITATIONS",
     "BASEL_CORRELATION_SCENARIOS",
     "BASEL_MAR21_URL",
+    "PRA_UK_CRR_CITATIONS",
+    "PRA_UK_CRR_CORRELATION_SCENARIOS",
+    "PRA_UK_CRR_URL",
     "PROFILE_CITATIONS",
     "PROFILE_CORRELATION_SCENARIOS",
     "US_NPR_2_0_CITATIONS",

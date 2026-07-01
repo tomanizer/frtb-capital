@@ -122,6 +122,11 @@ canonical classification before capital runs.
 **US NPR 2.0:** only **GIRR delta** is implemented; all other NPR cells fail closed
 even if Basel paths would succeed under `BASEL_MAR21`.
 
+**PRA UK CRR:** only **GIRR delta** is implemented, using PRA PS1/26 Appendix 1 /
+PRA2026/1 Articles 325c, 325h, and 325ae-325ag with `girr_delta_pra_uk_crr_v1`;
+all other PRA cells fail closed even if Basel paths would succeed under
+`BASEL_MAR21`.
+
 ### Choosing the right path in client code
 
 1. Tag each sensitivity row with `risk_class` and `risk_measure` before export.

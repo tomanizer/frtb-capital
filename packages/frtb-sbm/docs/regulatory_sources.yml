@@ -82,8 +82,13 @@ sources:
     url: "https://www.bankofengland.co.uk/-/media/boe/files/prudential-regulation/policy-statement/2026/january/ps126app1.pdf"
     section_hint: "Final PRA Rulebook CRR Firms Instrument 2026, Annex I, Market Risk: Advanced Standardised Approach (CRR) Part. Articles 325c-325h cover ASA/SBM structure, delta/vega/curvature aggregation, and correlation scenarios; Articles 325l-325u cover SBM risk-factor and sensitivity definitions; Articles 325ae-325ay cover GIRR, CSR, equity, commodity, FX, vega, and curvature weights/correlations."
     status: final_rule_reference
-    reuse_note: "Final UK PRA source map for SBM planning. This is not sufficient by itself to make PRA_UK_CRR capital-producing; runtime cells still need profile-owned citation ids, reference data, fixtures, and support-matrix updates."
-    module_paths: []
+    reuse_note: "Final UK PRA source map. Articles 325c, 325h, and 325ae-325ag now support the PRA_UK_CRR GIRR delta runtime slice with profile-owned citations and girr_delta_pra_uk_crr_v1 fixtures; remaining runtime cells still need profile-owned citation ids, reference data, fixtures, and support-matrix updates."
+    module_paths:
+      - src/frtb_sbm/reference_citations_pra_uk_crr.py
+      - src/frtb_sbm/girr_reference_tables.py
+      - src/frtb_sbm/reference_profiles.py
+      - src/frtb_sbm/regimes.py
+      - src/frtb_sbm/validation/context.py
     requirement_ids:
       - SBM-REF-001
 
