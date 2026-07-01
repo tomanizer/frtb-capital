@@ -1,9 +1,13 @@
 from __future__ import annotations
 
+from dataclasses import FrozenInstanceError
+
 import pytest
 from frtb_common import (
     ArtifactIdentityError,
     ScenarioId,
+    ScenarioSetId,
+    ScenarioVectorId,
     ShockDirection,
     ShockId,
     SurfaceAxisKind,
@@ -20,7 +24,18 @@ def test_artifact_identifiers_are_stable_value_objects() -> None:
     assert TimeSeriesId(" rfet-usd-5y ").value == "rfet-usd-5y"
     assert str(ShockId("sbm-curvature-up")) == "sbm-curvature-up"
     assert ScenarioId("scenario-001") == ScenarioId("scenario-001")
+    assert ScenarioSetId("historical-window-2024") == ScenarioSetId("historical-window-2024")
+    assert ScenarioVectorId("ima-pl-cube:desk-a:2024") == ScenarioVectorId(
+        "ima-pl-cube:desk-a:2024"
+    )
     assert SurfaceId("usd-swaption-vol") != SurfacePointId("usd-swaption-vol")
+
+
+def test_artifact_identifiers_are_immutable() -> None:
+    identifier = ScenarioVectorId("ima-pl-cube:desk-a:2024")
+
+    with pytest.raises(FrozenInstanceError):
+        identifier.value = "changed"  # type: ignore[misc]
 
 
 def test_artifact_identifiers_reject_blank_values() -> None:
