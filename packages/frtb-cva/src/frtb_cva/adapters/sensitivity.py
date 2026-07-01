@@ -70,7 +70,18 @@ def build_sa_cva_sensitivity_batch_from_columns(
     diagnostics: Sequence[Mapping[str, object]] = (),
     copy_arrays: bool = True,
 ) -> SaCvaSensitivityBatch:
-    """Build a validated SA-CVA sensitivity batch from aligned column inputs."""
+    """Build a validated SA-CVA sensitivity batch from aligned column inputs.
+
+    Parameters
+    ----------
+    sensitivity_ids : ColumnInput
+        First required column; remaining inputs are aligned columns or options.
+
+    Returns
+    -------
+    SaCvaSensitivityBatch
+        Validated immutable batch contract for downstream SA-CVA calculation.
+    """
     row_count = len(sensitivity_ids)
     if row_count == 0:
         raise CvaInputError("sensitivity batch requires at least one row", field="sensitivities")

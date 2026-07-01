@@ -106,12 +106,25 @@ class ArtifactEvidenceRef:
 
     @property
     def evidence_key(self) -> tuple[str, str, str]:
-        """Stable duplicate-detection key for this evidence reference."""
+        """Stable duplicate-detection key for this evidence reference.
+
+        Returns
+        -------
+        tuple[str, str, str]
+            Component, artifact kind, and role values used to reject duplicate
+            evidence references.
+        """
 
         return (self.component.value, self.kind.value, self.role)
 
     def as_dict(self) -> dict[str, object]:
-        """Return a deterministic JSON-compatible evidence payload."""
+        """Return a deterministic JSON-compatible evidence payload.
+
+        Returns
+        -------
+        dict[str, object]
+            Evidence reference payload with enum values serialized as strings.
+        """
 
         return {
             "component": self.component.value,
@@ -154,12 +167,29 @@ class ComponentArtifactEvidence:
         object.__setattr__(self, "refs", refs)
 
     def refs_by_kind(self, kind: ArtifactEvidenceKind) -> tuple[ArtifactEvidenceRef, ...]:
-        """Return references for one artifact kind."""
+        """Return references for one artifact kind.
+
+        Parameters
+        ----------
+        kind : ArtifactEvidenceKind
+            Artifact family to select from this component.
+
+        Returns
+        -------
+        tuple[ArtifactEvidenceRef, ...]
+            Evidence references whose ``kind`` matches ``kind``.
+        """
 
         return tuple(ref for ref in self.refs if ref.kind is kind)
 
     def status_counts(self) -> dict[str, int]:
-        """Return deterministic availability counts for this component."""
+        """Return deterministic availability counts for this component.
+
+        Returns
+        -------
+        dict[str, int]
+            Count of references by ``ArtifactEvidenceStatus`` value.
+        """
 
         counts = {status.value: 0 for status in ArtifactEvidenceStatus}
         for ref in self.refs:
@@ -167,7 +197,13 @@ class ComponentArtifactEvidence:
         return counts
 
     def as_dict(self) -> dict[str, object]:
-        """Return a deterministic JSON-compatible component payload."""
+        """Return a deterministic JSON-compatible component payload.
+
+        Returns
+        -------
+        dict[str, object]
+            Component payload containing status counts and serialized refs.
+        """
 
         return {
             "component": self.component.value,
@@ -206,7 +242,18 @@ class SuiteArtifactEvidenceView:
         object.__setattr__(self, "components", components)
 
     def component(self, component: SuiteEvidenceComponent) -> ComponentArtifactEvidence:
-        """Return evidence for one component."""
+        """Return evidence for one component.
+
+        Parameters
+        ----------
+        component : SuiteEvidenceComponent
+            Component bucket to retrieve from the suite evidence view.
+
+        Returns
+        -------
+        ComponentArtifactEvidence
+            Evidence grouped for the requested component.
+        """
 
         for item in self.components:
             if item.component is component:
@@ -214,7 +261,14 @@ class SuiteArtifactEvidenceView:
         raise KeyError(f"No artifact evidence for component {component.value}")
 
     def as_dict(self) -> dict[str, object]:
-        """Return a deterministic JSON-compatible suite evidence payload."""
+        """Return a deterministic JSON-compatible suite evidence payload.
+
+        Returns
+        -------
+        dict[str, object]
+            Suite-level payload containing run context, status counts, and
+            serialized component evidence.
+        """
 
         return {
             "run_id": self.run_id,
