@@ -67,8 +67,10 @@ def trading_desk_backtest_for_policy(
     Returns
     -------
     TradingDeskBacktestResult
-        Result of the operation.
+        TradingDeskBacktestResult with per-confidence-level pass/fail,
+        model_eligible flag, and calendar provenance.
     """
+    _require_regulatory_policy(policy)
     result = trading_desk_backtest(
         apl,
         hpl,
@@ -125,8 +127,10 @@ def trading_desk_backtest_trace_for_policy(
     Returns
     -------
     TradingDeskBacktestTraceResult
-        Result of the operation.
+        TradingDeskBacktestTraceResult with the policy result plus
+        per-level observation traces.
     """
+    _require_regulatory_policy(policy)
     result = trading_desk_backtest_trace(
         apl,
         hpl,
@@ -171,14 +175,17 @@ def backtest_for_policy(
     Returns
     -------
     BacktestResult
-        Result of the operation.
+        BacktestResult with policy-window exception counts, traffic-light zone
+        labels, and recorded VaR confidence level.
     """
+    _require_regulatory_policy(policy)
     result = backtest(
         apl,
         hpl,
         var_estimates,
         window=policy.backtesting_window_days,
         minimum_history=policy.backtesting_minimum_history_days,
+        confidence_level=max(policy.backtesting_var_confidence_levels),
     )
     logger.info(
         "backtest_complete",
@@ -194,6 +201,12 @@ def backtest_for_policy(
         ),
     )
     return result
+
+
+def _require_regulatory_policy(policy: RegulatoryPolicy) -> None:
+    if not isinstance(policy, RegulatoryPolicy):
+        raise TypeError("policy must be a RegulatoryPolicy")
+    policy.require_capital_runtime_supported()
 
 
 def _log_backtesting_result(

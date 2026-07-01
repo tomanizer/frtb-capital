@@ -53,7 +53,8 @@ def prepare_trace_inputs(
     Returns
     -------
     TraceInputs
-        Result of the operation.
+        TraceInputs with validated aligned arrays, optional dates, optional
+        holiday mask, and minimum series length.
     """
     apl_arr = as_1d_array_allowing_missing(apl, "apl")
     hpl_arr = as_1d_array_allowing_missing(hpl, "hpl")
@@ -112,7 +113,8 @@ def as_1d_array_allowing_missing(
     Returns
     -------
     npt.NDArray[np.float64]
-        Result of the operation.
+        One-dimensional float64 array preserving NaN as missing; not a copy
+        unless dtype conversion is needed.
     """
     arr = np.asarray(values, dtype=float)
     if arr.ndim != 1:
@@ -132,7 +134,7 @@ def float_or_none(value: float) -> float | None:
     Returns
     -------
     float | None
-        Result of the operation.
+        ``float`` if the value is finite, otherwise ``None``.
     """
     if np.isfinite(value):
         return float(value)

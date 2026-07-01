@@ -8,6 +8,7 @@ after masks have been computed.
 
 from __future__ import annotations
 
+import warnings
 from collections.abc import Mapping, Sequence
 from datetime import date
 
@@ -79,7 +80,8 @@ def trading_desk_backtest(
     Returns
     -------
     TradingDeskBacktestResult
-        Result of the operation.
+        TradingDeskBacktestResult with per-confidence-level pass/fail,
+        model_eligible flag, and calendar provenance.
     """
     return trading_desk_backtest_trace(
         apl,
@@ -122,10 +124,12 @@ def trading_desk_backtest_trace(
     Returns
     -------
     TradingDeskBacktestTraceResult
-        Result of the operation.
+        TradingDeskBacktestTraceResult with the per-level result plus
+        per-observation exception traces.
     """
     _require_positive_observation_count(window, field="window")
     _require_positive_optional_observation_count(minimum_history, field="minimum_history")
+    _warn_if_undated_trace(observation_dates)
     inputs = prepare_trace_inputs(
         apl,
         hpl,
@@ -180,6 +184,18 @@ def trading_desk_backtest_trace(
         missing_business_dates=date_window.missing_business_dates,
     )
     return TradingDeskBacktestTraceResult(result=result, levels=tuple(level_traces))
+
+
+def _warn_if_undated_trace(observation_dates: Sequence[date] | None) -> None:
+    if observation_dates is not None:
+        return
+    warnings.warn(
+        "observation_dates not supplied: exception traces will lack calendar dates. "
+        "Basel MAR32.4 / NPR proposed section __.212 require exceptions to be identifiable "
+        "by date. Pass observation_dates to produce a fully dated audit trace.",
+        UserWarning,
+        stacklevel=3,
+    )
 
 
 __all__ = ("trading_desk_backtest", "trading_desk_backtest_trace")
