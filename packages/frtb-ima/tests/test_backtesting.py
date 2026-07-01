@@ -13,6 +13,7 @@ from frtb_ima.backtesting import (
     trading_desk_backtest_trace,
     trading_desk_backtest_trace_for_policy,
 )
+from frtb_ima.backtesting_types import BacktestLevelResult, TradingDeskBacktestResult
 from frtb_ima.calendar import BusinessCalendar, ObservationWindowBasis
 from frtb_ima.regimes import get_policy
 from frtb_ima.validation.backtesting_stages import (
@@ -153,6 +154,34 @@ def test_trading_desk_backtest_uses_975_and_99_percentile_limits() -> None:
     assert result.level(0.99).as_dict()["apl_exceptions"] == 12
     with pytest.raises(KeyError, match="confidence level"):
         result.level(0.95)
+
+
+def test_trading_desk_backtest_result_serializes_time_series_ids() -> None:
+    result = TradingDeskBacktestResult(
+        levels=(
+            BacktestLevelResult(
+                confidence_level=0.99,
+                apl_exceptions=1,
+                hpl_exceptions=0,
+                exception_limit=12.0,
+                apl_passed=True,
+                hpl_passed=True,
+                level_passed=True,
+                window_size=250,
+            ),
+        ),
+        window_size=250,
+        model_eligible=True,
+        apl_time_series_id="ts-apl",
+        hpl_time_series_id="ts-hpl",
+        var_time_series_ids={0.99: "ts-var-99"},
+    )
+
+    assert result.as_dict()["time_series"] == {
+        "apl": "ts-apl",
+        "hpl": "ts-hpl",
+        "var": {"0.99": "ts-var-99"},
+    }
 
 
 def test_trading_desk_backtest_fails_when_either_pnl_series_exceeds_limit() -> None:

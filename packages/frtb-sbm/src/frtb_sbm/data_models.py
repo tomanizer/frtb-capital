@@ -203,6 +203,10 @@ class SbmSensitivity:
     risk_factor_id: str | None = None
     risk_factor_mapping_version: str | None = None
     bucket_label: str | None = None
+    up_shock_id: str | None = None
+    down_shock_id: str | None = None
+    surface_id: str | None = None
+    surface_point_id: str | None = None
     mapping_citation_ids: tuple[str, ...] = ()
     org_scope: CalculationScope | None = None
 

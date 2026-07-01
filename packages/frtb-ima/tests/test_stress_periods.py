@@ -1011,3 +1011,33 @@ def test_same_risk_class_nmrfs_use_common_selected_stress_period() -> None:
     )
 
     assert specs[0].stress_period == specs[1].stress_period
+
+
+def test_selection_result_serializes_time_series_and_scenario_provenance() -> None:
+    candidate = select_stress_period_from_history(
+        _series([1.0, 2.0, 10.0, 3.0]),
+        window_observations=2,
+        minimum_observations=2,
+        severity_metric=StressSeverityMetric.MAX_LOSS,
+        confidence_level=CONFIDENCE_LEVEL,
+        es_estimator=ES_ESTIMATOR,
+    )
+    result = StressPeriodSelectionResult(
+        as_of_date=date(2025, 6, 30),
+        regime="FED_NPR_2_0",
+        window_observations=2,
+        minimum_observations=2,
+        severity_metric=StressSeverityMetric.MAX_LOSS,
+        confidence_level=CONFIDENCE_LEVEL,
+        es_estimator=ES_ESTIMATOR,
+        tie_break=StressPeriodTieBreak.LATEST_START_DATE,
+        selected_by_risk_class={RiskClass.CSR: candidate},
+        candidate_counts={RiskClass.CSR: 3},
+        scenario_set_ids={RiskClass.CSR: "scenario-set-stress-csr"},
+        loss_time_series_ids={RiskClass.CSR: "ts-stress-loss-csr"},
+    )
+
+    payload = result.as_dict()
+
+    assert payload["scenario_set_ids"] == {"CSR": "scenario-set-stress-csr"}
+    assert payload["loss_time_series_ids"] == {"CSR": "ts-stress-loss-csr"}

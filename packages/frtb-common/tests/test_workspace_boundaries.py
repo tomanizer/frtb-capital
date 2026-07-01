@@ -67,3 +67,27 @@ def test_result_store_does_not_import_capital_or_orchestration_packages() -> Non
         imported_forbidden_modules.update(imported_top_level_modules(path) & forbidden_imports)
 
     assert imported_forbidden_modules == set()
+
+
+def test_artifact_metadata_lookup_remains_outside_capital_and_orchestration_packages() -> None:
+    # Time-series, shock, scenario-vector, and surface metadata is persisted and
+    # served by frtb-result-store. Capital packages and orchestration may carry
+    # stable IDs/provenance, but must not import storage lookup APIs.
+    guarded_packages = (
+        "frtb-common",
+        "frtb-cva",
+        "frtb-drc",
+        "frtb-ima",
+        "frtb-orchestration",
+        "frtb-rrao",
+        "frtb-sbm",
+    )
+    offenders: list[str] = []
+    for package_name in guarded_packages:
+        src_root = REPO_ROOT / "packages" / package_name / "src"
+        assert src_root.is_dir(), f"Source directory not found: {src_root}"
+        for path in src_root.rglob("*.py"):
+            if "frtb_result_store" in imported_top_level_modules(path):
+                offenders.append(str(path.relative_to(REPO_ROOT)))
+
+    assert offenders == []

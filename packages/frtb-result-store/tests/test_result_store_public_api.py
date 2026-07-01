@@ -3,6 +3,7 @@ from __future__ import annotations
 import subprocess
 import sys
 from datetime import UTC, date, datetime
+from pathlib import Path
 
 import frtb_result_store.mart_attribution_rows as mart_attribution_rows
 import frtb_result_store.mart_capital_tree_rows as mart_capital_tree_rows
@@ -21,6 +22,7 @@ from frtb_common import (
 )
 from frtb_result_store import (
     PACKAGE_METADATA,
+    ArtifactAvailabilityStatus,
     ArtifactRef,
     ArtifactSchemaEntry,
     ArtifactType,
@@ -32,9 +34,11 @@ from frtb_result_store import (
     CapitalNode,
     CapitalNodeFamily,
     CapitalNodeSpec,
+    DuckDbParquetResultStore,
     FrtbComponent,
     HierarchyDefinition,
     HierarchyLevel,
+    LineageRef,
     NodeType,
     RequiredArtifactExpectation,
     ResultBundle,
@@ -65,6 +69,88 @@ def test_package_metadata_marks_result_store_as_partial_runtime_infrastructure()
     assert PACKAGE_METADATA.component_name == "FRTB result store"
     assert PACKAGE_METADATA.implementation_status is ImplementationStatus.PARTIAL
     assert PACKAGE_METADATA.validation_status is ValidationStatus.PENDING
+
+
+def test_artifact_availability_status_is_public_and_requires_no_data_reason() -> None:
+    ref = ArtifactRef(
+        run_id="run-1",
+        artifact_id="artifact-no-upl",
+        component=FrtbComponent.IMA,
+        artifact_type=ArtifactType.TIME_SERIES,
+        uri="no-data://artifact-no-upl",
+        format="none",
+        row_count=0,
+        metadata={
+            "artifact_status": ArtifactAvailabilityStatus.NO_DATA.value,
+            "status_reason": "fixture does not include UPL time series",
+        },
+    )
+
+    assert ref.metadata["artifact_status"] == "NO_DATA"
+    with pytest.raises(ResultStoreContractError, match="status_reason"):
+        ArtifactRef(
+            run_id="run-1",
+            artifact_id="artifact-no-reason",
+            component=FrtbComponent.IMA,
+            artifact_type=ArtifactType.TIME_SERIES,
+            uri="no-data://artifact-no-reason",
+            format="none",
+            row_count=0,
+            metadata={"artifact_status": ArtifactAvailabilityStatus.NO_DATA.value},
+        )
+    with pytest.raises(ResultStoreContractError, match="artifact_status"):
+        ArtifactRef(
+            run_id="run-1",
+            artifact_id="artifact-bad-status",
+            component=FrtbComponent.IMA,
+            artifact_type=ArtifactType.TIME_SERIES,
+            uri="no-data://artifact-bad-status",
+            format="none",
+            row_count=0,
+            metadata={"artifact_status": "MISSING"},
+        )
+    with pytest.raises(ResultStoreContractError, match="row_count=0"):
+        ArtifactRef(
+            run_id="run-1",
+            artifact_id="artifact-no-data-with-rows",
+            component=FrtbComponent.IMA,
+            artifact_type=ArtifactType.TIME_SERIES,
+            uri="no-data://artifact-no-data-with-rows",
+            format="none",
+            row_count=1,
+            metadata={
+                "artifact_status": ArtifactAvailabilityStatus.NO_DATA.value,
+                "status_reason": "fixture does not include UPL time series",
+            },
+        )
+    with pytest.raises(ResultStoreContractError, match="format='none'"):
+        ArtifactRef(
+            run_id="run-1",
+            artifact_id="artifact-no-data-parquet",
+            component=FrtbComponent.IMA,
+            artifact_type=ArtifactType.TIME_SERIES,
+            uri="no-data://artifact-no-data-parquet",
+            format="parquet",
+            row_count=0,
+            metadata={
+                "artifact_status": ArtifactAvailabilityStatus.NO_DATA.value,
+                "status_reason": "fixture does not include UPL time series",
+            },
+        )
+    with pytest.raises(ResultStoreContractError, match="NO_DATA artifact refs"):
+        ArtifactRef(
+            run_id="run-1",
+            artifact_id="artifact-no-data-wrong-scheme",
+            component=FrtbComponent.IMA,
+            artifact_type=ArtifactType.TIME_SERIES,
+            uri="unsupported://artifact-no-data-wrong-scheme",
+            format="none",
+            row_count=0,
+            metadata={
+                "artifact_status": ArtifactAvailabilityStatus.NO_DATA.value,
+                "status_reason": "fixture does not include UPL time series",
+            },
+        )
 
 
 def test_top_level_import_does_not_load_duckdb_backend() -> None:
@@ -606,6 +692,159 @@ def test_result_bundle_validates_graph_references() -> None:
         ResultBundle(run=run, nodes=(root,), edges=(missing_child,))
 
 
+def test_result_store_rejects_orphan_artifact_and_input_sources(tmp_path: Path) -> None:
+    run = _run()
+    root = CapitalNode(
+        run_id=run.run_id,
+        node_id="total",
+        node_type=NodeType.ROOT,
+        component=FrtbComponent.TOP_OF_HOUSE,
+        label="Total capital",
+    )
+    artifact = ArtifactRef(
+        run_id=run.run_id,
+        artifact_id="ima-pnl-desk-a",
+        component=FrtbComponent.IMA,
+        artifact_type=ArtifactType.IMA_PNL_VECTOR,
+        uri="s3://frtb-results/run-001/ima-pnl-desk-a.parquet",
+        format="parquet",
+        row_count=250,
+    )
+
+    with pytest.raises(ResultStoreContractError, match="lineage artifact source not found"):
+        DuckDbParquetResultStore(tmp_path / "missing-lineage-artifact").write_bundle(
+            ResultBundle(
+                run=run,
+                nodes=(root,),
+                artifacts=(artifact,),
+                lineage=(
+                    LineageRef(
+                        run_id=run.run_id,
+                        result_id="total",
+                        source_type="artifact",
+                        source_id="missing-artifact",
+                    ),
+                ),
+            )
+        )
+    with pytest.raises(ResultStoreContractError, match="lineage input snapshot source not found"):
+        DuckDbParquetResultStore(tmp_path / "missing-lineage-input").write_bundle(
+            ResultBundle(
+                run=run,
+                nodes=(root,),
+                artifacts=(artifact,),
+                lineage=(
+                    LineageRef(
+                        run_id=run.run_id,
+                        result_id="total",
+                        source_type="input_snapshot",
+                        source_id="missing-input-snapshot",
+                    ),
+                ),
+            )
+        )
+    with pytest.raises(ResultStoreContractError, match="attribution artifact not found"):
+        DuckDbParquetResultStore(tmp_path / "missing-attribution-artifact").write_bundle(
+            ResultBundle(
+                run=run,
+                nodes=(root,),
+                artifacts=(artifact,),
+                attributions=(
+                    CapitalAttributionRecord(
+                        run_id=run.run_id,
+                        node_id="total",
+                        contribution_id="ima-desk-a",
+                        source_id="desk-a",
+                        source_level="DESK",
+                        category="IMA_DESK",
+                        base_amount=1.0,
+                        contribution=1.0,
+                        method="STANDALONE",
+                        artifact_id="missing-artifact",
+                    ),
+                ),
+            )
+        )
+
+
+def test_result_store_rejects_duplicate_artifact_partitions(tmp_path: Path) -> None:
+    run = _run()
+    root = CapitalNode(
+        run_id=run.run_id,
+        node_id="total",
+        node_type=NodeType.ROOT,
+        component=FrtbComponent.TOP_OF_HOUSE,
+        label="Total capital",
+    )
+    first = ArtifactRef(
+        run_id=run.run_id,
+        artifact_id="rfet-timeline-a",
+        component=FrtbComponent.IMA,
+        artifact_type=ArtifactType.TIME_SERIES,
+        uri="s3://frtb-results/rfet-timeline-a.parquet",
+        format="parquet",
+        row_count=1,
+        partition_keys=("time_series_id",),
+        metadata={"partition_values": {"time_series_id": "ts-rfet-usd-5y"}},
+    )
+    second = ArtifactRef(
+        run_id=run.run_id,
+        artifact_id="rfet-timeline-b",
+        component=FrtbComponent.IMA,
+        artifact_type=ArtifactType.TIME_SERIES,
+        uri="s3://frtb-results/rfet-timeline-b.parquet",
+        format="parquet",
+        row_count=1,
+        partition_keys=("time_series_id",),
+        metadata={"partition_values": {"time_series_id": "ts-rfet-usd-5y"}},
+    )
+    reversed_partition_order = ArtifactRef(
+        run_id=run.run_id,
+        artifact_id="scenario-vector-b",
+        component=FrtbComponent.IMA,
+        artifact_type=ArtifactType.SCENARIO_VECTOR_METADATA,
+        uri="s3://frtb-results/scenario-vector-b.parquet",
+        format="parquet",
+        row_count=1,
+        partition_keys=("scenario_vector_id", "scenario_set_id"),
+        metadata={
+            "partition_values": {
+                "scenario_set_id": "scenario-set-250d",
+                "scenario_vector_id": "scenario-vector-rtpl",
+            }
+        },
+    )
+    scenario_vector = ArtifactRef(
+        run_id=run.run_id,
+        artifact_id="scenario-vector-a",
+        component=FrtbComponent.IMA,
+        artifact_type=ArtifactType.SCENARIO_VECTOR_METADATA,
+        uri="s3://frtb-results/scenario-vector-a.parquet",
+        format="parquet",
+        row_count=1,
+        partition_keys=("scenario_set_id", "scenario_vector_id"),
+        metadata={
+            "partition_values": {
+                "scenario_set_id": "scenario-set-250d",
+                "scenario_vector_id": "scenario-vector-rtpl",
+            }
+        },
+    )
+
+    with pytest.raises(ResultStoreContractError, match="duplicate artifact partition"):
+        DuckDbParquetResultStore(tmp_path / "duplicate-artifact-partitions").write_bundle(
+            ResultBundle(run=run, nodes=(root,), artifacts=(first, second))
+        )
+    with pytest.raises(ResultStoreContractError, match="duplicate artifact partition"):
+        DuckDbParquetResultStore(tmp_path / "duplicate-reordered-partitions").write_bundle(
+            ResultBundle(
+                run=run,
+                nodes=(root,),
+                artifacts=(scenario_vector, reversed_partition_order),
+            )
+        )
+
+
 def test_result_bundle_reports_duplicate_node_ids_deterministically() -> None:
     run = _run()
     nodes = (
@@ -912,6 +1151,31 @@ def test_artifact_schema_registry_and_expectation_contracts() -> None:
         artifact_schema_for("missing.schema")
 
 
+def test_time_series_shock_scenario_and_surface_artifact_schemas_are_registered() -> None:
+    schemas = {
+        "common.time_series.v1": ArtifactType.TIME_SERIES,
+        "common.shock_definition.v1": ArtifactType.SHOCK_DEFINITION,
+        "common.scenario_vector_metadata.v1": ArtifactType.SCENARIO_VECTOR_METADATA,
+        "common.surface_grid.v1": ArtifactType.SURFACE_GRID,
+    }
+
+    for schema_id, artifact_type in schemas.items():
+        schema = artifact_schema_for(schema_id)
+        assert schema.artifact_type is artifact_type
+        assert schema.schema_version == 1
+        assert schema.schema_fingerprint == artifact_schema_for(schema.schema_id).schema_fingerprint
+        assert "run_id" in schema.required_columns
+        assert "source_row_id" in schema.required_columns
+
+    assert artifact_schema_for("common.time_series.v1").partition_columns == ("time_series_id",)
+    assert artifact_schema_for("common.shock_definition.v1").partition_columns == ("shock_id",)
+    assert artifact_schema_for("common.scenario_vector_metadata.v1").partition_columns == (
+        "scenario_set_id",
+        "scenario_vector_id",
+    )
+    assert artifact_schema_for("common.surface_grid.v1").partition_columns == ("surface_id",)
+
+
 def test_artifact_ref_accepts_object_store_drillthrough_uri() -> None:
     artifact = ArtifactRef(
         run_id="run-001",
@@ -922,10 +1186,60 @@ def test_artifact_ref_accepts_object_store_drillthrough_uri() -> None:
         format="parquet",
         row_count=2500,
         partition_keys=("desk_id", "portfolio_id", "book_id", "scenario_id"),
+        metadata={
+            "partition_values": {
+                "desk_id": "desk-a",
+                "portfolio_id": "portfolio-a",
+                "book_id": "book-a",
+                "scenario_id": "scenario-a",
+            }
+        },
     )
 
     assert artifact.component is FrtbComponent.IMA
     assert artifact.uri.startswith("s3://")
+
+
+def test_artifact_ref_requires_partition_values_for_partitioned_refs() -> None:
+    with pytest.raises(ResultStoreContractError, match=r"metadata\.partition_values"):
+        ArtifactRef(
+            run_id="run-001",
+            artifact_id="ima-pnl-desk-a",
+            component="IMA",
+            artifact_type=ArtifactType.IMA_PNL_VECTOR,
+            uri="s3://frtb-results/ima_pnl.parquet",
+            format="parquet",
+            row_count=2500,
+            partition_keys=("desk_id",),
+        )
+    with pytest.raises(ResultStoreContractError, match="partition value missing"):
+        ArtifactRef(
+            run_id="run-001",
+            artifact_id="ima-pnl-desk-a",
+            component="IMA",
+            artifact_type=ArtifactType.IMA_PNL_VECTOR,
+            uri="s3://frtb-results/ima_pnl.parquet",
+            format="parquet",
+            row_count=2500,
+            partition_keys=("desk_id", "book_id"),
+            metadata={"partition_values": {"desk_id": "desk-a"}},
+        )
+    with pytest.raises(ResultStoreContractError, match="partition_values"):
+        ArtifactRef(
+            run_id="run-001",
+            artifact_id="upl-no-data",
+            component=FrtbComponent.IMA,
+            artifact_type=ArtifactType.TIME_SERIES,
+            uri="no-data://upl-no-data",
+            format="none",
+            row_count=0,
+            partition_keys=("time_series_id",),
+            metadata={
+                "artifact_status": ArtifactAvailabilityStatus.NO_DATA.value,
+                "status_reason": "UPL time series is not present",
+                "partition_values": {"time_series_id": ""},
+            },
+        )
 
 
 def _run() -> CalculationRun:

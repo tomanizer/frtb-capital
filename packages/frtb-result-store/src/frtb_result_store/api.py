@@ -14,8 +14,10 @@ from frtb_common import jsonable
 from frtb_result_store.api_artifacts import (
     artifact_download_path,
     artifact_page_payload,
+    artifact_unavailable_payload,
     require_artifact_ref,
 )
+from frtb_result_store.api_metadata import register_artifact_metadata_routes
 from frtb_result_store.io import DuckDbParquetResultStore, ResultStoreConfig
 from frtb_result_store.model import (
     ArtifactType,
@@ -72,6 +74,7 @@ def create_result_store_app(
     store: DuckDbParquetResultStore | ResultStoreConfig | Path | str,
     *,
     title: str = "FRTB Result Store API",
+    cors_allow_origins: Sequence[str] = (),
 ) -> Any:
     """Return a read-only FastAPI app over committed result-store data.
     Parameters
@@ -89,6 +92,7 @@ def create_result_store_app(
 
     try:
         from fastapi import FastAPI, HTTPException, Query
+        from fastapi.middleware.cors import CORSMiddleware
         from fastapi.responses import FileResponse
     except ModuleNotFoundError as exc:
         if exc.name == "fastapi":
@@ -105,6 +109,13 @@ def create_result_store_app(
         version="1.0.0",
         openapi_tags=[{"name": tag} for tag in _OPENAPI_TAGS],
     )
+    if cors_allow_origins:
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=list(cors_allow_origins),
+            allow_methods=["GET"],
+            allow_headers=["*"],
+        )
     app.state.result_store = result_store
 
     routes = cast(_RouteRegistrar, app)
@@ -114,6 +125,14 @@ def create_result_store_app(
     _register_risk_factor_routes(routes, result_store, HTTPException, Query)
     _register_attribution_projection_routes(routes, result_store, HTTPException)
     _register_artifact_routes(routes, result_store, HTTPException, Query, FileResponse)
+    register_artifact_metadata_routes(
+        routes,
+        result_store,
+        HTTPException,
+        Query,
+        require_run=_require_run,
+        to_jsonable=_to_jsonable,
+    )
     _register_run_group_routes(routes, result_store, HTTPException)
     _register_run_detail_route(routes, result_store, HTTPException)
 
@@ -673,6 +692,13 @@ def _register_artifact_routes(
         ref = require_artifact_ref(result_store, run_id, artifact_id, http_exception_type)
         path = artifact_download_path(result_store, ref, http_exception_type)
         if path is None:
+            unavailable = artifact_unavailable_payload(ref)
+            if unavailable is not None:
+                return {
+                    "artifact": _to_jsonable(ref),
+                    "mode": "artifact_unavailable",
+                    **unavailable,
+                }
             return {
                 "artifact": _to_jsonable(ref),
                 "mode": "s3_uri_handoff",

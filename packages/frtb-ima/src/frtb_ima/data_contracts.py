@@ -74,6 +74,10 @@ class RiskFactorDefinition:
     liquidity_horizon: LiquidityHorizon
     bucket: RiskFactorBucket | None = None
     currency: str = ""
+    observation_time_series_id: str = ""
+    surface_id: str = ""
+    surface_point_id: str = ""
+    liquidity_horizon_vector_id: str = ""
     metadata: Mapping[str, str] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
@@ -250,6 +254,7 @@ class RFETEvidence:
     qualitative_criteria: tuple[RFETQualitativeCriterionEvidence, ...] = ()
     data_pools: tuple[RFETDataPoolEvidence, ...] = ()
     new_issuance: RFETNewIssuanceEvidence | None = None
+    observation_time_series_id: str = ""
     metadata: Mapping[str, str] = field(default_factory=dict)
     org_scope: CalculationScope | None = None
 
@@ -304,6 +309,9 @@ class ScenarioCube:
     position_ids: tuple[str, ...]
     risk_factor_names: tuple[str, ...]
     name: str = ""
+    artifact_id: str = ""
+    scenario_set_id: str = ""
+    scenario_vector_ids: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
         source_values = self.values
@@ -331,6 +339,14 @@ class ScenarioCube:
             raise ValueError("position_ids length must match ScenarioCube position axis")
         if len(risk_factor_names) != risk_factor_count:
             raise ValueError("risk_factor_names length must match ScenarioCube risk-factor axis")
+        scenario_vector_ids = tuple(self.scenario_vector_ids)
+        if scenario_vector_ids:
+            if len(scenario_vector_ids) != scenario_count:
+                raise ValueError("scenario_vector_ids length must match ScenarioCube scenario axis")
+            if any(not scenario_vector_id for scenario_vector_id in scenario_vector_ids):
+                raise ValueError("scenario_vector_ids cannot contain empty values")
+            if len(scenario_vector_ids) != len(set(scenario_vector_ids)):
+                raise ValueError("scenario_vector_ids contains duplicates")
 
         shares_source = isinstance(source_values, np.ndarray) and np.shares_memory(
             arr,
@@ -343,6 +359,7 @@ class ScenarioCube:
         object.__setattr__(self, "scenario_metadata", scenario_metadata)
         object.__setattr__(self, "position_ids", position_ids)
         object.__setattr__(self, "risk_factor_names", risk_factor_names)
+        object.__setattr__(self, "scenario_vector_ids", scenario_vector_ids)
 
     @property
     def scenario_count(self) -> int:

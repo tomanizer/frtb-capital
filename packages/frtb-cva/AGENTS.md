@@ -54,3 +54,7 @@ introducing `adapters/`, `validation/`, `kernel/`, or `assembly/`.
 - Do not emit successful placeholder capital for unsupported paths.
 - Cite specific MAR50 paragraphs for regulatory behaviour.
 - Material numerical changes require an ADR and deterministic tests.
+- Exposure time-series IDs and volatility surface/surface-point IDs are lineage
+  metadata only. Do not import `frtb_result_store`, fetch exposure/surface
+  artifacts, infer missing volatilities, or reprice instruments inside CVA
+  kernels.

@@ -309,6 +309,12 @@ def test_stress_artifact_as_dict_includes_scenario_ids() -> None:
         stress_period="synthetic-stress",
         source="upstream risk engine",
         scenario_ids=("scenario-1", "scenario-2"),
+        artifact_id="artifact-nmrf-stress",
+        scenario_set_id="scenario-set-stress",
+        scenario_vector_id="scenario-vector-stress",
+        shock_id="shock-nmrf-up",
+        surface_id="surface-credit-vol",
+        surface_point_id="surface-credit-vol:5y:atm",
     )
     empty_artifact = NMRFStressArtifact(
         risk_factor_name="EMPTY_IDS",
@@ -320,6 +326,10 @@ def test_stress_artifact_as_dict_includes_scenario_ids() -> None:
     )
 
     assert artifact.as_dict()["scenario_ids"] == ["scenario-1", "scenario-2"]
+    assert artifact.as_dict()["artifact_id"] == "artifact-nmrf-stress"
+    assert artifact.as_dict()["scenario_vector_id"] == "scenario-vector-stress"
+    assert artifact.as_dict()["shock_id"] == "shock-nmrf-up"
+    assert artifact.as_dict()["surface_point_id"] == "surface-credit-vol:5y:atm"
     assert empty_artifact.as_dict()["scenario_ids"] == []
 
 

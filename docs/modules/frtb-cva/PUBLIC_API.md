@@ -44,6 +44,13 @@ lookup remain downstream `frtb-result-store` responsibilities.
 | 2 - CRIF/vendor rows | Iterable mapping rows | `adapt_cva_records` -> canonical row adapter or batch path | Adapter path with explicit diagnostics. |
 | 3 - Canonical dataclasses | Counterparty, netting-set, hedge, and sensitivity dataclasses plus context | `calculate_cva_capital` -> canonical batches -> `calculate_cva_capital_from_batches` | Small books, tests, and notebooks. |
 
+Canonical netting-set rows and batches may carry optional exposure time-series
+IDs. SA-CVA sensitivity rows and batches may carry optional volatility surface,
+surface point, and shock IDs. These fields are lineage hooks for result-store
+and Navigator drill-downs; they do not allow `frtb_cva` to source exposures,
+infer volatilities, construct shocks, or reprice instruments inside capital
+kernels.
+
 Clients must supply all tables required by the selected `CvaMethod`:
 
 | Method | Required Arrow tables | Optional Arrow tables | Unsupported/fail-closed notes |

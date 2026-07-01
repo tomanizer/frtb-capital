@@ -178,6 +178,7 @@ class CvaNettingSet:
     source_row_id: str
     carved_out_to_ba_cva: bool = False
     discount_factor_explicit: bool = False
+    exposure_time_series_id: str = ""
     lineage: CvaSourceLineage | None = None
     org_scope: CalculationScope | None = None
 
@@ -234,6 +235,9 @@ class SaCvaSensitivity:
     index_homogeneous_sector_quality: bool = False
     index_dominant_sector: CvaSector | None = None
     index_remap_bucket_id: str | None = None
+    volatility_surface_id: str = ""
+    volatility_surface_point_id: str = ""
+    shock_id: str = ""
     lineage: CvaSourceLineage | None = None
 
 

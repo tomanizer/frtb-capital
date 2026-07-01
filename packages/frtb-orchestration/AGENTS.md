@@ -33,3 +33,7 @@ The package implements orchestration contracts end to end:
 - Do not emit successful placeholder capital.
 - Do not reach into private component batch modules; consume public input_table or
   result-summary contracts only.
+- May compose scenario/shock/surface evidence views over resolved artifact IDs,
+  but must not import `frtb_result_store`, fetch artifact payloads, or infer
+  artifact semantics. Result-store and Navigator layers own storage/query/UI
+  behavior for artifact metadata.

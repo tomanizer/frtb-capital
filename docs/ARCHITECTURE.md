@@ -29,6 +29,22 @@ Use [`CLIENT_REFERENCE_DATA.md`](CLIENT_REFERENCE_DATA.md) to decide which
 canonical fields come from client feeds, package rule tables, or run-scoped
 reference overlays.
 
+## Time-series, shock, and surface metadata ownership
+
+Canonical time-series, shock, scenario-vector, and surface metadata is owned by
+`frtb-result-store` artifacts and read models. `frtb-common` provides stable ID
+and coordinate primitives only. Component packages consume calculation-ready
+arrays/scalars plus those stable IDs for provenance; they must not fetch
+artifacts, source market data, infer surface axes, construct shock definitions,
+or query `frtb-result-store` inside capital kernels.
+
+`frtb-orchestration` may compose suite-level artifact evidence views over
+completed component summaries and resolved artifact references. It does not own
+the persisted artifact payloads. Navigator and other viewers consume
+result-store metadata/detail endpoints and orchestration evidence read models,
+and must render absent fixtures as explicit `NO_DATA` or `UNSUPPORTED` states
+rather than fabricating UPL, CRIF, stress-vector, RFET, or volatility data.
+
 ## Dependency graph
 
 ```mermaid
@@ -84,6 +100,9 @@ Shared primitives used by every capital component:
   handoff contract (with `StandardisedComponent` and `ComponentSummaryError`).
   See [`decisions/0029-unified-standardised-component-handoff-contract.md`](decisions/0029-unified-standardised-component-handoff-contract.md).
 - `jsonable` serialization for common domain values.
+- Stable artifact identity primitives for time-series IDs, scenario IDs, shock
+  IDs/directions, surface IDs, and surface coordinates. These primitives carry
+  identity and validation only; they do not imply a market-data library.
 - `assert_policy_has_regulatory_citations` and
   `MissingRegulatoryCitationsError` for package policy tests.
 

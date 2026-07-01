@@ -118,6 +118,13 @@ reported as explicit unsupported residual records. `calculate_sbm_capital_impact
 compares two capital results by finite difference and must not be interpreted as
 a marginal contribution.
 
+SBM sensitivity rows and batches may carry optional curvature shock IDs,
+surface IDs, and surface point IDs. These identifiers preserve provenance for
+result-store artifacts and Navigator drill-downs, especially curvature up/down
+branches and vega option-tenor/underlying-tenor surfaces. They do not change SBM
+capital calculations and must not be used by kernels to fetch market data,
+construct shocks, interpolate surfaces, or infer missing metadata.
+
 ## InputTable specs
 
 Use each spec with `normalize_sbm_arrow_table(table, risk_class, measure)`,

@@ -218,6 +218,8 @@ def netting_set_payload(netting_set: CvaNettingSet) -> dict[str, object]:
         "source_row_id": netting_set.source_row_id,
         "lineage": lineage_payload(netting_set.lineage),
     }
+    if netting_set.exposure_time_series_id:
+        payload["exposure_time_series_id"] = netting_set.exposure_time_series_id
     org_scope = scope_payload(netting_set.org_scope)
     if org_scope is not None:
         payload["org_scope"] = org_scope
@@ -284,7 +286,7 @@ def sensitivity_payload(sensitivity: SaCvaSensitivity) -> dict[str, object]:
     dict[str, object]
         Sensitivity fields with optional index remapping attributes.
     """
-    return {
+    payload: dict[str, object] = {
         "sensitivity_id": sensitivity.sensitivity_id,
         "risk_class": sensitivity.risk_class.value,
         "risk_measure": sensitivity.risk_measure.value,
@@ -309,6 +311,13 @@ def sensitivity_payload(sensitivity: SaCvaSensitivity) -> dict[str, object]:
         "source_row_id": sensitivity.source_row_id,
         "lineage": lineage_payload(sensitivity.lineage),
     }
+    if sensitivity.volatility_surface_id:
+        payload["volatility_surface_id"] = sensitivity.volatility_surface_id
+    if sensitivity.volatility_surface_point_id:
+        payload["volatility_surface_point_id"] = sensitivity.volatility_surface_point_id
+    if sensitivity.shock_id:
+        payload["shock_id"] = sensitivity.shock_id
+    return payload
 
 
 def lineage_payload(lineage: CvaSourceLineage | None) -> dict[str, object] | None:
@@ -394,6 +403,9 @@ def batch_netting_set_payload(batch: Any, index: int) -> dict[str, object]:
         "source_row_id": batch.source_row_ids[index],
         "lineage": batch_lineage_payload(batch, index),
     }
+    exposure_time_series_id = _optional_batch_text(batch.exposure_time_series_ids, index)
+    if exposure_time_series_id:
+        payload["exposure_time_series_id"] = exposure_time_series_id
     org_scope = scope_payload(scope_at(batch.org_scopes, index))
     if org_scope is not None:
         payload["org_scope"] = org_scope
@@ -458,7 +470,7 @@ def batch_sensitivity_payload(batch: Any, index: int) -> dict[str, object]:
     dict[str, object]
         Row payload matching :func:`sensitivity_payload` field names.
     """
-    return {
+    payload: dict[str, object] = {
         "sensitivity_id": batch.sensitivity_ids[index],
         "risk_class": batch.risk_classes[index],
         "risk_measure": batch.risk_measures[index],
@@ -479,6 +491,16 @@ def batch_sensitivity_payload(batch: Any, index: int) -> dict[str, object]:
         "source_row_id": batch.source_row_ids[index],
         "lineage": batch_lineage_payload(batch, index),
     }
+    volatility_surface_id = _optional_batch_text(batch.volatility_surface_ids, index)
+    if volatility_surface_id:
+        payload["volatility_surface_id"] = volatility_surface_id
+    volatility_surface_point_id = _optional_batch_text(batch.volatility_surface_point_ids, index)
+    if volatility_surface_point_id:
+        payload["volatility_surface_point_id"] = volatility_surface_point_id
+    shock_id = _optional_batch_text(batch.shock_ids, index)
+    if shock_id:
+        payload["shock_id"] = shock_id
+    return payload
 
 
 def batch_lineage_payload(batch: Any, index: int) -> dict[str, object] | None:
@@ -527,3 +549,14 @@ def _optional_float_value(value: object) -> float | None:
     if not math.isfinite(number):
         raise CvaInputError("value must be finite", field="optional numeric field")
     return number
+
+
+def _optional_batch_text(values: Any, index: int) -> str | None:
+    if values is None:
+        return None
+    value = values[index]
+    if value is None:
+        return None
+    if isinstance(value, (float, np.floating)) and math.isnan(float(value)):
+        return None
+    return str(value)

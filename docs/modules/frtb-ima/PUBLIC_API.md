@@ -50,6 +50,13 @@ Regulatory profiles are selected through `RegulatoryPolicy` / `RegulatoryRegime`
 (`FED_NPR_2_0`, `ECB_CRR3`, `PRA_UK_CRR`). Unsupported features raise
 `UnsupportedRegulatoryFeatureError`.
 
+Scenario, RFET, PLA, backtesting, NMRF, and stress-period result records may
+carry optional artifact identifiers such as time-series IDs, scenario-set IDs,
+scenario-vector IDs, shock IDs, and surface point IDs. These identifiers are
+lineage hooks for `frtb-result-store` and Navigator audit views; they do not
+change IMA capital calculations and must not be used by kernels to fetch market
+data, construct shocks, or price instruments.
+
 Orchestration consumes desk-level capital and `DeskEligibilityStatus`; it does
 not call internal IMA component steps directly. To feed suite attribution, pass
 completed desk audit records to `build_ima_contribution_bundle(...,

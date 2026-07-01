@@ -76,6 +76,7 @@ def test_risk_factor_definition_validates_bucket_alignment() -> None:
     )
 
     assert rf.bucket == bucket
+    assert rf.observation_time_series_id == ""
     assert isinstance(bucket.metadata, MappingProxyType)
 
     bad_bucket = RiskFactorBucket(
@@ -173,9 +174,11 @@ def test_rfet_evidence_requires_matching_observations() -> None:
             RealPriceObservation("RF", date(2025, 6, 1), source="VENDOR_B"),
         ),
         qualitative_pass=True,
+        observation_time_series_id="ts-rfet-rf",
     )
 
     assert evidence.observation_count == 2
+    assert evidence.observation_time_series_id == "ts-rfet-rf"
 
     with pytest.raises(ValueError, match="observations"):
         RFETEvidence(
@@ -267,6 +270,9 @@ def test_scenario_cube_validates_shape_and_axis_labels() -> None:
         scenario_metadata=_metadata(2),
         position_ids=("P1", "P2"),
         risk_factor_names=("RF1", "RF2"),
+        artifact_id="artifact-scenario-cube",
+        scenario_set_id="scenario-set-current",
+        scenario_vector_ids=("scenario-vector-1", "scenario-vector-2"),
     )
 
     values[0, 0, 0] = 999.0
@@ -274,6 +280,9 @@ def test_scenario_cube_validates_shape_and_axis_labels() -> None:
     assert cube.scenario_count == 2
     assert cube.position_count == 2
     assert cube.risk_factor_count == 2
+    assert cube.artifact_id == "artifact-scenario-cube"
+    assert cube.scenario_set_id == "scenario-set-current"
+    assert cube.scenario_vector_ids == ("scenario-vector-1", "scenario-vector-2")
     assert cube.total_scenario_pnl().tolist() == pytest.approx([1_111.0, 2_222.0])
     assert cube.pnl_for_positions(("P1",)).tolist() == pytest.approx([11.0, 22.0])
     assert cube.pnl_for_risk_factors(("RF2",)).tolist() == pytest.approx([1_010.0, 2_020.0])
@@ -310,6 +319,14 @@ def test_scenario_cube_validates_shape_and_axis_labels() -> None:
         cube.pnl_for_positions(("MISSING",))
     with pytest.raises(KeyError, match="Unknown risk_factor_names"):
         cube.pnl_for_risk_factors(("MISSING",))
+    with pytest.raises(ValueError, match="scenario_vector_ids"):
+        ScenarioCube(
+            values=np.ones((2, 1, 1)),
+            scenario_metadata=_metadata(2),
+            position_ids=("P1",),
+            risk_factor_names=("RF1",),
+            scenario_vector_ids=("scenario-vector-1",),
+        )
 
 
 def test_desk_run_validates_position_desk_alignment() -> None:

@@ -58,6 +58,9 @@ def build_sa_cva_sensitivity_batch_from_columns(
     index_homogeneous_sector_quality: ColumnInput | None = None,
     index_dominant_sectors: NullableColumnInput | None = None,
     index_remap_bucket_ids: NullableColumnInput | None = None,
+    volatility_surface_ids: NullableColumnInput | None = None,
+    volatility_surface_point_ids: NullableColumnInput | None = None,
+    shock_ids: NullableColumnInput | None = None,
     lineage_source_systems: ColumnInput | None = None,
     lineage_source_files: ColumnInput | None = None,
     lineage_source_row_ids: ColumnInput | None = None,
@@ -71,15 +74,13 @@ def build_sa_cva_sensitivity_batch_from_columns(
 
     Parameters
     ----------
-    sensitivity_ids, risk_classes, risk_measures, sensitivity_tags, bucket_ids,
-    risk_factor_keys, amounts, amount_currencies, sign_conventions, source_row_ids : ColumnInput
-        Required per-row columns with matching lengths.
-    Other parameters : optional
-        SA-CVA path metadata, lineage, audit hashes, and materialisation controls.
+    sensitivity_ids : ColumnInput
+        First required column; remaining inputs are aligned columns or options.
 
     Returns
     -------
     SaCvaSensitivityBatch
+        Validated immutable batch contract for downstream SA-CVA calculation.
     """
     row_count = len(sensitivity_ids)
     if row_count == 0:
@@ -106,6 +107,9 @@ def build_sa_cva_sensitivity_batch_from_columns(
             "index_homogeneous_sector_quality": index_homogeneous_sector_quality,
             "index_dominant_sectors": index_dominant_sectors,
             "index_remap_bucket_ids": index_remap_bucket_ids,
+            "volatility_surface_ids": volatility_surface_ids,
+            "volatility_surface_point_ids": volatility_surface_point_ids,
+            "shock_ids": shock_ids,
             "lineage_source_systems": lineage_source_systems,
             "lineage_source_files": lineage_source_files,
             "lineage_source_row_ids": lineage_source_row_ids,
@@ -200,6 +204,13 @@ def _sensitivity_core_fields(
             columns["volatility_inputs"], row_count, copy=copy_arrays
         ),
         "hedge_ids": _optional_text_array(columns["hedge_ids"], row_count, copy=copy_arrays),
+        "volatility_surface_ids": _optional_text_array(
+            columns["volatility_surface_ids"], row_count, copy=copy_arrays
+        ),
+        "volatility_surface_point_ids": _optional_text_array(
+            columns["volatility_surface_point_ids"], row_count, copy=copy_arrays
+        ),
+        "shock_ids": _optional_text_array(columns["shock_ids"], row_count, copy=copy_arrays),
     }
 
 

@@ -54,6 +54,11 @@ class NMRFStressScenarioResult:
     generated_by_prototype: bool
     source: str = ""
     notes: str = ""
+    artifact_id: str = ""
+    scenario_vector_id: str = ""
+    shock_id: str = ""
+    surface_id: str = ""
+    surface_point_id: str = ""
     org_scope: CalculationScope | None = None
 
     def __post_init__(self) -> None:
@@ -87,6 +92,11 @@ class NMRFStressScenarioResult:
                 "generated_by_prototype": self.generated_by_prototype,
                 "source": self.source,
                 "notes": self.notes,
+                "artifact_id": self.artifact_id,
+                "scenario_vector_id": self.scenario_vector_id,
+                "shock_id": self.shock_id,
+                "surface_id": self.surface_id,
+                "surface_point_id": self.surface_point_id,
             },
             self.org_scope,
         )
@@ -110,6 +120,12 @@ class NMRFStressArtifact:
     stress_period: str
     source: str
     scenario_ids: tuple[str, ...] = ()
+    artifact_id: str = ""
+    scenario_set_id: str = ""
+    scenario_vector_id: str = ""
+    shock_id: str = ""
+    surface_id: str = ""
+    surface_point_id: str = ""
     generated_by_prototype: bool = False
     notes: str = ""
     org_scope: CalculationScope | None = None
@@ -172,6 +188,12 @@ class NMRFStressArtifact:
                 "stress_period": self.stress_period,
                 "source": self.source,
                 "scenario_ids": list(self.scenario_ids),
+                "artifact_id": self.artifact_id,
+                "scenario_set_id": self.scenario_set_id,
+                "scenario_vector_id": self.scenario_vector_id,
+                "shock_id": self.shock_id,
+                "surface_id": self.surface_id,
+                "surface_point_id": self.surface_point_id,
                 "generated_by_prototype": self.generated_by_prototype,
                 "notes": self.notes,
             },

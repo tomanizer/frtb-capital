@@ -10,8 +10,13 @@ from fixtures.capital_navigator_drillthrough_component_rows import (
     CVA_ROWS,
     DRC_ROWS,
     IMA_ROWS,
+    IMA_SCENARIO_VECTOR_ROWS,
+    RFET_OBSERVATION_TIMELINE_ROWS,
     RRAO_ROWS,
+    SBM_CURVATURE_SHOCK_DOWN_ROWS,
+    SBM_CURVATURE_SHOCK_UP_ROWS,
     SBM_ROWS,
+    USD_SWAPTION_VOL_SURFACE_ROWS,
 )
 from fixtures.result_store_bundle import run_with_id
 from frtb_result_store import (
@@ -51,10 +56,32 @@ def test_capital_navigator_fixture_persists_full_suite_read_model(tmp_path: Path
     assert len(store.capital_tree(run_id)) == 28
 
     artifacts = store.artifact_refs(run_id)
-    assert all(artifact.uri.startswith("file://") for artifact in artifacts)
-    assert {artifact.artifact_id: artifact.row_count for artifact in artifacts} == (
+    available_artifacts = [
+        artifact
+        for artifact in artifacts
+        if artifact.metadata.get("artifact_status", "AVAILABLE") == "AVAILABLE"
+    ]
+    unavailable_artifacts = {
+        artifact.artifact_id: artifact
+        for artifact in artifacts
+        if artifact.metadata.get("artifact_status") in {"NO_DATA", "UNSUPPORTED"}
+    }
+    assert all(artifact.uri.startswith("file://") for artifact in available_artifacts)
+    assert {artifact.artifact_id: artifact.row_count for artifact in available_artifacts} == (
         _expected_artifact_row_counts()
     )
+    assert {
+        artifact_id: artifact.metadata["artifact_status"]
+        for artifact_id, artifact in unavailable_artifacts.items()
+    } == {
+        "navigator-cva-full-vol-surface-unsupported": "UNSUPPORTED",
+        "navigator-crif-lines-unsupported": "UNSUPPORTED",
+        "navigator-rfet-observation-timeline-no-data": "NO_DATA",
+        "navigator-stress-loss-series-no-data": "NO_DATA",
+        "navigator-upl-time-series-no-data": "NO_DATA",
+    }
+    assert all(artifact.row_count == 0 for artifact in unavailable_artifacts.values())
+    assert all(artifact.format == "none" for artifact in unavailable_artifacts.values())
     assert {artifact.artifact_type for artifact in artifacts} >= {
         ArtifactType.IMA_PNL_VECTOR,
         ArtifactType.SBM_SENSITIVITY_TABLE,
@@ -62,10 +89,25 @@ def test_capital_navigator_fixture_persists_full_suite_read_model(tmp_path: Path
         ArtifactType.RRAO_EXPOSURE_TABLE,
         ArtifactType.CVA_EXPOSURE_TABLE,
         ArtifactType.ATTRIBUTION_VECTOR,
+        ArtifactType.TIME_SERIES,
+        ArtifactType.SHOCK_DEFINITION,
+        ArtifactType.SCENARIO_VECTOR_METADATA,
+        ArtifactType.SURFACE_GRID,
     }
 
     assert len(store.input_snapshot_manifests(run_id)) == 5
     assert store.lineage_for_result(run_id, "total")[0].source_id == bundle.run.input_snapshot_id
+    assert {row.source_id for row in store.lineage_for_result(run_id, "ima-rates-desk")} >= {
+        "navigator-ima-pnl-vector",
+        "navigator-rfet-observation-timeline",
+        "navigator-ima-scenario-vector",
+    }
+    assert {row.source_id for row in store.lineage_for_result(run_id, "sbm-girr-usd")} >= {
+        "navigator-sbm-sensitivities",
+        "navigator-sbm-curvature-shock-up",
+        "navigator-sbm-curvature-shock-down",
+        "navigator-usd-swaption-vol-surface",
+    }
     assert store.movement_summary(run_id)[0].delta_amount == 6.0
 
 
@@ -173,12 +215,16 @@ def test_capital_navigator_fixture_serves_local_artifact_pages(tmp_path: Path) -
     assert run_id == "frtb/capital-navigator/2026-06-03/us-npr"
     _assert_run_detail_routes(client, run_id)
     _assert_artifact_row_counts(client, store, run_id)
+    _assert_metadata_catalog_routes(client, run_id)
+    _assert_metadata_lineage_routes(client, run_id)
     _assert_drc_artifact_page(client, run_id)
     _assert_cva_artifact_page(client, run_id)
     _assert_ima_artifact_page(client, run_id)
     _assert_sbm_artifact_page(client, run_id)
     _assert_rrao_artifact_page(client, run_id)
     _assert_attribution_artifact_page(client, run_id)
+    _assert_metadata_artifact_pages(client, run_id)
+    _assert_unavailable_artifacts_listed(client, run_id)
 
 
 def _assert_run_detail_routes(client: TestClient, run_id: str) -> None:
@@ -203,6 +249,72 @@ def _assert_artifact_row_counts(
         assert page["mode"] == "local_parquet"
         assert page["row_count"] == expected_count
         assert page["returned"] == expected_count
+
+
+def _assert_metadata_catalog_routes(client: TestClient, run_id: str) -> None:
+    time_series = client.get(f"/runs/{run_id}/time-series")
+    assert time_series.status_code == 200, time_series.text
+    assert time_series.json()["status_counts"] == {
+        "AVAILABLE": 1,
+        "NO_DATA": 3,
+        "UNSUPPORTED": 0,
+    }
+    time_series_catalog = {
+        row["partition_values"].get("time_series_id"): row for row in time_series.json()["catalog"]
+    }
+    assert time_series_catalog["ts-rfet-usd-5y"]["artifact_status"] == "AVAILABLE"
+    assert time_series_catalog["ts-rfet-usd-5y"]["row_count"] == len(RFET_OBSERVATION_TIMELINE_ROWS)
+    assert time_series_catalog["ts-plat-upl"]["artifact_status"] == "NO_DATA"
+    assert time_series_catalog["ts-plat-upl"]["navigator_role"] == "plat_upl"
+
+    shocks = client.get(f"/runs/{run_id}/shocks")
+    assert shocks.status_code == 200, shocks.text
+    assert shocks.json()["status_counts"] == {"AVAILABLE": 2, "NO_DATA": 0, "UNSUPPORTED": 0}
+    shock_catalog = {
+        row["partition_values"].get("shock_id"): row for row in shocks.json()["catalog"]
+    }
+    assert shock_catalog["shock-sbm-curvature-up"]["artifact_status"] == "AVAILABLE"
+    assert shock_catalog["shock-sbm-curvature-down"]["row_count"] == len(
+        SBM_CURVATURE_SHOCK_DOWN_ROWS
+    )
+
+    scenario_vectors = client.get(f"/runs/{run_id}/scenario-vectors")
+    assert scenario_vectors.status_code == 200, scenario_vectors.text
+    assert scenario_vectors.json()["status_counts"] == {
+        "AVAILABLE": 1,
+        "NO_DATA": 0,
+        "UNSUPPORTED": 0,
+    }
+    assert scenario_vectors.json()["catalog"][0]["partition_values"] == {
+        "scenario_set_id": "scenario-set-250d",
+        "scenario_vector_id": "scenario-vector-rtpl",
+    }
+
+    surfaces = client.get(f"/runs/{run_id}/surfaces")
+    assert surfaces.status_code == 200, surfaces.text
+    assert surfaces.json()["status_counts"] == {"AVAILABLE": 1, "NO_DATA": 0, "UNSUPPORTED": 1}
+    surface_catalog = {
+        row["partition_values"].get("surface_id"): row for row in surfaces.json()["catalog"]
+    }
+    assert surface_catalog["surface-usd-swaption-vol"]["navigator_role"] == "sbm_vega_surface"
+    assert surface_catalog["surface-cva-full-vol-cube"]["artifact_status"] == "UNSUPPORTED"
+
+
+def _assert_metadata_lineage_routes(client: TestClient, run_id: str) -> None:
+    ima_lineage = client.get(f"/runs/{run_id}/nodes/ima-rates-desk/lineage")
+    assert ima_lineage.status_code == 200, ima_lineage.text
+    assert {row["source_id"] for row in ima_lineage.json()["lineage"]} >= {
+        "navigator-rfet-observation-timeline",
+        "navigator-ima-scenario-vector",
+    }
+
+    sbm_lineage = client.get(f"/runs/{run_id}/nodes/sbm-girr-usd/lineage")
+    assert sbm_lineage.status_code == 200, sbm_lineage.text
+    assert {row["source_id"] for row in sbm_lineage.json()["lineage"]} >= {
+        "navigator-sbm-curvature-shock-up",
+        "navigator-sbm-curvature-shock-down",
+        "navigator-usd-swaption-vol-surface",
+    }
 
 
 def _assert_drc_artifact_page(client: TestClient, run_id: str) -> None:
@@ -314,6 +426,115 @@ def _assert_attribution_artifact_page(client: TestClient, run_id: str) -> None:
     ]
 
 
+def _assert_metadata_artifact_pages(client: TestClient, run_id: str) -> None:
+    timeline = client.get(f"/runs/{run_id}/time-series/ts-rfet-usd-5y/points")
+    assert timeline.status_code == 200, timeline.text
+    timeline_payload = timeline.json()
+    assert timeline_payload["row_count"] == len(RFET_OBSERVATION_TIMELINE_ROWS)
+    assert timeline_payload["filtered_row_count"] == len(RFET_OBSERVATION_TIMELINE_ROWS)
+    assert timeline_payload["returned"] == len(RFET_OBSERVATION_TIMELINE_ROWS)
+    assert [row["source_row_id"] for row in timeline_payload["rows"]] == [
+        "rfet-row-001",
+        "rfet-row-002",
+    ]
+    assert {row["mapping_version"] for row in timeline_payload["rows"]} == {"risk-factor-map-v1"}
+
+    shock = client.get(f"/runs/{run_id}/shocks/shock-sbm-curvature-up")
+    assert shock.status_code == 200, shock.text
+    shock_payload = shock.json()
+    assert shock_payload["row_count"] == len(SBM_CURVATURE_SHOCK_UP_ROWS)
+    assert shock_payload["filtered_row_count"] == len(SBM_CURVATURE_SHOCK_UP_ROWS)
+    assert shock_payload["returned"] == len(SBM_CURVATURE_SHOCK_UP_ROWS)
+    assert shock_payload["rows"] == [
+        {
+            "run_id": run_id,
+            "shock_id": "shock-sbm-curvature-up",
+            "shock_direction": "UP",
+            "shock_type": "ABSOLUTE",
+            "magnitude": 125.0,
+            "unit": "bp",
+            "risk_factor_id": "rf-girr-usd-5y",
+            "scenario_id": None,
+            "mapping_version": "shock-map-v1",
+            "regulatory_rule_id": "MAR21.96",
+            "source_row_id": "shock-row-up-001",
+        }
+    ]
+
+    scenario = client.get(
+        f"/runs/{run_id}/scenario-vectors/scenario-set-250d/scenario-vector-rtpl/metadata"
+    )
+    assert scenario.status_code == 200, scenario.text
+    scenario_payload = scenario.json()
+    assert scenario_payload["row_count"] == len(IMA_SCENARIO_VECTOR_ROWS)
+    assert scenario_payload["filtered_row_count"] == len(IMA_SCENARIO_VECTOR_ROWS)
+    assert scenario_payload["returned"] == len(IMA_SCENARIO_VECTOR_ROWS)
+    assert [row["scenario_label"] for row in scenario_payload["rows"]] == [
+        "RTPL day 1",
+        "RTPL day 2",
+    ]
+    assert {row["mapping_version"] for row in scenario_payload["rows"]} == {"scenario-map-v1"}
+
+    surface = client.get(
+        f"/runs/{run_id}/surfaces/surface-usd-swaption-vol/slice",
+        params={"axis_1_value": "3M"},
+    )
+    assert surface.status_code == 200, surface.text
+    surface_payload = surface.json()
+    assert surface_payload["row_count"] == len(USD_SWAPTION_VOL_SURFACE_ROWS)
+    assert surface_payload["filtered_row_count"] == 1
+    assert surface_payload["returned"] == 1
+    assert surface_payload["rows"][0]["surface_point_id"] == "surface-usd-swaption-vol:3m:5y"
+    assert surface_payload["rows"][0]["mapping_version"] == "surface-map-v1"
+
+
+def _assert_unavailable_artifacts_listed(client: TestClient, run_id: str) -> None:
+    response = client.get(f"/runs/{run_id}/artifacts")
+    assert response.status_code == 200, response.text
+    artifacts = {artifact["artifact_id"]: artifact for artifact in response.json()["artifacts"]}
+
+    assert artifacts["navigator-upl-time-series-no-data"]["metadata"]["artifact_status"] == (
+        "NO_DATA"
+    )
+    assert artifacts["navigator-upl-time-series-no-data"]["metadata"]["partition_values"] == {
+        "time_series_id": "ts-plat-upl"
+    }
+    assert artifacts["navigator-crif-lines-unsupported"]["metadata"]["artifact_status"] == (
+        "UNSUPPORTED"
+    )
+    assert artifacts["navigator-upl-time-series-no-data"]["format"] == "none"
+    assert artifacts["navigator-upl-time-series-no-data"]["partition_keys"] == ["time_series_id"]
+    assert artifacts["navigator-crif-lines-unsupported"]["row_count"] == 0
+
+    page = _artifact_page(client, run_id, "navigator-upl-time-series-no-data")
+    assert page["mode"] == "artifact_unavailable"
+    assert page["artifact_status"] == "NO_DATA"
+    assert page["row_count"] == 0
+    assert page["filtered_row_count"] == 0
+    assert page["returned"] == 0
+    assert page["rows"] == []
+
+    semantic_timeline = client.get(f"/runs/{run_id}/time-series/ts-plat-upl/points")
+    assert semantic_timeline.status_code == 200, semantic_timeline.text
+    assert semantic_timeline.json()["mode"] == "artifact_unavailable"
+    assert semantic_timeline.json()["artifact_status"] == "NO_DATA"
+    assert semantic_timeline.json()["row_count"] == 0
+    assert semantic_timeline.json()["filtered_row_count"] == 0
+    assert semantic_timeline.json()["returned"] == 0
+    assert semantic_timeline.json()["status_reason"].startswith("UPL time series")
+
+    download = client.get(f"/runs/{run_id}/artifacts/navigator-crif-lines-unsupported/download")
+    assert download.status_code == 200, download.text
+    assert download.json()["mode"] == "artifact_unavailable"
+    assert download.json()["artifact_status"] == "UNSUPPORTED"
+
+    unsupported_surface = client.get(f"/runs/{run_id}/surfaces/surface-cva-full-vol-cube/slice")
+    assert unsupported_surface.status_code == 200, unsupported_surface.text
+    assert unsupported_surface.json()["mode"] == "artifact_unavailable"
+    assert unsupported_surface.json()["artifact_status"] == "UNSUPPORTED"
+    assert unsupported_surface.json()["row_count"] == 0
+
+
 def _write_capital_navigator_bundle(
     tmp_path: Path,
     *,
@@ -349,6 +570,11 @@ def _expected_artifact_row_counts() -> dict[str, int]:
         "navigator-rrao-exposures": len(RRAO_ROWS),
         "navigator-cva-exposures": len(CVA_ROWS),
         "navigator-suite-attribution": len(ATTRIBUTION_ROWS),
+        "navigator-rfet-observation-timeline": len(RFET_OBSERVATION_TIMELINE_ROWS),
+        "navigator-sbm-curvature-shock-up": len(SBM_CURVATURE_SHOCK_UP_ROWS),
+        "navigator-sbm-curvature-shock-down": len(SBM_CURVATURE_SHOCK_DOWN_ROWS),
+        "navigator-ima-scenario-vector": len(IMA_SCENARIO_VECTOR_ROWS),
+        "navigator-usd-swaption-vol-surface": len(USD_SWAPTION_VOL_SURFACE_ROWS),
     }
 
 

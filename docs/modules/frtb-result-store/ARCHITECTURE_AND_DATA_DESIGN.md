@@ -59,9 +59,47 @@ The core shape is a capital result graph:
 - `LineageRef` ties stored results to input rows, snapshots, policy objects, or
   source hashes.
 
+## Time-series, shock, scenario, and surface artifacts
+
+The result store owns canonical persisted metadata for analytical artifacts that
+are too large, too evidence-heavy, or too reference-data-like to live inside
+scalar capital rows. Registered artifact schemas now cover:
+
+- `common.time_series.v1` for observed or calculated timelines such as RFET
+  real-price observations, PLA/backtesting vectors, or UPL vectors when those
+  fixtures exist;
+- `common.shock_definition.v1` for persisted shock definitions, including
+  direction, type, magnitude, unit, source row, mapping version, and optional
+  regulatory rule id;
+- `common.scenario_vector_metadata.v1` for scenario-set and scenario-vector
+  metadata that links dense IMA arrays to scenario ids, dates, labels, and
+  source rows;
+- `common.surface_grid.v1` for volatility or surface-like grids with explicit
+  axis names, axis values, surface point ids, risk-factor links, and source row
+  provenance.
+
+These schemas are read-model and evidence contracts. They are not pricing,
+interpolation, scenario-generation, or capital-calculation engines. Dense
+numeric payloads can remain behind artifact ids and storage adapters; dashboards
+and APIs should page or slice artifact rows instead of loading entire raw frames.
+Two-dimensional surface points should use the package-neutral
+`frtb_common.SurfacePointCoordinates` primitive at component/orchestration
+boundaries and `common.surface_grid.v1` rows in the result-store read model.
+The concrete Capital Navigator consumption contract for these artifact families
+is in
+[`CAPITAL_NAVIGATOR_METADATA_CONTRACT.md`](CAPITAL_NAVIGATOR_METADATA_CONTRACT.md).
+For a developer-facing guide to the four artifact schemas, their status model,
+current fixture examples, and follow-up limitations, see
+[`ARTIFACT_METADATA.md`](ARTIFACT_METADATA.md).
+
 ## Boundary rules
 
 Capital packages emit result objects and audit records. They must not import
 DuckDB, Parquet writers, or `frtb-result-store`. The result-store package may
 depend on `frtb-common` and public suite contracts, but this first slice keeps
 runtime dependencies to `frtb-common`, DuckDB, and PyArrow.
+
+For time-series, shock, scenario-vector, and surface metadata, component kernels
+consume validated arrays or scalar inputs plus stable ids/provenance. They must
+not fetch artifacts, perform market-data lookup, infer missing UPL or stress
+vectors, or generate shock/surface definitions from stored metadata.
