@@ -53,9 +53,10 @@ match the matrix for every cell marked implemented. Tests in
 Each profile family used for implementation must have an entry in
 `packages/frtb-sbm/docs/regulatory_sources.yml` with `section_hint` granular
 enough for reviewers to locate bucket/weight tables. `PRA_UK_CRR` is now
-source-mapped to PRA PS1/26 Appendix 1 / PRA2026/1, but the mapped source is not
-authority for capital-producing runtime until exact-cell citation ids,
-profile-owned reference data, and deterministic fixtures are added.
+source-mapped to PRA PS1/26 Appendix 1 / PRA2026/1. GIRR delta is
+capital-producing under audit because exact-cell citation ids, profile-owned
+reference data, and deterministic fixtures are present; later PRA cells require
+the same evidence before runtime support opens.
 
 ### SBM-NBP-004: Basel sub-feature matrix
 
@@ -98,12 +99,11 @@ enumerated allowed list (`ensure_sbm_profile_known`).
 
 ### SBM-NBP-013: Blocked profile behaviour
 
-`PRA_UK_CRR` must remain unsupported fail-closed at runtime until the exact
-profile/risk-class/measure cell has profile-owned citations, reference data, and
-fixtures. `PRA_UK_CRR` GIRR delta satisfies that standard and is implemented
-under audit; the remaining 20 PRA cells must remain fail-closed until their own
-cell-specific evidence lands. Documentation must mark each cell according to
-that exact-cell status.
+`PRA_UK_CRR` cells must remain unsupported fail-closed at runtime until the
+exact profile/risk-class/measure cell has profile-owned citations, reference
+data, and fixtures. Documentation must mark non-delivered PRA cells fail-closed
+at runtime; planning rows may move from blocked to planned once SBM-NBP-020 is
+satisfied.
 
 ---
 
@@ -121,9 +121,7 @@ Before any additional `PRA_UK_CRR` cell is implemented:
 - Record divergence from `EU_CRR3` where UK rules differ.
 - Close a dedicated mapping issue referenced from traceability.
 
-GIRR delta now satisfies this source-mapping prerequisite through Articles 325c,
-325h, and 325ae-325ag. The remaining PRA cells still fail closed until their
-own exact-cell source mappings, citations, reference data, and fixtures land.
+Until then, non-delivered PRA cells fail closed.
 
 Initial PRA SBM source map:
 
@@ -194,6 +192,36 @@ or cited proposal tables, not generic “NPR 2.0”.
 For each implemented `EU_CRR3` cell, citations must use article-level ids
 (e.g. `EU_CRR3_ART_325r`) suitable for cross-linking to EBA single-rulebook
 pages where applicable.
+
+### SBM-NBP-022A: EU CRR3 CSR implementation map
+
+Before any `EU_CRR3` CSR cell is implemented, the package must retain a
+profile-owned implementation map covering CSR non-securitisation, CSR
+securitisation non-CTP, and CSR securitisation CTP. The current source map is:
+
+| CSR topic | EU CRR3 source anchor | Canonical field boundary |
+| --- | --- | --- |
+| CSR non-securitisation risk factors | Amended CRR Article 325n | `risk_class=CSR_NONSEC`; issuer/obligor in `qualifier`; tenor in `tenor`; bucket from sector/quality evidence. |
+| CSR non-securitisation buckets and risk weights | Amended CRR Article 325ah(1), Table 4 | `bucket`, `risk_factor`, and credit-quality evidence drive profile-owned table lookup. |
+| CSR non-securitisation correlations | Amended CRR Articles 325ai-325aj | Intra-bucket issuer/tenor basis and inter-bucket gamma remain profile-owned citations. |
+| CSR securitisation non-CTP risk factors | Amended CRR Article 325o | `risk_class=CSR_SEC_NONCTP`; tranche/issuer evidence in `qualifier` and source lineage. |
+| CSR securitisation non-CTP buckets, weights, and correlations | Amended CRR Articles 325ak-325al, Tables 6 and related paragraphs | Tranche bucket, risk weight, other-sector handling, and decomposition evidence must be explicit. |
+| CSR securitisation CTP risk factors | Amended CRR Article 325p | `risk_class=CSR_SEC_CTP`; underlying-name evidence must be present before capital. |
+| CSR securitisation CTP buckets, weights, and correlations | Amended CRR Article 325am, Table 7 and related paragraphs | ACTP bucket, risk weight, other-bucket handling, and correlation rule must be fixture-backed. |
+| CSR vega and curvature overlays | Amended CRR Article 325ax(1)-(6) | Vega reuses delta buckets with option maturity/underlying tenor evidence; curvature reuses delta buckets and highest-delta-risk-weight shock logic. |
+
+EU CSR runtime gates must remain unsupported fail-closed until a follow-on PR
+adds profile-owned reference data and deterministic fixture packs. Planned
+fixture ids are `csr_nonsec_delta_eu_crr3_v1`,
+`csr_nonsec_vega_eu_crr3_v1`, `csr_nonsec_curvature_eu_crr3_v1`,
+`csr_sec_nonctp_delta_eu_crr3_v1`, `csr_sec_nonctp_vega_eu_crr3_v1`,
+`csr_sec_nonctp_curvature_eu_crr3_v1`, `csr_sec_ctp_delta_eu_crr3_v1`,
+`csr_sec_ctp_vega_eu_crr3_v1`, and `csr_sec_ctp_curvature_eu_crr3_v1`.
+
+Fail-closed cases must include missing issuer or tranche decomposition evidence,
+missing underlying-name evidence for CTP, unsupported option or volatility
+treatment for vega, unsupported curvature decomposition, and any CSR table key
+that has not been transcribed into `EU_CRR3` profile-owned reference data.
 
 ### SBM-NBP-023: Profile reference payload hash
 
@@ -332,12 +360,12 @@ must reflect the cited profile — not Basel shortcuts.
 
 | Requirement | Current evidence | Remaining target |
 | --- | --- | --- |
-| SBM-NBP-001 | Met (design + traceability link; `US_NPR_2_0` and `PRA_UK_CRR` partial matrices) | Maintain in traceability |
-| SBM-NBP-002 | Met for Basel, `US_NPR_2_0` GIRR delta, and `PRA_UK_CRR` GIRR delta via `test_sbm_support_matrix.py` | Extend for each new cell |
-| SBM-NBP-010 | Enforced for the implemented NPR and PRA GIRR delta slices through profile-owned citations and fixture citation checks | Extend for each new cell |
-| SBM-NBP-013 | Met for exact-cell PRA gating | Preserve as PRA coverage expands |
-| SBM-NBP-030–032 | Met for `US_NPR_2_0` GIRR delta with `girr_delta_us_npr_v1` and for `PRA_UK_CRR` GIRR delta with `girr_delta_pra_uk_crr_v1`; both have row/batch/Arrow tests | Extend to later cells |
-| SBM-NBP-040–042 | Met for unsupported NPR cells, EU cells, and unsupported PRA cells through fail-closed tests | Preserve as coverage expands |
+| SBM-NBP-001 | Met (design + traceability link; `US_NPR_2_0` partial matrix) | Maintain in traceability |
+| SBM-NBP-002 | Met for Basel and `US_NPR_2_0` GIRR delta via `test_sbm_support_matrix.py` | Extend for each new cell |
+| SBM-NBP-010 | Enforced for the implemented NPR GIRR delta slice through profile-owned citations and fixture citation checks | Extend for each new cell |
+| SBM-NBP-013 | Met for non-delivered PRA cells | Preserve as coverage expands |
+| SBM-NBP-030–032 | Met for `US_NPR_2_0` GIRR delta with `girr_delta_us_npr_v1` and row/batch/Arrow tests | Extend to later NPR cells |
+| SBM-NBP-040–042 | Met for unsupported NPR cells, unsupported EU cells, and unsupported PRA cells | Preserve as coverage expands |
 | SBM-NBP-060 | Required for implementation PRs | Run before push |
 
 ---
@@ -349,7 +377,7 @@ Use these titles when splitting implementation work:
 1. **SBM NPR GIRR vega/curvature** — extend NPR GIRR row (phase 2).
 2. **SBM NPR non-GIRR delta** — FX, equity, commodity, and CSR NPR mappings.
 3. **SBM EU CRR3 GIRR delta** — article mapping + first EU cell (blocked on legal mapping review).
-4. **SBM PRA UK CRR next cells** — SBM-NBP-020 prerequisite satisfied by
-   PS1/26 Appendix 1 / PRA2026/1; GIRR delta is implemented under audit, and
-   remaining runtime cells stay fail-closed until exact-cell citations,
-   reference data, and fixtures land.
+4. **SBM PRA UK CRR next runtime cell** — SBM-NBP-020 prerequisite satisfied by
+   PS1/26 Appendix 1 / PRA2026/1 and GIRR delta implemented; remaining runtime
+   cells stay fail-closed until exact-cell citations, reference data, and
+   fixtures land.

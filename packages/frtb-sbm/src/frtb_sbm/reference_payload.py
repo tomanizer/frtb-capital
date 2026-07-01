@@ -26,6 +26,7 @@ from frtb_sbm.girr_reference_tables import (
     PROFILE_GIRR_DELTA_RISK_WEIGHTS,
     PROFILE_GIRR_SPECIAL_RISK_FACTORS,
 )
+from frtb_sbm.reference_citations_eu_crr3 import eu_crr3_citation_id_for_basel
 from frtb_sbm.reference_profiles import (
     _resolve_supported_profile,
     citations_for_profile,
@@ -156,8 +157,11 @@ def _add_girr_vega_payload(payload: dict[str, object], profile: SbmRegulatoryPro
                 "risk_weight_factor": GIRR_VEGA_RISK_WEIGHT_FACTOR,
                 "risk_weight_cap": GIRR_VEGA_RISK_WEIGHT_CAP,
                 "intra_bucket_constant": GIRR_VEGA_INTRA_BUCKET_CONSTANT,
-                "liquidity_horizon_citation_id": "basel_mar21_92",
-                "intra_bucket_citation_id": "basel_mar21_93",
+                "liquidity_horizon_citation_id": _profile_citation_id(
+                    profile,
+                    "basel_mar21_92",
+                ),
+                "intra_bucket_citation_id": _profile_citation_id(profile, "basel_mar21_93"),
             },
             "girr_vega_option_tenors": [
                 {
@@ -193,8 +197,8 @@ def _add_non_girr_vega_payload(payload: dict[str, object], profile: SbmRegulator
         ),
         "risk_weight_factor": GIRR_VEGA_RISK_WEIGHT_FACTOR,
         "risk_weight_cap": GIRR_VEGA_RISK_WEIGHT_CAP,
-        "intra_bucket_citation_id": "basel_mar21_94",
-        "inter_bucket_citation_id": "basel_mar21_95",
+        "intra_bucket_citation_id": _profile_citation_id(profile, "basel_mar21_94"),
+        "inter_bucket_citation_id": _profile_citation_id(profile, "basel_mar21_95"),
     }
 
 
@@ -215,9 +219,12 @@ def _add_fx_payload(payload: dict[str, object], profile: SbmRegulatoryProfile) -
                 "risk_weight": FX_DELTA_RISK_WEIGHT,
                 "intra_bucket_correlation": FX_INTRA_BUCKET_CORRELATION,
                 "inter_bucket_correlation": FX_INTER_BUCKET_CORRELATION,
-                "risk_weight_citation_id": "basel_mar21_87",
-                "sqrt2_citation_id": "basel_mar21_88",
-                "inter_bucket_citation_id": "basel_mar21_89",
+                "risk_weight_citation_id": _profile_citation_id(profile, "basel_mar21_87"),
+                "sqrt2_citation_id": _profile_citation_id(profile, "basel_mar21_88"),
+                "inter_bucket_citation_id": _profile_citation_id(
+                    profile,
+                    "basel_mar21_89",
+                ),
             },
             "fx_specified_currencies": sorted(fx_specified_currencies_for_profile(profile)),
         }
@@ -228,17 +235,23 @@ def _add_basel_curvature_and_non_girr_payloads(
     payload: dict[str, object],
     profile: SbmRegulatoryProfile,
 ) -> None:
-    if profile is not SbmRegulatoryProfile.BASEL_MAR21:
+    if profile not in {SbmRegulatoryProfile.BASEL_MAR21, SbmRegulatoryProfile.EU_CRR3}:
         return
     payload["curvature_parameters"] = {
         "citation_ids": list(curvature_citation_ids(profile)),
         "girr_parallel_shift_risk_weight": max(
             rule.risk_weight for rule in PROFILE_GIRR_DELTA_RISK_WEIGHTS[profile]
         ),
-        "fx_equity_rule_citation_id": "basel_mar21_98",
-        "parallel_shift_rule_citation_id": "basel_mar21_99",
-        "intra_bucket_correlation_citation_id": "basel_mar21_100",
-        "inter_bucket_correlation_citation_id": "basel_mar21_101",
+        "fx_equity_rule_citation_id": _profile_citation_id(profile, "basel_mar21_98"),
+        "parallel_shift_rule_citation_id": _profile_citation_id(profile, "basel_mar21_99"),
+        "intra_bucket_correlation_citation_id": _profile_citation_id(
+            profile,
+            "basel_mar21_100",
+        ),
+        "inter_bucket_correlation_citation_id": _profile_citation_id(
+            profile,
+            "basel_mar21_101",
+        ),
     }
     _add_non_girr_reference_payloads(payload, profile)
 
@@ -248,16 +261,25 @@ def _add_non_girr_reference_payloads(
     profile: SbmRegulatoryProfile,
 ) -> None:
     from frtb_sbm.commodity_reference_data import commodity_reference_payload
-    from frtb_sbm.csr_nonsec_reference_data import csr_nonsec_reference_payload
-    from frtb_sbm.csr_sec_ctp_reference_data import csr_sec_ctp_reference_payload
-    from frtb_sbm.csr_sec_nonctp_reference_data import csr_sec_nonctp_reference_payload
     from frtb_sbm.equity_reference_data import equity_reference_payload
 
     payload.update(equity_reference_payload(profile))
     payload.update(commodity_reference_payload(profile))
+    if profile is not SbmRegulatoryProfile.BASEL_MAR21:
+        return
+    from frtb_sbm.csr_nonsec_reference_data import csr_nonsec_reference_payload
+    from frtb_sbm.csr_sec_ctp_reference_data import csr_sec_ctp_reference_payload
+    from frtb_sbm.csr_sec_nonctp_reference_data import csr_sec_nonctp_reference_payload
+
     payload.update(csr_nonsec_reference_payload(profile))
     payload.update(csr_sec_nonctp_reference_payload(profile))
     payload.update(csr_sec_ctp_reference_payload(profile))
+
+
+def _profile_citation_id(profile: SbmRegulatoryProfile, basel_id: str) -> str:
+    if profile is SbmRegulatoryProfile.EU_CRR3:
+        return eu_crr3_citation_id_for_basel(basel_id)
+    return basel_id
 
 
 __all__ = ["profile_reference_payload"]

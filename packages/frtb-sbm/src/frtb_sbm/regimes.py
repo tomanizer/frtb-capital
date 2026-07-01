@@ -42,23 +42,28 @@ SUPPORTED_PROFILE_METADATA: dict[SbmRegulatoryProfile, dict[str, object]] = {
             "effective_date": None,
         }
     ),
-    SbmRegulatoryProfile.PRA_UK_CRR: {
-        "regulator": "Prudential Regulation Authority",
-        "version": (
-            "PRA PS1/26 Appendix 1 / PRA2026/1 Market Risk: Advanced "
-            "Standardised Approach (CRR) Part"
-        ),
-        "publication_date": date(2026, 1, 20),
-        "status": "supported_pra_uk_crr_girr_delta_comparison_slice",
-        "effective_date": date(2027, 1, 1),
+    SbmRegulatoryProfile.EU_CRR3: {
+        "regulator": "European Parliament and Council of the European Union",
+        "version": "Regulation (EU) 2024/1623 CRR3 market-risk amendments",
+        "publication_date": date(2024, 6, 19),
+        "status": "supported_eu_crr3_sbm_comparison_slice",
+        "effective_date": None,
     },
-}
-
-UNSUPPORTED_PROFILE_REASONS: dict[SbmRegulatoryProfile, str] = {
-    SbmRegulatoryProfile.EU_CRR3: (
-        "EU CRR3 SBM profile is unsupported until cited reference data and fixtures are added."
+    SbmRegulatoryProfile.PRA_UK_CRR: (
+        {
+            "regulator": "Prudential Regulation Authority",
+            "version": (
+                "PRA PS1/26 Appendix 1 / PRA2026/1 Market Risk: Advanced "
+                "Standardised Approach (CRR) Part"
+            ),
+            "publication_date": date(2026, 1, 20),
+            "status": "supported_pra_uk_crr_girr_delta_comparison_slice",
+            "effective_date": date(2027, 1, 1),
+        }
     ),
 }
+
+UNSUPPORTED_PROFILE_REASONS: dict[SbmRegulatoryProfile, str] = {}
 
 PROFILE_SUPPORTED_MEASURES: dict[
     SbmRegulatoryProfile, dict[SbmRiskClass, frozenset[SbmRiskMeasure]]
@@ -88,6 +93,16 @@ PROFILE_SUPPORTED_MEASURES: dict[
     },
     SbmRegulatoryProfile.US_NPR_2_0: {
         SbmRiskClass.GIRR: frozenset({SbmRiskMeasure.DELTA}),
+    },
+    SbmRegulatoryProfile.EU_CRR3: {
+        SbmRiskClass.GIRR: frozenset(
+            {SbmRiskMeasure.DELTA, SbmRiskMeasure.VEGA, SbmRiskMeasure.CURVATURE}
+        ),
+        SbmRiskClass.FX: frozenset(
+            {SbmRiskMeasure.DELTA, SbmRiskMeasure.VEGA, SbmRiskMeasure.CURVATURE}
+        ),
+        SbmRiskClass.EQUITY: frozenset({SbmRiskMeasure.DELTA}),
+        SbmRiskClass.COMMODITY: frozenset({SbmRiskMeasure.DELTA}),
     },
     SbmRegulatoryProfile.PRA_UK_CRR: {
         SbmRiskClass.GIRR: frozenset({SbmRiskMeasure.DELTA}),

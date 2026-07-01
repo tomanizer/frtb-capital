@@ -19,6 +19,7 @@ from frtb_sbm.girr_reference_data import (
     PROFILE_GIRR_DELTA_RISK_WEIGHTS,
     _ensure_girr_delta_supported,
 )
+from frtb_sbm.reference_citations_eu_crr3 import translate_basel_citation_ids_to_eu
 from frtb_sbm.reference_profiles import (
     _coerce_risk_class,
     _resolve_supported_profile,
@@ -39,7 +40,7 @@ def curvature_citation_ids(profile: SbmRegulatoryProfile | str) -> tuple[str, ..
     """
 
     citations = citations_for_profile(profile)
-    required = (
+    basel_required = (
         "basel_mar21_curvature",
         "basel_mar21_96",
         "basel_mar21_97",
@@ -47,6 +48,12 @@ def curvature_citation_ids(profile: SbmRegulatoryProfile | str) -> tuple[str, ..
         "basel_mar21_99",
         "basel_mar21_100",
         "basel_mar21_101",
+    )
+    resolved = _resolve_supported_profile(profile)
+    required = (
+        translate_basel_citation_ids_to_eu(basel_required)
+        if resolved is SbmRegulatoryProfile.EU_CRR3
+        else basel_required
     )
     missing = [citation_id for citation_id in required if citation_id not in citations]
     if missing:
@@ -79,18 +86,23 @@ def curvature_risk_weight(
     resolved_class = _coerce_risk_class(risk_class)
     if resolved_class is SbmRiskClass.GIRR:
         _ensure_girr_delta_supported(profile)
+        resolved = _resolve_supported_profile(profile)
         rule = max(
-            PROFILE_GIRR_DELTA_RISK_WEIGHTS[_resolve_supported_profile(profile)],
+            PROFILE_GIRR_DELTA_RISK_WEIGHTS[resolved],
             key=lambda item: item.risk_weight,
         )
-        return rule.risk_weight, ("basel_mar21_99", rule.citation_id)
+        citation_id = _profile_citation_id(resolved, "basel_mar21_99")
+        return rule.risk_weight, (citation_id, rule.citation_id)
     if resolved_class is SbmRiskClass.FX:
         weight, citations = fx_delta_risk_weight(
             profile,
             currency=currency or risk_factor or bucket_id,
             reporting_currency=reporting_currency,
         )
-        return weight, _merge_citation_ids(("basel_mar21_98",), citations)
+        resolved = _resolve_supported_profile(profile)
+        return weight, _merge_citation_ids(
+            (_profile_citation_id(resolved, "basel_mar21_98"),), citations
+        )
     if resolved_class is SbmRiskClass.EQUITY:
         from frtb_sbm.equity_reference_data import EQUITY_SPOT_RISK_FACTOR
 
@@ -104,10 +116,16 @@ def curvature_risk_weight(
             bucket_id=bucket_id,
             risk_factor=EQUITY_SPOT_RISK_FACTOR,
         )
-        return weight, _merge_citation_ids(("basel_mar21_98",), citations)
+        resolved = _resolve_supported_profile(profile)
+        return weight, _merge_citation_ids(
+            (_profile_citation_id(resolved, "basel_mar21_98"),), citations
+        )
     if resolved_class is SbmRiskClass.COMMODITY:
         weight, citations = commodity_delta_risk_weight(profile, bucket_id=bucket_id)
-        return weight, _merge_citation_ids(("basel_mar21_99",), citations)
+        resolved = _resolve_supported_profile(profile)
+        return weight, _merge_citation_ids(
+            (_profile_citation_id(resolved, "basel_mar21_99"),), citations
+        )
     if resolved_class is SbmRiskClass.CSR_NONSEC:
         weight, citations = csr_nonsec_delta_risk_weight(profile, bucket_id=bucket_id)
         return weight, _merge_citation_ids(("basel_mar21_99",), citations)
@@ -124,6 +142,12 @@ def curvature_risk_weight(
     raise UnsupportedRegulatoryFeatureError(
         f"curvature risk weights are unsupported for risk_class={resolved_class.value}"
     )
+
+
+def _profile_citation_id(profile: SbmRegulatoryProfile, basel_id: str) -> str:
+    if profile is SbmRegulatoryProfile.EU_CRR3:
+        return translate_basel_citation_ids_to_eu((basel_id,))[0]
+    return basel_id
 
 
 __all__ = ["curvature_citation_ids", "curvature_risk_weight"]

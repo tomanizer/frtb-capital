@@ -12,8 +12,9 @@ Regulatory traceability:
 
 from __future__ import annotations
 
-from collections.abc import Sequence
-from typing import TypedDict
+from collections.abc import Mapping, Sequence
+from dataclasses import fields, is_dataclass, replace
+from typing import Any, TypedDict
 
 import numpy as np
 from frtb_common import UnsupportedRegulatoryFeatureError
@@ -43,6 +44,7 @@ from frtb_sbm.data_models import (
     SbmRunControls,
     SbmSensitivity,
 )
+from frtb_sbm.reference_citations_eu_crr3 import translate_basel_citation_ids_to_eu
 from frtb_sbm.regimes import get_sbm_rule_profile
 from frtb_sbm.registry import SBM_BATCH_PATH_ORDER, sbm_batch_spec
 from frtb_sbm.risk_classes.commodity import (
@@ -107,6 +109,9 @@ _SBM_REQUIREMENT_IDS = (
 _PROFILE_PORTFOLIO_SCENARIO_CITATIONS = {
     SbmRegulatoryProfile.BASEL_MAR21.value: ("basel_mar21_7_scenario_selection",),
     SbmRegulatoryProfile.US_NPR_2_0.value: ("us_npr_91_fr_14952_va7a_correlation_scenarios",),
+    SbmRegulatoryProfile.EU_CRR3.value: (
+        translate_basel_citation_ids_to_eu(("basel_mar21_7_scenario_selection",))[0],
+    ),
     SbmRegulatoryProfile.PRA_UK_CRR.value: ("pra_uk_crr_325h_correlation_scenarios",),
 }
 _SBM_CAPITAL_PATH_ORDER = SBM_BATCH_PATH_ORDER
@@ -596,6 +601,12 @@ def _build_sbm_capital_result(
         risk_class_results,
         citation_ids=_portfolio_scenario_citations(rule_profile.profile_id),
     )
+    if rule_profile.profile_id == SbmRegulatoryProfile.EU_CRR3.value:
+        aligned_risk_classes = _translate_eu_crr3_result_citations(aligned_risk_classes)
+        if portfolio_scenario_selection is not None:
+            portfolio_scenario_selection = _translate_eu_crr3_result_citations(
+                portfolio_scenario_selection
+            )
     citation_ids = _collect_citation_ids(
         aligned_risk_classes,
         portfolio_scenario_selection=portfolio_scenario_selection,
@@ -675,6 +686,94 @@ def _append_citation(citation_ids: list[str], seen: set[str], citation_id: str) 
         seen.add(citation_id)
 
 
+def _translate_eu_crr3_result_citations(value: Any) -> Any:
+    if is_dataclass(value) and not isinstance(value, type):
+        changes: dict[str, object] = {}
+        for field in fields(value):
+            translated: object
+            field_value = getattr(value, field.name)
+            if field.name == "citation_ids":
+                if isinstance(field_value, (tuple, list)):
+                    citation_ids = tuple(str(citation_id) for citation_id in field_value)
+                    try:
+                        translated = translate_basel_citation_ids_to_eu(citation_ids)
+                    except KeyError as exc:
+                        raise UnsupportedRegulatoryFeatureError(
+                            "EU_CRR3 result contains an unsupported Basel citation id: "
+                            f"{field_value!r}"
+                        ) from exc
+                else:
+                    translated = field_value
+            else:
+                if isinstance(field_value, (tuple, list)):
+                    translated = _translate_eu_crr3_result_citations_in_collection(field_value)
+                elif is_dataclass(field_value):
+                    translated = _translate_eu_crr3_result_citations(field_value)
+                elif isinstance(field_value, Mapping):
+                    translated = _translate_eu_crr3_result_citations_in_mapping(field_value)
+                else:
+                    translated = field_value
+            if translated != field_value:
+                changes[field.name] = translated
+        if not changes:
+            return value
+        return replace(value, **changes)
+    if isinstance(value, Mapping):
+        return _translate_eu_crr3_result_citations_in_mapping(value)
+    if isinstance(value, (tuple, list)):
+        return _translate_eu_crr3_result_citations_in_collection(value)
+    return value
+
+
+def _translate_eu_crr3_result_citations_in_collection(values: Sequence[Any]) -> Sequence[Any]:
+    if not values:
+        return values
+
+    first = values[0]
+    if not (is_dataclass(first) or isinstance(first, (tuple, list, Mapping))):
+        return values
+
+    translated = []
+    changed = False
+    for item in values:
+        if is_dataclass(item) or isinstance(item, (tuple, list, Mapping)):
+            translated_item = _translate_eu_crr3_result_citations(item)
+            changed = changed or (translated_item != item)
+            translated.append(translated_item)
+        else:
+            translated.append(item)
+    if not changed:
+        return values
+    if isinstance(values, tuple):
+        return tuple(translated)
+    return translated
+
+
+def _translate_eu_crr3_result_citations_in_mapping(value: Mapping[str, Any]) -> dict[str, Any]:
+    translated = {}
+    changed = False
+    for key, item in value.items():
+        if key == "citation_ids" and isinstance(item, (tuple, list)):
+            citation_ids = tuple(str(citation_id) for citation_id in item)
+            try:
+                translated_item = list(translate_basel_citation_ids_to_eu(citation_ids))
+            except KeyError as exc:
+                raise UnsupportedRegulatoryFeatureError(
+                    f"EU_CRR3 result contains an unsupported Basel citation id: {item!r}"
+                ) from exc
+            changed = changed or (translated_item != item)
+            translated[key] = translated_item
+        elif is_dataclass(item) or isinstance(item, (tuple, list, Mapping)):
+            translated_item = _translate_eu_crr3_result_citations(item)
+            changed = changed or (translated_item != item)
+            translated[key] = translated_item
+        else:
+            translated[key] = item
+    if not changed:
+        return dict(value)
+    return translated
+
+
 def _ordered_supported_paths(
     sensitivities: Sequence[SbmSensitivity],
     *,
@@ -688,7 +787,10 @@ def _ordered_supported_paths(
     }
     ordered = tuple(path for path in _SBM_CAPITAL_PATH_ORDER if path in present)
     remaining = tuple(
-        sorted(present - set(_SBM_CAPITAL_PATH_ORDER), key=lambda p: (p[0].value, p[1].value))
+        sorted(
+            present - set(_SBM_CAPITAL_PATH_ORDER),
+            key=lambda p: (p[0].value, p[1].value),
+        )
     )
     return ordered + remaining
 
