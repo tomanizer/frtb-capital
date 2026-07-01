@@ -462,7 +462,6 @@ def _register_capital_tree_routes(
             )
         return cast(dict[str, object], _to_jsonable(node))
 
-
     _register_node_detail_routes(app, result_store, http_exception_type, query)
 
 

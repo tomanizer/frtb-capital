@@ -38,7 +38,6 @@ DIMENSION_COLUMNS = [
 
 
 class StoreMartQueryMixin:
-
     def capital_tree(self: Any, run_id: str) -> tuple[CapitalNode, ...]:
         """Return all capital graph nodes for one run from the persisted mart.
         Parameters
@@ -419,12 +418,14 @@ class StoreMartQueryMixin:
             node_id = official_nodes_map.get(key)
             subtotal_type = "additive_official" if node_id is not None else "display_group"
 
-            pivot_rows.append({
-                "dimensions": dimensions,
-                "measures": res["measures"],
-                "subtotal_type": subtotal_type,
-                "node_id": node_id,
-            })
+            pivot_rows.append(
+                {
+                    "dimensions": dimensions,
+                    "measures": res["measures"],
+                    "subtotal_type": subtotal_type,
+                    "node_id": node_id,
+                }
+            )
 
         total_count = len(pivot_rows)
         return {
