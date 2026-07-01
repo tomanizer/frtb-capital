@@ -16,6 +16,8 @@ Basel MAR21 delta, vega, and curvature canonical inputs and for the cited
 `US_NPR_2_0` GIRR delta comparison slice. Row-wise, package-owned batch, and
 Arrow batch paths are available for the supported matrix. All other U.S. NPR 2.0
 cells, all EU CRR3 and PRA UK CRR cells, and unmapped sub-features fail closed.
+PRA UK CRR is source-mapped to PS1/26 Appendix 1 / PRA2026/1 for planning only;
+no PRA SBM cell is capital-producing yet.
 
 ## Boundary Flow
 

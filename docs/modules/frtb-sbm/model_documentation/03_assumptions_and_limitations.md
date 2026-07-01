@@ -2,7 +2,9 @@
 
 ## Risk-Class Scope Matrix
 
-`BASEL_MAR21` is the only capital-producing profile.
+`BASEL_MAR21` is the canonical capital-producing profile. `US_NPR_2_0` also has
+one capital-producing comparison cell, GIRR delta, as proposed-rule material.
+`EU_CRR3` and `PRA_UK_CRR` remain runtime fail-closed.
 
 | Risk class | Delta | Vega | Curvature | Notes |
 | --- | --- | --- | --- | --- |
@@ -20,7 +22,9 @@ Unsupported paths raise `UnsupportedRegulatoryFeatureError` or `SbmInputError`
 before capital is emitted:
 
 - `US_NPR_2_0` runtime profile cells outside GIRR delta;
-- `EU_CRR3` and `PRA_UK_CRR` runtime profiles;
+- `EU_CRR3` runtime profile cells;
+- `PRA_UK_CRR` runtime profile cells, despite source mapping to PS1/26
+  Appendix 1 / PRA2026/1;
 - risk-class/measure combinations outside the supported matrix;
 - missing curvature up/down shock inputs;
 - missing FX curvature scalar evidence where MAR21.98 requires it;
