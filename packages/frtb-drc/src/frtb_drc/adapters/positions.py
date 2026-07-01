@@ -6,6 +6,8 @@ from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import replace
 from typing import TYPE_CHECKING
 
+from frtb_common import CalculationScope
+
 from frtb_drc._batch_columns import (
     ColumnInput,
     NullableColumnInput,
@@ -36,6 +38,7 @@ from frtb_drc.data_models import (
     DrcRiskClass,
     DrcSeniority,
 )
+from frtb_drc.org_scope import validate_scope_metadata
 from frtb_drc.validation import US_NPR_2_0_PROFILE_ID, DrcInputError, validate_positions
 
 if TYPE_CHECKING:
@@ -129,6 +132,7 @@ def build_drc_nonsec_batch_from_positions(
             for position in validated
         ],
         citation_ids=[position.citation_ids for position in validated],
+        org_scopes=[position.org_scope for position in validated],
         source_hash=source_hash,
         handoff_hash=handoff_hash,
         diagnostics=diagnostics,
@@ -166,6 +170,7 @@ def build_drc_nonsec_batch_from_columns(
     lineage_present: ColumnInput | None = None,
     source_column_maps: Sequence[Sequence[tuple[str, str]]] | None = None,
     citation_ids: Sequence[Sequence[str]] | None = None,
+    org_scopes: Sequence[CalculationScope | None] | None = None,
     source_hash: str | None = None,
     handoff_hash: str | None = None,
     diagnostics: Sequence[Mapping[str, object]] = (),
@@ -186,7 +191,7 @@ def build_drc_nonsec_batch_from_columns(
     issuer_ids, tranche_ids, index_series_ids, seniorities, credit_qualities,
     market_values, cumulative_pnls, lgd_overrides, is_defaulted, is_gse,
     is_pse, is_covered_bond, lineage_source_systems, lineage_source_files,
-    lineage_present, source_column_maps, citation_ids :
+    lineage_present, source_column_maps, citation_ids, org_scopes :
         Optional per-position columns (see function signature).
     source_hash, handoff_hash :
         Optional source and handoff digests for audit metadata.
@@ -242,6 +247,7 @@ def build_drc_nonsec_batch_from_columns(
         "lineage_present": lineage_present,
         "source_column_maps": source_column_maps,
         "citation_ids": citation_ids,
+        "org_scopes": org_scopes,
     }
     for name, values in optional_lengths.items():
         if values is not None and len(values) != row_count:
@@ -323,6 +329,7 @@ def build_drc_nonsec_batch_from_columns(
         source_hash=source_hash,
         handoff_hash=handoff_hash,
         diagnostics=tuple(dict(item) for item in diagnostics),
+        org_scopes=_scope_metadata_from_columns(org_scopes, row_count),
     )
     validate_batch_columns(
         batch,
@@ -368,6 +375,7 @@ def build_drc_securitisation_non_ctp_batch_from_columns(
     lineage_present: ColumnInput | None = None,
     source_column_maps: Sequence[Sequence[tuple[str, str]]] | None = None,
     citation_ids: Sequence[Sequence[str]] | None = None,
+    org_scopes: Sequence[CalculationScope | None] | None = None,
     source_hash: str | None = None,
     handoff_hash: str | None = None,
     diagnostics: Sequence[Mapping[str, object]] = (),
@@ -383,7 +391,6 @@ def build_drc_securitisation_non_ctp_batch_from_columns(
         Required per-position column inputs (see signature for optional columns).
     source_hash, handoff_hash, diagnostics, copy_arrays :
         Optional audit metadata and array copy behaviour.
-
     Returns
     -------
     DrcPositionBatch
@@ -419,6 +426,7 @@ def build_drc_securitisation_non_ctp_batch_from_columns(
         lineage_present=lineage_present,
         source_column_maps=source_column_maps,
         citation_ids=citation_ids,
+        org_scopes=org_scopes,
         source_hash=source_hash,
         handoff_hash=handoff_hash,
         diagnostics=diagnostics,
@@ -458,6 +466,7 @@ def build_drc_ctp_batch_from_columns(
     lineage_present: ColumnInput | None = None,
     source_column_maps: Sequence[Sequence[tuple[str, str]]] | None = None,
     citation_ids: Sequence[Sequence[str]] | None = None,
+    org_scopes: Sequence[CalculationScope | None] | None = None,
     source_hash: str | None = None,
     handoff_hash: str | None = None,
     diagnostics: Sequence[Mapping[str, object]] = (),
@@ -473,7 +482,6 @@ def build_drc_ctp_batch_from_columns(
         Required per-position column inputs (see signature for optional columns).
     source_hash, handoff_hash, diagnostics, copy_arrays :
         Optional audit metadata and array copy behaviour.
-
     Returns
     -------
     DrcPositionBatch
@@ -509,6 +517,7 @@ def build_drc_ctp_batch_from_columns(
         lineage_present=lineage_present,
         source_column_maps=source_column_maps,
         citation_ids=citation_ids,
+        org_scopes=org_scopes,
         source_hash=source_hash,
         handoff_hash=handoff_hash,
         diagnostics=diagnostics,
@@ -520,6 +529,20 @@ def build_drc_ctp_batch_from_columns(
 def _sorted_positions(positions: tuple[DrcPosition, ...]) -> tuple[DrcPosition, ...]:
     return tuple(
         sorted(positions, key=lambda position: (position.position_id, position.source_row_id))
+    )
+
+
+def _scope_metadata_from_columns(
+    org_scopes: Sequence[CalculationScope | None] | None,
+    row_count: int,
+) -> tuple[CalculationScope | None, ...] | None:
+    if org_scopes is None:
+        return None
+    if len(org_scopes) != row_count:
+        raise DrcInputError("org_scopes length does not match position_ids")
+    return tuple(
+        validate_scope_metadata(scope, field=f"org_scopes[{index}]")
+        for index, scope in enumerate(org_scopes)
     )
 
 

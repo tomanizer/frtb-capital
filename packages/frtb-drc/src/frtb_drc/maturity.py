@@ -109,6 +109,7 @@ def scale_gross_jtd(
         floor_applied=floor_applied,
         citations=_append_citation(gross_jtd.citations, citation_id),
         branch_metadata=branch_metadata,
+        org_scope=gross_jtd.org_scope,
     )
 
 

@@ -96,6 +96,7 @@ def calculate_gross_jtd(
             *position.citation_ids,
         ),
         branch_metadata=branch_metadata,
+        org_scope=position.org_scope,
     )
 
 
