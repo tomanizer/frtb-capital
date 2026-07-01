@@ -24,10 +24,6 @@ from sbm_registry_helpers import (
 )
 
 FIXTURE_DIR = Path(__file__).parent / "fixtures" / "girr_delta_pra_uk_crr_v1"
-_RISK_CLASS_KEYS = ("risk_class", "risk_measure", "selected_capital", "selected_scenario")
-_BUCKET_KEYS = ("bucket_id", "kb", "sb")
-_WEIGHTED_KEYS = ("sensitivity_id", "risk_weight", "scaled_amount")
-_CITATION_KEYS = (*_RISK_CLASS_KEYS, "citation_ids")
 
 
 def load_fixture_module() -> ModuleType:
@@ -52,31 +48,7 @@ def test_pra_uk_crr_girr_delta_fixture_matches_expected_outputs() -> None:
     validate_sbm_result_reconciliation(result)
     payload = serialize_sbm_result(result)
 
-    assert payload["profile_id"] == expected["profile_id"]
-    assert payload["profile_hash"] == expected["profile_hash"]
-    assert payload["input_hash"] == expected["input_hash"]
-    assert payload["total_capital"] == expected["total_capital"]
-    assert payload["warnings"] == expected["warnings"]
-    assert payload["selected_portfolio_scenario"] == expected["selected_portfolio_scenario"]
-    assert payload["portfolio_scenario_totals"] == expected["portfolio_scenario_totals"]
-    assert [_select(item, _CITATION_KEYS) for item in payload["risk_classes"]] == expected[
-        "risk_classes"
-    ]
-    assert payload["risk_classes"][0]["scenario_totals"] == expected["scenario_totals"]
-    assert [
-        [_select(bucket, (*_BUCKET_KEYS, "citation_ids")) for bucket in risk_class["buckets"]]
-        for risk_class in payload["risk_classes"]
-    ] == expected["buckets"]
-    assert [
-        [
-            [
-                _select(item, (*_WEIGHTED_KEYS, "citation_ids"))
-                for item in bucket["weighted_sensitivities"]
-            ]
-            for bucket in risk_class["buckets"]
-        ]
-        for risk_class in payload["risk_classes"]
-    ] == expected["weighted_sensitivities"]
+    assert payload == expected
     assert not _contains_forbidden_non_pra_citation(payload)
 
 
@@ -148,11 +120,6 @@ def _arrow_table(sensitivities: tuple[SbmSensitivity, ...]) -> pa.Table:
             ],
         }
     )
-
-
-def _select(payload: object, keys: tuple[str, ...]) -> dict[str, object]:
-    assert isinstance(payload, dict)
-    return {key: payload[key] for key in keys}
 
 
 def _contains_forbidden_non_pra_citation(payload: object) -> bool:

@@ -33,6 +33,11 @@ _US_NPR_COMMODITY_WEIGHT_CITATION = "us_npr_91_fr_14952_va7a_commodity_delta_wei
 _US_NPR_COMMODITY_INTRA_CITATION = "us_npr_91_fr_14952_va7a_commodity_delta_intra"
 _US_NPR_COMMODITY_INTER_CITATION = "us_npr_91_fr_14952_va7a_commodity_delta_inter"
 
+_PRA_UK_CRR_COMMODITY_BUCKET_CITATION = "pra_uk_crr_325as_commodity_buckets"
+_PRA_UK_CRR_COMMODITY_WEIGHT_CITATION = "pra_uk_crr_325as_commodity_weights"
+_PRA_UK_CRR_COMMODITY_INTRA_CITATION = "pra_uk_crr_325at_commodity_intra"
+_PRA_UK_CRR_COMMODITY_INTER_CITATION = "pra_uk_crr_325au_commodity_inter"
+
 
 @dataclass(frozen=True)
 class SbmCommodityBucketDefinition:
@@ -69,6 +74,11 @@ _BASEL_COMMODITY_BUCKETS: tuple[SbmCommodityBucketDefinition, ...] = (
 
 _EU_CRR3_COMMODITY_BUCKETS: tuple[SbmCommodityBucketDefinition, ...] = tuple(
     replace(bucket, citation_id=eu_crr3_citation_id_for_basel(bucket.citation_id))
+    for bucket in _BASEL_COMMODITY_BUCKETS
+)
+
+_PRA_UK_CRR_COMMODITY_BUCKETS: tuple[SbmCommodityBucketDefinition, ...] = tuple(
+    replace(bucket, citation_id=_PRA_UK_CRR_COMMODITY_BUCKET_CITATION)
     for bucket in _BASEL_COMMODITY_BUCKETS
 )
 
@@ -117,24 +127,28 @@ _PROFILE_COMMODITY_BUCKETS: dict[SbmRegulatoryProfile, tuple[SbmCommodityBucketD
     SbmRegulatoryProfile.BASEL_MAR21: _BASEL_COMMODITY_BUCKETS,
     SbmRegulatoryProfile.US_NPR_2_0: _US_NPR_COMMODITY_BUCKETS,
     SbmRegulatoryProfile.EU_CRR3: _EU_CRR3_COMMODITY_BUCKETS,
+    SbmRegulatoryProfile.PRA_UK_CRR: _PRA_UK_CRR_COMMODITY_BUCKETS,
 }
 
 _PROFILE_COMMODITY_WEIGHT_CITATIONS: dict[SbmRegulatoryProfile, str] = {
     SbmRegulatoryProfile.BASEL_MAR21: _COMMODITY_WEIGHT_CITATION,
     SbmRegulatoryProfile.US_NPR_2_0: _US_NPR_COMMODITY_WEIGHT_CITATION,
     SbmRegulatoryProfile.EU_CRR3: eu_crr3_citation_id_for_basel(_COMMODITY_WEIGHT_CITATION),
+    SbmRegulatoryProfile.PRA_UK_CRR: _PRA_UK_CRR_COMMODITY_WEIGHT_CITATION,
 }
 
 _PROFILE_COMMODITY_INTRA_CITATIONS: dict[SbmRegulatoryProfile, str] = {
     SbmRegulatoryProfile.BASEL_MAR21: _COMMODITY_INTRA_CITATION,
     SbmRegulatoryProfile.US_NPR_2_0: _US_NPR_COMMODITY_INTRA_CITATION,
     SbmRegulatoryProfile.EU_CRR3: eu_crr3_citation_id_for_basel(_COMMODITY_INTRA_CITATION),
+    SbmRegulatoryProfile.PRA_UK_CRR: _PRA_UK_CRR_COMMODITY_INTRA_CITATION,
 }
 
 _PROFILE_COMMODITY_INTER_CITATIONS: dict[SbmRegulatoryProfile, str] = {
     SbmRegulatoryProfile.BASEL_MAR21: _COMMODITY_INTER_CITATION,
     SbmRegulatoryProfile.US_NPR_2_0: _US_NPR_COMMODITY_INTER_CITATION,
     SbmRegulatoryProfile.EU_CRR3: eu_crr3_citation_id_for_basel(_COMMODITY_INTER_CITATION),
+    SbmRegulatoryProfile.PRA_UK_CRR: _PRA_UK_CRR_COMMODITY_INTER_CITATION,
 }
 
 

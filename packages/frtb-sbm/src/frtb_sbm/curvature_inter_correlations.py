@@ -123,6 +123,11 @@ def _curvature_intra_citation_ids(
                 *_PRA_UK_CRR_CURVATURE_CORRELATION_CITATION,
                 "pra_uk_crr_325af_girr_intra",
             )
+        if risk_class is SbmRiskClass.FX:
+            return (
+                *_PRA_UK_CRR_CURVATURE_CORRELATION_CITATION,
+                "pra_uk_crr_325av_fx_delta_buckets",
+            )
         raise UnsupportedRegulatoryFeatureError(
             f"PRA_UK_CRR curvature intra-bucket correlation is unsupported for "
             f"risk_class={risk_class.value}"
@@ -171,6 +176,11 @@ def _curvature_inter_citation_ids(
             return (
                 *_PRA_UK_CRR_CURVATURE_CORRELATION_CITATION,
                 "pra_uk_crr_325ag_girr_inter",
+            )
+        if risk_class is SbmRiskClass.FX:
+            return (
+                *_PRA_UK_CRR_CURVATURE_CORRELATION_CITATION,
+                "pra_uk_crr_325aw_fx_delta_inter",
             )
         raise UnsupportedRegulatoryFeatureError(
             f"PRA_UK_CRR curvature inter-bucket correlation is unsupported for "

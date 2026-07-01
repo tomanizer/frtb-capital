@@ -100,13 +100,21 @@ def test_pra_uk_crr_profile_content_hash_uses_common_stable_json_hash() -> None:
             "effective_date": "2027-01-01",
             "publication_date": "2026-01-20",
             "regulator": "Prudential Regulation Authority",
-            "status": "supported_pra_uk_crr_girr_delta_vega_curvature_comparison_slice",
+            "status": (
+                "supported_pra_uk_crr_girr_delta_vega_curvature_"
+                "fx_delta_vega_curvature_equity_commodity_delta_comparison_slice"
+            ),
             "version": (
                 "PRA PS1/26 Appendix 1 / PRA2026/1 Market Risk: Advanced "
                 "Standardised Approach (CRR) Part"
             ),
         },
-        "supported_measures": {"GIRR": ["CURVATURE", "DELTA", "VEGA"]},
+        "supported_measures": {
+            "COMMODITY": ["DELTA"],
+            "EQUITY": ["DELTA"],
+            "FX": ["CURVATURE", "DELTA", "VEGA"],
+            "GIRR": ["CURVATURE", "DELTA", "VEGA"],
+        },
         "reference_data": profile_reference_payload(SbmRegulatoryProfile.PRA_UK_CRR),
     }
 
@@ -171,15 +179,25 @@ def test_get_sbm_rule_profile_returns_partial_pra_uk_crr_profile() -> None:
     assert profile.regulator == "Prudential Regulation Authority"
     assert profile.publication_date == date(2026, 1, 20)
     assert profile.effective_date == date(2027, 1, 1)
-    assert profile.supported_risk_classes == frozenset({SbmRiskClass.GIRR})
+    assert profile.supported_risk_classes == frozenset(
+        {SbmRiskClass.GIRR, SbmRiskClass.FX, SbmRiskClass.EQUITY, SbmRiskClass.COMMODITY}
+    )
     assert profile.supported_measures == {
         SbmRiskClass.GIRR: frozenset(
             {SbmRiskMeasure.DELTA, SbmRiskMeasure.VEGA, SbmRiskMeasure.CURVATURE}
         ),
+        SbmRiskClass.FX: frozenset(
+            {SbmRiskMeasure.DELTA, SbmRiskMeasure.VEGA, SbmRiskMeasure.CURVATURE}
+        ),
+        SbmRiskClass.EQUITY: frozenset({SbmRiskMeasure.DELTA}),
+        SbmRiskClass.COMMODITY: frozenset({SbmRiskMeasure.DELTA}),
     }
     assert "pra_uk_crr_325ae_girr_delta_weights" in profile.citations
     assert "pra_uk_crr_325ax_vega_risk_weights" in profile.citations
     assert "pra_uk_crr_325ax_curvature_risk_weights" in profile.citations
+    assert "pra_uk_crr_325av_fx_delta_weights" in profile.citations
+    assert "pra_uk_crr_325ap_equity_weights" in profile.citations
+    assert "pra_uk_crr_325as_commodity_weights" in profile.citations
     assert "basel_mar21_42" not in profile.citations
 
 
@@ -313,7 +331,7 @@ def test_us_npr_profile_support_map_includes_girr_fx_and_non_girr_delta() -> Non
         )
 
 
-def test_pra_uk_crr_profile_support_map_is_girr_delta_vega_and_curvature_only() -> None:
+def test_pra_uk_crr_profile_support_map_includes_delivered_comparison_cells() -> None:
     supported = supported_risk_class_measures(SbmRegulatoryProfile.PRA_UK_CRR)
 
     expected = frozenset(
@@ -321,23 +339,28 @@ def test_pra_uk_crr_profile_support_map_is_girr_delta_vega_and_curvature_only() 
             (SbmRiskClass.GIRR, SbmRiskMeasure.DELTA),
             (SbmRiskClass.GIRR, SbmRiskMeasure.VEGA),
             (SbmRiskClass.GIRR, SbmRiskMeasure.CURVATURE),
+            (SbmRiskClass.FX, SbmRiskMeasure.DELTA),
+            (SbmRiskClass.FX, SbmRiskMeasure.VEGA),
+            (SbmRiskClass.FX, SbmRiskMeasure.CURVATURE),
+            (SbmRiskClass.EQUITY, SbmRiskMeasure.DELTA),
+            (SbmRiskClass.COMMODITY, SbmRiskMeasure.DELTA),
         }
     )
     assert supported == expected
-    for _, risk_measure in expected:
+    for risk_class, risk_measure in expected:
         assert profile_supports_risk_class_measure(
             SbmRegulatoryProfile.PRA_UK_CRR,
-            SbmRiskClass.GIRR,
+            risk_class,
             risk_measure,
         )
         ensure_profile_supports_risk_class_measure(
             SbmRegulatoryProfile.PRA_UK_CRR,
-            SbmRiskClass.GIRR,
+            risk_class,
             risk_measure,
         )
     with pytest.raises(UnsupportedRegulatoryFeatureError, match="PRA_UK_CRR"):
         ensure_profile_supports_risk_class_measure(
             SbmRegulatoryProfile.PRA_UK_CRR,
-            SbmRiskClass.FX,
+            SbmRiskClass.CSR_NONSEC,
             SbmRiskMeasure.DELTA,
         )

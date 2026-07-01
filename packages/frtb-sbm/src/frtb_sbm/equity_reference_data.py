@@ -37,6 +37,12 @@ _US_NPR_EQUITY_INTRA_CITATION = "us_npr_91_fr_14952_va7a_equity_delta_intra"
 _US_NPR_EQUITY_OTHER_SECTOR_CITATION = "us_npr_91_fr_14952_va7a_equity_delta_other_sector"
 _US_NPR_EQUITY_INTER_CITATION = "us_npr_91_fr_14952_va7a_equity_delta_inter"
 
+_PRA_UK_CRR_EQUITY_BUCKET_CITATION = "pra_uk_crr_325ap_equity_buckets"
+_PRA_UK_CRR_EQUITY_WEIGHT_CITATION = "pra_uk_crr_325ap_equity_weights"
+_PRA_UK_CRR_EQUITY_INTRA_CITATION = "pra_uk_crr_325aq_equity_intra"
+_PRA_UK_CRR_EQUITY_OTHER_SECTOR_CITATION = "pra_uk_crr_325aq_equity_other_sector"
+_PRA_UK_CRR_EQUITY_INTER_CITATION = "pra_uk_crr_325ar_equity_inter"
+
 
 @dataclass(frozen=True)
 class SbmEquityBucketDefinition:
@@ -98,6 +104,11 @@ _US_NPR_EQUITY_BUCKETS: tuple[SbmEquityBucketDefinition, ...] = tuple(
     replace(bucket, citation_id=_US_NPR_EQUITY_BUCKET_CITATION) for bucket in _BASEL_EQUITY_BUCKETS
 )
 
+_PRA_UK_CRR_EQUITY_BUCKETS: tuple[SbmEquityBucketDefinition, ...] = tuple(
+    replace(bucket, citation_id=_PRA_UK_CRR_EQUITY_BUCKET_CITATION)
+    for bucket in _BASEL_EQUITY_BUCKETS
+)
+
 _EU_CRR3_EQUITY_RISK_WEIGHTS: tuple[SbmEquityRiskWeightRule, ...] = tuple(
     replace(rule, citation_id=eu_crr3_citation_id_for_basel(rule.citation_id))
     for rule in _BASEL_EQUITY_RISK_WEIGHTS
@@ -107,34 +118,44 @@ _US_NPR_EQUITY_RISK_WEIGHTS: tuple[SbmEquityRiskWeightRule, ...] = tuple(
     replace(rule, citation_id=_US_NPR_EQUITY_WEIGHT_CITATION) for rule in _BASEL_EQUITY_RISK_WEIGHTS
 )
 
+_PRA_UK_CRR_EQUITY_RISK_WEIGHTS: tuple[SbmEquityRiskWeightRule, ...] = tuple(
+    replace(rule, citation_id=_PRA_UK_CRR_EQUITY_WEIGHT_CITATION)
+    for rule in _BASEL_EQUITY_RISK_WEIGHTS
+)
+
 _PROFILE_EQUITY_BUCKETS: dict[SbmRegulatoryProfile, tuple[SbmEquityBucketDefinition, ...]] = {
     SbmRegulatoryProfile.BASEL_MAR21: _BASEL_EQUITY_BUCKETS,
     SbmRegulatoryProfile.US_NPR_2_0: _US_NPR_EQUITY_BUCKETS,
     SbmRegulatoryProfile.EU_CRR3: _EU_CRR3_EQUITY_BUCKETS,
+    SbmRegulatoryProfile.PRA_UK_CRR: _PRA_UK_CRR_EQUITY_BUCKETS,
 }
 
 _PROFILE_EQUITY_RISK_WEIGHTS: dict[SbmRegulatoryProfile, tuple[SbmEquityRiskWeightRule, ...]] = {
     SbmRegulatoryProfile.BASEL_MAR21: _BASEL_EQUITY_RISK_WEIGHTS,
     SbmRegulatoryProfile.US_NPR_2_0: _US_NPR_EQUITY_RISK_WEIGHTS,
     SbmRegulatoryProfile.EU_CRR3: _EU_CRR3_EQUITY_RISK_WEIGHTS,
+    SbmRegulatoryProfile.PRA_UK_CRR: _PRA_UK_CRR_EQUITY_RISK_WEIGHTS,
 }
 
 _PROFILE_EQUITY_INTRA_CITATIONS: dict[SbmRegulatoryProfile, str] = {
     SbmRegulatoryProfile.BASEL_MAR21: _EQUITY_INTRA_CITATION,
     SbmRegulatoryProfile.US_NPR_2_0: _US_NPR_EQUITY_INTRA_CITATION,
     SbmRegulatoryProfile.EU_CRR3: eu_crr3_citation_id_for_basel(_EQUITY_INTRA_CITATION),
+    SbmRegulatoryProfile.PRA_UK_CRR: _PRA_UK_CRR_EQUITY_INTRA_CITATION,
 }
 
 _PROFILE_EQUITY_OTHER_SECTOR_CITATIONS: dict[SbmRegulatoryProfile, str] = {
     SbmRegulatoryProfile.BASEL_MAR21: _EQUITY_OTHER_SECTOR_CITATION,
     SbmRegulatoryProfile.US_NPR_2_0: _US_NPR_EQUITY_OTHER_SECTOR_CITATION,
     SbmRegulatoryProfile.EU_CRR3: eu_crr3_citation_id_for_basel(_EQUITY_OTHER_SECTOR_CITATION),
+    SbmRegulatoryProfile.PRA_UK_CRR: _PRA_UK_CRR_EQUITY_OTHER_SECTOR_CITATION,
 }
 
 _PROFILE_EQUITY_INTER_CITATIONS: dict[SbmRegulatoryProfile, str] = {
     SbmRegulatoryProfile.BASEL_MAR21: _EQUITY_INTER_CITATION,
     SbmRegulatoryProfile.US_NPR_2_0: _US_NPR_EQUITY_INTER_CITATION,
     SbmRegulatoryProfile.EU_CRR3: eu_crr3_citation_id_for_basel(_EQUITY_INTER_CITATION),
+    SbmRegulatoryProfile.PRA_UK_CRR: _PRA_UK_CRR_EQUITY_INTER_CITATION,
 }
 
 _EQUITY_SPOT_SPOT_CORRELATIONS: dict[str, float] = {

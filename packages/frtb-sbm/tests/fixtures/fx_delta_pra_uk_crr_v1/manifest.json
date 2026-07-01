@@ -1,0 +1,26 @@
+{
+  "calculation_date": "2026-07-01",
+  "files": {
+    "README.md": {
+      "sha256": "764727e4c4d04f4def47dfb9912ec7eb214435b5ff6d63e48428dc427a07e49a"
+    },
+    "expected_outputs.json": {
+      "sha256": "a1d428fc900abbfa00ccc96b7c19f1149de92b899f3419d7c8bbf560f3b3790b"
+    },
+    "invalid_cases.json": {
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+    },
+    "loader.py": {
+      "sha256": "43a024d0eb24472b6763af48c4808c6a3b66c3108a7052ac2ff6ffe7957ae915"
+    },
+    "sensitivities.json": {
+      "sha256": "e5d4ba940281ecbf6581f4d046f67ee75c3b2e522ec474f4dad65ccc323eaa09"
+    }
+  },
+  "profile": "PRA_UK_CRR",
+  "risk_class": "FX",
+  "risk_measure": "DELTA",
+  "schema_version": "fx_delta_pra_uk_crr_v1_fixture_v1",
+  "sensitivity_count": 3,
+  "total_capital": 221680.4639109114
+}

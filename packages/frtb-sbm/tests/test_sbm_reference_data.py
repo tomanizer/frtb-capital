@@ -153,6 +153,62 @@ def test_us_npr_equity_and_commodity_delta_reference_data_uses_profile_owned_cit
     assert commodity_inter_citations == ("us_npr_91_fr_14952_va7a_commodity_delta_inter",)
 
 
+def test_pra_uk_crr_fx_equity_commodity_reference_data_uses_profile_owned_citations() -> None:
+    citations = citations_for_profile(SbmRegulatoryProfile.PRA_UK_CRR)
+
+    fx_weight, fx_weight_citations = fx_delta_risk_weight(
+        SbmRegulatoryProfile.PRA_UK_CRR,
+        currency="EUR",
+        reporting_currency="USD",
+    )
+    fx_inter, fx_inter_citations = fx_inter_bucket_correlation(
+        SbmRegulatoryProfile.PRA_UK_CRR,
+        bucket1="EUR",
+        bucket2="JPY",
+    )
+    equity_weight, equity_weight_citations = equity_delta_risk_weight(
+        SbmRegulatoryProfile.PRA_UK_CRR,
+        bucket_id="5",
+        risk_factor="SPOT",
+    )
+    commodity_weight, commodity_weight_citations = commodity_delta_risk_weight(
+        SbmRegulatoryProfile.PRA_UK_CRR,
+        bucket_id="2",
+    )
+    fx_vega_horizon = vega_liquidity_horizon_days(
+        SbmRegulatoryProfile.PRA_UK_CRR,
+        risk_class=SbmRiskClass.FX,
+    )
+    fx_curvature_weight, fx_curvature_citations = curvature_risk_weight(
+        SbmRegulatoryProfile.PRA_UK_CRR,
+        risk_class=SbmRiskClass.FX,
+        currency="EUR",
+        reporting_currency="USD",
+    )
+
+    assert "pra_uk_crr_325q_fx_risk_factors" in citations
+    assert "pra_uk_crr_325o_equity_risk_factors" in citations
+    assert "pra_uk_crr_325p_commodity_risk_factors" in citations
+    assert fx_weight == pytest.approx(FX_DELTA_RISK_WEIGHT / math.sqrt(2.0))
+    assert fx_weight_citations == (
+        "pra_uk_crr_325av_fx_delta_weights",
+        "pra_uk_crr_325av_fx_delta_sqrt2",
+    )
+    assert fx_inter == pytest.approx(FX_INTER_BUCKET_CORRELATION)
+    assert fx_inter_citations == ("pra_uk_crr_325aw_fx_delta_inter",)
+    assert equity_weight == pytest.approx(0.30)
+    assert equity_weight_citations == ("pra_uk_crr_325ap_equity_weights",)
+    assert commodity_weight == pytest.approx(0.35)
+    assert commodity_weight_citations == ("pra_uk_crr_325as_commodity_weights",)
+    assert fx_vega_horizon == 40
+    assert fx_curvature_weight == pytest.approx(FX_DELTA_RISK_WEIGHT / math.sqrt(2.0))
+    assert fx_curvature_citations == (
+        "pra_uk_crr_325ax_fx_curvature_risk_weights",
+        "pra_uk_crr_325av_fx_delta_weights",
+        "pra_uk_crr_325av_fx_delta_sqrt2",
+    )
+
+
 @pytest.mark.parametrize(
     ("currency", "bucket_id"),
     [
@@ -379,9 +435,9 @@ def test_pra_uk_crr_girr_vega_reference_data_uses_profile_owned_citations() -> N
     assert intra_correlation == pytest.approx(math.exp(-0.01 * 4.0) ** 2)
     assert intra_citations == ("pra_uk_crr_325ay_vega_correlations",)
     assert option_correlation == pytest.approx(math.exp(-0.01 * 4.0))
-    assert option_citations == ("pra_uk_crr_325ay_vega_correlations",)
+    assert option_citations == ("pra_uk_crr_325s_vega_sensitivities",)
     assert all(
-        tenor.citation_id == "pra_uk_crr_325ae_girr_delta_weights"
+        tenor.citation_id == "pra_uk_crr_325s_vega_sensitivities"
         for tenor in girr_vega_option_tenors(SbmRegulatoryProfile.PRA_UK_CRR)
     )
 

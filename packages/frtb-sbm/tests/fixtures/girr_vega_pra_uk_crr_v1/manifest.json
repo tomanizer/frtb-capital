@@ -1,0 +1,26 @@
+{
+  "calculation_date": "2026-07-01",
+  "files": {
+    "README.md": {
+      "sha256": "16db1efcd180f0c42c7ce370613d4d5318a7456d9738cce679797adca8622682"
+    },
+    "expected_outputs.json": {
+      "sha256": "2ce1f62f916933fad1b8f22077433dfeddbe32238a02ed0c87bc9620de745904"
+    },
+    "invalid_cases.json": {
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+    },
+    "loader.py": {
+      "sha256": "43a024d0eb24472b6763af48c4808c6a3b66c3108a7052ac2ff6ffe7957ae915"
+    },
+    "sensitivities.json": {
+      "sha256": "3002366a9088d2dc94a742f24e0df13669482af3c9cd035c3f946898b90c9116"
+    }
+  },
+  "profile": "PRA_UK_CRR",
+  "risk_class": "GIRR",
+  "risk_measure": "VEGA",
+  "schema_version": "girr_vega_pra_uk_crr_v1_fixture_v1",
+  "sensitivity_count": 3,
+  "total_capital": 547722.5575051662
+}

@@ -240,6 +240,9 @@ def _add_non_girr_vega_payload(payload: dict[str, object], profile: SbmRegulator
         "risk_weight_cap": GIRR_VEGA_RISK_WEIGHT_CAP,
     }
     payload["non_girr_vega_parameters"] = parameters
+    if profile is SbmRegulatoryProfile.PRA_UK_CRR:
+        parameters.update(_non_girr_vega_citation_payload(profile))
+        return
     if profile is not SbmRegulatoryProfile.US_NPR_2_0:
         parameters.update(
             {
@@ -248,42 +251,36 @@ def _add_non_girr_vega_payload(payload: dict[str, object], profile: SbmRegulator
             }
         )
         return
-    parameters.update(
-        {
-            "risk_weight_citation_ids": {
-                risk_class.value: PROFILE_VEGA_RISK_WEIGHT_CITATION_IDS[profile][risk_class]
-                for risk_class in sorted(
-                    PROFILE_VEGA_LIQUIDITY_HORIZON_DAYS[profile],
-                    key=lambda item: item.value,
-                )
-                if risk_class not in {SbmRiskClass.EQUITY, SbmRiskClass.GIRR}
-            },
-            "option_tenor_citation_ids": {
-                risk_class.value: PROFILE_VEGA_OPTION_TENOR_CITATION_IDS[profile][risk_class]
-                for risk_class in sorted(
-                    PROFILE_VEGA_LIQUIDITY_HORIZON_DAYS[profile],
-                    key=lambda item: item.value,
-                )
-                if risk_class not in {SbmRiskClass.EQUITY, SbmRiskClass.GIRR}
-            },
-            "intra_bucket_citation_ids": {
-                risk_class.value: list(PROFILE_VEGA_INTRA_BUCKET_CITATION_IDS[profile][risk_class])
-                for risk_class in sorted(
-                    PROFILE_VEGA_LIQUIDITY_HORIZON_DAYS[profile],
-                    key=lambda item: item.value,
-                )
-                if risk_class not in {SbmRiskClass.EQUITY, SbmRiskClass.GIRR}
-            },
-            "inter_bucket_citation_ids": {
-                risk_class.value: list(PROFILE_VEGA_INTER_BUCKET_CITATION_IDS[profile][risk_class])
-                for risk_class in sorted(
-                    PROFILE_VEGA_LIQUIDITY_HORIZON_DAYS[profile],
-                    key=lambda item: item.value,
-                )
-                if risk_class not in {SbmRiskClass.EQUITY, SbmRiskClass.GIRR}
-            },
-        }
+    parameters.update(_non_girr_vega_citation_payload(profile))
+
+
+def _non_girr_vega_citation_payload(profile: SbmRegulatoryProfile) -> dict[str, object]:
+    risk_classes = tuple(
+        risk_class
+        for risk_class in sorted(
+            PROFILE_VEGA_LIQUIDITY_HORIZON_DAYS[profile],
+            key=lambda item: item.value,
+        )
+        if risk_class not in {SbmRiskClass.EQUITY, SbmRiskClass.GIRR}
     )
+    return {
+        "risk_weight_citation_ids": {
+            risk_class.value: PROFILE_VEGA_RISK_WEIGHT_CITATION_IDS[profile][risk_class]
+            for risk_class in risk_classes
+        },
+        "option_tenor_citation_ids": {
+            risk_class.value: PROFILE_VEGA_OPTION_TENOR_CITATION_IDS[profile][risk_class]
+            for risk_class in risk_classes
+        },
+        "intra_bucket_citation_ids": {
+            risk_class.value: list(PROFILE_VEGA_INTRA_BUCKET_CITATION_IDS[profile][risk_class])
+            for risk_class in risk_classes
+        },
+        "inter_bucket_citation_ids": {
+            risk_class.value: list(PROFILE_VEGA_INTER_BUCKET_CITATION_IDS[profile][risk_class])
+            for risk_class in risk_classes
+        },
+    }
 
 
 def _add_fx_payload(payload: dict[str, object], profile: SbmRegulatoryProfile) -> None:
@@ -295,6 +292,15 @@ def _add_fx_payload(payload: dict[str, object], profile: SbmRegulatoryProfile) -
         "inter_bucket_correlation": FX_INTER_BUCKET_CORRELATION,
     }
     if profile is SbmRegulatoryProfile.US_NPR_2_0:
+        fx_delta_parameters.update(
+            {
+                "risk_weight_citation_id": PROFILE_FX_DELTA_RISK_WEIGHT_CITATION_IDS[profile],
+                "sqrt2_citation_id": PROFILE_FX_DELTA_SQRT2_CITATION_IDS[profile],
+                "intra_bucket_citation_id": PROFILE_FX_DELTA_INTRA_BUCKET_CITATION_IDS[profile],
+                "inter_bucket_citation_id": PROFILE_FX_DELTA_INTER_BUCKET_CITATION_IDS[profile],
+            }
+        )
+    elif profile is SbmRegulatoryProfile.PRA_UK_CRR:
         fx_delta_parameters.update(
             {
                 "risk_weight_citation_id": PROFILE_FX_DELTA_RISK_WEIGHT_CITATION_IDS[profile],
@@ -328,9 +334,28 @@ def _add_fx_payload(payload: dict[str, object], profile: SbmRegulatoryProfile) -
 
 
 def _add_fx_curvature_payload(payload: dict[str, object], profile: SbmRegulatoryProfile) -> None:
-    if profile is not SbmRegulatoryProfile.US_NPR_2_0:
+    if profile not in {SbmRegulatoryProfile.US_NPR_2_0, SbmRegulatoryProfile.PRA_UK_CRR}:
         return
     if SbmRiskClass.FX not in PROFILE_CURVATURE_CITATION_IDS.get(profile, {}):
+        return
+    if profile is SbmRegulatoryProfile.PRA_UK_CRR:
+        payload["fx_curvature_parameters"] = {
+            "citation_ids": list(PROFILE_CURVATURE_CITATION_IDS[profile][SbmRiskClass.FX]),
+            "risk_weight_citation_id": PROFILE_CURVATURE_RISK_WEIGHT_CITATION_IDS[profile][
+                SbmRiskClass.FX
+            ],
+            "intra_bucket_citation_ids": [
+                "pra_uk_crr_325g_curvature_aggregation",
+                "pra_uk_crr_325ay_curvature_correlations",
+                "pra_uk_crr_325av_fx_delta_buckets",
+            ],
+            "inter_bucket_citation_ids": [
+                "pra_uk_crr_325g_curvature_aggregation",
+                "pra_uk_crr_325ay_curvature_correlations",
+                "pra_uk_crr_325aw_fx_delta_inter",
+            ],
+            "scenario_citation_ids": ["pra_uk_crr_325h_correlation_scenarios"],
+        }
         return
     payload["fx_curvature_parameters"] = {
         "citation_ids": list(PROFILE_CURVATURE_CITATION_IDS[profile][SbmRiskClass.FX]),
@@ -378,6 +403,7 @@ def _add_basel_curvature_and_non_girr_payloads(
             "intra_bucket_correlation_citation_id": ("pra_uk_crr_325ay_curvature_correlations"),
             "inter_bucket_correlation_citation_id": ("pra_uk_crr_325ay_curvature_correlations"),
         }
+        _add_non_girr_reference_payloads(payload, profile)
         return
     if profile not in {SbmRegulatoryProfile.BASEL_MAR21, SbmRegulatoryProfile.EU_CRR3}:
         _add_us_npr_equity_commodity_delta_payload(payload, profile)

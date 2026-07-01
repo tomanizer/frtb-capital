@@ -769,12 +769,15 @@ def _curvature_scenario_citation_ids(
     profile_id: str,
     risk_class: SbmRiskClass,
 ) -> tuple[str, ...]:
+    profile = _resolve_supported_profile(profile_id)
+    if profile is SbmRegulatoryProfile.PRA_UK_CRR and risk_class in {
+        SbmRiskClass.GIRR,
+        SbmRiskClass.FX,
+    }:
+        return ("pra_uk_crr_325h_correlation_scenarios",)
     if risk_class is SbmRiskClass.GIRR:
-        return PROFILE_GIRR_CURVATURE_SCENARIO_CITATION_IDS[_resolve_supported_profile(profile_id)]
-    if (
-        _resolve_supported_profile(profile_id) is SbmRegulatoryProfile.US_NPR_2_0
-        and risk_class is SbmRiskClass.FX
-    ):
+        return PROFILE_GIRR_CURVATURE_SCENARIO_CITATION_IDS[profile]
+    if profile is SbmRegulatoryProfile.US_NPR_2_0 and risk_class is SbmRiskClass.FX:
         return ("us_npr_91_fr_14952_va7a_fx_curvature_scenarios",)
     return _MAR21_CURVATURE_SCENARIO_CITATION
 
