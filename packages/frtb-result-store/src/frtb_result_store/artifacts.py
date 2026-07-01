@@ -417,6 +417,16 @@ def validate_artifact_ref_targets(artifacts: Sequence[ArtifactRef]) -> None:
                 )
 
 
+
+_METADATA_PARTITIONED_ARTIFACT_TYPES = frozenset(
+    {
+        ArtifactType.TIME_SERIES,
+        ArtifactType.SHOCK_DEFINITION,
+        ArtifactType.SCENARIO_VECTOR_METADATA,
+        ArtifactType.SURFACE_GRID,
+    }
+)
+
 def validate_artifact_ref_partitions(artifacts: Sequence[ArtifactRef]) -> None:
     """Reject duplicate semantic artifact partitions within one committed run."""
 
@@ -424,11 +434,14 @@ def validate_artifact_ref_partitions(artifacts: Sequence[ArtifactRef]) -> None:
     for artifact in artifacts:
         if not artifact.partition_keys:
             continue
+        artifact_type = ArtifactType(artifact.artifact_type)
+        if artifact_type not in _METADATA_PARTITIONED_ARTIFACT_TYPES:
+            continue
         raw_partition_values = artifact.metadata.get("partition_values")
         if not isinstance(raw_partition_values, Mapping):
             continue
         key = (
-            ArtifactType(artifact.artifact_type).value,
+            artifact_type.value,
             tuple(
                 sorted((name, str(raw_partition_values[name])) for name in artifact.partition_keys)
             ),

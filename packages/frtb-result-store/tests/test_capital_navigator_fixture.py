@@ -13,9 +13,9 @@ from fixtures.capital_navigator_drillthrough_component_rows import (
     IMA_SCENARIO_VECTOR_ROWS,
     RFET_OBSERVATION_TIMELINE_ROWS,
     RRAO_ROWS,
-    SBM_ROWS,
     SBM_CURVATURE_SHOCK_DOWN_ROWS,
     SBM_CURVATURE_SHOCK_UP_ROWS,
+    SBM_ROWS,
     USD_SWAPTION_VOL_SURFACE_ROWS,
 )
 from fixtures.result_store_bundle import run_with_id

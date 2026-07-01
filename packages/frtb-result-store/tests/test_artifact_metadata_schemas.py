@@ -7,6 +7,7 @@ from urllib.parse import unquote, urlparse
 import pyarrow as pa
 import pyarrow.parquet as pq
 from fastapi.testclient import TestClient
+from fixtures.result_store_bundle import run_with_id, sample_bundle
 from frtb_result_store import (
     ArtifactType,
     ArtifactWriteRequest,
@@ -15,8 +16,6 @@ from frtb_result_store import (
     artifact_schema_for,
     create_result_store_app,
 )
-
-from fixtures.result_store_bundle import sample_bundle, run_with_id
 
 
 def test_common_artifact_schemas_stage_timeline_shock_scenario_and_surface(
@@ -49,7 +48,7 @@ def test_common_artifact_schemas_stage_timeline_shock_scenario_and_surface(
     assert refs[ArtifactType.SURFACE_GRID].metadata["schema_id"] == "common.surface_grid.v1"
 
     surface_path = Path(unquote(urlparse(refs[ArtifactType.SURFACE_GRID].uri).path))
-    surface_rows = pq.read_table(surface_path).to_pylist()
+    surface_rows = pq.ParquetFile(surface_path).read().to_pylist()
     assert surface_rows[0]["axis_1_name"] == "option_tenor"
     assert surface_rows[0]["axis_2_value"] == "5Y"
 

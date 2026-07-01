@@ -4,8 +4,6 @@ from dataclasses import FrozenInstanceError
 from datetime import date
 
 import pytest
-from frtb_sbm.assembly.hashes import sensitivity_payload, sensitivity_payloads_from_batch
-from frtb_sbm.batch import build_sbm_batch_from_sensitivities
 from frtb_sbm import (
     DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
     BucketCapital,
@@ -31,6 +29,8 @@ from frtb_sbm import (
     WeightedSensitivity,
     coerce_fx_risk_factor_basis,
 )
+from frtb_sbm.assembly.hashes import sensitivity_payload, sensitivity_payloads_from_batch
+from frtb_sbm.batch import build_sbm_batch_from_sensitivities
 
 from tests.sbm_fixture_helpers import sample_sbm_lineage as sample_lineage
 

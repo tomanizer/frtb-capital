@@ -120,9 +120,6 @@ class CvaHedgeBatch:
     source_hash: str | None = None
     handoff_hash: str | None = None
     diagnostics: tuple[Mapping[str, object], ...] = ()
-    volatility_surface_ids: ObjectArray | None = None
-    volatility_surface_point_ids: ObjectArray | None = None
-    shock_ids: ObjectArray | None = None
 
     @property
     def row_count(self) -> int:
@@ -165,6 +162,9 @@ class SaCvaSensitivityBatch:
     source_hash: str | None = None
     handoff_hash: str | None = None
     diagnostics: tuple[Mapping[str, object], ...] = ()
+    volatility_surface_ids: ObjectArray | None = None
+    volatility_surface_point_ids: ObjectArray | None = None
+    shock_ids: ObjectArray | None = None
 
     @property
     def row_count(self) -> int:

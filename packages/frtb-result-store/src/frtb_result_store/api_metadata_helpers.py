@@ -6,7 +6,7 @@ from collections.abc import Callable, Mapping, Sequence
 
 from frtb_result_store.api_artifacts import artifact_page_payload
 from frtb_result_store.io import DuckDbParquetResultStore
-from frtb_result_store.model import ArtifactRef, ArtifactType
+from frtb_result_store.model import ArtifactRef, ArtifactType, FrtbComponent
 
 _Jsonable = Callable[[object], object]
 
@@ -109,7 +109,7 @@ def artifact_metadata_catalog(
             {
                 "artifact_id": ref.artifact_id,
                 "artifact_type": ArtifactType(ref.artifact_type).value,
-                "component": ref.component.value,
+                "component": FrtbComponent(ref.component).value,
                 "artifact_status": ref.metadata.get("artifact_status", "AVAILABLE"),
                 "status_reason": ref.metadata.get("status_reason", ""),
                 "navigator_role": ref.metadata.get("navigator_role", ""),

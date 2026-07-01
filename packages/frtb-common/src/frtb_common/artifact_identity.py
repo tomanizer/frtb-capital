@@ -190,7 +190,7 @@ __all__ = [
     "SurfaceAxisName",
     "SurfaceCoordinate",
     "SurfaceId",
-    "SurfacePointId",
     "SurfacePointCoordinates",
+    "SurfacePointId",
     "TimeSeriesId",
 ]

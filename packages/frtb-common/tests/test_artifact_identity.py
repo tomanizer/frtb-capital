@@ -10,8 +10,8 @@ from frtb_common import (
     SurfaceAxisName,
     SurfaceCoordinate,
     SurfaceId,
-    SurfacePointId,
     SurfacePointCoordinates,
+    SurfacePointId,
     TimeSeriesId,
 )
 
