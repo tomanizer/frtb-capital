@@ -124,18 +124,14 @@ def _capital_navigator_artifacts(
     local_artifacts: dict[str, tuple[str, int]],
 ) -> tuple[ArtifactRef, ...]:
     return tuple(
-        ArtifactRef(
-            run_id=run.run_id,
+        _capital_navigator_artifact(
+            run=run,
             artifact_id=artifact_id,
             component=component,
             artifact_type=artifact_type,
-            uri=local_artifacts.get(
-                artifact_id,
-                (f"s3://frtb-results/capital-navigator/{run.run_id}/{artifact_id}.parquet", 0),
-            )[0],
-            format="parquet",
-            row_count=local_artifacts.get(artifact_id, ("", row_count))[1],
+            declared_row_count=row_count,
             partition_keys=partition_keys,
+            local_artifacts=local_artifacts,
         )
         for (
             artifact_id,
@@ -144,6 +140,34 @@ def _capital_navigator_artifacts(
             row_count,
             partition_keys,
         ) in NAVIGATOR_ARTIFACT_SPECS
+    )
+
+
+def _capital_navigator_artifact(
+    *,
+    run: CalculationRun,
+    artifact_id: str,
+    component: str,
+    artifact_type: str,
+    declared_row_count: int,
+    partition_keys: tuple[str, ...],
+    local_artifacts: dict[str, tuple[str, int]],
+) -> ArtifactRef:
+    local_artifact = local_artifacts.get(artifact_id)
+    if local_artifact is None:
+        uri = f"s3://frtb-results/capital-navigator/{run.run_id}/{artifact_id}.parquet"
+        row_count = declared_row_count
+    else:
+        uri, row_count = local_artifact
+    return ArtifactRef(
+        run_id=run.run_id,
+        artifact_id=artifact_id,
+        component=component,
+        artifact_type=artifact_type,
+        uri=uri,
+        format="parquet",
+        row_count=row_count,
+        partition_keys=partition_keys,
     )
 
 
@@ -255,25 +279,31 @@ def _capital_navigator_residual_attribution(run: CalculationRun) -> CapitalAttri
     (
         contribution_id,
         node_id,
+        source_id,
         source_level,
         category,
         base_amount,
+        residual,
         artifact_id,
         reason,
+        target_type,
+        target_id,
     ) = NAVIGATOR_RESIDUAL_ATTRIBUTION_SPEC
     return _capital_navigator_attribution(
         run=run,
         contribution_id=contribution_id,
         node_id=node_id,
-        source_id=run.run_id,
+        source_id=source_id,
         source_level=source_level,
         category=category,
         base_amount=base_amount,
         method="RESIDUAL",
         contribution=None,
-        residual=0.0,
+        residual=residual,
         artifact_id=artifact_id,
         reason=reason,
+        target_type=target_type,
+        target_id=target_id,
     )
 
 
@@ -291,6 +321,8 @@ def _capital_navigator_attribution(
     residual: float,
     artifact_id: str,
     reason: str,
+    target_type: str | None = None,
+    target_id: str | None = None,
 ) -> CapitalAttributionRecord:
     marginal_multiplier = 1.0 if method == "ANALYTICAL_EULER" else None
     return CapitalAttributionRecord.from_contribution(
@@ -310,6 +342,8 @@ def _capital_navigator_attribution(
             reason=reason,
         ),
         artifact_id=artifact_id,
+        target_type=target_type,
+        target_id=target_id,
     )
 
 

@@ -10,8 +10,11 @@ from frtb_result_store.model import (
     CapitalMeasure,
     CapitalNode,
     FrtbComponent,
+    NodeType,
     ResultBundle,
 )
+
+_RRAO_EXPOSURE_NODE_TYPES = frozenset({NodeType.MEASURE_BRANCH, NodeType.POSITION})
 
 
 def _ima_desk_dashboard_rows(bundle: ResultBundle) -> list[dict[str, object]]:
@@ -121,7 +124,7 @@ def _rrao_exposure_summary_rows(bundle: ResultBundle) -> list[dict[str, object]]
     for node in sorted(bundle.nodes, key=lambda item: (item.sort_key, item.node_id)):
         if FrtbComponent(node.component) != FrtbComponent.RRAO:
             continue
-        if not node.calculation_branch:
+        if NodeType(node.node_type) not in _RRAO_EXPOSURE_NODE_TYPES:
             continue
         rows.append(
             {

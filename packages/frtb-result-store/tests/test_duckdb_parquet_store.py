@@ -23,6 +23,8 @@ from frtb_result_store import (
     CalculationRun,
     CapitalAttributionRecord,
     CapitalEdge,
+    CapitalMeasure,
+    CapitalNode,
     CapitalNodeFamily,
     CapitalNodeSpec,
     CapitalSummaryRow,
@@ -835,6 +837,119 @@ def test_store_persists_dashboard_marts_and_manifest_fingerprints(tmp_path: Path
         "rrao_exposure_summary": 0,
     }
     assert sorted(manifest["mart_schema_fingerprints"]) == sorted(MART_NAMES)
+
+
+def test_rrao_exposure_summary_uses_exposure_node_types(tmp_path: Path) -> None:
+    run = run_with_id("run-rrao-exposure-summary-node-type")
+    store = DuckDbParquetResultStore(tmp_path / "result-store")
+
+    store.write_bundle(_rrao_exposure_summary_node_type_bundle(run))
+
+    rows = store.mart_rows(run.run_id, "rrao_exposure_summary")
+    assert {
+        (row["node_id"], row["exposure_class"], row["capital"], row["artifact_id"]) for row in rows
+    } == {
+        (
+            "rrao-label-fallback-branch",
+            "Label fallback branch",
+            7.0,
+            "rrao-exposure-table",
+        )
+    }
+
+
+def _rrao_exposure_summary_node_type_bundle(run: CalculationRun) -> ResultBundle:
+    base = sample_bundle(
+        run,
+        artifacts=(*default_artifacts(run), _rrao_exposure_summary_artifact(run)),
+    )
+    return ResultBundle(
+        run=base.run,
+        nodes=(*base.nodes, *_rrao_exposure_summary_nodes(run)),
+        hierarchy_definition=base.hierarchy_definition,
+        hierarchy_nodes=base.hierarchy_nodes,
+        edges=(*base.edges, *_rrao_exposure_summary_edges(run)),
+        measures=(*base.measures, *_rrao_exposure_summary_measures(run)),
+        artifacts=base.artifacts,
+        input_manifests=base.input_manifests,
+        lineage=base.lineage,
+        attributions=base.attributions,
+        movement_results=base.movement_results,
+        events=base.events,
+        telemetry=base.telemetry,
+    )
+
+
+def _rrao_exposure_summary_artifact(run: CalculationRun) -> ArtifactRef:
+    return ArtifactRef(
+        run_id=run.run_id,
+        artifact_id="rrao-exposure-table",
+        component=FrtbComponent.RRAO,
+        artifact_type=ArtifactType.RRAO_EXPOSURE_TABLE,
+        uri="s3://frtb-results/rrao-exposure-table.parquet",
+        format="parquet",
+        row_count=1,
+    )
+
+
+def _rrao_exposure_summary_nodes(run: CalculationRun) -> tuple[CapitalNode, ...]:
+    return (
+        CapitalNode(
+            run_id=run.run_id,
+            node_id="rrao-wrapper-with-branch",
+            node_type=NodeType.COMPONENT,
+            component=FrtbComponent.RRAO,
+            label="RRAO wrapper",
+            calculation_branch="RRAO_TOTAL",
+            sort_key=4,
+        ),
+        CapitalNode(
+            run_id=run.run_id,
+            node_id="rrao-label-fallback-branch",
+            node_type=NodeType.MEASURE_BRANCH,
+            component=FrtbComponent.RRAO,
+            label="Label fallback branch",
+            sort_key=5,
+        ),
+    )
+
+
+def _rrao_exposure_summary_edges(run: CalculationRun) -> tuple[CapitalEdge, ...]:
+    return (
+        CapitalEdge(
+            run_id=run.run_id,
+            parent_node_id="sa",
+            child_node_id="rrao-wrapper-with-branch",
+            edge_type=EdgeType.AGGREGATES,
+            sort_key=4,
+        ),
+        CapitalEdge(
+            run_id=run.run_id,
+            parent_node_id="rrao-wrapper-with-branch",
+            child_node_id="rrao-label-fallback-branch",
+            edge_type=EdgeType.DRILLDOWN,
+            sort_key=5,
+        ),
+    )
+
+
+def _rrao_exposure_summary_measures(run: CalculationRun) -> tuple[CapitalMeasure, ...]:
+    return (
+        CapitalMeasure(
+            run_id=run.run_id,
+            node_id="rrao-wrapper-with-branch",
+            measure_name="capital",
+            amount=99.0,
+            currency="USD",
+        ),
+        CapitalMeasure(
+            run_id=run.run_id,
+            node_id="rrao-label-fallback-branch",
+            measure_name="capital",
+            amount=7.0,
+            currency="USD",
+        ),
+    )
 
 
 def test_store_persists_attribution_explain_projection_marts(tmp_path: Path) -> None:

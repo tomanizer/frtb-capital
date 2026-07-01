@@ -2,27 +2,12 @@
 
 from __future__ import annotations
 
-NAVIGATOR_ARTIFACT_SPECS = (
-    (
-        "navigator-ima-pnl-vector",
-        "IMA",
-        "IMA_PNL_VECTOR",
-        6,
-        ("desk_id", "portfolio_id", "book_id"),
-    ),
-    ("navigator-sbm-sensitivities", "SBM", "SBM_SENSITIVITY_TABLE", 6, ()),
-    ("navigator-drc-jtd", "DRC", "DRC_JTD_TABLE", 4, ()),
-    ("navigator-rrao-exposures", "RRAO", "RRAO_EXPOSURE_TABLE", 3, ()),
-    ("navigator-cva-exposures", "CVA", "CVA_EXPOSURE_TABLE", 5, ()),
-    ("navigator-suite-attribution", "TOP_OF_HOUSE", "ATTRIBUTION_VECTOR", 21, ()),
-)
-
-NAVIGATOR_INPUT_MANIFEST_SPECS = (
-    ("ima-pnl", "risk-engine-ima", 6),
-    ("sbm-sensitivities", "risk-engine-sbm", 6),
-    ("drc-positions", "risk-engine-drc", 4),
-    ("rrao-positions", "risk-engine-rrao", 3),
-    ("cva-exposures", "risk-engine-cva", 5),
+from fixtures.capital_navigator_drillthrough_component_rows import (
+    CVA_ROWS,
+    DRC_ROWS,
+    IMA_ROWS,
+    RRAO_ROWS,
+    SBM_ROWS,
 )
 
 NAVIGATOR_LINEAGE_SPECS = (
@@ -241,11 +226,48 @@ NAVIGATOR_UNSUPPORTED_ATTRIBUTION_SPECS = (
 )
 
 NAVIGATOR_RESIDUAL_ATTRIBUTION_SPEC = (
-    "suite-residual-zero",
+    "suite-unreconciled-residual",
     "total",
+    "navigator-suite-residual",
     "RESIDUAL_BRANCH",
-    "SUITE_RESIDUAL",
-    210.0,
+    "SUITE_UNRECONCILED",
+    1.25,
+    1.25,
     "navigator-suite-attribution",
-    "Suite residual retained for audit; component explain rows reconcile.",
+    "Suite residual retained for Navigator unreconciled-branch display.",
+    "RESIDUAL_BRANCH",
+    "navigator-suite-residual-target",
+)
+
+_ATTRIBUTION_ROW_COUNT = (
+    len(NAVIGATOR_ATTRIBUTION_SPECS) + len(NAVIGATOR_UNSUPPORTED_ATTRIBUTION_SPECS) + 1
+)
+
+NAVIGATOR_ARTIFACT_SPECS = (
+    (
+        "navigator-ima-pnl-vector",
+        "IMA",
+        "IMA_PNL_VECTOR",
+        len(IMA_ROWS),
+        ("desk_id", "portfolio_id", "book_id"),
+    ),
+    ("navigator-sbm-sensitivities", "SBM", "SBM_SENSITIVITY_TABLE", len(SBM_ROWS), ()),
+    ("navigator-drc-jtd", "DRC", "DRC_JTD_TABLE", len(DRC_ROWS), ()),
+    ("navigator-rrao-exposures", "RRAO", "RRAO_EXPOSURE_TABLE", len(RRAO_ROWS), ()),
+    ("navigator-cva-exposures", "CVA", "CVA_EXPOSURE_TABLE", len(CVA_ROWS), ()),
+    (
+        "navigator-suite-attribution",
+        "TOP_OF_HOUSE",
+        "ATTRIBUTION_VECTOR",
+        _ATTRIBUTION_ROW_COUNT,
+        (),
+    ),
+)
+
+NAVIGATOR_INPUT_MANIFEST_SPECS = (
+    ("ima-pnl", "risk-engine-ima", len(IMA_ROWS)),
+    ("sbm-sensitivities", "risk-engine-sbm", len(SBM_ROWS)),
+    ("drc-positions", "risk-engine-drc", len(DRC_ROWS)),
+    ("rrao-positions", "risk-engine-rrao", len(RRAO_ROWS)),
+    ("cva-exposures", "risk-engine-cva", len(CVA_ROWS)),
 )
