@@ -12,7 +12,7 @@ from frtb_drc._validation_utils import require_text as _required_text
 from frtb_drc.data_models import DrcCalculationContext, DrcRiskClass
 from frtb_drc.fair_value_cap import validate_fair_value_cap_evidence
 from frtb_drc.fx import validate_fx_rates
-from frtb_drc.regimes import DrcRuleProfile, ensure_risk_class_supported
+from frtb_drc.regimes import EU_CRR3_PROFILE_ID, DrcRuleProfile, ensure_risk_class_supported
 from frtb_drc.risk_weight_evidence import effective_risk_weights
 from frtb_drc.validation import (
     DrcInputError,
@@ -117,13 +117,13 @@ def validate_supported_batch_run(
             batch,
             context.securitisation_non_ctp_offset_groups,
             field_name="context.securitisation_non_ctp_offset_groups",
-            require_all=False,
+            require_all=context.profile_id == EU_CRR3_PROFILE_ID,
         )
         _validate_context_position_map(
             batch,
             context.securitisation_non_ctp_fair_value_cap_evidence,
             field_name="context.securitisation_non_ctp_fair_value_cap_evidence",
-            require_all=False,
+            require_all=context.profile_id == EU_CRR3_PROFILE_ID,
         )
     elif risk_class is DrcRiskClass.CORRELATION_TRADING_PORTFOLIO:
         risk_weights = effective_risk_weights(

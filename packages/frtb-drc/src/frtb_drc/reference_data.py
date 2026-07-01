@@ -592,6 +592,15 @@ _MATURITY_POLICIES: Mapping[tuple[str, DrcRiskClass], MaturityPolicy] = MappingP
             full_weight_years=1.0,
             citation_id="EU_CRR3_ARTICLE_325X",
         ),
+        (
+            EU_CRR3_PROFILE_ID,
+            DrcRiskClass.SECURITISATION_NON_CTP,
+        ): MaturityPolicy(
+            profile_id=EU_CRR3_PROFILE_ID,
+            floor_years=1.0,
+            full_weight_years=1.0,
+            citation_id="EU_CRR3_ARTICLE_325Z",
+        ),
     }
 )
 
@@ -693,6 +702,18 @@ _SECURITISATION_BUCKET_DEFINITIONS.update(
             bucket_type=DrcBucketType.SECURITISATION_ASSET_REGION,
             risk_class=DrcRiskClass.SECURITISATION_NON_CTP,
             citation_id="BASEL_MAR22_31",
+            description=_securitisation_bucket_description(bucket_key),
+        )
+        for bucket_key in chargeable_securitisation_non_ctp_bucket_keys()
+    }
+)
+_SECURITISATION_BUCKET_DEFINITIONS.update(
+    {
+        (EU_CRR3_PROFILE_ID, bucket_key): BucketDefinition(
+            bucket_key=bucket_key,
+            bucket_type=DrcBucketType.SECURITISATION_ASSET_REGION,
+            risk_class=DrcRiskClass.SECURITISATION_NON_CTP,
+            citation_id="EU_CRR3_ARTICLE_325AA",
             description=_securitisation_bucket_description(bucket_key),
         )
         for bucket_key in chargeable_securitisation_non_ctp_bucket_keys()

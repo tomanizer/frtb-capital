@@ -201,11 +201,26 @@ def test_eu_crr3_bucket_definitions_are_cited() -> None:
         bucket.bucket_key: bucket
         for bucket in iter_bucket_definitions(profile_id=EU_CRR3_PROFILE_ID)
     }
+    nonsec_buckets = {
+        key
+        for key, bucket in buckets.items()
+        if bucket.risk_class is DrcRiskClass.NON_SECURITISATION
+    }
+    securitisation_buckets = {
+        key
+        for key, bucket in buckets.items()
+        if bucket.risk_class is DrcRiskClass.SECURITISATION_NON_CTP
+    }
 
-    assert set(buckets) == {"CORPORATE", "SOVEREIGN", "LOCAL_GOVERNMENT_MUNICIPAL"}
+    assert nonsec_buckets == {"CORPORATE", "SOVEREIGN", "LOCAL_GOVERNMENT_MUNICIPAL"}
+    assert "SEC_CORPORATE" in securitisation_buckets
+    assert "SEC_CLO_NORTH_AMERICA" in securitisation_buckets
+    assert "SEC_OTHER_WHOLESALE_OTHER" in securitisation_buckets
+    assert len(securitisation_buckets) == 45
     assert buckets["SOVEREIGN"].bucket_type is DrcBucketType.SOVEREIGN
-    assert all(bucket.risk_class is DrcRiskClass.NON_SECURITISATION for bucket in buckets.values())
-    assert all(bucket.citation_id == "EU_CRR3_ARTICLE_325Y_1_2" for bucket in buckets.values())
+    assert buckets["SEC_CLO_NORTH_AMERICA"].bucket_type is DrcBucketType.SECURITISATION_ASSET_REGION
+    assert all(buckets[key].citation_id == "EU_CRR3_ARTICLE_325Y_1_2" for key in nonsec_buckets)
+    assert all(buckets[key].citation_id == "EU_CRR3_ARTICLE_325AA" for key in securitisation_buckets)
 
 
 def test_us_npr_risk_weight_table_uses_strict_lookup_keys() -> None:

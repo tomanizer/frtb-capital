@@ -33,7 +33,7 @@ requirements:
     challenger_refs:
       - frtb_net_frtb
       - ankitjha67_baselkit
-    notes: "US_NPR_2_0 and BASEL_MAR22 non-securitisation, securitisation non-CTP, and CTP paths are capital-producing. EU_CRR3 non-securitisation is capital-producing. EU_CRR3 securitisation non-CTP/CTP and all PRA_UK_CRR DRC paths remain fail-closed pending #1002-#1006."
+    notes: "US_NPR_2_0 and BASEL_MAR22 non-securitisation, securitisation non-CTP, and CTP paths are capital-producing. EU_CRR3 non-securitisation and securitisation non-CTP are capital-producing. EU_CRR3 CTP and all PRA_UK_CRR DRC paths remain fail-closed pending #1003-#1006."
 
   - id: DRC-HBR-001
     topic: Hedge benefit ratio and netting constraints
@@ -55,20 +55,27 @@ requirements:
     coverage_status: partially_implemented_under_audit
     challenger_refs:
       - frtb_net_frtb
-    notes: "Supported paths preserve issuer/tranche grouping, HBR inputs, bucket/category totals, and attribution-ready lineage. Planned EU/PRA cells have source-map ids but no capital-producing runtime support yet."
+    notes: "Supported paths preserve issuer/tranche grouping, HBR inputs, bucket/category totals, and attribution-ready lineage. EU_CRR3 CTP and planned PRA cells have source-map ids but no capital-producing runtime support yet."
 
   - id: DRC-EU-SEC-001
-    topic: EU CRR3 securitisation non-CTP DRC source map
+    topic: EU CRR3 securitisation non-CTP DRC runtime support
     source_refs:
       - eu_crr3_2024_1623
       - eu_eba_rts_gross_jtd_default_risk
     code_refs:
       - packages/frtb-drc/src/frtb_drc/regime_citations_eu_pra.py
       - packages/frtb-drc/src/frtb_drc/regimes.py
+      - packages/frtb-drc/src/frtb_drc/reference_data.py
+      - packages/frtb-drc/src/frtb_drc/kernel/securitisation.py
+      - packages/frtb-drc/src/frtb_drc/assembly/citations.py
+      - packages/frtb-drc/src/frtb_drc/adapters/arrow.py
     test_refs:
       - packages/frtb-drc/tests/test_drc_regimes.py
-    coverage_status: planned_fail_closed
-    notes: "Source-map ids `EU_CRR3_ARTICLE_325Z` and `EU_CRR3_ARTICLE_325AA` are implementation anchors for #1002. Runtime remains fail-closed until row, batch, Arrow, fixture, and citation tests land."
+      - packages/frtb-drc/tests/test_drc_securitisation.py
+      - packages/frtb-drc/tests/test_drc_arrow_batch.py
+      - packages/frtb-drc/tests/fixtures/drc_eu_sec_nonctp_v1
+    coverage_status: implemented_with_fixture
+    notes: "Source-map ids `EU_CRR3_ARTICLE_325Z` and `EU_CRR3_ARTICLE_325AA` are runtime citations for #1002. Row, batch, Arrow, fixture, evidence-fail-closed, attribution, and citation tests cover the supported path."
 
   - id: DRC-EU-CTP-001
     topic: EU CRR3 CTP DRC source map

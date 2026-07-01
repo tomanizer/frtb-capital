@@ -286,14 +286,17 @@ _EU_CRR3_PROFILE = DrcRuleProfile(
     version="Regulation (EU) 2024/1623",
     publication_date=date(2024, 5, 31),
     effective_date=None,
-    status="partial_nonsec_supported",
-    supported_risk_classes=frozenset({DrcRiskClass.NON_SECURITISATION}),
+    status="partial_nonsec_sec_supported",
+    supported_risk_classes=frozenset(
+        {
+            DrcRiskClass.NON_SECURITISATION,
+            DrcRiskClass.SECURITISATION_NON_CTP,
+        }
+    ),
     citations=EU_CRR3_CITATIONS,
+    securitisation_non_ctp_fair_value_cap_allowed=True,
+    securitisation_non_ctp_fair_value_cap_citation_ids=("EU_CRR3_ARTICLE_325AA",),
     unsupported_features={
-        DrcRiskClass.SECURITISATION_NON_CTP: (
-            "EU_CRR3 securitisation non-CTP DRC because Articles 325z and 325aa and related "
-            "banking-book securitisation mappings have not been implemented"
-        ),
         DrcRiskClass.CORRELATION_TRADING_PORTFOLIO: (
             "EU_CRR3 CTP DRC because Articles 325ab to 325ad and related CTP mappings have not "
             "been implemented"
@@ -465,6 +468,21 @@ _SUPPORTED_CELL_DETAILS: Mapping[tuple[str, DrcRiskClass], tuple[str, tuple[str,
                 ),
                 "Maintain EU CRR3 non-securitisation fixture and CQS mapping evidence.",
             ),
+            (
+                EU_CRR3_PROFILE_ID,
+                DrcRiskClass.SECURITISATION_NON_CTP,
+            ): (
+                (
+                    "EU CRR3 securitisation non-CTP row and batch capital supported "
+                    "with typed Article 325aa banking-book risk-weight and fair-value "
+                    "cap evidence."
+                ),
+                (
+                    "EU_CRR3_ARTICLE_325Z",
+                    "EU_CRR3_ARTICLE_325AA",
+                ),
+                "Maintain EU CRR3 securitisation non-CTP fixture and typed evidence coverage.",
+            ),
         }
     )
 )
@@ -472,20 +490,6 @@ _SUPPORTED_CELL_DETAILS: Mapping[tuple[str, DrcRiskClass], tuple[str, tuple[str,
 _PLANNED_CELL_DETAILS: Mapping[tuple[str, DrcRiskClass], tuple[tuple[str, ...], str]] = (
     MappingProxyType(
         {
-            (
-                EU_CRR3_PROFILE_ID,
-                DrcRiskClass.SECURITISATION_NON_CTP,
-            ): (
-                (
-                    "EU_CRR3_ARTICLE_325Z",
-                    "EU_CRR3_ARTICLE_325AA",
-                ),
-                (
-                    "Implement Article 325z/325aa securitisation non-CTP mappings, "
-                    "typed banking-book risk-weight evidence, and deterministic EU "
-                    "securitisation fixtures."
-                ),
-            ),
             (
                 EU_CRR3_PROFILE_ID,
                 DrcRiskClass.CORRELATION_TRADING_PORTFOLIO,

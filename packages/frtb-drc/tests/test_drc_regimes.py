@@ -54,10 +54,19 @@ def test_basel_profile_supports_nonsec_securitisation_non_ctp_and_ctp() -> None:
     ensure_risk_class_supported(profile, DrcRiskClass.CORRELATION_TRADING_PORTFOLIO)
 
 
-def test_eu_crr3_profile_supports_only_nonsec() -> None:
+def test_eu_crr3_profile_supports_nonsec_and_securitisation_non_ctp() -> None:
     profile = get_rule_profile(EU_CRR3_PROFILE_ID)
 
-    assert profile.supported_risk_classes == frozenset({DrcRiskClass.NON_SECURITISATION})
+    assert profile.supported_risk_classes == frozenset(
+        {
+            DrcRiskClass.NON_SECURITISATION,
+            DrcRiskClass.SECURITISATION_NON_CTP,
+        }
+    )
+    assert profile.securitisation_non_ctp_fair_value_cap_allowed is True
+    assert profile.securitisation_non_ctp_fair_value_cap_citation_ids == (
+        "EU_CRR3_ARTICLE_325AA",
+    )
     assert "EU_CRR3_ARTICLE_325W" in profile.citations
     assert "EU_CRR3_ARTICLE_325X" in profile.citations
     assert "EU_CRR3_ARTICLE_325Y_1_2" in profile.citations
@@ -68,8 +77,7 @@ def test_eu_crr3_profile_supports_only_nonsec() -> None:
     assert "EU_CRR3_ARTICLE_325AC" in profile.citations
     assert "EU_CRR3_ARTICLE_325AD" in profile.citations
     ensure_risk_class_supported(profile, DrcRiskClass.NON_SECURITISATION)
-    with pytest.raises(UnsupportedRegulatoryFeatureError, match=EU_CRR3_PROFILE_ID):
-        ensure_risk_class_supported(profile, DrcRiskClass.SECURITISATION_NON_CTP)
+    ensure_risk_class_supported(profile, DrcRiskClass.SECURITISATION_NON_CTP)
     with pytest.raises(UnsupportedRegulatoryFeatureError, match=EU_CRR3_PROFILE_ID):
         ensure_risk_class_supported(profile, DrcRiskClass.CORRELATION_TRADING_PORTFOLIO)
 
@@ -133,7 +141,7 @@ def test_profile_support_matrix_marks_basel_securitisation_and_ctp_supported() -
     assert basel_ctp.next_step == "Maintain Basel-specific CTP typed evidence fixtures."
 
 
-def test_profile_support_matrix_marks_eu_crr3_nonsec_supported_only() -> None:
+def test_profile_support_matrix_marks_eu_crr3_nonsec_and_sec_supported() -> None:
     cells = {(cell.profile_id, cell.risk_class): cell for cell in drc_profile_support_matrix()}
 
     eu_nonsec = cells[(EU_CRR3_PROFILE_ID, DrcRiskClass.NON_SECURITISATION)]
@@ -143,9 +151,11 @@ def test_profile_support_matrix_marks_eu_crr3_nonsec_supported_only() -> None:
     assert eu_nonsec.status == "SUPPORTED"
     assert "EU_CRR3_ARTICLE_325W" in eu_nonsec.citation_ids
     assert "EU_CRR3_ECAI_CQS_MAPPING" in eu_nonsec.citation_ids
-    assert eu_sec.status == "FAIL_CLOSED"
+    assert eu_sec.status == "SUPPORTED"
     assert eu_sec.citation_ids == ("EU_CRR3_ARTICLE_325Z", "EU_CRR3_ARTICLE_325AA")
-    assert "Article 325z/325aa" in eu_sec.next_step
+    assert eu_sec.next_step == (
+        "Maintain EU CRR3 securitisation non-CTP fixture and typed evidence coverage."
+    )
     assert eu_ctp.status == "FAIL_CLOSED"
     assert eu_ctp.citation_ids == (
         "EU_CRR3_ARTICLE_325AB",

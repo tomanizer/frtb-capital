@@ -8,18 +8,18 @@ suite.
 The package exposes `calculate_drc_capital` for supported U.S. NPR 2.0
 non-securitisation, securitisation non-CTP, and correlation trading portfolio
 (CTP) paths, plus cited Basel MAR22 non-securitisation, securitisation
-non-CTP, and CTP paths. EU CRR3 non-securitisation row and Arrow batch paths
-are supported with Article 325w, Article 325x, Article 325y, and ECAI/CQS
-mapping evidence. EU CRR3 securitisation non-CTP, EU CRR3 CTP, and all
-PRA_UK_CRR paths fail closed. Unsupported scope must not emit zero or
-placeholder capital.
+non-CTP, and CTP paths. EU CRR3 non-securitisation and securitisation non-CTP
+row and Arrow batch paths are supported with Article 325w, Article 325x,
+Article 325y, Article 325z, Article 325aa, and ECAI/CQS mapping evidence.
+EU CRR3 CTP and all PRA_UK_CRR paths fail closed. Unsupported scope must not
+emit zero or placeholder capital.
 
 | Area | Status |
 | --- | --- |
 | U.S. NPR 2.0 non-sec / sec non-CTP / CTP | Implemented row and Arrow batch paths |
 | Basel MAR22 non-sec / sec non-CTP / CTP | Implemented row and Arrow batch paths; securitisation and CTP require typed risk-weight evidence |
-| EU CRR3 non-sec | Implemented row and Arrow batch paths |
-| EU CRR3 sec non-CTP / CTP; PRA_UK_CRR | Fail-closed profile paths |
+| EU CRR3 non-sec / sec non-CTP | Implemented row and Arrow batch paths |
+| EU CRR3 CTP; PRA_UK_CRR | Fail-closed profile paths |
 
 Outputs are engineering and validation evidence, not final regulatory capital.
 `PACKAGE_METADATA.validation_status` remains `PENDING`.

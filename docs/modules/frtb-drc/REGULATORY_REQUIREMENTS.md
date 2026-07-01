@@ -158,12 +158,13 @@ under profile controls anchored to proposed section `__.210(c)(3)(iii)` and
 Basel MAR22.34. EU CRR3 non-securitisation row and batch paths are implemented
 with Article 325w gross JTD/LGD, Article 325x netting and maturity weighting,
 Article 325y bucket/risk-weight/HBR/category mechanics, and ECAI-to-CQS mapping
-evidence. EU CRR3 securitisation non-CTP is source-mapped to
-`EU_CRR3_ARTICLE_325Z` and `EU_CRR3_ARTICLE_325AA`; EU CRR3 CTP is
+evidence. EU CRR3 securitisation non-CTP row and batch paths are implemented
+with Article 325z gross/net JTD mapping and Article 325aa bucket, HBR,
+risk-weight, category, and fair-value-cap evidence. EU CRR3 CTP is
 source-mapped to `EU_CRR3_ARTICLE_325AB`, `EU_CRR3_ARTICLE_325AC`, and
-`EU_CRR3_ARTICLE_325AD`. Those EU paths remain fail closed until implementation
-issues add profile-specific risk-weight, decomposition, fixture, and citation
-tests. PRA UK CRR DRC is source-mapped to `PRA_DRC_ARTICLE_325V` through
+`EU_CRR3_ARTICLE_325AD` but remains fail closed until implementation issues add
+profile-specific risk-weight, decomposition, fixture, and citation tests. PRA UK
+CRR DRC is source-mapped to `PRA_DRC_ARTICLE_325V` through
 `PRA_DRC_ARTICLE_325AD` but remains fail closed for all DRC risk classes until
 PRA-owned reference data, deterministic fixtures, and support-matrix tests land.
 

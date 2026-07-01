@@ -21,7 +21,12 @@ from frtb_drc.data_models import (
 )
 from frtb_drc.kernel.nonsec import nonsec_netting_citation
 from frtb_drc.reference_data import get_risk_weight_rule
-from frtb_drc.regimes import BASEL_MAR22_PROFILE_ID, US_NPR_2_0_PROFILE_ID, DrcRuleProfile
+from frtb_drc.regimes import (
+    BASEL_MAR22_PROFILE_ID,
+    EU_CRR3_PROFILE_ID,
+    US_NPR_2_0_PROFILE_ID,
+    DrcRuleProfile,
+)
 from frtb_drc.risk_weight_evidence import effective_risk_weights
 
 
@@ -230,6 +235,8 @@ def _securitisation_non_ctp_public_api_citations(profile_id: str) -> tuple[str, 
             "BASEL_MAR22_30",
             "BASEL_MAR22_35",
         )
+    if profile_id == EU_CRR3_PROFILE_ID:
+        return ("EU_CRR3_ARTICLE_325Z", "EU_CRR3_ARTICLE_325AA")
     return ("US_NPR_210_C_1", "US_NPR_210_C_2", "US_NPR_210_C_3_IV")
 
 
