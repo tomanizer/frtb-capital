@@ -11,6 +11,8 @@ Related:
 - UX north star: `docs/tools/frtb-dashboard/UX_AUDIT_AND_INTERACTION_CONTRACT.md`
 - Capital and movement semantics:
   `docs/tools/frtb-dashboard/CAPITAL_AND_MOVEMENT_SEMANTICS.md`
+- Mode wireframes:
+  `docs/tools/frtb-dashboard/MODE_WIREFRAMES.md`
 - Result-store epic: #1105
 
 ## 1. Purpose
