@@ -33,6 +33,7 @@ from frtb_drc.maturity import scale_gross_jtds
 from frtb_drc.regimes import (
     BASEL_MAR22_PROFILE_ID,
     EU_CRR3_PROFILE_ID,
+    PRA_UK_CRR_PROFILE_ID,
     US_NPR_2_0_PROFILE_ID,
     ensure_risk_class_supported,
     get_rule_profile,
@@ -67,6 +68,11 @@ _EU_CRR3_NETTING_CITATIONS = ("EU_CRR3_ARTICLE_325AC",)
 _EU_CRR3_BUCKET_CITATIONS = ("EU_CRR3_ARTICLE_325AD",)
 _EU_CRR3_HBR_CITATIONS = ("EU_CRR3_ARTICLE_325AD",)
 _EU_CRR3_CATEGORY_CITATIONS = ("EU_CRR3_ARTICLE_325AD",)
+_PRA_GROSS_CITATIONS = ("PRA_DRC_ARTICLE_325AB",)
+_PRA_NETTING_CITATIONS = ("PRA_DRC_ARTICLE_325AC",)
+_PRA_BUCKET_CITATIONS = ("PRA_DRC_ARTICLE_325AD",)
+_PRA_HBR_CITATIONS = ("PRA_DRC_ARTICLE_325AD",)
+_PRA_CATEGORY_CITATIONS = ("PRA_DRC_ARTICLE_325AD",)
 
 
 @dataclass(frozen=True)
@@ -439,11 +445,11 @@ def _validate_ctp_context(
             "context.ctp_offset_groups contains unused CTP position ids: "
             + ", ".join(unused_offset_groups)
         )
-    if context.profile_id == EU_CRR3_PROFILE_ID:
+    if context.profile_id in {EU_CRR3_PROFILE_ID, PRA_UK_CRR_PROFILE_ID}:
         missing_offset_groups = sorted(position_ids - set(context.ctp_offset_groups))
         if missing_offset_groups:
             raise DrcInputError(
-                "context.ctp_offset_groups is required for EU_CRR3 CTP positions: "
+                f"context.ctp_offset_groups is required for {context.profile_id} CTP positions: "
                 + ", ".join(missing_offset_groups)
             )
 
@@ -722,6 +728,8 @@ def _ctp_gross_citations(profile_id: str) -> tuple[str, ...]:
         return _BASEL_GROSS_CITATIONS
     if profile_id == EU_CRR3_PROFILE_ID:
         return _EU_CRR3_GROSS_CITATIONS
+    if profile_id == PRA_UK_CRR_PROFILE_ID:
+        return _PRA_GROSS_CITATIONS
     return _US_NPR_GROSS_CITATIONS
 
 
@@ -730,6 +738,8 @@ def _ctp_netting_citations(profile_id: str) -> tuple[str, ...]:
         return _BASEL_NETTING_CITATIONS
     if profile_id == EU_CRR3_PROFILE_ID:
         return _EU_CRR3_NETTING_CITATIONS
+    if profile_id == PRA_UK_CRR_PROFILE_ID:
+        return _PRA_NETTING_CITATIONS
     return _US_NPR_NETTING_CITATIONS
 
 
@@ -738,6 +748,8 @@ def _ctp_bucket_citations(profile_id: str) -> tuple[str, ...]:
         return _BASEL_BUCKET_CITATIONS
     if profile_id == EU_CRR3_PROFILE_ID:
         return _EU_CRR3_BUCKET_CITATIONS
+    if profile_id == PRA_UK_CRR_PROFILE_ID:
+        return _PRA_BUCKET_CITATIONS
     return _US_NPR_BUCKET_CITATIONS
 
 
@@ -746,6 +758,8 @@ def _ctp_hbr_citations(profile_id: str) -> tuple[str, ...]:
         return _BASEL_HBR_CITATIONS
     if profile_id == EU_CRR3_PROFILE_ID:
         return _EU_CRR3_HBR_CITATIONS
+    if profile_id == PRA_UK_CRR_PROFILE_ID:
+        return _PRA_HBR_CITATIONS
     return _US_NPR_HBR_CITATIONS
 
 
@@ -754,6 +768,8 @@ def _ctp_category_citations(profile_id: str) -> tuple[str, ...]:
         return _BASEL_CATEGORY_CITATIONS
     if profile_id == EU_CRR3_PROFILE_ID:
         return _EU_CRR3_CATEGORY_CITATIONS
+    if profile_id == PRA_UK_CRR_PROFILE_ID:
+        return _PRA_CATEGORY_CITATIONS
     return _US_NPR_CATEGORY_CITATIONS
 
 

@@ -33,7 +33,7 @@ requirements:
     challenger_refs:
       - frtb_net_frtb
       - ankitjha67_baselkit
-    notes: "US_NPR_2_0, BASEL_MAR22, and EU_CRR3 non-securitisation, securitisation non-CTP, and CTP paths are capital-producing. PRA_UK_CRR non-securitisation and securitisation non-CTP are capital-producing. PRA_UK_CRR CTP remains fail-closed pending #1006."
+    notes: "US_NPR_2_0, BASEL_MAR22, EU_CRR3, and PRA_UK_CRR non-securitisation, securitisation non-CTP, and CTP paths are capital-producing."
 
   - id: DRC-HBR-001
     topic: Hedge benefit ratio and netting constraints
@@ -55,7 +55,7 @@ requirements:
     coverage_status: partially_implemented_under_audit
     challenger_refs:
       - frtb_net_frtb
-    notes: "Supported paths preserve issuer/tranche grouping, HBR inputs, bucket/category totals, and attribution-ready lineage. PRA CTP has source-map ids but no capital-producing runtime support yet."
+    notes: "Supported paths preserve issuer/tranche grouping, HBR inputs, bucket/category totals, and attribution-ready lineage across U.S. NPR 2.0, Basel MAR22, EU CRR3, and PRA UK CRR paths."
 
   - id: DRC-EU-SEC-001
     topic: EU CRR3 securitisation non-CTP DRC runtime support
@@ -115,7 +115,7 @@ requirements:
       - packages/frtb-drc/tests/test_drc_arrow_batch.py
       - packages/frtb-drc/tests/fixtures/drc_pra_nonsec_v1
     coverage_status: implemented_with_fixture
-    notes: "Source-map ids `PRA_DRC_ARTICLE_325W`, `PRA_DRC_ARTICLE_325X`, and `PRA_DRC_ARTICLE_325Y` are runtime citations for #1004. Row, batch, Arrow, fixture, attribution, and citation tests cover the supported non-securitisation path. `PRA_DRC_ARTICLE_325AB` through `PRA_DRC_ARTICLE_325AD` remain fail-closed anchors for #1006."
+    notes: "Source-map ids `PRA_DRC_ARTICLE_325W`, `PRA_DRC_ARTICLE_325X`, and `PRA_DRC_ARTICLE_325Y` are runtime citations for #1004. Row, batch, Arrow, fixture, attribution, and citation tests cover the supported non-securitisation path."
 
   - id: DRC-PRA-SEC-001
     topic: PRA UK CRR securitisation non-CTP DRC runtime support
@@ -135,4 +135,24 @@ requirements:
       - packages/frtb-drc/tests/test_drc_arrow_batch.py
       - packages/frtb-drc/tests/fixtures/drc_pra_sec_nonctp_v1
     coverage_status: implemented_with_fixture
-    notes: "Source-map ids `PRA_DRC_ARTICLE_325Z` and `PRA_DRC_ARTICLE_325AA` are runtime citations for #1005. Row, batch, Arrow, fixture, evidence-fail-closed, attribution, and citation tests cover the supported securitisation non-CTP path. `PRA_DRC_ARTICLE_325AB` through `PRA_DRC_ARTICLE_325AD` remain fail-closed anchors for #1006."
+    notes: "Source-map ids `PRA_DRC_ARTICLE_325Z` and `PRA_DRC_ARTICLE_325AA` are runtime citations for #1005. Row, batch, Arrow, fixture, evidence-fail-closed, attribution, and citation tests cover the supported securitisation non-CTP path."
+
+  - id: DRC-PRA-CTP-001
+    topic: PRA UK CRR CTP DRC runtime support
+    source_refs:
+      - uk_pra_ps1_26_basel_3_1_final_rules
+      - uk_pra_2026_1_market_risk_part
+    code_refs:
+      - packages/frtb-drc/src/frtb_drc/regime_citations_eu_pra.py
+      - packages/frtb-drc/src/frtb_drc/regimes.py
+      - packages/frtb-drc/src/frtb_drc/reference_data.py
+      - packages/frtb-drc/src/frtb_drc/kernel/ctp.py
+      - packages/frtb-drc/src/frtb_drc/assembly/citations.py
+      - packages/frtb-drc/src/frtb_drc/adapters/arrow.py
+    test_refs:
+      - packages/frtb-drc/tests/test_drc_regimes.py
+      - packages/frtb-drc/tests/test_drc_ctp.py
+      - packages/frtb-drc/tests/test_drc_arrow_batch.py
+      - packages/frtb-drc/tests/fixtures/drc_pra_ctp_v1
+    coverage_status: implemented_with_fixture
+    notes: "Source-map ids `PRA_DRC_ARTICLE_325AB`, `PRA_DRC_ARTICLE_325AC`, and `PRA_DRC_ARTICLE_325AD` are runtime citations for #1006. Row, batch, Arrow, fixture, evidence-fail-closed, attribution, and citation tests cover the supported CTP path."

@@ -251,6 +251,12 @@ def _ctp_public_api_citations(profile_id: str) -> tuple[str, ...]:
             "EU_CRR3_ARTICLE_325AC",
             "EU_CRR3_ARTICLE_325AD",
         )
+    if profile_id == PRA_UK_CRR_PROFILE_ID:
+        return (
+            "PRA_DRC_ARTICLE_325AB",
+            "PRA_DRC_ARTICLE_325AC",
+            "PRA_DRC_ARTICLE_325AD",
+        )
     return ("US_NPR_210_D_1", "US_NPR_210_D_2", "US_NPR_210_D_3_V")
 
 

@@ -9,7 +9,7 @@ from typing import Any, cast
 import numpy as np
 import pyarrow as pa
 import pytest
-from frtb_common import UnsupportedRegulatoryFeatureError, source_content_hash
+from frtb_common import source_content_hash
 from frtb_drc import (
     BASEL_MAR22_PROFILE_ID,
     EU_CRR3_PROFILE_ID,
@@ -569,6 +569,33 @@ def test_drc_eu_crr3_ctp_batch_matches_row_result_for_typed_evidence() -> None:
     assert not any(citation.startswith("BASEL_MAR22") for citation in calculation.result.citations)
 
 
+def test_drc_pra_uk_crr_ctp_batch_matches_row_result_for_typed_evidence() -> None:
+    fixture = _load_fixture("drc_pra_ctp_v1")
+    row_result = calculate_drc_capital(fixture["positions"], context=fixture["context"])
+    handoff = normalize_drc_ctp_arrow_table(
+        _arrow_table(fixture["positions"]),
+        source_hash=source_content_hash("synthetic pra drc ctp source"),
+    )
+
+    batch = build_drc_ctp_batch_from_arrow(handoff)
+    calculation = calculate_drc_capital_from_batch(batch, context=fixture["context"])
+
+    validate_reconciliation(calculation.result)
+    assert calculation.result.profile_id == PRA_UK_CRR_PROFILE_ID
+    assert calculation.result.total_drc == pytest.approx(row_result.total_drc)
+    assert calculation.result.risk_weight_evidence == row_result.risk_weight_evidence
+    assert _net_outputs(calculation.result.net_jtds) == _net_outputs(row_result.net_jtds)
+    assert _bucket_outputs(calculation.result.categories[0].bucket_results) == _bucket_outputs(
+        row_result.categories[0].bucket_results
+    )
+    assert "PRA_DRC_ARTICLE_325AB" in calculation.result.citations
+    assert "PRA_DRC_ARTICLE_325AC" in calculation.result.citations
+    assert "PRA_DRC_ARTICLE_325AD" in calculation.result.citations
+    assert not any(citation.startswith("US_NPR") for citation in calculation.result.citations)
+    assert not any(citation.startswith("BASEL_MAR22") for citation in calculation.result.citations)
+    assert not any(citation.startswith("EU_CRR3") for citation in calculation.result.citations)
+
+
 def test_drc_arrow_batch_matches_pra_uk_crr_securitisation_non_ctp_row_capital() -> None:
     fixture = _load_fixture("drc_pra_sec_nonctp_v1")
     expected = json.loads(
@@ -604,44 +631,6 @@ def test_drc_arrow_batch_matches_pra_uk_crr_securitisation_non_ctp_row_capital()
     assert not any(citation.startswith("US_NPR") for citation in calculation.result.citations)
     assert not any(citation.startswith("BASEL_MAR22") for citation in calculation.result.citations)
     assert not any(citation.startswith("EU_CRR3") for citation in calculation.result.citations)
-
-
-@pytest.mark.parametrize(
-    ("fixture_name", "normalize", "build_batch", "profile_id", "expected"),
-    [
-        (
-            "drc_ctp_v1",
-            normalize_drc_ctp_arrow_table,
-            build_drc_ctp_batch_from_arrow,
-            PRA_UK_CRR_PROFILE_ID,
-            PRA_UK_CRR_PROFILE_ID,
-        ),
-    ],
-)
-def test_arrow_batch_calculation_fails_closed_for_unsupported_profile_paths(
-    fixture_name: str,
-    normalize: Any,
-    build_batch: Any,
-    profile_id: str,
-    expected: str,
-) -> None:
-    fixture = _load_fixture(fixture_name)
-    handoff = normalize(_arrow_table(fixture["positions"]))
-    batch = build_batch(handoff)
-    context = replace(
-        fixture["context"],
-        profile_id=profile_id,
-        securitisation_non_ctp_risk_weights={},
-        securitisation_non_ctp_risk_weight_evidence={},
-        securitisation_non_ctp_fair_value_cap_evidence={},
-        securitisation_non_ctp_offset_groups={},
-        ctp_risk_weights={},
-        ctp_risk_weight_evidence={},
-        ctp_offset_groups={},
-    )
-
-    with pytest.raises(UnsupportedRegulatoryFeatureError, match=expected):
-        calculate_drc_capital_from_batch(batch, context=context)
 
 
 def test_drc_arrow_batch_uses_zero_copy_float64_columns_when_possible() -> None:

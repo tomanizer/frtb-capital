@@ -58,11 +58,14 @@ Supported profile coverage is:
 - PRA UK CRR securitisation non-CTP row and batch paths using Article 325z,
   Article 325aa, typed risk-weight, fair-value-cap, offset, and deterministic
   fixture evidence.
+- PRA UK CRR CTP row and batch paths using Article 325ab, Article 325ac,
+  Article 325ad, typed risk-weight, decomposition, offset, and deterministic
+  fixture evidence.
 
 Known fail-closed profile paths are:
 
-- `PRA_UK_CRR` CTP, source-mapped to `PRA_DRC_ARTICLE_325AB` through
-  `PRA_DRC_ARTICLE_325AD` for issue #1006.
+- None for the known DRC rule profiles listed in
+  [`PROFILE_SUPPORT_MATRIX.md`](../PROFILE_SUPPORT_MATRIX.md).
 
 Regulatory anchors for the supported path are recorded in
 [`REGULATORY_REQUIREMENTS.md`](../REGULATORY_REQUIREMENTS.md) and

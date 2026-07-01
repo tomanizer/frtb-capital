@@ -220,8 +220,9 @@ category evidence. PRA UK CRR non-securitisation uses Article 325w, Article
 325x, and Article 325y LGD, maturity, netting, bucket, risk-weight, HBR, and
 category evidence. PRA UK CRR securitisation non-CTP uses Article 325z and
 Article 325aa gross/net JTD, bucket, risk-weight, HBR, fair-value-cap, and
-category evidence. PRA UK CRR CTP remains fail-closed until cited
-decomposition and deterministic fixture mappings are implemented.
+category evidence. PRA UK CRR CTP uses Article 325ab, Article 325ac, and
+Article 325ad scope, netting, decomposition, bucket, risk-weight, HBR, and
+category evidence.
 
 ### DRC-FUNC-009: Risk weights
 
@@ -495,9 +496,9 @@ conditions remain true:
 - PRA UK CRR securitisation non-CTP row and batch paths use cited Article
   325z, Article 325aa, typed risk-weight, fair-value-cap, offset, fixture, and
   attribution evidence.
-- PRA UK CRR CTP paths fail explicitly until the source-map ids tracked in
-  `PROFILE_SUPPORT_MATRIX.md` are backed by runtime mappings, fixtures, and
-  tests.
+- PRA UK CRR CTP row and batch paths use cited Article 325ab, Article 325ac,
+  Article 325ad, typed risk-weight, decomposition, offset, fixture, and
+  attribution evidence.
 - Results are frozen, serialisable, carry rule-profile/input hashes, and emit
   attribution records that reconcile to total capital through analytical,
   residual, or unsupported methods.

@@ -6,7 +6,7 @@
 
 - Package directory: `packages/frtb-drc`
 - Import name: `frtb_drc`
-- Implementation status: partial runtime; supported U.S. NPR 2.0, Basel MAR22, and EU CRR3 row/batch paths for non-securitisation, securitisation non-CTP, and CTP; supported PRA UK CRR row/batch paths for non-securitisation and securitisation non-CTP
+- Implementation status: supported runtime for U.S. NPR 2.0, Basel MAR22, EU CRR3, and PRA UK CRR row/batch paths for non-securitisation, securitisation non-CTP, and CTP
 - Validation status: pending
 
 The package is importable and exposes `calculate_drc_capital` for supported
@@ -36,9 +36,8 @@ non-securitisation is supported through Article 325w, Article 325x, and
 Article 325y row, batch, Arrow, and fixture evidence. PRA UK CRR
 securitisation non-CTP is supported through Article 325z and Article 325aa row,
 batch, Arrow, typed risk-weight, fair-value-cap, and offset evidence. PRA UK
-CRR CTP fails closed until profile-specific mappings are implemented; its
-source-map anchors are tracked in [`PROFILE_SUPPORT_MATRIX.md`](PROFILE_SUPPORT_MATRIX.md)
-for issue #1006.
+CRR CTP is supported through Article 325ab-325ad row, batch, Arrow, typed
+risk-weight, decomposition, and offset evidence.
 Securitisation non-CTP and CTP sub-scope without supplied risk weights or
 explicit replication evidence also fails closed.
 

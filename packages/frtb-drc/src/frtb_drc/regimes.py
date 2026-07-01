@@ -306,22 +306,18 @@ _PRA_UK_CRR_PROFILE = DrcRuleProfile(
     version="Basel 3.1 PS1/26",
     publication_date=date(2026, 1, 20),
     effective_date=date(2027, 1, 1),
-    status="partial_nonsec_sec_supported",
+    status="supported",
     supported_risk_classes=frozenset(
         {
             DrcRiskClass.NON_SECURITISATION,
             DrcRiskClass.SECURITISATION_NON_CTP,
+            DrcRiskClass.CORRELATION_TRADING_PORTFOLIO,
         }
     ),
     citations=PRA_UK_CRR_CITATIONS,
     securitisation_non_ctp_fair_value_cap_allowed=True,
     securitisation_non_ctp_fair_value_cap_citation_ids=("PRA_DRC_ARTICLE_325AA",),
-    unsupported_features={
-        DrcRiskClass.CORRELATION_TRADING_PORTFOLIO: (
-            "PRA_UK_CRR CTP DRC because PS1/26 Chapter 3 and Appendix 1 CTP mappings "
-            "have not been implemented"
-        ),
-    },
+    unsupported_features={},
 )
 
 _PROFILES: Mapping[str, DrcRuleProfile] = MappingProxyType(
@@ -529,30 +525,29 @@ _SUPPORTED_CELL_DETAILS: Mapping[tuple[str, DrcRiskClass], tuple[str, tuple[str,
                     "citation coverage."
                 ),
             ),
-        }
-    )
-)
-
-_PLANNED_CELL_DETAILS: Mapping[tuple[str, DrcRiskClass], tuple[tuple[str, ...], str]] = (
-    MappingProxyType(
-        {
             (
                 PRA_UK_CRR_PROFILE_ID,
                 DrcRiskClass.CORRELATION_TRADING_PORTFOLIO,
             ): (
+                (
+                    "PRA UK CRR CTP row and batch capital supported with Article 325ab "
+                    "maturity/gross JTD, Article 325ac netting/decomposition, and Article "
+                    "325ad bucket, risk-weight, HBR, and category evidence."
+                ),
                 (
                     "PRA_DRC_ARTICLE_325V",
                     "PRA_DRC_ARTICLE_325AB",
                     "PRA_DRC_ARTICLE_325AC",
                     "PRA_DRC_ARTICLE_325AD",
                 ),
-                (
-                    "Implement PRA-owned CTP mappings, typed risk-weight and "
-                    "decomposition evidence, and fixture evidence before enabling runtime support."
-                ),
+                "Maintain PRA UK CRR CTP fixture and typed decomposition evidence coverage.",
             ),
         }
     )
+)
+
+_PLANNED_CELL_DETAILS: Mapping[tuple[str, DrcRiskClass], tuple[tuple[str, ...], str]] = (
+    MappingProxyType({})
 )
 
 

@@ -4,7 +4,6 @@ from datetime import date
 from importlib.metadata import version as package_version
 
 import pytest
-from frtb_common import UnsupportedRegulatoryFeatureError
 from frtb_drc import (
     BASEL_MAR22_PROFILE_ID,
     EU_CRR3_PROFILE_ID,
@@ -134,28 +133,6 @@ def test_calculate_drc_capital_supports_pra_uk_crr_nonsec_profile() -> None:
     assert not any(citation.startswith("BASEL_MAR22") for citation in result.citations)
     assert not any(citation.startswith("EU_CRR3") for citation in result.citations)
     validate_reconciliation(result)
-
-
-@pytest.mark.parametrize(
-    ("profile_id", "risk_class", "expected"),
-    [
-        (
-            PRA_UK_CRR_PROFILE_ID,
-            DrcRiskClass.CORRELATION_TRADING_PORTFOLIO,
-            PRA_UK_CRR_PROFILE_ID,
-        ),
-    ],
-)
-def test_public_api_fails_closed_for_unsupported_profile_paths(
-    profile_id: str,
-    risk_class: DrcRiskClass,
-    expected: str,
-) -> None:
-    with pytest.raises(UnsupportedRegulatoryFeatureError, match=expected):
-        calculate_drc_capital(
-            (_unsupported_profile_position(risk_class),),
-            context=_context(profile_id=profile_id),
-        )
 
 
 def test_public_api_wires_securitisation_non_ctp_category() -> None:
@@ -510,45 +487,6 @@ def _position(
             source_column_map={"position_id": "position_id", "issuer_id": "issuer_id"},
         ),
         citation_ids=citation_ids,
-    )
-
-
-def _unsupported_profile_position(risk_class: DrcRiskClass) -> DrcPosition:
-    if risk_class is DrcRiskClass.NON_SECURITISATION:
-        return _position(
-            "unsupported-nonsec",
-            DefaultDirection.LONG,
-            100.0,
-            bucket_key="SOVEREIGN",
-            credit_quality=CreditQuality.AA,
-            citation_ids=("BASEL_MAR22_12",),
-        )
-    if risk_class is DrcRiskClass.SECURITISATION_NON_CTP:
-        return _position(
-            "unsupported-sec",
-            DefaultDirection.LONG,
-            100.0,
-            issuer="clo-2026-1",
-            tranche="mezz",
-            risk_class=DrcRiskClass.SECURITISATION_NON_CTP,
-            instrument_type=DrcInstrumentType.SECURITISATION_TRANCHE,
-            seniority=None,
-            credit_quality=None,
-            bucket_key="SEC_CLO_NORTH_AMERICA",
-            citation_ids=("BASEL_MAR22_34",),
-        )
-    return _position(
-        "unsupported-ctp",
-        DefaultDirection.LONG,
-        100.0,
-        issuer="cdx-ig",
-        tranche="series-42",
-        risk_class=DrcRiskClass.CORRELATION_TRADING_PORTFOLIO,
-        instrument_type=DrcInstrumentType.INDEX_TRANCHE,
-        seniority=None,
-        credit_quality=None,
-        bucket_key="CTP_CDX_IG",
-        citation_ids=("BASEL_MAR22_42",),
     )
 
 

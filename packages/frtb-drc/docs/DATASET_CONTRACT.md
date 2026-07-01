@@ -33,6 +33,9 @@ The committed fixture packs are:
 - `drc_eu_ctp_v1/`: static EU CRR3 CTP cases with typed Article 325ad
   banking-book risk-weight evidence, decomposition evidence, and explicit
   offset-group evidence.
+- `drc_pra_ctp_v1/`: static PRA UK CRR CTP cases with typed Article 325ad
+  banking-book risk-weight evidence, decomposition evidence, and explicit
+  offset-group evidence.
 - `handoff/`: minimal Parquet tables for the package Arrow handoff path.
 
 ## Boundary
@@ -136,6 +139,14 @@ class-specific Arrow handoffs, or deterministic rejected-row diagnostics.
 - `positions.json`: static EU CRR3 CTP positions, context, typed Article 325ad
   banking-book risk-weight evidence, decomposition evidence, and explicit
   offset-group inputs.
+- `expected_outputs.json`: expected total and selected outputs.
+- `README.md`: fixture intent and Article 325ab-325ad evidence boundary.
+
+`packages/frtb-drc/tests/fixtures/drc_pra_ctp_v1/` contains:
+
+- `positions.json`: static PRA UK CRR CTP positions, context, typed Article
+  325ad banking-book risk-weight evidence, decomposition evidence, and
+  explicit offset-group inputs.
 - `expected_outputs.json`: expected total and selected outputs.
 - `README.md`: fixture intent and Article 325ab-325ad evidence boundary.
 

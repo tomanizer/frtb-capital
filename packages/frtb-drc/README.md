@@ -15,7 +15,8 @@ Article 325ad, and ECAI/CQS mapping evidence. PRA_UK_CRR non-securitisation
 row and Arrow batch paths are supported with Article 325w, Article 325x, and
 Article 325y evidence. PRA_UK_CRR securitisation non-CTP row and Arrow batch
 paths are supported with Article 325z and Article 325aa evidence. PRA_UK_CRR
-CTP paths fail closed. Unsupported scope must not emit zero or placeholder
+CTP row and Arrow batch paths are supported with Article 325ab, Article 325ac,
+and Article 325ad evidence. Unsupported scope must not emit zero or placeholder
 capital.
 
 | Area | Status |
@@ -23,8 +24,7 @@ capital.
 | U.S. NPR 2.0 non-sec / sec non-CTP / CTP | Implemented row and Arrow batch paths |
 | Basel MAR22 non-sec / sec non-CTP / CTP | Implemented row and Arrow batch paths; securitisation and CTP require typed risk-weight evidence |
 | EU CRR3 non-sec / sec non-CTP / CTP | Implemented row and Arrow batch paths |
-| PRA_UK_CRR non-sec / sec non-CTP | Implemented row and Arrow batch paths |
-| PRA_UK_CRR CTP | Fail-closed profile path |
+| PRA_UK_CRR non-sec / sec non-CTP / CTP | Implemented row and Arrow batch paths |
 
 Outputs are engineering and validation evidence, not final regulatory capital.
 `PACKAGE_METADATA.validation_status` remains `PENDING`.

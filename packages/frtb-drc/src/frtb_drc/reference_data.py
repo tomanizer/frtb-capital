@@ -679,6 +679,15 @@ _MATURITY_POLICIES: Mapping[tuple[str, DrcRiskClass], MaturityPolicy] = MappingP
             full_weight_years=1.0,
             citation_id="PRA_DRC_ARTICLE_325Z",
         ),
+        (
+            PRA_UK_CRR_PROFILE_ID,
+            DrcRiskClass.CORRELATION_TRADING_PORTFOLIO,
+        ): MaturityPolicy(
+            profile_id=PRA_UK_CRR_PROFILE_ID,
+            floor_years=1.0,
+            full_weight_years=1.0,
+            citation_id="PRA_DRC_ARTICLE_325AB",
+        ),
     }
 )
 

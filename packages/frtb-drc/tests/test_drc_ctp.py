@@ -10,6 +10,7 @@ import pytest
 from frtb_drc import (
     BASEL_MAR22_PROFILE_ID,
     EU_CRR3_PROFILE_ID,
+    PRA_UK_CRR_PROFILE_ID,
     US_NPR_2_0_PROFILE_ID,
     DefaultDirection,
     DrcCalculationContext,
@@ -279,11 +280,42 @@ def test_eu_crr3_ctp_fixture_cross_tranche_replication_matches_hand_checked_expe
     validate_reconciliation(result)
 
 
+def test_pra_uk_crr_ctp_fixture_cross_tranche_replication_matches_hand_checked_expected() -> None:
+    fixture = _load_pra_ctp_fixture()
+
+    result = calculate_drc_capital(fixture["positions"], context=fixture["context"])
+    expected = fixture["expected"]
+    buckets = {bucket.bucket_key: bucket for bucket in result.categories[0].bucket_results}
+
+    assert result.profile_id == PRA_UK_CRR_PROFILE_ID
+    assert result.input_count == expected["input_count"]
+    assert result.total_drc == pytest.approx(expected["total_drc"])
+    assert result.categories[0].capital == pytest.approx(expected["category_capital"])
+    assert buckets["CDX_NA_IG"].capital == pytest.approx(expected["buckets"]["CDX_NA_IG"])
+    assert buckets["CDX_HY"].capital == pytest.approx(expected["buckets"]["CDX_HY"])
+    assert len(result.risk_weight_evidence) == result.input_count
+    assert "PRA_DRC_ARTICLE_325AB" in result.citations
+    assert "PRA_DRC_ARTICLE_325AC" in result.citations
+    assert "PRA_DRC_ARTICLE_325AD" in result.citations
+    assert not any(citation.startswith("US_NPR") for citation in result.citations)
+    assert not any(citation.startswith("BASEL_MAR22") for citation in result.citations)
+    assert not any(citation.startswith("EU_CRR3") for citation in result.citations)
+    validate_reconciliation(result)
+
+
 def test_eu_crr3_ctp_missing_offset_evidence_fails_closed() -> None:
     fixture = _load_eu_ctp_fixture()
     context = replace(fixture["context"], ctp_offset_groups={})
 
     with pytest.raises(DrcInputError, match="ctp_offset_groups is required"):
+        calculate_drc_capital(fixture["positions"], context=context)
+
+
+def test_pra_uk_crr_ctp_missing_offset_evidence_fails_closed() -> None:
+    fixture = _load_pra_ctp_fixture()
+    context = replace(fixture["context"], ctp_offset_groups={})
+
+    with pytest.raises(DrcInputError, match="PRA_UK_CRR CTP positions"):
         calculate_drc_capital(fixture["positions"], context=context)
 
 
@@ -545,6 +577,10 @@ def _load_basel_ctp_fixture() -> dict[str, Any]:
 
 def _load_eu_ctp_fixture() -> dict[str, Any]:
     return _load_ctp_fixture_named("drc_eu_ctp_v1")
+
+
+def _load_pra_ctp_fixture() -> dict[str, Any]:
+    return _load_ctp_fixture_named("drc_pra_ctp_v1")
 
 
 def _load_ctp_fixture_named(fixture_name: str) -> dict[str, Any]:

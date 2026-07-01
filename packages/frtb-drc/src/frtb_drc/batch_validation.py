@@ -32,6 +32,7 @@ if TYPE_CHECKING:
     from frtb_drc.batch import DrcPositionBatch
 
 _COMPLETE_SEC_NON_CTP_EVIDENCE_PROFILES = {EU_CRR3_PROFILE_ID, PRA_UK_CRR_PROFILE_ID}
+_COMPLETE_CTP_EVIDENCE_PROFILES = {EU_CRR3_PROFILE_ID, PRA_UK_CRR_PROFILE_ID}
 
 
 def validate_batch_context(context: DrcCalculationContext) -> None:
@@ -146,7 +147,7 @@ def validate_supported_batch_run(
             batch,
             context.ctp_offset_groups,
             field_name="context.ctp_offset_groups",
-            require_all=context.profile_id == EU_CRR3_PROFILE_ID,
+            require_all=context.profile_id in _COMPLETE_CTP_EVIDENCE_PROFILES,
         )
 
 

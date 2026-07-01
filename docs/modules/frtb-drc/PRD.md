@@ -93,7 +93,8 @@ risk-weight, decomposition, and offset evidence. PRA UK CRR non-securitisation
 is implemented with Article 325w, Article 325x, Article 325y, and fixture
 evidence. PRA UK CRR securitisation non-CTP is implemented with Article 325z,
 Article 325aa, typed risk-weight, fair-value-cap, and offset evidence. PRA UK
-CRR CTP fails closed until cited rule mappings and fixtures are complete.
+CRR CTP is implemented with Article 325ab, Article 325ac, Article 325ad, typed
+risk-weight, decomposition, and offset evidence.
 
 ## Delivery Slices
 

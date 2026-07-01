@@ -82,13 +82,14 @@ def test_eu_crr3_profile_supports_all_drc_risk_classes() -> None:
     ensure_risk_class_supported(profile, DrcRiskClass.CORRELATION_TRADING_PORTFOLIO)
 
 
-def test_pra_profile_supports_nonsec_and_securitisation_and_keeps_ctp_fail_closed() -> None:
+def test_pra_profile_supports_all_drc_risk_classes() -> None:
     profile = get_rule_profile(PRA_UK_CRR_PROFILE_ID)
 
     assert profile.supported_risk_classes == frozenset(
         {
             DrcRiskClass.NON_SECURITISATION,
             DrcRiskClass.SECURITISATION_NON_CTP,
+            DrcRiskClass.CORRELATION_TRADING_PORTFOLIO,
         }
     )
     assert profile.securitisation_non_ctp_fair_value_cap_allowed is True
@@ -107,8 +108,7 @@ def test_pra_profile_supports_nonsec_and_securitisation_and_keeps_ctp_fail_close
     assert "PRA_DRC_ARTICLE_325AD" in profile.citations
     ensure_risk_class_supported(profile, DrcRiskClass.NON_SECURITISATION)
     ensure_risk_class_supported(profile, DrcRiskClass.SECURITISATION_NON_CTP)
-    with pytest.raises(UnsupportedRegulatoryFeatureError, match=PRA_UK_CRR_PROFILE_ID):
-        ensure_risk_class_supported(profile, DrcRiskClass.CORRELATION_TRADING_PORTFOLIO)
+    ensure_risk_class_supported(profile, DrcRiskClass.CORRELATION_TRADING_PORTFOLIO)
 
 
 def test_unsupported_risk_classes_fail_closed() -> None:
@@ -176,7 +176,7 @@ def test_profile_support_matrix_marks_eu_crr3_all_paths_supported() -> None:
     assert eu_ctp.next_step == "Maintain EU CRR3 CTP fixture and typed decomposition evidence coverage."
 
 
-def test_profile_support_matrix_marks_pra_nonsec_and_securitisation_supported() -> None:
+def test_profile_support_matrix_marks_pra_all_paths_supported() -> None:
     cells = {(cell.profile_id, cell.risk_class): cell for cell in drc_profile_support_matrix()}
 
     pra_nonsec = cells[(PRA_UK_CRR_PROFILE_ID, DrcRiskClass.NON_SECURITISATION)]
@@ -202,12 +202,15 @@ def test_profile_support_matrix_marks_pra_nonsec_and_securitisation_supported() 
     assert pra_sec.next_step == (
         "Maintain PRA UK CRR securitisation non-CTP fixture and typed evidence coverage."
     )
-    assert pra_ctp.status == "FAIL_CLOSED"
+    assert pra_ctp.status == "SUPPORTED"
     assert pra_ctp.citation_ids == (
         "PRA_DRC_ARTICLE_325V",
         "PRA_DRC_ARTICLE_325AB",
         "PRA_DRC_ARTICLE_325AC",
         "PRA_DRC_ARTICLE_325AD",
+    )
+    assert pra_ctp.next_step == (
+        "Maintain PRA UK CRR CTP fixture and typed decomposition evidence coverage."
     )
 
 
