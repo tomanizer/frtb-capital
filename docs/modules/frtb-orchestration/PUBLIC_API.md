@@ -14,6 +14,7 @@ capital.
 | --- | --- | --- |
 | Identity | `PACKAGE_METADATA`, `__version__` | Workspace discovery and maturity reporting. |
 | Suite capital | `calculate_suite_capital`, `SuiteCapitalResult`, `SuiteAttributionResult`, `SuiteAttributionReport`, `SuiteAttributionComponentReport`, `SuiteAttributionSummary`, `SuiteAttributionRecordSummary`, `SuiteAttributionGroupSummary`, `aggregate_suite_attribution`, `build_suite_attribution_report`, `summarise_suite_attribution`, `top_suite_attribution_contributors`, `suite_attribution_residual_records`, `suite_attribution_unsupported_records` | Top-of-house additive `IMA + SA + CVA` aggregation and attribution-ready branch reporting. |
+| Scope capital views | `compose_scope_capital_view`, `ScopeCapitalView`, `ScopeComponentCapital`, `BindingCapitalResult`, `BindingCapitalSide`, `ScopeViewStatus` | Composes result-store-resolved scope totals into SA, IMA, CVA, output-floor binding, and dashboard-ready no-data/unsupported states. |
 | SA composition | `compose_standardised_approach_capital`, `StandardisedApproachCapitalResult`, `StandardisedComponentSubtotal`, `StandardisedFallbackRoute`, `ComponentCapitalSummary`, `StandardisedComponent` | Composes SBM, DRC, and RRAO public component summaries into Standardised Approach capital. |
 | IMA handoff | `ImaCapitalSummary`, `recognise_ima_summary` | Direct or duck-typed summary handoff from IMA audit-log-shaped outputs. |
 | CVA handoff | `CvaCapitalSummary`, `recognise_cva_summary` | Direct or duck-typed summary handoff from public CVA capital results. |
@@ -27,7 +28,8 @@ capital.
 | --- | --- | --- | --- |
 | 1 - Completed summaries | `ImaCapitalSummary`, `StandardisedApproachCapitalResult`, and `CvaCapitalSummary` | `calculate_suite_capital` | Recommended top-of-house path once component packages have calculated capital. |
 | 2 - Public component results | IMA audit-log-shaped object, public CVA result, and SBM/DRC/RRAO `ComponentCapitalSummary` outputs | `recognise_ima_summary`, `recognise_cva_summary`, `compose_standardised_approach_capital`, then `calculate_suite_capital` | Uses public result or summary contracts only. |
-| 3 - Manifest-routed SA inputs | `CapitalRunManifest` with supported Arrow input tables | `validate_capital_run_manifest` -> `run_standardised_approach_from_manifest` | Routes explicit tables to component-owned public adapters; file IO and client delivery-pack parsing stay outside orchestration. |
+| 3 - Resolved hierarchy scope totals | `ScopeComponentCapital` totals for SBM, DRC, RRAO, IMA, and CVA after result-store hierarchy selection | `compose_scope_capital_view` | Result store owns hierarchy traversal; orchestration owns SA/IMA/CVA and output-floor composition. |
+| 4 - Manifest-routed SA inputs | `CapitalRunManifest` with supported Arrow input tables | `validate_capital_run_manifest` -> `run_standardised_approach_from_manifest` | Routes explicit tables to component-owned public adapters; file IO and client delivery-pack parsing stay outside orchestration. |
 
 ## Suite capital
 
@@ -90,6 +92,24 @@ consistency, base-currency consistency, and deterministic subtotal ordering.
 
 SA is a composition label for `SBM + DRC + RRAO`; it is not a standalone
 package.
+
+## Scope capital views
+
+`compose_scope_capital_view` accepts `ScopeComponentCapital` values for a
+single hierarchy node that has already been resolved by the result store or a
+future OLAP adapter. It composes:
+
+- SA capital as `SBM + DRC + RRAO`;
+- IMA and CVA totals where data exists;
+- output-floor binding as `max(IMA, 0.725 * SA)`;
+- total scope capital as binding market-risk capital plus CVA when binding data
+  exists.
+
+The view returns explicit `OK`, `NO_DATA`, or `UNSUPPORTED` statuses. Missing
+IMA or SA inputs leave binding capital as `NO_DATA`; missing CVA remains visible
+on the CVA component without fabricating successful capital. Hierarchy
+metadata, parent-child traversal, and source-row lookup stay outside
+orchestration.
 
 ## Manifest input tables
 
