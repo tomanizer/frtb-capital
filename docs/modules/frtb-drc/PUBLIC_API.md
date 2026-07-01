@@ -30,6 +30,11 @@ Reference overlays are documented in
 [`docs/CLIENT_REFERENCE_DATA.md`](../../CLIENT_REFERENCE_DATA.md). The
 high-volume batch boundary is summarized in
 [`docs/performance/frtb-drc-arrow-batch-triage.md`](../../performance/frtb-drc-arrow-batch-triage.md).
+`DrcCalculationContext.calculation_scope`, `DrcPosition.org_scope`, and
+`DrcPositionBatch.org_scopes` preserve supplied organisation identifiers on
+DRC inputs, intermediates, net JTD records, and result envelopes so downstream
+result-store or orchestration layers can build hierarchy rollups. `frtb-drc`
+does not traverse enterprise hierarchy trees or apply rollup rules.
 Column and position batch builders physically live in
 `frtb_drc.adapters.positions`; `frtb_drc.batch` and the top-level `frtb_drc`
 module remain stable import paths for existing callers.

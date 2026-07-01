@@ -619,6 +619,7 @@ def _build_sbm_capital_result(
             calculation_date=context.calculation_date,
             base_currency=context.base_currency,
             reporting_currency=context.reporting_currency,
+            calculation_scope=context.calculation_scope,
         ),
         portfolio_scenario_totals=portfolio_scenario_totals,
         selected_portfolio_scenario=selected_portfolio_scenario,

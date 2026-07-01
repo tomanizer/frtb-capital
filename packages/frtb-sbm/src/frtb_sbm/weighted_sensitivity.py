@@ -32,6 +32,7 @@ from frtb_sbm.kernel.weighting import (
     sort_weighted_sensitivities_deterministic,
     weighted_sensitivity_sort_key,
 )
+from frtb_sbm.org_scope import scope_at
 from frtb_sbm.reference_data import (
     csr_nonsec_delta_risk_weight,
     csr_nonsec_validate_delta_inputs,
@@ -211,6 +212,7 @@ def weight_csr_nonsec_delta_sensitivity_batch(
                 scaled_amount=amount * risk_weight,
                 citation_ids=citation_ids,
                 qualifier=qualifier,
+                org_scope=scope_at(batch.org_scopes, index),
             )
         )
     return tuple(weighted)
@@ -284,6 +286,7 @@ def weight_csr_sec_nonctp_delta_sensitivity_batch(
                 scaled_amount=amount * risk_weight,
                 citation_ids=citation_ids,
                 qualifier=qualifier,
+                org_scope=scope_at(batch.org_scopes, index),
             )
         )
     return tuple(weighted)
@@ -358,6 +361,7 @@ def weight_csr_sec_ctp_delta_sensitivity_batch(
                 scaled_amount=amount * risk_weight,
                 citation_ids=citation_ids,
                 qualifier=qualifier,
+                org_scope=scope_at(batch.org_scopes, index),
             )
         )
     return tuple(weighted)
@@ -421,6 +425,7 @@ def weight_csr_nonsec_delta_sensitivities(
                 scaled_amount=scaled_amount,
                 citation_ids=citation_ids,
                 qualifier=sensitivity.qualifier,
+                org_scope=sensitivity.org_scope,
             )
         )
     return tuple(weighted)
@@ -489,6 +494,7 @@ def weight_csr_sec_nonctp_delta_sensitivities(
                 scaled_amount=scaled_amount,
                 citation_ids=citation_ids,
                 qualifier=sensitivity.qualifier,
+                org_scope=sensitivity.org_scope,
             )
         )
     return tuple(weighted)
@@ -559,6 +565,7 @@ def weight_csr_sec_ctp_delta_sensitivities(
                 scaled_amount=scaled_amount,
                 citation_ids=citation_ids,
                 qualifier=sensitivity.qualifier,
+                org_scope=sensitivity.org_scope,
             )
         )
     return tuple(weighted)

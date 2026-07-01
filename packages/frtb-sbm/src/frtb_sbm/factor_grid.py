@@ -11,6 +11,7 @@ from typing import cast
 from frtb_sbm._citations import merge_citation_groups as _merge_citation_ids
 from frtb_sbm.batch import SbmSensitivityBatch, sorted_girr_delta_batch_indices
 from frtb_sbm.data_models import SbmRiskClass, SbmRiskMeasure, SbmSensitivity, WeightedSensitivity
+from frtb_sbm.org_scope import scope_at, single_scope_metadata, unique_scope_metadata
 from frtb_sbm.reference_data import girr_bucket_definition, girr_delta_risk_weight
 from frtb_sbm.regimes import ensure_profile_supports_risk_class_measure
 from frtb_sbm.validation import SbmInputError
@@ -247,6 +248,10 @@ def _net_weighted_group(
         factor_key=key.as_tuple(),
         contributing_sensitivity_ids=tuple(item.sensitivity_id for item in members),
         contributing_source_row_ids=tuple(item.source_row_id for item in source_sensitivities),
+        org_scope=single_scope_metadata(item.org_scope for item in source_sensitivities),
+        contributing_org_scopes=unique_scope_metadata(
+            item.org_scope for item in source_sensitivities
+        ),
     )
 
 
@@ -267,6 +272,7 @@ def _single_batch_weighted_sensitivity(
         scaled_amount=amount * risk_weight,
         citation_ids=citation_ids,
         qualifier=cast(str, batch.tenors[row_index]),
+        org_scope=scope_at(batch.org_scopes, row_index),
     )
 
 
@@ -297,6 +303,10 @@ def _net_batch_factor_group(
         ),
         contributing_source_row_ids=tuple(
             cast(str, batch.source_row_ids[index]) for index in row_indices
+        ),
+        org_scope=single_scope_metadata(scope_at(batch.org_scopes, index) for index in row_indices),
+        contributing_org_scopes=unique_scope_metadata(
+            scope_at(batch.org_scopes, index) for index in row_indices
         ),
     )
 

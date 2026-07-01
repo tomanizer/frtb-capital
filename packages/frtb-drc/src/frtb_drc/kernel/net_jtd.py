@@ -8,6 +8,7 @@ from itertools import count
 from typing import TYPE_CHECKING, cast
 
 import frtb_common.batch_arrays as _batch_arrays
+from frtb_common import CalculationScope
 
 from frtb_drc._batch_columns import FloatArray, ObjectArray
 from frtb_drc._batch_order import sorted_position_indices as _sorted_indices
@@ -27,6 +28,7 @@ from frtb_drc.data_models import (
     NetJtd,
     RejectedOffset,
 )
+from frtb_drc.org_scope import scope_at, single_scope_metadata, unique_scope_metadata
 from frtb_drc.validation import DrcInputError
 
 if TYPE_CHECKING:
@@ -248,6 +250,7 @@ def _calculate_exact_group_net_jtds_from_arrays(
         else:
             reason = normal_reason
             direction = DefaultDirection.LONG if signed_net > 0.0 else DefaultDirection.SHORT
+        org_scope, contributing_org_scopes = _scope_metadata_for_indices(batch, indices)
         records.append(
             NetJtd(
                 net_jtd_id=(
@@ -278,6 +281,8 @@ def _calculate_exact_group_net_jtds_from_arrays(
                         citations=netting_citations,
                     ),
                 ),
+                org_scope=org_scope,
+                contributing_org_scopes=contributing_org_scopes,
             )
         )
     return tuple(records)
@@ -550,6 +555,7 @@ def _net_record(
     rejected_offsets: tuple[RejectedOffset, ...],
 ) -> NetJtd:
     seniority_label = seniority.value.lower()
+    org_scope, contributing_org_scopes = _scope_metadata_for_indices(batch, source_indices)
     return NetJtd(
         net_jtd_id=f"net-{_slug(bucket_key)}-{_slug(issuer_key)}-{seniority_label}-{direction.value.lower()}",
         netting_group_id=f"ng-{_slug(bucket_key)}-{_slug(issuer_key)}-{seniority_label}",
@@ -566,7 +572,17 @@ def _net_record(
         position_ids=tuple(cast(str, batch.position_ids[index]) for index in source_indices),
         scaled_jtd_ids=tuple(f"scaled-{batch.position_ids[index]}" for index in source_indices),
         rejected_offsets=rejected_offsets,
+        org_scope=org_scope,
+        contributing_org_scopes=contributing_org_scopes,
     )
+
+
+def _scope_metadata_for_indices(
+    batch: DrcPositionBatch,
+    indices: Sequence[int],
+) -> tuple[CalculationScope | None, tuple[CalculationScope, ...]]:
+    scopes = tuple(scope_at(batch.org_scopes, index) for index in indices)
+    return single_scope_metadata(scopes), unique_scope_metadata(scopes)
 
 
 def _rejected_seniority_offsets(

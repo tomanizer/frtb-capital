@@ -12,6 +12,7 @@ from frtb_drc._validation_utils import require_text as _required_text
 from frtb_drc.data_models import DrcCalculationContext, DrcRiskClass
 from frtb_drc.fair_value_cap import validate_fair_value_cap_evidence
 from frtb_drc.fx import validate_fx_rates
+from frtb_drc.org_scope import validate_scope_metadata
 from frtb_drc.regimes import (
     EU_CRR3_PROFILE_ID,
     PRA_UK_CRR_PROFILE_ID,
@@ -55,6 +56,7 @@ def validate_batch_context(context: DrcCalculationContext) -> None:
         raise DrcInputError("citation_policy must be non-empty")
     if context.citation_policy.strip().lower() != "strict":
         raise DrcInputError(f"unsupported citation_policy: {context.citation_policy}")
+    validate_scope_metadata(context.calculation_scope, field="context.calculation_scope")
     validate_fx_rates(context)
     effective_risk_weights(context, risk_class=DrcRiskClass.SECURITISATION_NON_CTP)
     validate_fair_value_cap_evidence(
@@ -250,6 +252,11 @@ def _validate_common_batch_fields(batch: DrcPositionBatch) -> None:
             raise DrcInputError(f"{field_name} values must be finite when present")
     if bool(np.any(~batch.lineage_present)):
         raise DrcInputError("lineage is required")
+    if batch.org_scopes is not None:
+        if len(batch.org_scopes) != batch.row_count:
+            raise DrcInputError("org_scopes length does not match position_ids")
+        for index, scope in enumerate(batch.org_scopes):
+            validate_scope_metadata(scope, field=f"org_scopes[{index}]")
     _raise_first_mismatch(
         batch.lineage_source_systems,
         "",

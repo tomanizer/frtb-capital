@@ -23,6 +23,7 @@ from frtb_sbm.data_models import (
     SbmRunControls,
     SbmSensitivity,
 )
+from frtb_sbm.org_scope import validate_scope_metadata
 from frtb_sbm.validation.coercion import (
     coerce_fx_risk_factor_basis,
     coerce_pairwise_evidence_mode,
@@ -101,6 +102,7 @@ def validate_sbm_calculation_context(context: SbmCalculationContext) -> SbmCalcu
     ensure_sbm_profile_known(context.profile_id)
     _validate_run_controls(context.run_controls)
     _validate_fx_risk_factor_basis(context.run_controls)
+    validate_scope_metadata(context.calculation_scope, field="calculation_scope")
     if context.desk_id is not None and context.desk_id != context.desk_id.strip():
         raise SbmInputError(
             "desk_id must not contain leading or trailing whitespace",

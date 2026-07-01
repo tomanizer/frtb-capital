@@ -34,6 +34,9 @@ Current runtime support is deliberately narrow:
   movement explanations;
 - `CapitalAttributionRecord` rows compatible with
   `frtb_common.CapitalContribution`;
+- fixture-backed organisational hierarchy read-model contracts for
+  top-of-house, legal entity, business division, business line, desk, Volcker
+  desk, and book rollups;
 - manifest-gated local and S3-layout Parquet files queried through independent
   DuckDB connections;
 - best-effort read-only SQL helper and admin CLI for inspection, disposable
@@ -98,3 +101,40 @@ parameters. `GET /runs/{run_id}/artifacts/{artifact_id}/download` serves local
 Parquet artifacts directly and returns an S3 URI handoff payload for object
 store artifacts. The service does not expose write endpoints or generic raw
 table-dump routes.
+
+## Organisational Hierarchy Fixtures
+
+`frtb_result_store.org_hierarchy` provides the public read-model contracts used
+to roll mapped capital rows up through an enterprise hierarchy. The supported
+levels are `TOH`, `LEGAL_ENTITY`, `BUSINESS_DIVISION`, `BUSINESS_LINE`, `DESK`,
+`VOLCKER_DESK`, and `BOOK`. `TOH` is the top-of-house group aggregate across
+legal entities. `BOOK` is the normal leaf, while desk-level source rows remain
+valid when book data is unavailable.
+
+The committed synthetic fixture returned by `sample_org_hierarchy()` includes
+`GLOBAL_GROUP`, `US_BANK_NA`, `UK_BANK_PLC`, `MARKETS`, `TREASURY`, `FICC`,
+`FX`, `EQUITIES`, `USD_RATES_VOLCKER`, `G10_FX_SPOT`, `US_CASH_EQUITIES`,
+`USD_SWAP_BOOK_01`, `EURUSD_SPOT_BOOK`, and `US_EQ_BOOK_01`. The fixture also
+includes a UK treasury desk row and explicit 2025/2026 effective-dated hierarchy
+versions so historical run dates resolve to one version.
+
+`sample_org_capital_rows()` returns synthetic component rows with
+`OrgSliceKeys`. At least one row is mapped at book grain and at least one row is
+mapped only at desk grain. `validate_org_hierarchy(...)` checks the single-root
+rule, duplicate nodes, cycles, missing parents, effective dates, row key
+existence, run-date version resolution, and whether supplied book/desk/legal
+entity keys are on the same ancestor path.
+
+`aggregate_by_org_hierarchy(...)` returns deterministic `OrgAggregateRow`
+objects with URL-safe row IDs, parent IDs, group paths, capital totals, source
+row counts, and component breakdowns. `source_rows_for_org_aggregate(...)`
+traces an aggregate row back to the source rows under that branch; selecting
+`GLOBAL_GROUP > US_BANK_NA > MARKETS > FICC > USD_RATES_VOLCKER` returns only
+the source rows under that Volcker desk, while selecting `GLOBAL_GROUP` returns
+all source rows for the hierarchy version.
+
+This is fixture/read-model infrastructure, not production master data,
+entitlements, SSO, or a general OLAP engine. Component packages preserve
+stable identifiers and audit records, but they must not traverse the enterprise
+hierarchy; hierarchy traversal belongs in the result store and later dashboard
+API adapters.

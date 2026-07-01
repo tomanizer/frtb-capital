@@ -16,6 +16,8 @@ from dataclasses import dataclass
 from datetime import date
 from enum import StrEnum
 
+from frtb_common import CalculationScope
+
 
 class SbmRiskClass(StrEnum):
     """Seven SBM risk classes cited by Basel MAR21."""
@@ -151,7 +153,11 @@ class SbmRunControls:
 
 @dataclass(frozen=True)
 class SbmCalculationContext:
-    """Run-level context for an SBM calculation."""
+    """Run-level context for an SBM calculation.
+
+    ``calculation_scope`` is preserved metadata for downstream result-store
+    rollups; SBM does not traverse or interpret enterprise hierarchy edges.
+    """
 
     run_id: str
     calculation_date: date
@@ -162,11 +168,16 @@ class SbmCalculationContext:
     legal_entity: str = ""
     citation_policy: str = "strict"
     run_controls: SbmRunControls | None = None
+    calculation_scope: CalculationScope | None = None
 
 
 @dataclass(frozen=True)
 class SbmSensitivity:
-    """Canonical sensitivity input before weighting and aggregation."""
+    """Canonical sensitivity input before weighting and aggregation.
+
+    ``org_scope`` carries optional upstream organisation identifiers for audit
+    and drilldown. Missing metadata remains explicit as ``None``.
+    """
 
     sensitivity_id: str
     source_row_id: str
@@ -190,6 +201,7 @@ class SbmSensitivity:
     up_shock_amount: float | None = None
     down_shock_amount: float | None = None
     mapping_citation_ids: tuple[str, ...] = ()
+    org_scope: CalculationScope | None = None
 
 
 @dataclass(frozen=True)
@@ -211,6 +223,8 @@ class WeightedSensitivity:
     factor_key: tuple[str, ...] = ()
     contributing_sensitivity_ids: tuple[str, ...] = ()
     contributing_source_row_ids: tuple[str, ...] = ()
+    org_scope: CalculationScope | None = None
+    contributing_org_scopes: tuple[CalculationScope, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -292,12 +306,13 @@ class RiskClassCapital:
 
 @dataclass(frozen=True)
 class SbmRunContextSummary:
-    """Run identity and currency context preserved on capital results."""
+    """Run identity, currency, and optional scope context preserved on results."""
 
     run_id: str
     calculation_date: date
     base_currency: str
     reporting_currency: str
+    calculation_scope: CalculationScope | None = None
 
 
 @dataclass(frozen=True)

@@ -7,8 +7,11 @@ from dataclasses import replace
 from types import MappingProxyType
 from typing import TYPE_CHECKING, Any, cast
 
+from frtb_common import CalculationScope
+
 from frtb_sbm.assembly.hashes import INPUT_HASH_ALGORITHM_JSON_ROW_V1
 from frtb_sbm.data_models import SbmCalculationContext, SbmRiskClass, SbmRiskMeasure
+from frtb_sbm.org_scope import validate_scope_metadata
 from frtb_sbm.registry import sbm_batch_spec
 from frtb_sbm.validation import SbmInputError, coerce_risk_class, coerce_risk_measure
 from frtb_sbm.validation.batch import validate_homogeneous_batch_arrays
@@ -105,6 +108,7 @@ def build_sbm_batch_from_columns(
     down_shock_amounts: Iterable[object] | None = None,
     source_column_maps: tuple[tuple[tuple[str, str], ...], ...] | None = None,
     mapping_citation_ids: tuple[tuple[str, ...], ...] | None = None,
+    org_scopes: Iterable[object] | None = None,
     input_hash: str | None = None,
     input_hash_algorithm: str = INPUT_HASH_ALGORITHM_JSON_ROW_V1,
     copy_arrays: bool = True,
@@ -134,6 +138,11 @@ def build_sbm_batch_from_columns(
     row_count = int(amount_array.shape[0])
     _validate_required_arrays(arrays, row_count)
     optional = _optional_arrays_from_columns(columns, row_count=row_count, copy_arrays=copy_arrays)
+    scope_metadata = _scope_metadata_from_columns(
+        org_scopes,
+        row_count=row_count,
+        sensitivity_ids=arrays["sensitivity_ids"],
+    )
     _validate_batch_arrays(
         arrays,
         amount_array,
@@ -153,6 +162,7 @@ def build_sbm_batch_from_columns(
         diagnostics=diagnostics,
         source_column_maps=source_column_maps,
         mapping_citation_ids=mapping_citation_ids,
+        org_scopes=scope_metadata,
         input_hash=input_hash,
         input_hash_algorithm=input_hash_algorithm,
     )
@@ -266,6 +276,7 @@ def _batch_with_hash(
     diagnostics: Sequence[Mapping[str, object]],
     source_column_maps: tuple[tuple[tuple[str, str], ...], ...] | None,
     mapping_citation_ids: tuple[tuple[str, ...], ...] | None,
+    org_scopes: tuple[CalculationScope | None, ...] | None,
     input_hash: str | None,
     input_hash_algorithm: str,
 ) -> SbmSensitivityBatch:
@@ -300,6 +311,7 @@ def _batch_with_hash(
         down_shock_amounts=optional["down_shock_amounts"],
         source_column_maps=source_column_maps,
         mapping_citation_ids=mapping_citation_ids,
+        org_scopes=org_scopes,
     )
     if input_hash is not None:
         return cast("SbmSensitivityBatch", batch_without_hash)
@@ -311,6 +323,30 @@ def _batch_with_hash(
             input_hash_algorithm=INPUT_HASH_ALGORITHM_JSON_ROW_V1,
         ),
     )
+
+
+def _scope_metadata_from_columns(
+    org_scopes: Iterable[object] | None,
+    *,
+    row_count: int,
+    sensitivity_ids: ObjectArray,
+) -> tuple[CalculationScope | None, ...] | None:
+    if org_scopes is None:
+        return None
+    rows = tuple(org_scopes)
+    if len(rows) != row_count:
+        raise SbmInputError("org_scopes length must match batch row count", field="org_scopes")
+    validated = tuple(
+        validate_scope_metadata(
+            scope,
+            field="org_scopes",
+            sensitivity_id=cast(str, sensitivity_ids[index]),
+        )
+        for index, scope in enumerate(rows)
+    )
+    if not any(scope is not None for scope in validated):
+        return None
+    return validated
 
 
 __all__ = [
