@@ -131,7 +131,7 @@ def test_us_npr_girr_vega_batch_and_arrow_match_row_result() -> None:
 @pytest.mark.parametrize(
     ("case_id", "expected_error_match", "sensitivities"),
     load_fixture_module().load_invalid_cases(),
-    ids=lambda item: item if isinstance(item, str) else None,
+    ids=lambda case: str(case[0]),
 )
 def test_us_npr_girr_vega_unsupported_fixture_cases_fail_closed(
     case_id: str,
