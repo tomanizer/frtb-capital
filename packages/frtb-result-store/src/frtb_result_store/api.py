@@ -47,6 +47,7 @@ _OPENAPI_TAGS = (
     "Movements",
     "Regime Comparison",
     "Org Hierarchy",
+    "Risk Factors",
     "Artifacts",
     "Attribution",
     "Lineage",
@@ -110,6 +111,7 @@ def create_result_store_app(
     _register_run_routes(routes, result_store, HTTPException)
     _register_org_hierarchy_routes(routes, result_store, HTTPException, Query)
     _register_capital_tree_routes(routes, result_store, HTTPException)
+    _register_risk_factor_routes(routes, result_store, HTTPException, Query)
     _register_attribution_projection_routes(routes, result_store, HTTPException)
     _register_artifact_routes(routes, result_store, HTTPException, Query, FileResponse)
     _register_run_group_routes(routes, result_store, HTTPException)
@@ -201,6 +203,164 @@ def _register_attribution_projection_routes(
                 result_store.unsupported_attribution_records(run_id, node_id=node_id)
             )
         }
+
+
+def _register_risk_factor_routes(
+    app: _RouteRegistrar,
+    result_store: DuckDbParquetResultStore,
+    http_exception_type: type[Exception],
+    query: Any,
+) -> None:
+    _register_risk_factor_list_route(app, result_store, http_exception_type, query)
+    _register_risk_factor_detail_route(app, result_store, http_exception_type)
+    _register_risk_factor_lineage_route(app, result_store, http_exception_type)
+    _register_risk_factor_capital_route(app, result_store, http_exception_type)
+    _register_risk_factor_source_rows_route(app, result_store, http_exception_type, query)
+
+
+def _register_risk_factor_list_route(
+    app: _RouteRegistrar,
+    result_store: DuckDbParquetResultStore,
+    http_exception_type: type[Exception],
+    query: Any,
+) -> None:
+    @app.get(
+        "/runs/{run_id:path}/risk-factors",
+        tags=["Risk Factors"],
+        summary="List canonical risk-factor metadata records",
+    )
+    def list_risk_factors(
+        run_id: str,
+        search: str | None = None,
+        risk_class: str | None = None,
+        bucket_id: str | None = None,
+        snapshot_id: str | None = None,
+        limit: int = query(default=100, ge=1, le=1000),
+        offset: int = query(default=0, ge=0),
+    ) -> dict[str, object]:
+        _require_run(result_store, run_id, http_exception_type)
+        return _risk_factor_jsonable(
+            result_store.list_risk_factors(
+                run_id,
+                search=search,
+                risk_class=risk_class,
+                bucket_id=bucket_id,
+                snapshot_id=snapshot_id,
+                limit=limit,
+                offset=offset,
+            )
+        )
+
+
+def _register_risk_factor_detail_route(
+    app: _RouteRegistrar,
+    result_store: DuckDbParquetResultStore,
+    http_exception_type: type[Exception],
+) -> None:
+    @app.get(
+        "/runs/{run_id:path}/risk-factors/{risk_factor_id}",
+        tags=["Risk Factors"],
+        summary="Return canonical metadata for one risk factor",
+    )
+    def get_risk_factor(
+        run_id: str,
+        risk_factor_id: str,
+        snapshot_id: str | None = None,
+    ) -> dict[str, object]:
+        _require_run(result_store, run_id, http_exception_type)
+        return _risk_factor_jsonable(
+            result_store.get_risk_factor(run_id, risk_factor_id, snapshot_id=snapshot_id)
+        )
+
+
+def _register_risk_factor_lineage_route(
+    app: _RouteRegistrar,
+    result_store: DuckDbParquetResultStore,
+    http_exception_type: type[Exception],
+) -> None:
+    @app.get(
+        "/runs/{run_id:path}/risk-factors/{risk_factor_id}/lineage",
+        tags=["Risk Factors", "Lineage"],
+        summary="Return source lineage for one risk factor",
+    )
+    def risk_factor_lineage(
+        run_id: str,
+        risk_factor_id: str,
+        snapshot_id: str | None = None,
+    ) -> dict[str, object]:
+        _require_run(result_store, run_id, http_exception_type)
+        return _risk_factor_jsonable(
+            result_store.risk_factor_lineage(
+                run_id,
+                risk_factor_id,
+                snapshot_id=snapshot_id,
+            )
+        )
+
+
+def _register_risk_factor_capital_route(
+    app: _RouteRegistrar,
+    result_store: DuckDbParquetResultStore,
+    http_exception_type: type[Exception],
+) -> None:
+    @app.get(
+        "/runs/{run_id:path}/risk-factors/{risk_factor_id}/capital",
+        tags=["Risk Factors", "Attribution"],
+        summary="Return stored risk-factor capital contribution aggregate",
+    )
+    def risk_factor_capital(
+        run_id: str,
+        risk_factor_id: str,
+        framework: str | None = None,
+    ) -> dict[str, object]:
+        _require_run(result_store, run_id, http_exception_type)
+        return _to_jsonable(
+            result_store.risk_factor_capital(run_id, risk_factor_id, framework=framework)
+        )
+
+
+def _register_risk_factor_source_rows_route(
+    app: _RouteRegistrar,
+    result_store: DuckDbParquetResultStore,
+    http_exception_type: type[Exception],
+    query: Any,
+) -> None:
+    @app.get(
+        "/runs/{run_id:path}/risk-factors/{risk_factor_id}/source-rows",
+        tags=["Risk Factors"],
+        summary="Return a bounded page of source rows for one risk factor",
+    )
+    def risk_factor_source_rows(
+        run_id: str,
+        risk_factor_id: str,
+        snapshot_id: str | None = None,
+        limit: int = query(default=100, ge=1, le=1000),
+        offset: int = query(default=0, ge=0),
+    ) -> dict[str, object]:
+        _require_run(result_store, run_id, http_exception_type)
+        return _risk_factor_jsonable(
+            result_store.risk_factor_source_rows(
+                run_id,
+                risk_factor_id,
+                snapshot_id=snapshot_id,
+                limit=limit,
+                offset=offset,
+            )
+        )
+
+
+def _risk_factor_jsonable(payload: object) -> dict[str, object]:
+    return cast(dict[str, object], _collapse_value_wrappers(_to_jsonable(payload)))
+
+
+def _collapse_value_wrappers(payload: object) -> object:
+    if isinstance(payload, Mapping):
+        if set(payload) == {"value"} and isinstance(payload.get("value"), str):
+            return payload["value"]
+        return {str(key): _collapse_value_wrappers(value) for key, value in payload.items()}
+    if isinstance(payload, Sequence) and not isinstance(payload, str | bytes | bytearray):
+        return [_collapse_value_wrappers(value) for value in payload]
+    return payload
 
 
 def _register_capital_tree_routes(

@@ -36,6 +36,14 @@ Risk-factor metadata is exposed through domain query methods such as
 `risk_factor_source_mappings`; these methods serve fixture-backed viewer read
 models and do not provide production reference-data management or calculation
 logic.
+Risk-factor drilldown is exposed through bounded UI/API contracts:
+`list_risk_factors`, `get_risk_factor`, `risk_factor_lineage`,
+`risk_factor_capital`, and `risk_factor_source_rows`. These methods return
+explicit `available` or `no_data` states. Capital drilldown aggregates only
+persisted attribution rows that identify the selected risk factor; missing
+RFET, UPL, CRIF, stress-vector, or contribution evidence is not reconstructed.
+Future OLAP-backed implementations should preserve these aggregate/detail
+payload shapes and pagination limits while replacing only the query engine.
 
 Base-table row assembly is split across internal IO stages:
 `frtb_result_store.store_bundle_rows` assembles one `ResultBundle` into table
@@ -75,7 +83,13 @@ workflow management are out of scope for the CLI.
 The optional FastAPI service is available through the `api` extra. It exposes
 read-only domain endpoints for runs, run groups, capital trees, artifacts,
 attribution, top contributor attribution, residual attribution, unsupported
-attribution, lineage, events, movements, and regime comparison. Artifact
+attribution, risk-factor metadata/drilldown, lineage, events, movements, and
+regime comparison. Risk-factor routes include
+`GET /runs/{run_id}/risk-factors`,
+`GET /runs/{run_id}/risk-factors/{risk_factor_id}`,
+`GET /runs/{run_id}/risk-factors/{risk_factor_id}/lineage`,
+`GET /runs/{run_id}/risk-factors/{risk_factor_id}/capital`, and
+`GET /runs/{run_id}/risk-factors/{risk_factor_id}/source-rows`. Artifact
 drillthrough is served through deterministic paged Parquet reads with optional
 column selection and simple equality filters, plus local Parquet download or
 S3 URI handoff. The service does not share the writer catalog or expose generic

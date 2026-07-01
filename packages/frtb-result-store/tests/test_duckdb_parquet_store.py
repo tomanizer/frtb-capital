@@ -842,6 +842,98 @@ def test_store_persists_risk_factor_metadata_snapshots(tmp_path: Path) -> None:
     ] == ["row-001"]
 
 
+def test_store_serves_risk_factor_drilldown_queries(tmp_path: Path) -> None:
+    run = run_with_id("run-with-risk-factor-drilldown")
+    snapshot, records, mappings = _risk_factor_metadata_fixture(run)
+    second_mapping = RiskFactorSourceMapping(
+        run_id=run.run_id,
+        snapshot_id=snapshot.snapshot_id,
+        risk_factor_id="rf-girr-usd-5y",
+        source_system="rfet-vendor",
+        source_row_id="rfet-row-001",
+        mapping_version=snapshot.mapping_version,
+        relationship="rfet-evidence",
+        source_hash="rfet-source-hash-001",
+    )
+    attributions = (
+        CapitalAttributionRecord.from_contribution(
+            run_id=run.run_id,
+            node_id="sbm-girr-usd",
+            contribution=CapitalContribution(
+                contribution_id="rf-girr-usd-5y-contribution",
+                source_id="rf-girr-usd-5y",
+                source_level="RISK_FACTOR",
+                bucket_key="GIRR:USD",
+                category="SBM_DELTA",
+                base_amount=11.0,
+                marginal_multiplier=0.5,
+                contribution=5.5,
+                method=AttributionMethod.ANALYTICAL_EULER,
+            ),
+            artifact_id="sbm-sensitivity-table",
+        ),
+    )
+    bundle = sample_bundle(
+        run,
+        attributions=attributions,
+        risk_factor_snapshots=(snapshot,),
+        risk_factor_metadata=records,
+        risk_factor_source_mappings=(*mappings, second_mapping),
+    )
+    store = DuckDbParquetResultStore(tmp_path / "result-store")
+
+    store.write_bundle(bundle)
+
+    page = store.list_risk_factors(run.run_id, search="5y", limit=1)
+    assert page["state"] == "available"
+    assert page["total_count"] == 1
+    assert [record.risk_factor_id.value for record in page["items"]] == ["rf-girr-usd-5y"]
+    assert page["next_offset"] is None
+
+    bucket_page = store.list_risk_factors(run.run_id, risk_class="GIRR", bucket_id="USD")
+    assert bucket_page["total_count"] == 2
+
+    detail = store.get_risk_factor(run.run_id, "rf-girr-usd-5y")
+    assert detail["state"] == "available"
+    assert detail["lineage_count"] == 2
+
+    lineage = store.risk_factor_lineage(run.run_id, "rf-girr-usd-5y")
+    assert lineage["state"] == "available"
+    assert [row.source_system for row in lineage["lineage"]] == [
+        "fixture-risk-engine",
+        "rfet-vendor",
+    ]
+
+    source_rows = store.risk_factor_source_rows(run.run_id, "rf-girr-usd-5y", limit=1)
+    assert source_rows["state"] == "available"
+    assert source_rows["total_count"] == 2
+    assert source_rows["next_offset"] == 1
+    assert [row.source_row_id for row in source_rows["rows"]] == ["row-001"]
+
+    second_page = store.risk_factor_source_rows(
+        run.run_id,
+        "rf-girr-usd-5y",
+        limit=1,
+        offset=1,
+    )
+    assert second_page["next_offset"] is None
+    assert [row.source_row_id for row in second_page["rows"]] == ["rfet-row-001"]
+
+    capital = store.risk_factor_capital(run.run_id, "rf-girr-usd-5y", framework="SBM")
+    assert capital == {
+        "state": "available",
+        "risk_factor_id": "rf-girr-usd-5y",
+        "framework": "SBM",
+        "attribution_count": 1,
+        "contribution": 5.5,
+        "base_amount": 11.0,
+        "residual": 0.0,
+        "unsupported_count": 0,
+    }
+    assert store.risk_factor_capital(run.run_id, "rf-girr-usd-10y")["state"] == "no_data"
+    assert store.get_risk_factor(run.run_id, "missing-risk-factor")["state"] == "no_data"
+
+
 def test_store_persists_input_events_telemetry_and_manifest_fingerprints(
     tmp_path: Path,
 ) -> None:

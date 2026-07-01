@@ -78,6 +78,18 @@ from frtb_common.regulatory import (
     MissingRegulatoryCitationsError,
     assert_policy_has_regulatory_citations,
 )
+from frtb_common.risk_factor import (
+    BucketId,
+    CurrencyCode,
+    RiskFactorId,
+    RiskFactorLineageId,
+    RiskFactorMappingVersion,
+    RiskFactorPrimitiveError,
+    RiskFactorRiskClassCode,
+    RiskFactorTypeCode,
+    SensitivityTypeCode,
+    Tenor,
+)
 from frtb_common.scope import (
     BookId,
     BusinessDivisionId,
@@ -91,18 +103,6 @@ from frtb_common.scope import (
     PortfolioId,
     TradingBookId,
     VolckerDeskId,
-)
-from frtb_common.risk_factor import (
-    BucketId,
-    CurrencyCode,
-    RiskFactorId,
-    RiskFactorLineageId,
-    RiskFactorMappingVersion,
-    RiskFactorPrimitiveError,
-    RiskFactorRiskClassCode,
-    RiskFactorTypeCode,
-    SensitivityTypeCode,
-    Tenor,
 )
 from frtb_common.serialization import dataclass_as_dict, jsonable
 from frtb_common.status import (
@@ -123,9 +123,9 @@ __all__ = [
     "AdapterDiagnostic",
     "AttributionMethod",
     "BookId",
+    "BucketId",
     "BusinessDivisionId",
     "BusinessLineId",
-    "BucketId",
     "CalculationScope",
     "CalculationScopeLevel",
     "CapitalComponentMetadata",

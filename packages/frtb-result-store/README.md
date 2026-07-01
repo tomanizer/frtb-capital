@@ -40,6 +40,9 @@ Current runtime support is deliberately narrow:
 - fixture-backed canonical risk-factor metadata snapshots for viewer read
   models, including no-data states for RFET, modellability, liquidity horizon,
   NMRF, and stress-period evidence;
+- bounded risk-factor metadata, lineage, capital-contribution, and source-row
+  drilldown queries for Navigator/API readers, with explicit no-data states
+  when persisted contribution or evidence rows are unavailable;
 - manifest-gated local and S3-layout Parquet files queried through independent
   DuckDB connections;
 - best-effort read-only SQL helper and admin CLI for inspection, disposable
@@ -95,8 +98,12 @@ fixture.
 
 The FastAPI service is created with `create_result_store_app(...)`. It exposes
 FRTB-specific read endpoints for runs, run groups, capital trees, measures,
-artifacts, attribution, attribution explain projections, lineage, events,
-movements, and regime comparison. It also supports artifact drillthrough with
+artifacts, attribution, attribution explain projections, risk-factor metadata
+and drilldown, lineage, events, movements, and regime comparison. Risk-factor
+routes list/search canonical metadata, fetch details and source lineage,
+aggregate persisted attribution rows for a selected framework, and page source
+rows without reconstructing missing RFET, UPL, CRIF, stress-vector, or
+contribution evidence. It also supports artifact drillthrough with
 deterministic Parquet-backed pages:
 `GET /runs/{run_id}/artifacts/{artifact_id}/page` accepts `limit`, `offset`,
 repeated or comma-separated `columns`, and repeated `filter=column=value`
