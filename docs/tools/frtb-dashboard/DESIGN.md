@@ -3,6 +3,19 @@
 This document records the second-attempt design for `tools/frtb_dashboard`. It
 supersedes the first-pass P0 dashboard architecture.
 
+Target Navigator contracts:
+
+- UX contract:
+  [`UX_AUDIT_AND_INTERACTION_CONTRACT.md`](UX_AUDIT_AND_INTERACTION_CONTRACT.md)
+- Mode wireframes:
+  [`MODE_WIREFRAMES.md`](MODE_WIREFRAMES.md)
+- State and routing:
+  [`NAVIGATOR_STATE_AND_ROUTING.md`](NAVIGATOR_STATE_AND_ROUTING.md)
+- Capital and movement semantics:
+  [`CAPITAL_AND_MOVEMENT_SEMANTICS.md`](CAPITAL_AND_MOVEMENT_SEMANTICS.md)
+- Result-store data contract:
+  [`RESULT_STORE_DATA_CONTRACT.md`](RESULT_STORE_DATA_CONTRACT.md)
+
 ## Design law
 
 Every fact appears once, at the altitude where it belongs:
