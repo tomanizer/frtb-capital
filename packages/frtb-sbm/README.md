@@ -15,6 +15,7 @@ explicit errors.
 | BASEL_MAR21 delta capital paths | Implemented under audit for GIRR, FX, equity, commodity, CSR non-sec, CSR sec non-CTP, and CSR sec CTP |
 | BASEL_MAR21 vega capital paths | Implemented under audit for GIRR, FX, equity, commodity, CSR non-sec, CSR sec non-CTP, and CSR sec CTP |
 | BASEL_MAR21 curvature capital paths | Implemented under audit for GIRR, FX, equity, commodity, CSR non-sec, CSR sec non-CTP, and CSR sec CTP |
+| US_NPR_2_0 comparison slices | Implemented under audit for GIRR delta/vega/curvature, reporting-currency FX delta/vega/curvature, equity delta, and commodity delta; all CSR cells and remaining measures fail closed |
 | Unsupported profiles and unmapped sub-features | Unsupported capital (fail-closed) |
 | Arrow batch | Supported BASEL_MAR21 delta, vega, and curvature capital paths implemented; portfolio dispatcher available |
 | CRIF/CSV adapters | Implemented row-dict canonical mapping for supported BASEL_MAR21 delta/vega/curvature paths; GIRR delta CRIF-to-Arrow batch |

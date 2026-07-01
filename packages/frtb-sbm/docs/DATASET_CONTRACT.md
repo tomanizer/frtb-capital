@@ -146,9 +146,10 @@ The canonical risk measures are:
 
 `BASEL_MAR21` is implemented for supported delta, vega, and curvature paths
 across the seven SBM risk classes. `US_NPR_2_0` is implemented only for GIRR
-delta, GIRR vega, GIRR curvature, and reporting-currency FX delta, vega, and curvature comparison
-fixtures. Unsupported profiles or unsupported sub-features must fail closed
-through package errors before any capital result is emitted.
+delta, GIRR vega, GIRR curvature, reporting-currency FX delta, vega,
+curvature, equity delta, and commodity delta comparison fixtures. Unsupported
+profiles or unsupported sub-features must fail closed through package errors
+before any capital result is emitted.
 
 Path-specific input requirements are enforced by validation and batch builders:
 

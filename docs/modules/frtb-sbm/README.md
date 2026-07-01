@@ -8,14 +8,15 @@
 - Import name: `frtb_sbm`
 - Implementation status: partial runtime — BASEL_MAR21 delta, vega, and
   curvature paths implemented under audit across all seven SBM risk classes,
-  plus `US_NPR_2_0` GIRR delta, GIRR vega, GIRR curvature, and FX delta, vega, curvature and
+  plus `US_NPR_2_0` GIRR delta, GIRR vega, GIRR curvature, FX delta, vega,
+  curvature, equity delta, and commodity delta and
   `PRA_UK_CRR` GIRR delta comparison slices
 - Validation status: deterministic fixture, audit, replay, and public API tests available
 
 The package is importable and exposes `calculate_sbm_capital` for supported
 Basel MAR21 delta, vega, and curvature canonical inputs and for the cited
-`US_NPR_2_0` GIRR delta, GIRR vega, GIRR curvature, FX delta, and
-FX vega and FX curvature, and
+`US_NPR_2_0` GIRR delta, GIRR vega, GIRR curvature, FX delta,
+FX vega and FX curvature, equity delta, and commodity delta, and
 `PRA_UK_CRR` GIRR delta comparison slices. Row-wise, package-owned batch, and Arrow batch
 paths are available for the supported matrix. All other U.S. NPR 2.0 cells, all
 EU CRR3 cells, all PRA UK CRR cells outside GIRR delta, and unmapped
@@ -61,6 +62,7 @@ End-to-end client flow (Arrow handoff, portfolio batch capital, attribution,
 - [Detailed requirements](DETAILED_REQUIREMENTS.md)
 - [Non-Basel profile design](NON_BASEL_PROFILE_DESIGN.md) — AUDIT-IMP-003 / #501
 - [Non-Basel profile requirements](NON_BASEL_PROFILE_REQUIREMENTS.md) — `SBM-NBP-*`
+- [U.S. NPR CSR mapping](US_NPR_CSR_MAPPING.md) — #1034 source map before any CSR runtime gate opens
 - [Architecture and data design](ARCHITECTURE_AND_DATA_DESIGN.md)
 - [Decisions and plan](DECISIONS_AND_PLAN.md)
 - [Issue breakdown](ISSUE_BREAKDOWN.md)
