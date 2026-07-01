@@ -157,3 +157,9 @@ entitlements, SSO, or a general OLAP engine. Component packages preserve
 stable identifiers and audit records, but they must not traverse the enterprise
 hierarchy; hierarchy traversal belongs in the result store and later dashboard
 API adapters.
+
+The suite-wide ownership and validation split is documented in
+[`docs/HIERARCHY_OWNERSHIP.md`](../../docs/HIERARCHY_OWNERSHIP.md). New
+hierarchy nodes, edge fixtures, row mappings, aggregate/detail read-model
+behavior, and API query states belong here; component packages should only
+preserve supplied scope identifiers.

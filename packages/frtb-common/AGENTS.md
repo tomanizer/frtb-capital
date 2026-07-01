@@ -19,6 +19,8 @@ before editing this package.
   package-supplied RiskType mapping hooks.
 - Future shared regulatory-policy, audit, calendar, sign-convention, and
   calculation-context primitives.
+- Stable organisation identifier aliases and `CalculationScope` metadata for
+  downstream hierarchy-aware rollups.
 
 ## Rules
 
@@ -30,5 +32,8 @@ before editing this package.
 - Do not put SBM, DRC, RRAO, CVA, or IMA regulatory semantics in common
   handoff or CRIF primitives. Package-owned adapters supply RiskType mappings,
   then translate handoff tables into calculation-specific axes and arrays.
+- Do not store hierarchy edges, traverse hierarchy graphs, or aggregate capital
+  rows here. Enterprise hierarchy ownership is documented in
+  [`../../docs/HIERARCHY_OWNERSHIP.md`](../../docs/HIERARCHY_OWNERSHIP.md).
 - Do not import from capital component packages.
 - Use frozen dataclasses and enums for public data containers.

@@ -88,6 +88,12 @@ All U.S. NPR 2.0 / Basel FRTB / EU CRR3 / PRA UK CRR content is proposed-rule or
   supplied IDs and provenance, orchestration composes resolved views, and
   Navigator consumes APIs without client-side regulatory classification. See
   [`docs/RISK_FACTOR_METADATA_OWNERSHIP.md`](docs/RISK_FACTOR_METADATA_OWNERSHIP.md).
+- Enterprise hierarchy follows the same package split. `frtb-common` owns
+  stable `CalculationScope` primitives, component packages preserve supplied
+  scope IDs, `frtb-result-store` owns hierarchy nodes/edges/mappings and
+  rollup/detail read models, `frtb-orchestration` composes already resolved
+  scope totals, and Dashboard/API consumers call backend contracts. See
+  [`docs/HIERARCHY_OWNERSHIP.md`](docs/HIERARCHY_OWNERSHIP.md).
 - **One package per PR** unless the change is genuinely cross-cutting (regulatory definition change, shared type update). Cross-cutting PRs must reference an ADR.
 - **Per-package versioning.** Bump only the affected package's version.
 - **Material changes need ADRs.** See [`CONTRIBUTING.md`](CONTRIBUTING.md).

@@ -77,6 +77,10 @@ introducing `adapters/`, `validation/`, `kernel/`, or `assembly/`.
   evidence/result records for lineage. Do not import `frtb_result_store`, fetch
   stored artifacts, source market data, create missing UPL vectors, or generate
   pricing/shock payloads inside IMA kernels.
+- Organisation scope IDs are metadata only. Preserve supplied
+  `CalculationScope` values on evidence/results, but keep enterprise hierarchy
+  traversal and rollups in `frtb-result-store`; see
+  [`../../docs/HIERARCHY_OWNERSHIP.md`](../../docs/HIERARCHY_OWNERSHIP.md).
 
 ## Review focus
 

@@ -64,3 +64,7 @@ introducing `adapters/`, `validation/`, `kernel/`, or `assembly/`.
 - Curvature shock IDs and vega surface/surface-point IDs are lineage metadata
   only. Do not import `frtb_result_store`, fetch shock/surface artifacts, infer
   surface axes, or generate missing market-data payloads inside SBM kernels.
+- Organisation scope IDs are metadata only. Preserve supplied
+  `CalculationScope` values on audit/results, but keep enterprise hierarchy
+  traversal and rollups in `frtb-result-store`; see
+  [`../../docs/HIERARCHY_OWNERSHIP.md`](../../docs/HIERARCHY_OWNERSHIP.md).

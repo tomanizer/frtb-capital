@@ -42,3 +42,7 @@ introducing `adapters/`, `validation/`, `kernel/`, or `assembly/`.
 - Do not emit successful placeholder capital for unmapped regulatory paths.
 - Preserve zero-capital exclusion records as auditable lines rather than
   dropping input rows.
+- Organisation scope IDs are metadata only. Preserve supplied
+  `CalculationScope` values on audit/results, but keep enterprise hierarchy
+  traversal and rollups in `frtb-result-store`; see
+  [`../../docs/HIERARCHY_OWNERSHIP.md`](../../docs/HIERARCHY_OWNERSHIP.md).

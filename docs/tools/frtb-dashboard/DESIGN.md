@@ -72,6 +72,12 @@ book scope. The fixture uses synthetic component membership to make scoped
 totals visible: rates nodes contain IMA/SBM, credit nodes contain DRC, and
 residual-risk nodes contain RRAO.
 
+Hierarchy node lists, source-row mappings, scoped aggregate totals, and
+aggregate/detail reconciliation are backend/result-store contracts. The
+frontend may request and render them, but must not derive parent-child
+membership, fabricate missing source rows, or recalculate capital totals in the
+browser. See [`../../HIERARCHY_OWNERSHIP.md`](../../HIERARCHY_OWNERSHIP.md).
+
 The fixture implementation is intentionally thin. Later DuckDB/ClickHouse/Impala
 work should replace the data source behind those endpoints rather than rewrite
 the UI.

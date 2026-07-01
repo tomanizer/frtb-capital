@@ -29,6 +29,11 @@ The package has a first local DuckDB/Parquet backend:
   scenario vectors, and surfaces. Store resolved artifact IDs, partition keys,
   mapping versions, lineage, and explicit no-data/unsupported states; do not
   infer component regulatory semantics or fabricate missing artifact payloads.
+- Own enterprise hierarchy nodes, edges, effective-dated versions, source-row
+  mappings, aggregate rollups, source-row drilldown, and read/API contracts.
+  Component packages preserve `CalculationScope` IDs only; they must not
+  traverse hierarchy graphs. See
+  [`../../docs/HIERARCHY_OWNERSHIP.md`](../../docs/HIERARCHY_OWNERSHIP.md).
 - Preserve append-only run semantics; corrections require a new `run_id`.
 - Keep artifact references URI-based so local and object-storage drillthrough
   can share the same domain model.

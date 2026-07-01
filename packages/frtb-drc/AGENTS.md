@@ -46,3 +46,7 @@ introducing `adapters/`, `validation/`, `kernel/`, or `assembly/`.
 - Do not emit successful placeholder capital.
 - Preserve attribution-ready lineage for capital-producing paths: stable record
   ids, deterministic grouping, input citations, and branch metadata.
+- Organisation scope IDs are metadata only. Preserve supplied
+  `CalculationScope` values on audit/results, but keep enterprise hierarchy
+  traversal and rollups in `frtb-result-store`; see
+  [`../../docs/HIERARCHY_OWNERSHIP.md`](../../docs/HIERARCHY_OWNERSHIP.md).
