@@ -18,6 +18,13 @@ Current contents:
     lineage hashes, generic counts, citations, and warnings;
   - `StandardisedComponent` identifiers for SBM, DRC, and RRAO;
   - `ComponentSummaryError` for shared field-level contract violations;
+- package-neutral organisation and calculation-scope metadata:
+  - stable identifier aliases for legal entities, business divisions, business
+    lines, desks, Volcker desks, books, trading books, portfolios, hierarchy
+    nodes, and model-approval scopes;
+  - `CalculationScopeLevel` and frozen `CalculationScope` for carrying the
+    selected scope on package inputs, outputs, and audit records without
+    hierarchy traversal or rollup logic;
 - Arrow-backed normalized tabular primitives:
   - `ColumnSpec`, aliases, package-neutral logical types, null/chunk/dictionary
     policies;
@@ -46,10 +53,11 @@ Current contents:
   - `assert_policy_has_regulatory_citations`;
   - `MissingRegulatoryCitationsError`.
 
-The package performs no capital calculation. It also does not own rule-profile
-semantics, capital audit records, sign conventions, business calendars, or
-component regulatory parameters unless a future cross-cutting ADR explicitly
-extracts those contracts into `frtb-common`.
+The package performs no capital calculation. It also does not own enterprise
+hierarchy traversal, top-of-house rollups, rule-profile semantics, capital audit
+records, sign conventions, business calendars, or component regulatory
+parameters unless a future cross-cutting ADR explicitly extracts those contracts
+into `frtb-common`.
 
 ADR 0033 M3 removed the old `*Handoff*`, `*_HANDOFF_COLUMN_SPECS`, and
 `*_from_handoff` public names. Use the Arrow table and component summary names
