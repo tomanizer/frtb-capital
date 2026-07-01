@@ -55,12 +55,14 @@ Supported profile coverage is:
   explicit offset-group evidence.
 - PRA UK CRR non-securitisation row and batch paths using Article 325w,
   Article 325x, Article 325y, and deterministic fixture evidence.
+- PRA UK CRR securitisation non-CTP row and batch paths using Article 325z,
+  Article 325aa, typed risk-weight, fair-value-cap, offset, and deterministic
+  fixture evidence.
 
 Known fail-closed profile paths are:
 
-- `PRA_UK_CRR` securitisation non-CTP and CTP, source-mapped to
-  `PRA_DRC_ARTICLE_325Z` through `PRA_DRC_ARTICLE_325AD` for issues #1005
-  and #1006.
+- `PRA_UK_CRR` CTP, source-mapped to `PRA_DRC_ARTICLE_325AB` through
+  `PRA_DRC_ARTICLE_325AD` for issue #1006.
 
 Regulatory anchors for the supported path are recorded in
 [`REGULATORY_REQUIREMENTS.md`](../REGULATORY_REQUIREMENTS.md) and

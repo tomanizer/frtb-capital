@@ -45,6 +45,7 @@ from frtb_drc.regimes import (
 )
 from frtb_drc.regimes import (
     EU_CRR3_PROFILE_ID as _EU_CRR3_PROFILE_ID,
+    PRA_UK_CRR_PROFILE_ID as _PRA_UK_CRR_PROFILE_ID,
     US_NPR_2_0_PROFILE_ID,
     ensure_risk_class_supported,
     get_rule_profile,
@@ -89,6 +90,12 @@ _EU_CRR3_BUCKET_CITATIONS = ("EU_CRR3_ARTICLE_325AA",)
 _EU_CRR3_HBR_CITATIONS = ("EU_CRR3_ARTICLE_325AA",)
 _EU_CRR3_CATEGORY_CITATIONS = ("EU_CRR3_ARTICLE_325AA",)
 _EU_CRR3_FAIR_VALUE_CAP_CITATIONS = ("EU_CRR3_ARTICLE_325AA",)
+_PRA_GROSS_CITATIONS = ("PRA_DRC_ARTICLE_325Z",)
+_PRA_NETTING_CITATIONS = ("PRA_DRC_ARTICLE_325Z",)
+_PRA_BUCKET_CITATIONS = ("PRA_DRC_ARTICLE_325AA",)
+_PRA_HBR_CITATIONS = ("PRA_DRC_ARTICLE_325AA",)
+_PRA_CATEGORY_CITATIONS = ("PRA_DRC_ARTICLE_325AA",)
+_PRA_FAIR_VALUE_CAP_CITATIONS = ("PRA_DRC_ARTICLE_325AA",)
 
 
 @dataclass(frozen=True)
@@ -718,6 +725,8 @@ def _gross_citations(profile_id: str) -> tuple[str, ...]:
         return _BASEL_GROSS_CITATIONS
     if profile_id == _EU_CRR3_PROFILE_ID:
         return _EU_CRR3_GROSS_CITATIONS
+    if profile_id == _PRA_UK_CRR_PROFILE_ID:
+        return _PRA_GROSS_CITATIONS
     return _GROSS_CITATIONS
 
 
@@ -726,6 +735,8 @@ def _netting_citations(profile_id: str) -> tuple[str, ...]:
         return _BASEL_NETTING_CITATIONS
     if profile_id == _EU_CRR3_PROFILE_ID:
         return _EU_CRR3_NETTING_CITATIONS
+    if profile_id == _PRA_UK_CRR_PROFILE_ID:
+        return _PRA_NETTING_CITATIONS
     return _NETTING_CITATIONS
 
 
@@ -734,6 +745,8 @@ def _bucket_citations(profile_id: str) -> tuple[str, ...]:
         return _BASEL_BUCKET_CITATIONS
     if profile_id == _EU_CRR3_PROFILE_ID:
         return _EU_CRR3_BUCKET_CITATIONS
+    if profile_id == _PRA_UK_CRR_PROFILE_ID:
+        return _PRA_BUCKET_CITATIONS
     return _BUCKET_CITATIONS
 
 
@@ -742,6 +755,8 @@ def _hbr_citations(profile_id: str) -> tuple[str, ...]:
         return _BASEL_HBR_CITATIONS
     if profile_id == _EU_CRR3_PROFILE_ID:
         return _EU_CRR3_HBR_CITATIONS
+    if profile_id == _PRA_UK_CRR_PROFILE_ID:
+        return _PRA_HBR_CITATIONS
     return _HBR_CITATIONS
 
 
@@ -750,6 +765,8 @@ def _category_citations(profile_id: str) -> tuple[str, ...]:
         return _BASEL_CATEGORY_CITATIONS
     if profile_id == _EU_CRR3_PROFILE_ID:
         return _EU_CRR3_CATEGORY_CITATIONS
+    if profile_id == _PRA_UK_CRR_PROFILE_ID:
+        return _PRA_CATEGORY_CITATIONS
     return _CATEGORY_CITATIONS
 
 
@@ -758,6 +775,8 @@ def _fair_value_cap_citations(profile_id: str) -> tuple[str, ...]:
         return _BASEL_FAIR_VALUE_CAP_CITATIONS
     if profile_id == _EU_CRR3_PROFILE_ID:
         return _EU_CRR3_FAIR_VALUE_CAP_CITATIONS
+    if profile_id == _PRA_UK_CRR_PROFILE_ID:
+        return _PRA_FAIR_VALUE_CAP_CITATIONS
     return _FAIR_VALUE_CAP_CITATIONS
 
 

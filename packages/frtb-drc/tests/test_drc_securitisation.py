@@ -10,6 +10,7 @@ import pytest
 from frtb_drc import (
     BASEL_MAR22_PROFILE_ID,
     EU_CRR3_PROFILE_ID,
+    PRA_UK_CRR_PROFILE_ID,
     US_NPR_2_0_PROFILE_ID,
     DefaultDirection,
     DrcCalculationContext,
@@ -437,6 +438,38 @@ def test_eu_crr3_securitisation_non_ctp_fixture_matches_hand_checked_expected() 
     validate_reconciliation(result)
 
 
+def test_pra_uk_crr_securitisation_non_ctp_fixture_matches_hand_checked_expected() -> None:
+    fixture = _load_securitisation_fixture("drc_pra_sec_nonctp_v1")
+
+    result = calculate_drc_capital(fixture["positions"], context=fixture["context"])
+    expected = fixture["expected"]
+    buckets = {bucket.bucket_key: bucket for bucket in result.categories[0].bucket_results}
+
+    assert result.profile_id == PRA_UK_CRR_PROFILE_ID
+    assert result.input_count == expected["input_count"]
+    assert result.total_drc == pytest.approx(expected["total_drc"])
+    assert result.categories[0].risk_class is DrcRiskClass.SECURITISATION_NON_CTP
+    assert buckets["SEC_CLO_NORTH_AMERICA"].capital == pytest.approx(
+        expected["buckets"]["SEC_CLO_NORTH_AMERICA"]
+    )
+    assert buckets["SEC_RMBS_EUROPE"].capital == pytest.approx(
+        expected["buckets"]["SEC_RMBS_EUROPE"]
+    )
+    assert buckets["SEC_RMBS_EUROPE"].hbr.ratio == pytest.approx(expected["rmbs_hbr"])
+    gross_by_position = {record.position_id: record.gross_jtd for record in result.gross_jtds}
+    assert gross_by_position["long-rmbs-a"] == pytest.approx(
+        expected["fair_value_capped_gross_jtd"]
+    )
+    assert len(result.risk_weight_evidence) == 4
+    assert len(result.fair_value_cap_evidence) == 4
+    assert "PRA_DRC_ARTICLE_325Z" in result.citations
+    assert "PRA_DRC_ARTICLE_325AA" in result.citations
+    assert not any(citation.startswith("US_NPR") for citation in result.citations)
+    assert not any(citation.startswith("BASEL_MAR22") for citation in result.citations)
+    assert not any(citation.startswith("EU_CRR3") for citation in result.citations)
+    validate_reconciliation(result)
+
+
 def test_basel_securitisation_non_ctp_rejects_legacy_raw_weight_map() -> None:
     position = _sec_position("basel-legacy-raw", DefaultDirection.LONG, market_value=100.0)
 
@@ -482,6 +515,28 @@ def test_eu_crr3_securitisation_non_ctp_missing_offset_evidence_fails_closed() -
     )
 
     with pytest.raises(DrcInputError, match="offset_groups is required"):
+        calculate_drc_capital(fixture["positions"], context=context)
+
+
+def test_pra_uk_crr_securitisation_non_ctp_missing_cap_evidence_fails_closed() -> None:
+    fixture = _load_securitisation_fixture("drc_pra_sec_nonctp_v1")
+    context = replace(
+        fixture["context"],
+        securitisation_non_ctp_fair_value_cap_evidence={},
+    )
+
+    with pytest.raises(DrcInputError, match="PRA_UK_CRR securitisation non-CTP positions"):
+        calculate_drc_capital(fixture["positions"], context=context)
+
+
+def test_pra_uk_crr_securitisation_non_ctp_missing_offset_evidence_fails_closed() -> None:
+    fixture = _load_securitisation_fixture("drc_pra_sec_nonctp_v1")
+    context = replace(
+        fixture["context"],
+        securitisation_non_ctp_offset_groups={},
+    )
+
+    with pytest.raises(DrcInputError, match="PRA_UK_CRR securitisation non-CTP positions"):
         calculate_drc_capital(fixture["positions"], context=context)
 
 

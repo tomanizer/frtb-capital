@@ -75,8 +75,8 @@
       "rejected_offsets": []
     }
   },
-  "profile_hash": "a97e70b9c6103fb9c4244de0d0b7fc51740c52e62a69ada9c7f2e276a431d871",
-  "result_json_sha256": "ca93ad118c01576f36fecb2bb3008b36769bfdba5ed9450dbd6adb5eb0ebca86",
+  "profile_hash": "39fae630df26da3af6ac6f724f122ead652c96af92bd5f49360c523b27de060a",
+  "result_json_sha256": "54618860cc5dfd570dabb4eae0f030408327f9ffaa2e39d2459b0240e538f020",
   "scaled": {
     "pra-corp-alpha-long": 75.0,
     "pra-corp-alpha-short": 30.0,

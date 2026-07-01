@@ -139,7 +139,6 @@ def test_calculate_drc_capital_supports_pra_uk_crr_nonsec_profile() -> None:
 @pytest.mark.parametrize(
     ("profile_id", "risk_class", "expected"),
     [
-        (PRA_UK_CRR_PROFILE_ID, DrcRiskClass.SECURITISATION_NON_CTP, PRA_UK_CRR_PROFILE_ID),
         (
             PRA_UK_CRR_PROFILE_ID,
             DrcRiskClass.CORRELATION_TRADING_PORTFOLIO,

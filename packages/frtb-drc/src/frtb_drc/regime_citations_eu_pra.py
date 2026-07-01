@@ -125,8 +125,9 @@ PRA_UK_CRR_CITATIONS: dict[str, DrcCitation] = {
         paragraph="Chapter 3 and Appendix 1",
         url="https://www.bankofengland.co.uk/prudential-regulation/publication/2026/january/implementation-of-the-basel-3-1-final-rules-policy-statement",
         note=(
-            "UK Basel 3.1 market-risk profile anchor; runtime DRC profile remains "
-            "fail-closed until PRA rulebook paragraph mapping is implemented."
+            "UK Basel 3.1 market-risk profile anchor for supported DRC "
+            "non-securitisation and securitisation non-CTP runtime paths; CTP "
+            "remains fail-closed until mappings and fixtures are implemented."
         ),
     ),
     "PRA_DRC_ARTICLE_325V": DrcCitation(
@@ -135,8 +136,9 @@ PRA_UK_CRR_CITATIONS: dict[str, DrcCitation] = {
         paragraph="Article 325v",
         url="https://www.prarulebook.co.uk/-/media/pra/files/legal-instruments/2026/pra2026-1.pdf",
         note=(
-            "UK PRA Default Risk Charge scope source map. Runtime remains "
-            "fail-closed until package-local PRA mappings and fixtures are implemented."
+            "UK PRA Default Risk Charge scope source map for supported "
+            "non-securitisation and securitisation non-CTP runtime paths; CTP "
+            "remains fail-closed until package-local mappings and fixtures are implemented."
         ),
     ),
     "PRA_DRC_ARTICLE_325W": DrcCitation(
@@ -177,7 +179,7 @@ PRA_UK_CRR_CITATIONS: dict[str, DrcCitation] = {
         url="https://www.prarulebook.co.uk/-/media/pra/files/legal-instruments/2026/pra2026-1.pdf",
         note=(
             "UK PRA securitisation non-CTP gross JTD and net JTD source map. "
-            "Runtime remains fail-closed until PRA mappings and fixtures are implemented."
+            "Runtime support uses this Article 325z source map for row and batch paths."
         ),
     ),
     "PRA_DRC_ARTICLE_325AA": DrcCitation(
@@ -187,8 +189,8 @@ PRA_UK_CRR_CITATIONS: dict[str, DrcCitation] = {
         url="https://www.prarulebook.co.uk/-/media/pra/files/legal-instruments/2026/pra2026-1.pdf",
         note=(
             "UK PRA securitisation non-CTP bucket, risk-weight, HBR, and category "
-            "capital source map. Runtime remains fail-closed until PRA typed "
-            "evidence mappings and fixtures are implemented."
+            "capital source map for the supported Article 325aa row and batch "
+            "runtime path."
         ),
     ),
     "PRA_DRC_ARTICLE_325AB": DrcCitation(

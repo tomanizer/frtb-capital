@@ -82,10 +82,19 @@ def test_eu_crr3_profile_supports_all_drc_risk_classes() -> None:
     ensure_risk_class_supported(profile, DrcRiskClass.CORRELATION_TRADING_PORTFOLIO)
 
 
-def test_pra_profile_supports_nonsec_and_keeps_sec_ctp_fail_closed() -> None:
+def test_pra_profile_supports_nonsec_and_securitisation_and_keeps_ctp_fail_closed() -> None:
     profile = get_rule_profile(PRA_UK_CRR_PROFILE_ID)
 
-    assert profile.supported_risk_classes == frozenset({DrcRiskClass.NON_SECURITISATION})
+    assert profile.supported_risk_classes == frozenset(
+        {
+            DrcRiskClass.NON_SECURITISATION,
+            DrcRiskClass.SECURITISATION_NON_CTP,
+        }
+    )
+    assert profile.securitisation_non_ctp_fair_value_cap_allowed is True
+    assert profile.securitisation_non_ctp_fair_value_cap_citation_ids == (
+        "PRA_DRC_ARTICLE_325AA",
+    )
     assert "PRA_PS1_26_MARKET_RISK" in profile.citations
     assert "PRA_DRC_ARTICLE_325V" in profile.citations
     assert "PRA_DRC_ARTICLE_325W" in profile.citations
@@ -97,8 +106,7 @@ def test_pra_profile_supports_nonsec_and_keeps_sec_ctp_fail_closed() -> None:
     assert "PRA_DRC_ARTICLE_325AC" in profile.citations
     assert "PRA_DRC_ARTICLE_325AD" in profile.citations
     ensure_risk_class_supported(profile, DrcRiskClass.NON_SECURITISATION)
-    with pytest.raises(UnsupportedRegulatoryFeatureError, match=PRA_UK_CRR_PROFILE_ID):
-        ensure_risk_class_supported(profile, DrcRiskClass.SECURITISATION_NON_CTP)
+    ensure_risk_class_supported(profile, DrcRiskClass.SECURITISATION_NON_CTP)
     with pytest.raises(UnsupportedRegulatoryFeatureError, match=PRA_UK_CRR_PROFILE_ID):
         ensure_risk_class_supported(profile, DrcRiskClass.CORRELATION_TRADING_PORTFOLIO)
 
@@ -168,7 +176,7 @@ def test_profile_support_matrix_marks_eu_crr3_all_paths_supported() -> None:
     assert eu_ctp.next_step == "Maintain EU CRR3 CTP fixture and typed decomposition evidence coverage."
 
 
-def test_profile_support_matrix_marks_pra_nonsec_supported_and_other_paths_fail_closed() -> None:
+def test_profile_support_matrix_marks_pra_nonsec_and_securitisation_supported() -> None:
     cells = {(cell.profile_id, cell.risk_class): cell for cell in drc_profile_support_matrix()}
 
     pra_nonsec = cells[(PRA_UK_CRR_PROFILE_ID, DrcRiskClass.NON_SECURITISATION)]
@@ -185,11 +193,14 @@ def test_profile_support_matrix_marks_pra_nonsec_supported_and_other_paths_fail_
     assert pra_nonsec.next_step == (
         "Maintain PRA UK CRR non-securitisation fixture and article-level citation coverage."
     )
-    assert pra_sec.status == "FAIL_CLOSED"
+    assert pra_sec.status == "SUPPORTED"
     assert pra_sec.citation_ids == (
         "PRA_DRC_ARTICLE_325V",
         "PRA_DRC_ARTICLE_325Z",
         "PRA_DRC_ARTICLE_325AA",
+    )
+    assert pra_sec.next_step == (
+        "Maintain PRA UK CRR securitisation non-CTP fixture and typed evidence coverage."
     )
     assert pra_ctp.status == "FAIL_CLOSED"
     assert pra_ctp.citation_ids == (

@@ -12,8 +12,8 @@ non-securitisation, securitisation non-CTP, and correlation trading portfolio
 (CTP) DRC row and batch paths, plus Basel MAR22 non-securitisation row and
 batch paths, Basel MAR22 securitisation non-CTP and CTP row and batch paths,
 and EU CRR3 non-securitisation, securitisation non-CTP, and CTP row and batch
-paths, plus PRA UK CRR non-securitisation row and batch paths. PRA UK CRR
-securitisation non-CTP and CTP paths must fail explicitly until cited profile
+paths, plus PRA UK CRR non-securitisation and securitisation non-CTP row and
+batch paths. PRA UK CRR CTP paths must fail explicitly until cited profile
 mappings and deterministic tests exist.
 
 Reject silent zero-capital placeholders, sibling capital-package imports,

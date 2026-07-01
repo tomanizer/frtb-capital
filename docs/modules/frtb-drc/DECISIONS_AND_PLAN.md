@@ -25,8 +25,9 @@ row/batch is implemented with Article 325ab-325ad typed risk-weight,
 decomposition, and offset evidence. PRA UK CRR non-securitisation row/batch is
 implemented with Article 325w, Article 325x, and Article 325y LGD, maturity,
 netting, bucket, risk-weight, HBR, and category evidence. PRA UK CRR
-securitisation non-CTP and CTP remain fail-closed until profile-specific
-mappings and tests are implemented.
+securitisation non-CTP row/batch is implemented with Article 325z, Article
+325aa, typed risk-weight, fair-value-cap, and offset evidence. PRA UK CRR CTP
+remains fail-closed until profile-specific mappings and tests are implemented.
 
 ### DRC-DEC-002: Keep data contracts package-local initially
 
@@ -131,8 +132,9 @@ replication evidence, and deterministic tests. U.S. NPR 2.0 securitisation
 non-CTP also supports profile-controlled fair-value cap evidence. Basel MAR22
 securitisation non-CTP is implemented with typed MAR22.34 evidence. Basel
 MAR22 CTP is implemented with typed MAR22.42 evidence. EU CRR3
-non-securitisation, securitisation non-CTP, and CTP are implemented; PRA UK CRR
-paths still fail closed.
+non-securitisation, securitisation non-CTP, and CTP are implemented; PRA UK
+CRR non-securitisation and securitisation non-CTP are implemented, while PRA
+UK CRR CTP still fails closed.
 
 ## Implementation sequence
 
@@ -189,7 +191,8 @@ The current partial runtime also includes U.S. NPR 2.0 securitisation non-CTP
 and CTP row/batch paths, Basel MAR22 non-securitisation row/batch paths,
 Basel MAR22 securitisation non-CTP and CTP row/batch paths, Arrow/batch fast
 paths, EU CRR3 non-securitisation, securitisation non-CTP, and CTP row/batch
-paths, and attribution records. Remaining gaps are deliberate: PRA UK CRR,
+paths, PRA UK CRR non-securitisation and securitisation non-CTP row/batch
+paths, and attribution records. Remaining gaps are deliberate: PRA UK CRR CTP,
 internal banking-book securitisation risk-weight derivation, and
 additional branch-specific impact decomposition beyond explicit
 finite-difference, unsupported, and residual records.

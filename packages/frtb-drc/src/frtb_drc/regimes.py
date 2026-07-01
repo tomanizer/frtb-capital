@@ -306,14 +306,17 @@ _PRA_UK_CRR_PROFILE = DrcRuleProfile(
     version="Basel 3.1 PS1/26",
     publication_date=date(2026, 1, 20),
     effective_date=date(2027, 1, 1),
-    status="partial_nonsec_supported",
-    supported_risk_classes=frozenset({DrcRiskClass.NON_SECURITISATION}),
+    status="partial_nonsec_sec_supported",
+    supported_risk_classes=frozenset(
+        {
+            DrcRiskClass.NON_SECURITISATION,
+            DrcRiskClass.SECURITISATION_NON_CTP,
+        }
+    ),
     citations=PRA_UK_CRR_CITATIONS,
+    securitisation_non_ctp_fair_value_cap_allowed=True,
+    securitisation_non_ctp_fair_value_cap_citation_ids=("PRA_DRC_ARTICLE_325AA",),
     unsupported_features={
-        DrcRiskClass.SECURITISATION_NON_CTP: (
-            "PRA_UK_CRR securitisation non-CTP DRC because PS1/26 Chapter 3 and "
-            "Appendix 1 securitisation mappings have not been implemented"
-        ),
         DrcRiskClass.CORRELATION_TRADING_PORTFOLIO: (
             "PRA_UK_CRR CTP DRC because PS1/26 Chapter 3 and Appendix 1 CTP mappings "
             "have not been implemented"
@@ -492,6 +495,22 @@ _SUPPORTED_CELL_DETAILS: Mapping[tuple[str, DrcRiskClass], tuple[str, tuple[str,
             ),
             (
                 PRA_UK_CRR_PROFILE_ID,
+                DrcRiskClass.SECURITISATION_NON_CTP,
+            ): (
+                (
+                    "PRA UK CRR securitisation non-CTP row and batch capital supported "
+                    "with Article 325z maturity, gross JTD, netting, and Article 325aa "
+                    "bucket, risk-weight, HBR, category, and fair-value-cap evidence."
+                ),
+                (
+                    "PRA_DRC_ARTICLE_325V",
+                    "PRA_DRC_ARTICLE_325Z",
+                    "PRA_DRC_ARTICLE_325AA",
+                ),
+                "Maintain PRA UK CRR securitisation non-CTP fixture and typed evidence coverage.",
+            ),
+            (
+                PRA_UK_CRR_PROFILE_ID,
                 DrcRiskClass.NON_SECURITISATION,
             ): (
                 (
@@ -505,7 +524,10 @@ _SUPPORTED_CELL_DETAILS: Mapping[tuple[str, DrcRiskClass], tuple[str, tuple[str,
                     "PRA_DRC_ARTICLE_325X",
                     "PRA_DRC_ARTICLE_325Y",
                 ),
-                "Maintain PRA UK CRR non-securitisation fixture and article-level citation coverage.",
+                (
+                    "Maintain PRA UK CRR non-securitisation fixture and article-level "
+                    "citation coverage."
+                ),
             ),
         }
     )
@@ -514,21 +536,6 @@ _SUPPORTED_CELL_DETAILS: Mapping[tuple[str, DrcRiskClass], tuple[str, tuple[str,
 _PLANNED_CELL_DETAILS: Mapping[tuple[str, DrcRiskClass], tuple[tuple[str, ...], str]] = (
     MappingProxyType(
         {
-            (
-                PRA_UK_CRR_PROFILE_ID,
-                DrcRiskClass.SECURITISATION_NON_CTP,
-            ): (
-                (
-                    "PRA_DRC_ARTICLE_325V",
-                    "PRA_DRC_ARTICLE_325Z",
-                    "PRA_DRC_ARTICLE_325AA",
-                ),
-                (
-                    "Implement PRA-owned securitisation non-CTP mappings, typed "
-                    "risk-weight evidence, fair-value cap handling, and fixture evidence "
-                    "before enabling runtime support."
-                ),
-            ),
             (
                 PRA_UK_CRR_PROFILE_ID,
                 DrcRiskClass.CORRELATION_TRADING_PORTFOLIO,

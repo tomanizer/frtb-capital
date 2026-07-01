@@ -16,13 +16,13 @@ same contract is exposed programmatically through
 | `EU_CRR3` | `SECURITISATION_NON_CTP` | `SUPPORTED` | EU CRR3 securitisation non-CTP row and batch capital supported with typed Article 325aa banking-book risk-weight and fair-value cap evidence. | `EU_CRR3_ARTICLE_325Z`, `EU_CRR3_ARTICLE_325AA` | Maintain EU CRR3 securitisation non-CTP fixture and typed evidence coverage. |
 | `EU_CRR3` | `CORRELATION_TRADING_PORTFOLIO` | `SUPPORTED` | EU CRR3 CTP row and batch capital supported with typed Article 325ad banking-book risk-weight and decomposition evidence. | `EU_CRR3_ARTICLE_325AB`, `EU_CRR3_ARTICLE_325AC`, `EU_CRR3_ARTICLE_325AD` | Maintain EU CRR3 CTP fixture and typed decomposition evidence coverage. |
 | `PRA_UK_CRR` | `NON_SECURITISATION` | `SUPPORTED` | PRA UK CRR non-securitisation row and batch capital supported with Article 325w/x/y LGD, maturity, netting, bucket, risk-weight, HBR, and category evidence. | `PRA_DRC_ARTICLE_325V`, `PRA_DRC_ARTICLE_325W`, `PRA_DRC_ARTICLE_325X`, `PRA_DRC_ARTICLE_325Y` | Maintain PRA UK CRR non-securitisation fixture and article-level citation coverage. |
-| `PRA_UK_CRR` | `SECURITISATION_NON_CTP` | `FAIL_CLOSED` | PRA_UK_CRR securitisation non-CTP DRC because PS1/26 Chapter 3 and Appendix 1 securitisation mappings have not been implemented | `PRA_DRC_ARTICLE_325V`, `PRA_DRC_ARTICLE_325Z`, `PRA_DRC_ARTICLE_325AA` | Implement PRA-owned securitisation non-CTP mappings, typed risk-weight evidence, fair-value cap handling, and fixture evidence before enabling runtime support. |
+| `PRA_UK_CRR` | `SECURITISATION_NON_CTP` | `SUPPORTED` | PRA UK CRR securitisation non-CTP row and batch capital supported with Article 325z maturity, gross JTD, netting, and Article 325aa bucket, risk-weight, HBR, category, and fair-value-cap evidence. | `PRA_DRC_ARTICLE_325V`, `PRA_DRC_ARTICLE_325Z`, `PRA_DRC_ARTICLE_325AA` | Maintain PRA UK CRR securitisation non-CTP fixture and typed evidence coverage. |
 | `PRA_UK_CRR` | `CORRELATION_TRADING_PORTFOLIO` | `FAIL_CLOSED` | PRA_UK_CRR CTP DRC because PS1/26 Chapter 3 and Appendix 1 CTP mappings have not been implemented | `PRA_DRC_ARTICLE_325V`, `PRA_DRC_ARTICLE_325AB`, `PRA_DRC_ARTICLE_325AC`, `PRA_DRC_ARTICLE_325AD` | Implement PRA-owned CTP mappings, typed risk-weight and decomposition evidence, and fixture evidence before enabling runtime support. |
 
 Basel MAR22 securitisation non-CTP and CTP support requires typed
 `DrcRiskWeightEvidence` records for MAR22.34 or MAR22.42, respectively. EU CRR3
 support covers non-securitisation, securitisation non-CTP, and CTP row and
-batch capital. PRA UK CRR supports non-securitisation row and batch capital;
-PRA securitisation non-CTP and CTP remain fail-closed for #1005 and #1006.
+batch capital. PRA UK CRR supports non-securitisation and securitisation
+non-CTP row and batch capital; PRA CTP remains fail-closed for #1006.
 Legacy raw float risk-weight maps are limited to `US_NPR_2_0` compatibility
 use.

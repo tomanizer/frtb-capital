@@ -24,6 +24,7 @@ from frtb_drc.reference_data import get_risk_weight_rule
 from frtb_drc.regimes import (
     BASEL_MAR22_PROFILE_ID,
     EU_CRR3_PROFILE_ID,
+    PRA_UK_CRR_PROFILE_ID,
     US_NPR_2_0_PROFILE_ID,
     DrcRuleProfile,
 )
@@ -236,6 +237,8 @@ def _securitisation_non_ctp_public_api_citations(profile_id: str) -> tuple[str, 
         )
     if profile_id == EU_CRR3_PROFILE_ID:
         return ("EU_CRR3_ARTICLE_325Z", "EU_CRR3_ARTICLE_325AA")
+    if profile_id == PRA_UK_CRR_PROFILE_ID:
+        return ("PRA_DRC_ARTICLE_325Z", "PRA_DRC_ARTICLE_325AA")
     return ("US_NPR_210_C_1", "US_NPR_210_C_2", "US_NPR_210_C_3_IV")
 
 

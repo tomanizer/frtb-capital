@@ -23,6 +23,9 @@ The committed fixture packs are:
 - `drc_eu_sec_nonctp_v1/`: static EU CRR3 securitisation non-CTP cases with
   typed Article 325aa risk-weight evidence, fair-value cap evidence, and
   explicit offset-group evidence.
+- `drc_pra_sec_nonctp_v1/`: static PRA UK CRR securitisation non-CTP cases
+  with typed Article 325aa risk-weight evidence, fair-value cap evidence, and
+  explicit offset-group evidence.
 - `drc_ctp_v1/`: static U.S. NPR 2.0 CTP cases with replicated tranche and
   index-offset treatment.
 - `drc_basel_ctp_v1/`: static Basel MAR22 CTP cases with typed MAR22.42
@@ -102,6 +105,14 @@ class-specific Arrow handoffs, or deterministic rejected-row diagnostics.
 
 - `positions.json`: static EU CRR3 securitisation non-CTP positions, context,
   typed risk-weight evidence, fair-value cap evidence, and explicit
+  offset-group evidence.
+- `expected_outputs.json`: expected total and selected outputs.
+- `README.md`: fixture intent and Article 325z/325aa evidence boundary.
+
+`packages/frtb-drc/tests/fixtures/drc_pra_sec_nonctp_v1/` contains:
+
+- `positions.json`: static PRA UK CRR securitisation non-CTP positions,
+  context, typed risk-weight evidence, fair-value cap evidence, and explicit
   offset-group evidence.
 - `expected_outputs.json`: expected total and selected outputs.
 - `README.md`: fixture intent and Article 325z/325aa evidence boundary.

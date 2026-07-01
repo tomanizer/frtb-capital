@@ -15,7 +15,7 @@ from frtb_drc.risk_weight_evidence import (
     effective_risk_weights,
     risk_weight_evidence_hash_payload,
 )
-from frtb_drc.regimes import EU_CRR3_PROFILE_ID
+from frtb_drc.regimes import EU_CRR3_PROFILE_ID, PRA_UK_CRR_PROFILE_ID
 from frtb_drc.validation import DrcInputError
 
 
@@ -147,11 +147,11 @@ def validate_securitisation_non_ctp_context_for_positions(
             "context.securitisation_non_ctp_offset_groups contains unused "
             "securitisation non-CTP position ids: " + ", ".join(unused_offset_groups)
         )
-    if context.profile_id == EU_CRR3_PROFILE_ID:
-        _validate_eu_crr3_complete_evidence(position_ids, context=context)
+    if context.profile_id in {EU_CRR3_PROFILE_ID, PRA_UK_CRR_PROFILE_ID}:
+        _validate_profile_complete_evidence(position_ids, context=context)
 
 
-def _validate_eu_crr3_complete_evidence(
+def _validate_profile_complete_evidence(
     position_ids: set[str],
     *,
     context: DrcCalculationContext,
@@ -162,13 +162,15 @@ def _validate_eu_crr3_complete_evidence(
     if missing_cap_evidence:
         raise DrcInputError(
             "context.securitisation_non_ctp_fair_value_cap_evidence is required for "
-            "EU_CRR3 securitisation non-CTP positions: " + ", ".join(missing_cap_evidence)
+            f"{context.profile_id} securitisation non-CTP positions: "
+            + ", ".join(missing_cap_evidence)
         )
     missing_offset_groups = sorted(position_ids - set(context.securitisation_non_ctp_offset_groups))
     if missing_offset_groups:
         raise DrcInputError(
-            "context.securitisation_non_ctp_offset_groups is required for EU_CRR3 "
-            "securitisation non-CTP positions: " + ", ".join(missing_offset_groups)
+            "context.securitisation_non_ctp_offset_groups is required for "
+            f"{context.profile_id} securitisation non-CTP positions: "
+            + ", ".join(missing_offset_groups)
         )
 
 

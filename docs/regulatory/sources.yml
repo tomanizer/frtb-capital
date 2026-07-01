@@ -117,7 +117,7 @@ sources:
       - "CTP DRC"
     components:
       - frtb-drc
-    reuse_note: "Link-only legal instrument source for UK PRA DRC mappings; frtb-drc uses Articles 325w-325y for the supported PRA non-securitisation path while PRA securitisation non-CTP and CTP remain fail-closed."
+    reuse_note: "Link-only legal instrument source for UK PRA DRC mappings; frtb-drc uses Articles 325w-325y for the supported PRA non-securitisation path and Articles 325z-325aa for the supported PRA securitisation non-CTP path while PRA CTP remains fail-closed."
 
   - id: uk_pra_cp16_22_basel_3_1_consultation
     issuer: PRA
