@@ -18,7 +18,8 @@ All contributions must be made under the **Developer Certificate of Origin (DCO)
 Sign off every commit with `git commit -s`, which adds a `Signed-off-by` line
 certifying you have the right to submit the code. See [`DCO.md`](DCO.md) for the
 full text and rationale. Pull requests whose commits are not signed off may be
-rejected by an automated DCO check.
+rejected during review; automated DCO enforcement is not yet configured in this
+repository's GitHub Actions workflows.
 
 ## Setup
 

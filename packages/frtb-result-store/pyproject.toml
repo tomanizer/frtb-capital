@@ -8,7 +8,7 @@ version = "0.1.0"
 description = "DuckDB and Parquet result store for FRTB capital evidence"
 readme = "README.md"
 requires-python = ">=3.11"
-license = "Apache-2.0"
+license = { text = "Apache-2.0" }
 dependencies = [
     "frtb-common",
     "pyarrow>=23.0.1,<24",
