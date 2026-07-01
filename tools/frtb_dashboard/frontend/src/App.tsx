@@ -35,7 +35,10 @@ function formatCell(row: GridRow, column: GridColumn): ReactNode {
   if (column.key === "pla_zone" || column.key === "backtest_zone") return <ZoneChip value={typeof value === "string" ? value : null} />;
   if (column.kind === "percent") return formatPercent(typeof value === "number" ? value : null);
   if (column.kind === "decimal") return typeof value === "number" ? value.toFixed(2) : "—";
-  if (column.kind === "signed") return <span className="muted-cell">—</span>;
+  if (column.kind === "signed") {
+    if (typeof value !== "number" || !Number.isFinite(value)) return <span className="muted-cell">—</span>;
+    return <span className={signClass(value)}>{formatMoney(value, row.currency)}</span>;
+  }
   if (typeof value === "number") return formatMoney(value, row.currency);
   if (typeof value === "string" && value.length > 0) return value;
   return "—";
@@ -107,6 +110,7 @@ function App() {
     if (cachedRun && cachedMetadata) {
       setOverview(cachedRun);
       setMetadata(cachedMetadata);
+      setError(null);
       setLoadingZone(null);
       return () => {
         active = false;
@@ -148,6 +152,8 @@ function App() {
     if (cachedGrid) {
       setGrid(cachedGrid);
       setSelectedRowId(cachedGrid.rows[0]?.row_id ?? "");
+      setError(null);
+      setLoadingZone(null);
       return () => {
         active = false;
         controller.abort();
@@ -186,11 +192,14 @@ function App() {
     if (cachedInspector) {
       setInspector(cachedInspector);
       setActiveInspectorTab(cachedInspector.tabs[0]?.key ?? "attribution");
+      setError(null);
+      setLoadingZone(null);
       return () => {
         active = false;
         controller.abort();
       };
     }
+    setInspector(null);
     setLoadingZone("inspector");
     getInspector(RUN_ID, selectedRowId, scenario, selectedNodeId, controller.signal)
       .then((payload) => {

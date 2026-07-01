@@ -795,8 +795,11 @@ Interaction contract:
 - Clicking IMA selects framework IMA.
 - Clicking SA selects framework SA.
 - Clicking CVA selects framework CVA.
-- Clicking output floor opens an explanation panel: `max(IMA, 0.725 * SA)` and
-  whether floor is binding.
+- Clicking output floor opens an explanation panel that shows the floor amount
+  and whether the floor is binding. In the v2 demo, the explanatory text may
+  show the fixed non-regulatory `0.725` display multiplier used by the fixture;
+  production views should show a multiplier only when it is supplied by the
+  persisted run payload.
 - Movement badges use baseline data only. If no baseline exists, they render as
   unavailable, not zero.
 
