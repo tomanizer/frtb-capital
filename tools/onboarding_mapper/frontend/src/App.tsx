@@ -4,7 +4,6 @@ import {
   ArrowRight,
   Check,
   CheckCircle2,
-  Circle,
   ClipboardList,
   Columns3,
   Copy,
@@ -625,7 +624,7 @@ export default function App() {
                 <span className="step-index">{index + 1}</span>
                 <span className="step-copy">
                   <strong>{item.title}</strong>
-                  <span>{item.subtitle}</span>
+                  {isActive ? <span>{item.subtitle}</span> : null}
                 </span>
               </button>
             );
@@ -664,33 +663,11 @@ export default function App() {
           </div>
         ) : null}
         <header className="page-header">
-          <div>
-            <span className="eyebrow">FRTB client onboarding</span>
-            <h2>{STEPS.find((item) => item.id === step)?.title}</h2>
-            <p>{STEPS.find((item) => item.id === step)?.subtitle}</p>
-          </div>
-          <div className="status-strip" aria-label="Workflow status">
-            <span className={selectedTable ? "status-pill complete" : "status-pill"}>
-              {selectedTable ? <CheckCircle2 aria-hidden="true" className="icon" /> : <Circle aria-hidden="true" className="icon" />}
-              Target
-            </span>
-            <span className={sourcePreview ? "status-pill complete" : "status-pill"}>
-              {sourcePreview ? <CheckCircle2 aria-hidden="true" className="icon" /> : <Circle aria-hidden="true" className="icon" />}
-              Source
-            </span>
-            <span className={mappedRequired.total && mappedRequired.done === mappedRequired.total ? "status-pill complete" : "status-pill"}>
-              {mappedRequired.total && mappedRequired.done === mappedRequired.total ? (
-                <CheckCircle2 aria-hidden="true" className="icon" />
-              ) : (
-                <Circle aria-hidden="true" className="icon" />
-              )}
-              Mapping
-            </span>
-            <span className={validation ? "status-pill complete" : "status-pill"}>
-              {validation ? <CheckCircle2 aria-hidden="true" className="icon" /> : <Circle aria-hidden="true" className="icon" />}
-              Validation
-            </span>
-          </div>
+          <span className="eyebrow">FRTB client onboarding</span>
+          <h2>
+            {STEPS.find((item) => item.id === step)?.title}
+            <span className="page-header-subtitle">{STEPS.find((item) => item.id === step)?.subtitle}</span>
+          </h2>
         </header>
 
         {error ? (
@@ -808,14 +785,14 @@ export default function App() {
                     <h3>{tableDetail.label}</h3>
                     <p>{tableDetail.description}</p>
                   </div>
-                  <div className="metric-row">
+                  <div className="stat-cluster">
                     <div>
                       <strong>{tableDetail.required_column_count}</strong>
-                      <span>Required fields</span>
+                      <span>Required</span>
                     </div>
                     <div>
                       <strong>{tableDetail.column_count}</strong>
-                      <span>Total fields</span>
+                      <span>Total</span>
                     </div>
                     <div>
                       <strong>{tableDetail.component}</strong>
@@ -955,23 +932,14 @@ export default function App() {
               <div className="source-preview">
                 {sourcePreview ? (
                   <>
-                    <div className="metric-row">
-                      <div>
-                        <strong>{sourcePreview.row_count.toLocaleString()}</strong>
-                        <span>Rows</span>
-                      </div>
-                      <div>
-                        <strong>{sourcePreview.columns.length}</strong>
-                        <span>Source columns</span>
-                      </div>
-                      <div>
-                        <strong>{tableDetail?.column_count ?? "-"}</strong>
-                        <span>Target columns</span>
-                      </div>
-                      <div>
-                        <strong>{mappedRequired.total || "-"}</strong>
-                        <span>Required target fields</span>
-                      </div>
+                    <div className="stat-strip">
+                      <span><strong>{sourcePreview.row_count.toLocaleString()}</strong> rows</span>
+                      <span className="divider">·</span>
+                      <span><strong>{sourcePreview.columns.length}</strong> source cols</span>
+                      <span className="divider">·</span>
+                      <span><strong>{tableDetail?.column_count ?? "-"}</strong> target cols</span>
+                      <span className="divider">·</span>
+                      <span><strong>{mappedRequired.total || "-"}</strong> required</span>
                     </div>
                     <div className="preview-toolbar">
                       <div className="segmented-control">
@@ -1134,11 +1102,16 @@ export default function App() {
                               </span>
                             </td>
                             <td>
-                              <div className="cell-title mono">{column.name}</div>
-                              <div className="cell-note">
-                                {column.logical_type} / {column.null_policy}
+                              <div
+                                className="cell-title mono"
+                                title={column.aliases.length ? `Aliases: ${column.aliases.join(", ")}` : undefined}
+                              >
+                                {column.name}
+                                <span className="cell-note">
+                                  {column.logical_type} / {column.null_policy}
+                                  {column.aliases.length ? " · has aliases" : ""}
+                                </span>
                               </div>
-                              {column.aliases.length ? <div className="cell-note">Aliases: {column.aliases.join(", ")}</div> : null}
                             </td>
                             <td>
                               <select
@@ -1168,17 +1141,17 @@ export default function App() {
                             <td>
                               {sourceColumn ? (
                                 <>
-                                  <div className="cell-title cell-title-with-badge">
+                                  <div className="cell-title">
                                     {sourceColumn.arrow_type}
                                     <span className={`badge ${typeStatus === "check" ? "warning" : "success"} type-badge`}>
                                       {typeStatus === "check" ? "check type" : "type ok"}
                                     </span>
-                                  </div>
-                                  <div className="cell-note">
-                                    {sourceColumn.null_count.toLocaleString()} nulls
-                                    {sourceColumn.distinct_count !== null && sourceColumn.distinct_count !== undefined
-                                      ? ` / ${sourceColumn.distinct_count.toLocaleString()} distinct`
-                                      : ""}
+                                    <span className="cell-note">
+                                      {sourceColumn.null_count.toLocaleString()} nulls
+                                      {sourceColumn.distinct_count !== null && sourceColumn.distinct_count !== undefined
+                                        ? ` / ${sourceColumn.distinct_count.toLocaleString()} distinct`
+                                        : ""}
+                                    </span>
                                   </div>
                                   <div className="cell-note sample-cell">{sourceColumn.sample_values.map(formatValue).join(", ") || "-"}</div>
                                 </>
@@ -1272,13 +1245,13 @@ export default function App() {
                         {validation.accepted_rows.toLocaleString()} accepted / {validation.rejected_rows.toLocaleString()} rejected rows
                       </span>
                     </div>
-                    <div className="metric-row compact-row">
+                    <div className="stat-cluster">
                       <div>
                         <strong>{validation.batch_built ? "Yes" : "No"}</strong>
                         <span>Batch built</span>
                       </div>
                       <div>
-                        <strong>{validation.input_table_hash?.slice(0, 12) ?? "-"}</strong>
+                        <strong className="mono">{validation.input_table_hash?.slice(0, 12) ?? "-"}</strong>
                         <span>Table hash</span>
                       </div>
                     </div>
