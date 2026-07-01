@@ -238,6 +238,7 @@ component_type = "capital"
 metadata_object = "frtb_sbm:PACKAGE_METADATA"
 calculation_entrypoint = "frtb_sbm:calculate_sbm_capital"
 attribution_status = "shared_projection"
+notes = "Basel MAR21 has 21/21 cells implemented under audit; US_NPR_2_0 has GIRR delta only; EU_CRR3 and PRA_UK_CRR fail closed. See ADR 0048 and packages/frtb-sbm/docs/REGULATORY_TRACEABILITY.md."
 
 [[packages.required_tests]]
 id = "public-api"
@@ -249,6 +250,10 @@ path = "packages/frtb-sbm/tests/test_sbm_unsupported_features.py"
 
 [[packages.required_tests]]
 id = "support-matrix"
+path = "packages/frtb-sbm/tests/test_sbm_support_matrix.py"
+
+[[packages.required_tests]]
+id = "comparison-profile-matrix"
 path = "packages/frtb-sbm/tests/test_sbm_support_matrix.py"
 
 [[packages.required_tests]]
