@@ -5,6 +5,8 @@ from __future__ import annotations
 import math
 from collections.abc import Iterable
 
+from frtb_common import CalculationScope
+
 from frtb_drc.data_models import CreditQuality, DrcPosition, DrcRiskClass
 
 
@@ -121,6 +123,8 @@ def validate_position(
     _require_non_empty(position.bucket_key, "bucket_key")
     if position.lineage is None:
         raise DrcInputError("lineage is required")
+    if position.org_scope is not None and not isinstance(position.org_scope, CalculationScope):
+        raise DrcInputError("org_scope must be CalculationScope when supplied")
     _require_non_empty(position.lineage.source_system, "lineage.source_system")
     _require_non_empty(position.lineage.source_file, "lineage.source_file")
     _require_non_empty(position.lineage.source_row_id, "lineage.source_row_id")

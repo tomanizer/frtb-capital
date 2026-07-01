@@ -39,6 +39,7 @@ from frtb_drc.kernel.securitisation_gross import (
     fair_value_capped_gross_jtd as _fair_value_capped_gross_jtd,
 )
 from frtb_drc.maturity import scale_gross_jtds
+from frtb_drc.org_scope import single_scope_metadata, unique_scope_metadata
 from frtb_drc.reference_data import get_bucket_definition
 from frtb_drc.regimes import (
     BASEL_MAR22_PROFILE_ID as _BASEL_MAR22_PROFILE_ID,
@@ -281,6 +282,7 @@ def calculate_securitisation_non_ctp_gross_jtd(
             (*_gross_citations(profile_id), *citations, *position.citation_ids)
         ),
         branch_metadata=branch_metadata,
+        org_scope=position.org_scope,
     )
 
 
@@ -586,6 +588,10 @@ def _net_securitisation_non_ctp_group(
                 reason=reason,
                 citations=_netting_citations(profile_id),
             ),
+        ),
+        org_scope=single_scope_metadata(item.gross_jtd.org_scope for item in exposures),
+        contributing_org_scopes=unique_scope_metadata(
+            item.gross_jtd.org_scope for item in exposures
         ),
     )
 

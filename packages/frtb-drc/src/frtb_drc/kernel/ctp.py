@@ -30,6 +30,7 @@ from frtb_drc.data_models import (
     RejectedOffset,
 )
 from frtb_drc.maturity import scale_gross_jtds
+from frtb_drc.org_scope import single_scope_metadata, unique_scope_metadata
 from frtb_drc.regimes import (
     BASEL_MAR22_PROFILE_ID,
     EU_CRR3_PROFILE_ID,
@@ -227,6 +228,7 @@ def calculate_ctp_gross_jtd(
         pnl_component=0.0,
         gross_jtd=abs(position.market_value),
         citations=merge_citations((*_ctp_gross_citations(profile_id), *position.citation_ids)),
+        org_scope=position.org_scope,
     )
 
 
@@ -636,6 +638,10 @@ def _net_ctp_group(
                 ),
                 citations=_ctp_netting_citations(profile_id),
             ),
+        ),
+        org_scope=single_scope_metadata(item.gross_jtd.org_scope for item in exposures),
+        contributing_org_scopes=unique_scope_metadata(
+            item.gross_jtd.org_scope for item in exposures
         ),
     )
 

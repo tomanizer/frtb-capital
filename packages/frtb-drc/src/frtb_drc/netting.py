@@ -16,6 +16,7 @@ from frtb_drc.data_models import (
     NetJtd,
     RejectedOffset,
 )
+from frtb_drc.org_scope import single_scope_metadata, unique_scope_metadata
 from frtb_drc.regimes import (
     BASEL_MAR22_PROFILE_ID,
     EU_CRR3_PROFILE_ID,
@@ -305,6 +306,10 @@ def _net_record(
         position_ids=tuple(item.gross_jtd.position_id for item in source_items),
         scaled_jtd_ids=tuple(item.scaled_jtd.scaled_jtd_id for item in source_items),
         rejected_offsets=rejected_offsets,
+        org_scope=single_scope_metadata(item.gross_jtd.org_scope for item in source_items),
+        contributing_org_scopes=unique_scope_metadata(
+            item.gross_jtd.org_scope for item in source_items
+        ),
     )
 
 

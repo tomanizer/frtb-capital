@@ -34,13 +34,20 @@ def input_snapshot_hash(positions: Iterable[DrcPosition]) -> str:
     """
 
     payload = [
-        position.as_dict()
+        _position_hash_payload(position)
         for position in sorted(
             positions,
             key=lambda position: (position.position_id, position.source_row_id),
         )
     ]
     return _hash_payload(payload)
+
+
+def _position_hash_payload(position: DrcPosition) -> dict[str, object]:
+    payload = position.as_dict()
+    if position.org_scope is None:
+        payload.pop("org_scope", None)
+    return payload
 
 
 def rule_profile_hash(profile_id: str) -> str:
