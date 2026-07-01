@@ -56,9 +56,9 @@ frtb-capital/
 │   ├── frtb-common/         # shared primitives
 │   ├── frtb-ima/            # Internal Models Approach (implemented)
 │   ├── frtb-sbm/            # Standardized Approach SBM (partial runtime)
-│   ├── frtb-drc/            # Standardized Approach DRC (partial runtime)
+│   ├── frtb-drc/            # Standardized Approach DRC (implemented)
 │   ├── frtb-rrao/           # Standardized Approach RRAO (implemented)
-│   ├── frtb-cva/            # Credit Valuation Adjustment (partial runtime)
+│   ├── frtb-cva/            # Credit Valuation Adjustment (implemented)
 │   ├── frtb-orchestration/  # suite-level aggregation (implemented)
 │   └── frtb-result-store/   # DuckDB/Parquet evidence store (partial)
 ├── docs/
@@ -69,6 +69,11 @@ frtb-capital/
 ├── AGENTS.md                # Codex brief
 └── pyproject.toml           # uv workspace root
 ```
+
+Maturity labels above are a convenience summary and can lag; treat
+[`docs/quality/package_maturity.toml`](docs/quality/package_maturity.toml)
+(and its generated [`docs/quality/PACKAGE_STATUS.md`](docs/quality/PACKAGE_STATUS.md))
+as authoritative before relying on the parenthetical status here.
 
 ---
 
