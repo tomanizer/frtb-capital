@@ -632,7 +632,7 @@ textarea {
   white-space: nowrap;
 }
 
-.selected-row {
+.data-table tbody tr.selected-row {
   background: var(--blue-soft);
 }
 
@@ -850,7 +850,7 @@ textarea {
 .mapping-command-row {
   display: flex;
   flex-wrap: wrap;
-  align-items: end;
+  align-items: flex-end;
   gap: 10px;
   margin-bottom: 8px;
 }

@@ -665,8 +665,8 @@ export default function App() {
         <header className="page-header">
           <span className="eyebrow">FRTB client onboarding</span>
           <h2>
-            {STEPS.find((item) => item.id === step)?.title}
-            <span className="page-header-subtitle">{STEPS.find((item) => item.id === step)?.subtitle}</span>
+            {STEPS[stepIndex]?.title}
+            <span className="page-header-subtitle">{STEPS[stepIndex]?.subtitle}</span>
           </h2>
         </header>
 
@@ -1103,10 +1103,10 @@ export default function App() {
                             </td>
                             <td>
                               <div
-                                className="cell-title mono"
+                                className="cell-title"
                                 title={column.aliases.length ? `Aliases: ${column.aliases.join(", ")}` : undefined}
                               >
-                                {column.name}
+                                <span className="mono">{column.name}</span>
                                 <span className="cell-note">
                                   {column.logical_type} / {column.null_policy}
                                   {column.aliases.length ? " · has aliases" : ""}
