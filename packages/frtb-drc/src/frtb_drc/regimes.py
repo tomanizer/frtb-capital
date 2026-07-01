@@ -469,6 +469,86 @@ _SUPPORTED_CELL_DETAILS: Mapping[tuple[str, DrcRiskClass], tuple[str, tuple[str,
     )
 )
 
+_PLANNED_CELL_DETAILS: Mapping[tuple[str, DrcRiskClass], tuple[tuple[str, ...], str]] = (
+    MappingProxyType(
+        {
+            (
+                EU_CRR3_PROFILE_ID,
+                DrcRiskClass.SECURITISATION_NON_CTP,
+            ): (
+                (
+                    "EU_CRR3_ARTICLE_325Z",
+                    "EU_CRR3_ARTICLE_325AA",
+                ),
+                (
+                    "Implement Article 325z/325aa securitisation non-CTP mappings, "
+                    "typed banking-book risk-weight evidence, and deterministic EU "
+                    "securitisation fixtures."
+                ),
+            ),
+            (
+                EU_CRR3_PROFILE_ID,
+                DrcRiskClass.CORRELATION_TRADING_PORTFOLIO,
+            ): (
+                (
+                    "EU_CRR3_ARTICLE_325AB",
+                    "EU_CRR3_ARTICLE_325AC",
+                    "EU_CRR3_ARTICLE_325AD",
+                ),
+                (
+                    "Implement Article 325ab-325ad CTP mappings, typed risk-weight "
+                    "and decomposition evidence, and deterministic EU CTP fixtures."
+                ),
+            ),
+            (
+                PRA_UK_CRR_PROFILE_ID,
+                DrcRiskClass.NON_SECURITISATION,
+            ): (
+                (
+                    "PRA_DRC_ARTICLE_325V",
+                    "PRA_DRC_ARTICLE_325W",
+                    "PRA_DRC_ARTICLE_325X",
+                    "PRA_DRC_ARTICLE_325Y",
+                ),
+                (
+                    "Implement PRA-owned non-securitisation LGD, netting, maturity, "
+                    "risk-weight, HBR, and fixture evidence before enabling runtime support."
+                ),
+            ),
+            (
+                PRA_UK_CRR_PROFILE_ID,
+                DrcRiskClass.SECURITISATION_NON_CTP,
+            ): (
+                (
+                    "PRA_DRC_ARTICLE_325V",
+                    "PRA_DRC_ARTICLE_325Z",
+                    "PRA_DRC_ARTICLE_325AA",
+                ),
+                (
+                    "Implement PRA-owned securitisation non-CTP mappings, typed "
+                    "risk-weight evidence, fair-value cap handling, and fixture evidence "
+                    "before enabling runtime support."
+                ),
+            ),
+            (
+                PRA_UK_CRR_PROFILE_ID,
+                DrcRiskClass.CORRELATION_TRADING_PORTFOLIO,
+            ): (
+                (
+                    "PRA_DRC_ARTICLE_325V",
+                    "PRA_DRC_ARTICLE_325AB",
+                    "PRA_DRC_ARTICLE_325AC",
+                    "PRA_DRC_ARTICLE_325AD",
+                ),
+                (
+                    "Implement PRA-owned CTP mappings, typed risk-weight and "
+                    "decomposition evidence, and fixture evidence before enabling runtime support."
+                ),
+            ),
+        }
+    )
+)
+
 
 def _profile_support_cell(
     profile: DrcRuleProfile,
@@ -487,8 +567,12 @@ def _profile_support_cell(
             risk_class,
             f"{profile.profile_id} {risk_class.value} is unsupported until mapped.",
         )
-        citations = tuple(sorted(profile.citations))
-        next_step = "Add cited profile-specific mappings and deterministic fixtures."
+        planned = _PLANNED_CELL_DETAILS.get((profile.profile_id, risk_class))
+        if planned is None:
+            citations = tuple(sorted(profile.citations))
+            next_step = "Add cited profile-specific mappings and deterministic fixtures."
+        else:
+            citations, next_step = planned
     return DrcProfileSupportCell(
         profile_id=profile.profile_id,
         risk_class=risk_class,

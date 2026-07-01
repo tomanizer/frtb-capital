@@ -50,10 +50,13 @@ Supported profile coverage is:
 
 Known fail-closed profile paths are:
 
-- `EU_CRR3` securitisation non-CTP and CTP, pending Articles 325z-325ad and
-  related securitisation/CTP mappings.
-- `PRA_UK_CRR` for all DRC risk classes, pending PRA PS1/26 Chapter 3 and
-  Appendix 1 rulebook paragraph mappings.
+- `EU_CRR3` securitisation non-CTP, source-mapped to
+  `EU_CRR3_ARTICLE_325Z` and `EU_CRR3_ARTICLE_325AA` for issue #1002.
+- `EU_CRR3` CTP, source-mapped to `EU_CRR3_ARTICLE_325AB`,
+  `EU_CRR3_ARTICLE_325AC`, and `EU_CRR3_ARTICLE_325AD` for issue #1003.
+- `PRA_UK_CRR` for all DRC risk classes, source-mapped to
+  `PRA_DRC_ARTICLE_325V` through `PRA_DRC_ARTICLE_325AD` for issues #1004,
+  #1005, and #1006.
 
 Regulatory anchors for the supported path are recorded in
 [`REGULATORY_REQUIREMENTS.md`](../REGULATORY_REQUIREMENTS.md) and

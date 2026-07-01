@@ -34,9 +34,12 @@ before capital is emitted.
 
 The following paths remain unsupported and fail closed:
 
-- EU CRR3 securitisation non-CTP and CTP paths pending Articles 325z-325ad and
-  related securitisation/CTP mappings;
-- PRA UK CRR DRC paths pending PRA PS1/26 Chapter 3 and Appendix 1 mappings;
+- EU CRR3 securitisation non-CTP paths pending implementation of the
+  `EU_CRR3_ARTICLE_325Z` and `EU_CRR3_ARTICLE_325AA` source-map ids;
+- EU CRR3 CTP paths pending implementation of the `EU_CRR3_ARTICLE_325AB`,
+  `EU_CRR3_ARTICLE_325AC`, and `EU_CRR3_ARTICLE_325AD` source-map ids;
+- PRA UK CRR DRC paths pending implementation of the `PRA_DRC_ARTICLE_325V`
+  through `PRA_DRC_ARTICLE_325AD` source-map ids;
 - internal derivation of banking-book securitisation risk weights;
 - final regulatory reporting and firm-level capital consolidation.
 

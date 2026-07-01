@@ -65,24 +65,58 @@ EU_CRR3_CITATIONS: dict[str, DrcCitation] = {
             "the Standardised Approach credit-quality categories referenced by Article 325y(6)."
         ),
     ),
-    "EU_CRR3_ARTICLES_325Z_325AA": DrcCitation(
-        citation_id="EU_CRR3_ARTICLES_325Z_325AA",
+    "EU_CRR3_ARTICLE_325Z": DrcCitation(
+        citation_id="EU_CRR3_ARTICLE_325Z",
         source_id="EU_CRR3_2024_1623",
-        paragraph="Articles 325z and 325aa",
+        paragraph="Article 325z",
         url="https://eur-lex.europa.eu/eli/reg/2024/1623/oj/eng",
         note=(
-            "EU securitisation non-CTP DRC article range; runtime path remains "
-            "fail-closed until profile-specific mappings are implemented."
+            "EU securitisation non-CTP gross JTD and net JTD source map; "
+            "runtime path remains fail-closed until profile-specific mappings "
+            "and fixtures are implemented."
         ),
     ),
-    "EU_CRR3_ARTICLES_325AB_325AD": DrcCitation(
-        citation_id="EU_CRR3_ARTICLES_325AB_325AD",
+    "EU_CRR3_ARTICLE_325AA": DrcCitation(
+        citation_id="EU_CRR3_ARTICLE_325AA",
         source_id="EU_CRR3_2024_1623",
-        paragraph="Articles 325ab to 325ad",
+        paragraph="Article 325aa",
         url="https://eur-lex.europa.eu/eli/reg/2024/1623/oj/eng",
         note=(
-            "EU CTP DRC article range; runtime path remains fail-closed until "
-            "profile-specific mappings are implemented."
+            "EU securitisation non-CTP bucket, risk-weight, hedge benefit, and "
+            "category capital source map; runtime path remains fail-closed until "
+            "profile-specific mappings and fixtures are implemented."
+        ),
+    ),
+    "EU_CRR3_ARTICLE_325AB": DrcCitation(
+        citation_id="EU_CRR3_ARTICLE_325AB",
+        source_id="EU_CRR3_2024_1623",
+        paragraph="Article 325ab",
+        url="https://eur-lex.europa.eu/eli/reg/2024/1623/oj/eng",
+        note=(
+            "EU CTP DRC scope and gross JTD source map; runtime path remains "
+            "fail-closed until profile-specific mappings and fixtures are implemented."
+        ),
+    ),
+    "EU_CRR3_ARTICLE_325AC": DrcCitation(
+        citation_id="EU_CRR3_ARTICLE_325AC",
+        source_id="EU_CRR3_2024_1623",
+        paragraph="Article 325ac",
+        url="https://eur-lex.europa.eu/eli/reg/2024/1623/oj/eng",
+        note=(
+            "EU CTP net JTD, offsetting, replication, and decomposition source "
+            "map; runtime path remains fail-closed until profile-specific mappings "
+            "and fixtures are implemented."
+        ),
+    ),
+    "EU_CRR3_ARTICLE_325AD": DrcCitation(
+        citation_id="EU_CRR3_ARTICLE_325AD",
+        source_id="EU_CRR3_2024_1623",
+        paragraph="Article 325ad",
+        url="https://eur-lex.europa.eu/eli/reg/2024/1623/oj/eng",
+        note=(
+            "EU CTP bucket, risk-weight, hedge benefit, and category capital "
+            "source map; runtime path remains fail-closed until profile-specific "
+            "mappings and fixtures are implemented."
         ),
     ),
 }
@@ -96,6 +130,99 @@ PRA_UK_CRR_CITATIONS: dict[str, DrcCitation] = {
         note=(
             "UK Basel 3.1 market-risk profile anchor; runtime DRC profile remains "
             "fail-closed until PRA rulebook paragraph mapping is implemented."
+        ),
+    ),
+    "PRA_DRC_ARTICLE_325V": DrcCitation(
+        citation_id="PRA_DRC_ARTICLE_325V",
+        source_id="UK_PRA_2026_1_MARKET_RISK_PART",
+        paragraph="Article 325v",
+        url="https://www.prarulebook.co.uk/-/media/pra/files/legal-instruments/2026/pra2026-1.pdf",
+        note=(
+            "UK PRA Default Risk Charge scope source map. Runtime remains "
+            "fail-closed until package-local PRA mappings and fixtures are implemented."
+        ),
+    ),
+    "PRA_DRC_ARTICLE_325W": DrcCitation(
+        citation_id="PRA_DRC_ARTICLE_325W",
+        source_id="UK_PRA_2026_1_MARKET_RISK_PART",
+        paragraph="Article 325w",
+        url="https://www.prarulebook.co.uk/-/media/pra/files/legal-instruments/2026/pra2026-1.pdf",
+        note=(
+            "UK PRA non-securitisation gross JTD and LGD source map. Runtime "
+            "remains fail-closed until PRA reference data and fixtures are implemented."
+        ),
+    ),
+    "PRA_DRC_ARTICLE_325X": DrcCitation(
+        citation_id="PRA_DRC_ARTICLE_325X",
+        source_id="UK_PRA_2026_1_MARKET_RISK_PART",
+        paragraph="Article 325x",
+        url="https://www.prarulebook.co.uk/-/media/pra/files/legal-instruments/2026/pra2026-1.pdf",
+        note=(
+            "UK PRA non-securitisation net JTD, offsetting, and maturity source "
+            "map. Runtime remains fail-closed until PRA mappings and fixtures are implemented."
+        ),
+    ),
+    "PRA_DRC_ARTICLE_325Y": DrcCitation(
+        citation_id="PRA_DRC_ARTICLE_325Y",
+        source_id="UK_PRA_2026_1_MARKET_RISK_PART",
+        paragraph="Article 325y",
+        url="https://www.prarulebook.co.uk/-/media/pra/files/legal-instruments/2026/pra2026-1.pdf",
+        note=(
+            "UK PRA non-securitisation bucket, risk-weight, HBR, and category "
+            "capital source map. Runtime remains fail-closed until PRA mappings "
+            "and fixtures are implemented."
+        ),
+    ),
+    "PRA_DRC_ARTICLE_325Z": DrcCitation(
+        citation_id="PRA_DRC_ARTICLE_325Z",
+        source_id="UK_PRA_2026_1_MARKET_RISK_PART",
+        paragraph="Article 325z",
+        url="https://www.prarulebook.co.uk/-/media/pra/files/legal-instruments/2026/pra2026-1.pdf",
+        note=(
+            "UK PRA securitisation non-CTP gross JTD and net JTD source map. "
+            "Runtime remains fail-closed until PRA mappings and fixtures are implemented."
+        ),
+    ),
+    "PRA_DRC_ARTICLE_325AA": DrcCitation(
+        citation_id="PRA_DRC_ARTICLE_325AA",
+        source_id="UK_PRA_2026_1_MARKET_RISK_PART",
+        paragraph="Article 325aa",
+        url="https://www.prarulebook.co.uk/-/media/pra/files/legal-instruments/2026/pra2026-1.pdf",
+        note=(
+            "UK PRA securitisation non-CTP bucket, risk-weight, HBR, and category "
+            "capital source map. Runtime remains fail-closed until PRA typed "
+            "evidence mappings and fixtures are implemented."
+        ),
+    ),
+    "PRA_DRC_ARTICLE_325AB": DrcCitation(
+        citation_id="PRA_DRC_ARTICLE_325AB",
+        source_id="UK_PRA_2026_1_MARKET_RISK_PART",
+        paragraph="Article 325ab",
+        url="https://www.prarulebook.co.uk/-/media/pra/files/legal-instruments/2026/pra2026-1.pdf",
+        note=(
+            "UK PRA CTP DRC scope and gross JTD source map. Runtime remains "
+            "fail-closed until PRA CTP mappings and fixtures are implemented."
+        ),
+    ),
+    "PRA_DRC_ARTICLE_325AC": DrcCitation(
+        citation_id="PRA_DRC_ARTICLE_325AC",
+        source_id="UK_PRA_2026_1_MARKET_RISK_PART",
+        paragraph="Article 325ac",
+        url="https://www.prarulebook.co.uk/-/media/pra/files/legal-instruments/2026/pra2026-1.pdf",
+        note=(
+            "UK PRA CTP net JTD, offsetting, replication, and decomposition "
+            "source map. Runtime remains fail-closed until PRA mappings and fixtures are implemented."
+        ),
+    ),
+    "PRA_DRC_ARTICLE_325AD": DrcCitation(
+        citation_id="PRA_DRC_ARTICLE_325AD",
+        source_id="UK_PRA_2026_1_MARKET_RISK_PART",
+        paragraph="Article 325ad",
+        url="https://www.prarulebook.co.uk/-/media/pra/files/legal-instruments/2026/pra2026-1.pdf",
+        note=(
+            "UK PRA CTP bucket, risk-weight, HBR, and category capital source "
+            "map. Runtime remains fail-closed until PRA typed evidence mappings "
+            "and fixtures are implemented."
         ),
     ),
 }

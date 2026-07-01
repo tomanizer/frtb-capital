@@ -99,6 +99,26 @@ sources:
       - frtb-cva
     reuse_note: "Link-only legal instrument source for the UK PRA CVA Risk Part; PS1/26 remains the policy-statement anchor."
 
+  - id: uk_pra_2026_1_market_risk_part
+    issuer: PRA
+    jurisdiction: UK
+    family: PRA_BASEL_3_1
+    title: "PRA2026/1 - PRA Rulebook CRR Firms Instrument 2026"
+    effective_date: "2027-01-01"
+    status: final_rule
+    source_type: rulebook_instrument
+    url: "https://www.prarulebook.co.uk/-/media/pra/files/legal-instruments/2026/pra2026-1.pdf"
+    section_hints:
+      - "Market Risk Part"
+      - "Default Risk Charge"
+      - "Articles 325v-325ad"
+      - "Non-securitisation DRC"
+      - "Securitisation non-CTP DRC"
+      - "CTP DRC"
+    components:
+      - frtb-drc
+    reuse_note: "Link-only legal instrument source for UK PRA DRC mappings; package runtime remains fail-closed until paragraph-level mappings and deterministic fixtures land."
+
   - id: uk_pra_cp16_22_basel_3_1_consultation
     issuer: PRA
     jurisdiction: UK

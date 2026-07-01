@@ -27,6 +27,7 @@ by `mapped_and_cited` entries and fixture-backed tests.
 | --- | --- | --- | --- | --- |
 | `frtb-ima` | `PRA_UK_CRR` | Allowed (`get_policy`) | `mapped_and_cited` partial runtime | `tests/fixtures/ima_pra` replay; RFET/NMRF/IMCC capital for supported synthetic inputs |
 | `frtb-sbm` | `PRA_UK_CRR` | Allowed (`resolve_sbm_profile`) | `mapped_and_cited` partial runtime | GIRR delta supported with PRA-owned Articles 325c, 325h, and 325ae-325ag citation ids plus `girr_delta_pra_uk_crr_v1`; all other PRA SBM cells remain fail-closed. |
+| `frtb-drc` | `PRA_UK_CRR` | Allowed (`get_rule_profile`) | `unsupported_fail_closed` | `ensure_risk_class_supported` raises for non-securitisation, securitisation non-CTP, and CTP until #1004-#1006 land |
 | `frtb-rrao` | `PRA_UK_CRR` | Allowed (`resolve_rrao_profile`) | `mapped_and_cited` partial runtime | `tests/fixtures/rrao_pra` replay; investment-fund paths remain fail-closed |
 
 Do not implement PRA capital by silently reusing Basel, U.S. NPR, or EU defaults.
@@ -44,6 +45,25 @@ component.
 | `src/frtb_ima/nmrf.py` | `mapped_and_cited` | BASEL_EU_NMRF routing and SES aggregation for PRA profile. |
 | `src/frtb_ima/pla.py` EU/PRA Spearman path | `comparison_only` | KS + Spearman thresholds cited for EU RTS comparison; not UK capital. |
 | Fed NPR / ECB comparison tests | `out_of_scope` | Other profiles remain governed by their own rows. |
+
+## DRC inventory (`packages/frtb-drc`)
+
+| Location | Classification | Notes |
+| --- | --- | --- |
+| `docs/regulatory/sources.yml` `uk_pra_ps1_26_basel_3_1_final_rules` | `placeholder_reference` | Policy-statement anchor for UK Basel 3.1 market-risk final rules; not enough by itself to emit DRC capital. |
+| `docs/regulatory/sources.yml` `uk_pra_2026_1_market_risk_part` | `placeholder_reference` | Link-only PRA Rulebook legal-instrument source for Market Risk Part Articles 325v-325ad. |
+| `src/frtb_drc/regime_citations_eu_pra.py` `PRA_DRC_ARTICLE_325V` | `placeholder_reference` | DRC scope source-map id for future PRA implementation. |
+| `src/frtb_drc/regime_citations_eu_pra.py` `PRA_DRC_ARTICLE_325W`, `PRA_DRC_ARTICLE_325X`, `PRA_DRC_ARTICLE_325Y` | `placeholder_reference` | Non-securitisation source-map ids for gross JTD/LGD, netting/maturity, bucket/risk-weight/HBR/category mechanics. |
+| `src/frtb_drc/regime_citations_eu_pra.py` `PRA_DRC_ARTICLE_325Z`, `PRA_DRC_ARTICLE_325AA` | `placeholder_reference` | Securitisation non-CTP source-map ids for gross/net JTD and bucket/risk-weight/category mechanics. |
+| `src/frtb_drc/regime_citations_eu_pra.py` `PRA_DRC_ARTICLE_325AB`, `PRA_DRC_ARTICLE_325AC`, `PRA_DRC_ARTICLE_325AD` | `placeholder_reference` | CTP source-map ids for scope/gross JTD, netting/replication/decomposition, bucket/risk-weight/category mechanics. |
+| `src/frtb_drc/regimes.py` `_PRA_UK_CRR_PROFILE` | `unsupported_fail_closed` | Profile metadata is available, but `supported_risk_classes` is empty by design. |
+| `docs/modules/frtb-drc/PROFILE_SUPPORT_MATRIX.md` | `unsupported_fail_closed` | Lists precise source-map ids and implementation next steps for #1004, #1005, and #1006. |
+| PRA DRC fixture packs | `unsupported_fail_closed` | No `drc_pra_*` replay fixture exists yet; future child issues must add deterministic fixtures before enabling runtime support. |
+
+The DRC PRA source-map ids are not capital authority by themselves. A child
+issue must promote a cell only when the implementation adds profile-owned
+reference data, deterministic fixtures, citation propagation, support-matrix
+updates, and fail-closed tests for the still-unsupported cells.
 
 ## RRAO inventory (`packages/frtb-rrao`)
 
@@ -74,9 +94,13 @@ component.
    CRR comparison-profile expansion roadmap.
 4. [#1064](https://github.com/tomanizer/frtb-capital/issues/1064) — SBM PRA
    source-map documentation and manifest update.
+5. [#1000](https://github.com/tomanizer/frtb-capital/issues/1000) — DRC
+   promotion roadmap. PRA DRC runtime work is split into #1004
+   non-securitisation, #1005 securitisation non-CTP, and #1006 CTP.
 
 ## Crosswalk pointers
 
 - [`docs/regulatory/crosswalk/frtb-ima.yml`](../crosswalk/frtb-ima.yml)
 - [`packages/frtb-sbm/docs/REGULATORY_TRACEABILITY.md`](../../../packages/frtb-sbm/docs/REGULATORY_TRACEABILITY.md)
+- [`docs/regulatory/crosswalk/frtb-drc.yml`](../crosswalk/frtb-drc.yml)
 - [`docs/regulatory/crosswalk/frtb-rrao.yml`](../crosswalk/frtb-rrao.yml)

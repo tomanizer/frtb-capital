@@ -62,6 +62,11 @@ def test_eu_crr3_profile_supports_only_nonsec() -> None:
     assert "EU_CRR3_ARTICLE_325X" in profile.citations
     assert "EU_CRR3_ARTICLE_325Y_1_2" in profile.citations
     assert "EU_CRR3_ECAI_CQS_MAPPING" in profile.citations
+    assert "EU_CRR3_ARTICLE_325Z" in profile.citations
+    assert "EU_CRR3_ARTICLE_325AA" in profile.citations
+    assert "EU_CRR3_ARTICLE_325AB" in profile.citations
+    assert "EU_CRR3_ARTICLE_325AC" in profile.citations
+    assert "EU_CRR3_ARTICLE_325AD" in profile.citations
     ensure_risk_class_supported(profile, DrcRiskClass.NON_SECURITISATION)
     with pytest.raises(UnsupportedRegulatoryFeatureError, match=EU_CRR3_PROFILE_ID):
         ensure_risk_class_supported(profile, DrcRiskClass.SECURITISATION_NON_CTP)
@@ -73,6 +78,16 @@ def test_pra_profile_is_known_and_fail_closed() -> None:
     profile = get_rule_profile(PRA_UK_CRR_PROFILE_ID)
 
     assert profile.supported_risk_classes == frozenset()
+    assert "PRA_PS1_26_MARKET_RISK" in profile.citations
+    assert "PRA_DRC_ARTICLE_325V" in profile.citations
+    assert "PRA_DRC_ARTICLE_325W" in profile.citations
+    assert "PRA_DRC_ARTICLE_325X" in profile.citations
+    assert "PRA_DRC_ARTICLE_325Y" in profile.citations
+    assert "PRA_DRC_ARTICLE_325Z" in profile.citations
+    assert "PRA_DRC_ARTICLE_325AA" in profile.citations
+    assert "PRA_DRC_ARTICLE_325AB" in profile.citations
+    assert "PRA_DRC_ARTICLE_325AC" in profile.citations
+    assert "PRA_DRC_ARTICLE_325AD" in profile.citations
     with pytest.raises(UnsupportedRegulatoryFeatureError, match=PRA_UK_CRR_PROFILE_ID):
         ensure_risk_class_supported(profile, DrcRiskClass.NON_SECURITISATION)
 
@@ -129,7 +144,45 @@ def test_profile_support_matrix_marks_eu_crr3_nonsec_supported_only() -> None:
     assert "EU_CRR3_ARTICLE_325W" in eu_nonsec.citation_ids
     assert "EU_CRR3_ECAI_CQS_MAPPING" in eu_nonsec.citation_ids
     assert eu_sec.status == "FAIL_CLOSED"
+    assert eu_sec.citation_ids == ("EU_CRR3_ARTICLE_325Z", "EU_CRR3_ARTICLE_325AA")
+    assert "Article 325z/325aa" in eu_sec.next_step
     assert eu_ctp.status == "FAIL_CLOSED"
+    assert eu_ctp.citation_ids == (
+        "EU_CRR3_ARTICLE_325AB",
+        "EU_CRR3_ARTICLE_325AC",
+        "EU_CRR3_ARTICLE_325AD",
+    )
+    assert "Article 325ab-325ad" in eu_ctp.next_step
+
+
+def test_profile_support_matrix_marks_pra_paths_fail_closed_with_source_map_ids() -> None:
+    cells = {(cell.profile_id, cell.risk_class): cell for cell in drc_profile_support_matrix()}
+
+    pra_nonsec = cells[(PRA_UK_CRR_PROFILE_ID, DrcRiskClass.NON_SECURITISATION)]
+    pra_sec = cells[(PRA_UK_CRR_PROFILE_ID, DrcRiskClass.SECURITISATION_NON_CTP)]
+    pra_ctp = cells[(PRA_UK_CRR_PROFILE_ID, DrcRiskClass.CORRELATION_TRADING_PORTFOLIO)]
+
+    assert pra_nonsec.status == "FAIL_CLOSED"
+    assert pra_nonsec.citation_ids == (
+        "PRA_DRC_ARTICLE_325V",
+        "PRA_DRC_ARTICLE_325W",
+        "PRA_DRC_ARTICLE_325X",
+        "PRA_DRC_ARTICLE_325Y",
+    )
+    assert "before enabling runtime support" in pra_nonsec.next_step
+    assert pra_sec.status == "FAIL_CLOSED"
+    assert pra_sec.citation_ids == (
+        "PRA_DRC_ARTICLE_325V",
+        "PRA_DRC_ARTICLE_325Z",
+        "PRA_DRC_ARTICLE_325AA",
+    )
+    assert pra_ctp.status == "FAIL_CLOSED"
+    assert pra_ctp.citation_ids == (
+        "PRA_DRC_ARTICLE_325V",
+        "PRA_DRC_ARTICLE_325AB",
+        "PRA_DRC_ARTICLE_325AC",
+        "PRA_DRC_ARTICLE_325AD",
+    )
 
 
 def test_profile_support_matrix_covers_every_known_profile_path() -> None:
