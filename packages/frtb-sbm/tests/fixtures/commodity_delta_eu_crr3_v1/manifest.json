@@ -1,0 +1,20 @@
+{
+  "calculation_date": "2026-07-01",
+  "files": {
+    "expected_outputs.json": {
+      "sha256": "bb07e34b82459a7b929a5d02557e8df5b90f7dcb90160556082b32505039f518"
+    },
+    "invalid_cases.json": {
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+    },
+    "sensitivities.json": {
+      "sha256": "520e2024e869aa9db16d3847b55f5790b603dfd03d06bd62489697a162c40380"
+    }
+  },
+  "profile": "EU_CRR3",
+  "risk_class": "COMMODITY",
+  "risk_measure": "DELTA",
+  "schema_version": "commodity_delta_eu_crr3_v1_fixture_v1",
+  "sensitivity_count": 4,
+  "total_capital": 1081815.4602333987
+}

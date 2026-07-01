@@ -58,7 +58,6 @@ def test_get_sbm_rule_profile_returns_supported_basel_profile() -> None:
 def test_profile_content_hash_is_deterministic_and_profile_specific() -> None:
     basel_profile = get_sbm_rule_profile(SbmRegulatoryProfile.BASEL_MAR21)
     us_npr_profile = get_sbm_rule_profile(SbmRegulatoryProfile.US_NPR_2_0)
-    pra_profile = get_sbm_rule_profile(SbmRegulatoryProfile.PRA_UK_CRR)
 
     assert re.fullmatch(r"[0-9a-f]{64}", basel_profile.content_hash)
     assert basel_profile.content_hash == profile_content_hash(SbmRegulatoryProfile.BASEL_MAR21)
@@ -66,10 +65,6 @@ def test_profile_content_hash_is_deterministic_and_profile_specific() -> None:
     assert re.fullmatch(r"[0-9a-f]{64}", us_npr_profile.content_hash)
     assert us_npr_profile.content_hash == profile_content_hash(SbmRegulatoryProfile.US_NPR_2_0)
     assert us_npr_profile.content_hash != basel_profile.content_hash
-    assert re.fullmatch(r"[0-9a-f]{64}", pra_profile.content_hash)
-    assert pra_profile.content_hash == profile_content_hash(SbmRegulatoryProfile.PRA_UK_CRR)
-    assert pra_profile.content_hash != basel_profile.content_hash
-    assert pra_profile.content_hash != us_npr_profile.content_hash
 
 
 def test_profile_content_hash_uses_common_stable_json_hash() -> None:
@@ -91,25 +86,6 @@ def test_profile_content_hash_uses_common_stable_json_hash() -> None:
     assert profile_content_hash(SbmRegulatoryProfile.US_NPR_2_0) == stable_json_hash(payload)
 
 
-def test_pra_uk_crr_profile_content_hash_uses_common_stable_json_hash() -> None:
-    payload = {
-        "metadata": {
-            "effective_date": "2027-01-01",
-            "publication_date": "2026-01-20",
-            "regulator": "Prudential Regulation Authority",
-            "status": "supported_pra_uk_crr_girr_delta_comparison_slice",
-            "version": (
-                "PRA PS1/26 Appendix 1 / PRA2026/1 Market Risk: Advanced "
-                "Standardised Approach (CRR) Part"
-            ),
-        },
-        "supported_measures": {"GIRR": ["DELTA"]},
-        "reference_data": profile_reference_payload(SbmRegulatoryProfile.PRA_UK_CRR),
-    }
-
-    assert profile_content_hash(SbmRegulatoryProfile.PRA_UK_CRR) == stable_json_hash(payload)
-
-
 def test_get_sbm_rule_profile_returns_partial_us_npr_profile() -> None:
     profile = get_sbm_rule_profile(SbmRegulatoryProfile.US_NPR_2_0)
 
@@ -123,26 +99,31 @@ def test_get_sbm_rule_profile_returns_partial_us_npr_profile() -> None:
     assert "us_npr_91_fr_14952_va7a_girr_delta_weights" in profile.citations
 
 
-def test_get_sbm_rule_profile_returns_partial_pra_uk_crr_profile() -> None:
-    profile = get_sbm_rule_profile(SbmRegulatoryProfile.PRA_UK_CRR)
+def test_get_sbm_rule_profile_returns_partial_eu_crr3_profile() -> None:
+    profile = get_sbm_rule_profile(SbmRegulatoryProfile.EU_CRR3)
 
-    assert resolve_sbm_profile(SbmRegulatoryProfile.PRA_UK_CRR) is SbmRegulatoryProfile.PRA_UK_CRR
-    assert profile.profile_id == SbmRegulatoryProfile.PRA_UK_CRR.value
-    assert profile.regulator == "Prudential Regulation Authority"
-    assert profile.publication_date == date(2026, 1, 20)
-    assert profile.effective_date == date(2027, 1, 1)
-    assert profile.supported_risk_classes == frozenset({SbmRiskClass.GIRR})
-    assert profile.supported_measures == {
-        SbmRiskClass.GIRR: frozenset({SbmRiskMeasure.DELTA}),
-    }
-    assert "pra_uk_crr_325ae_girr_delta_weights" in profile.citations
-    assert "basel_mar21_42" not in profile.citations
+    assert resolve_sbm_profile(SbmRegulatoryProfile.EU_CRR3) is SbmRegulatoryProfile.EU_CRR3
+    assert profile.profile_id == SbmRegulatoryProfile.EU_CRR3.value
+    assert profile.publication_date == date(2024, 6, 19)
+    assert profile.supported_risk_classes == frozenset(
+        {SbmRiskClass.GIRR, SbmRiskClass.FX, SbmRiskClass.EQUITY, SbmRiskClass.COMMODITY}
+    )
+    assert profile.supported_measures[SbmRiskClass.GIRR] == frozenset(
+        {SbmRiskMeasure.DELTA, SbmRiskMeasure.VEGA, SbmRiskMeasure.CURVATURE}
+    )
+    assert profile.supported_measures[SbmRiskClass.FX] == frozenset(
+        {SbmRiskMeasure.DELTA, SbmRiskMeasure.VEGA, SbmRiskMeasure.CURVATURE}
+    )
+    assert profile.supported_measures[SbmRiskClass.EQUITY] == frozenset({SbmRiskMeasure.DELTA})
+    assert profile.supported_measures[SbmRiskClass.COMMODITY] == frozenset({SbmRiskMeasure.DELTA})
+    assert "eu_crr3_42" in profile.citations
+    assert "eu_crr3_87" in profile.citations
 
 
 @pytest.mark.parametrize(
     "profile",
     [
-        SbmRegulatoryProfile.EU_CRR3,
+        SbmRegulatoryProfile.PRA_UK_CRR,
     ],
 )
 def test_unsupported_profiles_fail_before_calculation(profile: SbmRegulatoryProfile) -> None:
@@ -263,28 +244,6 @@ def test_us_npr_profile_support_map_is_girr_delta_only() -> None:
     with pytest.raises(UnsupportedRegulatoryFeatureError, match="US_NPR_2_0"):
         ensure_profile_supports_risk_class_measure(
             SbmRegulatoryProfile.US_NPR_2_0,
-            SbmRiskClass.GIRR,
-            SbmRiskMeasure.VEGA,
-        )
-
-
-def test_pra_uk_crr_profile_support_map_is_girr_delta_only() -> None:
-    supported = supported_risk_class_measures(SbmRegulatoryProfile.PRA_UK_CRR)
-
-    assert supported == frozenset({(SbmRiskClass.GIRR, SbmRiskMeasure.DELTA)})
-    assert profile_supports_risk_class_measure(
-        SbmRegulatoryProfile.PRA_UK_CRR,
-        SbmRiskClass.GIRR,
-        SbmRiskMeasure.DELTA,
-    )
-    ensure_profile_supports_risk_class_measure(
-        SbmRegulatoryProfile.PRA_UK_CRR,
-        SbmRiskClass.GIRR,
-        SbmRiskMeasure.DELTA,
-    )
-    with pytest.raises(UnsupportedRegulatoryFeatureError, match="PRA_UK_CRR"):
-        ensure_profile_supports_risk_class_measure(
-            SbmRegulatoryProfile.PRA_UK_CRR,
             SbmRiskClass.GIRR,
             SbmRiskMeasure.VEGA,
         )

@@ -20,12 +20,13 @@ and do not constitute independent model validation. Do not treat outputs as
 production regulatory capital.
 
 `BASEL_MAR21` produces phase-1 capital for the supported delta, vega, and
-curvature matrix. `US_NPR_2_0` and `PRA_UK_CRR` produce capital only for GIRR
-delta; all other U.S. NPR, EU CRR3, and PRA UK CRR cells fail closed until cited
-reference data exists. `PRA_UK_CRR` GIRR delta uses PS1/26 Appendix 1 /
-PRA2026/1 Articles 325c, 325h, and 325ae-325ag; do not open another PRA runtime
-gate without exact-cell PRA citations, profile-owned reference data, and
-deterministic fixtures.
+curvature matrix. `US_NPR_2_0` produces capital only for GIRR delta. `EU_CRR3`
+produces capital for GIRR delta/vega/curvature, FX delta/vega/curvature, equity
+delta, and commodity delta. All other U.S. NPR, EU CRR3, and PRA UK CRR cells
+fail closed until cited reference data exists. `PRA_UK_CRR` is source-mapped to
+PS1/26 Appendix 1 / PRA2026/1 for planning only; do not open a PRA runtime gate
+without exact-cell PRA citations, profile-owned reference data, and deterministic
+fixtures.
 
 Package-local traceability lives under `packages/frtb-sbm/docs/`. See
 `REGULATORY_TRACEABILITY.md` for implemented/unsupported status by area.

@@ -262,7 +262,7 @@ component_type = "capital"
 metadata_object = "frtb_sbm:PACKAGE_METADATA"
 calculation_entrypoint = "frtb_sbm:calculate_sbm_capital"
 attribution_status = "shared_projection"
-notes = "Basel MAR21 has 21/21 cells implemented under audit; US_NPR_2_0 and PRA_UK_CRR have GIRR delta only; EU_CRR3 fails closed. PRA_UK_CRR GIRR delta is source-mapped to PRA PS1/26 Appendix 1 / PRA2026/1 and fixture-backed by girr_delta_pra_uk_crr_v1. See ADR 0048 and packages/frtb-sbm/docs/REGULATORY_TRACEABILITY.md."
+notes = "Basel MAR21 has 21/21 cells implemented under audit; US_NPR_2_0 has GIRR delta only; EU_CRR3 has 8/21 comparison cells implemented under audit; PRA_UK_CRR fails closed and is source-mapped to PRA PS1/26 Appendix 1 for planning only. See ADR 0048 and packages/frtb-sbm/docs/REGULATORY_TRACEABILITY.md."
 
 [[packages.required_tests]]
 id = "public-api"

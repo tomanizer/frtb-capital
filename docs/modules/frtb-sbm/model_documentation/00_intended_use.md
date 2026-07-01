@@ -28,11 +28,12 @@ The package also supports CRIF/CSV adapter paths where input rows map to the
 canonical sensitivity model and preserve source lineage.
 
 The package also supports `US_NPR_2_0` GIRR delta as a proposed-rule comparison
-slice under Federal Register 91 FR 14952 section V.A.7.a and `PRA_UK_CRR` GIRR
-delta under PRA PS1/26 Appendix 1 / PRA2026/1 Articles 325c, 325h, and
-325ae-325ag. All other U.S. NPR 2.0 cells, all EU CRR3 cells, and all PRA UK
-CRR cells outside GIRR delta fail closed until profile-specific citations and
-deterministic fixtures are added.
+slice under Federal Register 91 FR 14952 section V.A.7.a. It supports `EU_CRR3`
+GIRR delta/vega/curvature, FX delta/vega/curvature, equity delta, and commodity
+delta as Regulation (EU) 2024/1623 comparison cells. All other U.S. NPR 2.0,
+EU CRR3, and PRA UK CRR cells fail closed until profile-specific citations and
+deterministic fixtures are added. PRA UK CRR is source-mapped to PS1/26 Appendix
+1 / PRA2026/1 for planning only; no PRA SBM cell is capital-producing.
 
 Post-calculation attribution is supported for selected, differentiable delta and
 vega branches through analytical Euler `CapitalContribution` records. Curvature

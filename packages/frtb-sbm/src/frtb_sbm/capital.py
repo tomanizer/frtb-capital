@@ -13,7 +13,8 @@ Regulatory traceability:
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import TypedDict
+from dataclasses import fields, is_dataclass, replace
+from typing import Any, TypedDict
 
 import numpy as np
 from frtb_common import UnsupportedRegulatoryFeatureError
@@ -43,6 +44,7 @@ from frtb_sbm.data_models import (
     SbmRunControls,
     SbmSensitivity,
 )
+from frtb_sbm.reference_citations_eu_crr3 import translate_basel_citation_ids_to_eu
 from frtb_sbm.regimes import get_sbm_rule_profile
 from frtb_sbm.registry import SBM_BATCH_PATH_ORDER, sbm_batch_spec
 from frtb_sbm.risk_classes.commodity import (
@@ -107,7 +109,9 @@ _SBM_REQUIREMENT_IDS = (
 _PROFILE_PORTFOLIO_SCENARIO_CITATIONS = {
     SbmRegulatoryProfile.BASEL_MAR21.value: ("basel_mar21_7_scenario_selection",),
     SbmRegulatoryProfile.US_NPR_2_0.value: ("us_npr_91_fr_14952_va7a_correlation_scenarios",),
-    SbmRegulatoryProfile.PRA_UK_CRR.value: ("pra_uk_crr_325h_correlation_scenarios",),
+    SbmRegulatoryProfile.EU_CRR3.value: (
+        translate_basel_citation_ids_to_eu(("basel_mar21_7_scenario_selection",))[0],
+    ),
 }
 _SBM_CAPITAL_PATH_ORDER = SBM_BATCH_PATH_ORDER
 
@@ -596,6 +600,12 @@ def _build_sbm_capital_result(
         risk_class_results,
         citation_ids=_portfolio_scenario_citations(rule_profile.profile_id),
     )
+    if rule_profile.profile_id == SbmRegulatoryProfile.EU_CRR3.value:
+        aligned_risk_classes = _translate_eu_crr3_result_citations(aligned_risk_classes)
+        if portfolio_scenario_selection is not None:
+            portfolio_scenario_selection = _translate_eu_crr3_result_citations(
+                portfolio_scenario_selection
+            )
     citation_ids = _collect_citation_ids(
         aligned_risk_classes,
         portfolio_scenario_selection=portfolio_scenario_selection,
@@ -673,6 +683,35 @@ def _append_citation(citation_ids: list[str], seen: set[str], citation_id: str) 
     if citation_id not in seen:
         citation_ids.append(citation_id)
         seen.add(citation_id)
+
+
+def _translate_eu_crr3_result_citations(value: Any) -> Any:
+    if is_dataclass(value) and not isinstance(value, type):
+        changes: dict[str, object] = {}
+        for field in fields(value):
+            field_value = getattr(value, field.name)
+            if field.name == "citation_ids":
+                try:
+                    translated = translate_basel_citation_ids_to_eu(field_value)
+                except KeyError as exc:
+                    raise UnsupportedRegulatoryFeatureError(
+                        "EU_CRR3 result contains an unsupported Basel citation id: "
+                        f"{field_value!r}"
+                    ) from exc
+            else:
+                translated = _translate_eu_crr3_result_citations(field_value)
+            if translated != field_value:
+                changes[field.name] = translated
+        if not changes:
+            return value
+        return replace(value, **changes)
+    if isinstance(value, tuple):
+        return tuple(_translate_eu_crr3_result_citations(item) for item in value)
+    if isinstance(value, list):
+        return [_translate_eu_crr3_result_citations(item) for item in value]
+    if isinstance(value, dict):
+        return {key: _translate_eu_crr3_result_citations(item) for key, item in value.items()}
+    return value
 
 
 def _ordered_supported_paths(

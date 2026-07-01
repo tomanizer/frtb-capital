@@ -2,8 +2,7 @@
 
 Regulatory traceability:
     Basel MAR21.1 scope validation, U.S. NPR 2.0 section V.A.7.a profile
-    gating, PRA PS1/26 Appendix 1 Articles 325c, 325h, and 325ae-325ag, and
-    SBM-NFR-004 fail-closed unsupported-feature handling.
+    gating, and SBM-NFR-004 fail-closed unsupported-feature handling.
 """
 
 from __future__ import annotations
@@ -63,12 +62,19 @@ _PHASE1_SUPPORTED: dict[str, frozenset[tuple[SbmRiskClass, SbmRiskMeasure]]] = {
             (SbmRiskClass.CSR_SEC_CTP, SbmRiskMeasure.CURVATURE),
         }
     ),
-    SbmRegulatoryProfile.EU_CRR3.value: frozenset(),
-    SbmRegulatoryProfile.PRA_UK_CRR.value: frozenset(
+    SbmRegulatoryProfile.EU_CRR3.value: frozenset(
         {
             (SbmRiskClass.GIRR, SbmRiskMeasure.DELTA),
+            (SbmRiskClass.GIRR, SbmRiskMeasure.VEGA),
+            (SbmRiskClass.GIRR, SbmRiskMeasure.CURVATURE),
+            (SbmRiskClass.FX, SbmRiskMeasure.DELTA),
+            (SbmRiskClass.FX, SbmRiskMeasure.VEGA),
+            (SbmRiskClass.FX, SbmRiskMeasure.CURVATURE),
+            (SbmRiskClass.EQUITY, SbmRiskMeasure.DELTA),
+            (SbmRiskClass.COMMODITY, SbmRiskMeasure.DELTA),
         }
     ),
+    SbmRegulatoryProfile.PRA_UK_CRR.value: frozenset(),
 }
 
 _CURVATURE_CAPITAL_REQUIREMENT_ID = "SBM-CURV-001"

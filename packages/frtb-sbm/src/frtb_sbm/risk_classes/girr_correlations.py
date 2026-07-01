@@ -22,6 +22,7 @@ from frtb_sbm.data_models import (
     SbmRiskMeasure,
     WeightedSensitivity,
 )
+from frtb_sbm.reference_citations_eu_crr3 import translate_basel_citation_ids_to_eu
 from frtb_sbm.reference_data import (
     GIRR_INTRA_BUCKET_CORRELATION_FLOOR,
     girr_inter_bucket_correlation,
@@ -43,9 +44,8 @@ _PROFILE_GIRR_DELTA_INTRA_CITATIONS = {
         "us_npr_91_fr_14952_va7a_sbm_scope",
         "us_npr_91_fr_14952_va7a_girr_intra",
     ),
-    SbmRegulatoryProfile.PRA_UK_CRR.value: (
-        "pra_uk_crr_325c_asa_scope",
-        "pra_uk_crr_325af_girr_intra",
+    SbmRegulatoryProfile.EU_CRR3.value: translate_basel_citation_ids_to_eu(
+        _GIRR_DELTA_INTRA_CITATIONS
     ),
 }
 _PROFILE_GIRR_DELTA_INTER_CITATIONS = {
@@ -54,9 +54,8 @@ _PROFILE_GIRR_DELTA_INTER_CITATIONS = {
         "us_npr_91_fr_14952_va7a_sbm_scope",
         "us_npr_91_fr_14952_va7a_girr_inter",
     ),
-    SbmRegulatoryProfile.PRA_UK_CRR.value: (
-        "pra_uk_crr_325c_asa_scope",
-        "pra_uk_crr_325ag_girr_inter",
+    SbmRegulatoryProfile.EU_CRR3.value: translate_basel_citation_ids_to_eu(
+        _GIRR_DELTA_INTER_CITATIONS
     ),
 }
 _PROFILE_GIRR_DELTA_SCENARIO_CITATIONS = {
@@ -65,7 +64,12 @@ _PROFILE_GIRR_DELTA_SCENARIO_CITATIONS = {
         "basel_mar21_7_scenario_selection",
     ),
     SbmRegulatoryProfile.US_NPR_2_0.value: ("us_npr_91_fr_14952_va7a_correlation_scenarios",),
-    SbmRegulatoryProfile.PRA_UK_CRR.value: ("pra_uk_crr_325h_correlation_scenarios",),
+    SbmRegulatoryProfile.EU_CRR3.value: translate_basel_citation_ids_to_eu(
+        (
+            "basel_mar21_6_correlation_scenarios",
+            "basel_mar21_7_scenario_selection",
+        )
+    ),
 }
 
 

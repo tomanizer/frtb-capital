@@ -162,7 +162,7 @@ def test_calculate_sbm_capital_fails_closed_for_unsupported_profiles() -> None:
                     amount=1_000_000.0,
                 ),
             ),
-            context=sample_context(SbmRegulatoryProfile.EU_CRR3),
+            context=sample_context(SbmRegulatoryProfile.PRA_UK_CRR),
         )
 
 

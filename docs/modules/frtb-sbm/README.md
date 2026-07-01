@@ -8,17 +8,18 @@
 - Import name: `frtb_sbm`
 - Implementation status: partial runtime — BASEL_MAR21 delta, vega, and
   curvature paths implemented under audit across all seven SBM risk classes,
-  plus `US_NPR_2_0` and `PRA_UK_CRR` GIRR delta comparison slices
+  plus `US_NPR_2_0` GIRR delta and delivered `EU_CRR3` comparison cells
 - Validation status: deterministic fixture, audit, replay, and public API tests available
 
 The package is importable and exposes `calculate_sbm_capital` for supported
 Basel MAR21 delta, vega, and curvature canonical inputs and for the cited
-`US_NPR_2_0` and `PRA_UK_CRR` GIRR delta comparison slices. Row-wise,
-package-owned batch, and Arrow batch paths are available for the supported
-matrix. All other U.S. NPR 2.0 cells, all EU CRR3 cells, all PRA UK CRR cells
-outside GIRR delta, and unmapped sub-features fail closed. PRA UK CRR GIRR delta
-uses PS1/26 Appendix 1 / PRA2026/1 Articles 325c, 325h, and 325ae-325ag with
-2027-01-01 effective-date metadata.
+`US_NPR_2_0` GIRR delta comparison slice. `EU_CRR3` supports GIRR
+delta/vega/curvature, FX delta/vega/curvature, equity delta, and commodity
+delta with EU profile-owned citation ids. Row-wise, package-owned batch, and
+Arrow batch paths are available for the supported matrix. All other U.S. NPR
+2.0, EU CRR3, and PRA UK CRR cells and unmapped sub-features fail closed.
+PRA UK CRR is source-mapped to PS1/26 Appendix 1 / PRA2026/1 for planning only;
+no PRA SBM cell is capital-producing yet.
 
 ## Boundary Flow
 

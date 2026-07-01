@@ -7,11 +7,14 @@ Regulatory traceability:
 
 from __future__ import annotations
 
+from dataclasses import replace
+
 from frtb_common import UnsupportedRegulatoryFeatureError
 
 from frtb_sbm.data_models import SbmRegulatoryProfile
 from frtb_sbm.girr_reference_data import _require_currency
 from frtb_sbm.girr_reference_tables import SQRT2
+from frtb_sbm.reference_citations_eu_crr3 import eu_crr3_citation_id_for_basel
 from frtb_sbm.reference_profiles import _resolve_supported_profile
 from frtb_sbm.reference_types import SbmFxBucketDefinition
 
@@ -49,12 +52,39 @@ BASEL_FX_BUCKETS: tuple[SbmFxBucketDefinition, ...] = tuple(
     for currency in sorted(BASEL_FX_SPECIFIED_CURRENCIES)
 )
 
+EU_CRR3_FX_BUCKETS: tuple[SbmFxBucketDefinition, ...] = tuple(
+    replace(bucket, citation_id=eu_crr3_citation_id_for_basel(bucket.citation_id))
+    for bucket in BASEL_FX_BUCKETS
+)
+
 PROFILE_FX_BUCKETS: dict[SbmRegulatoryProfile, tuple[SbmFxBucketDefinition, ...]] = {
     SbmRegulatoryProfile.BASEL_MAR21: BASEL_FX_BUCKETS,
+    SbmRegulatoryProfile.EU_CRR3: EU_CRR3_FX_BUCKETS,
 }
 
 PROFILE_FX_SPECIFIED_CURRENCIES: dict[SbmRegulatoryProfile, frozenset[str]] = {
     SbmRegulatoryProfile.BASEL_MAR21: BASEL_FX_SPECIFIED_CURRENCIES,
+    SbmRegulatoryProfile.EU_CRR3: BASEL_FX_SPECIFIED_CURRENCIES,
+}
+
+_PROFILE_FX_BUCKET_CITATION_IDS: dict[SbmRegulatoryProfile, str] = {
+    SbmRegulatoryProfile.BASEL_MAR21: "basel_mar21_86",
+    SbmRegulatoryProfile.EU_CRR3: eu_crr3_citation_id_for_basel("basel_mar21_86"),
+}
+
+_PROFILE_FX_WEIGHT_CITATION_IDS: dict[SbmRegulatoryProfile, str] = {
+    SbmRegulatoryProfile.BASEL_MAR21: "basel_mar21_87",
+    SbmRegulatoryProfile.EU_CRR3: eu_crr3_citation_id_for_basel("basel_mar21_87"),
+}
+
+_PROFILE_FX_SQRT2_CITATION_IDS: dict[SbmRegulatoryProfile, str] = {
+    SbmRegulatoryProfile.BASEL_MAR21: "basel_mar21_88",
+    SbmRegulatoryProfile.EU_CRR3: eu_crr3_citation_id_for_basel("basel_mar21_88"),
+}
+
+_PROFILE_FX_INTER_CITATION_IDS: dict[SbmRegulatoryProfile, str] = {
+    SbmRegulatoryProfile.BASEL_MAR21: "basel_mar21_89",
+    SbmRegulatoryProfile.EU_CRR3: eu_crr3_citation_id_for_basel("basel_mar21_89"),
 }
 
 
@@ -136,10 +166,11 @@ def fx_bucket_definition(
     for bucket in PROFILE_FX_BUCKETS[_resolve_supported_profile(profile)]:
         if bucket.bucket_id == normalised:
             return bucket
+    resolved = _resolve_supported_profile(profile)
     return SbmFxBucketDefinition(
         bucket_id=normalised,
         currency=normalised,
-        citation_id="basel_mar21_86",
+        citation_id=_PROFILE_FX_BUCKET_CITATION_IDS[resolved],
     )
 
 
@@ -167,9 +198,10 @@ def fx_delta_risk_weight(
     _ensure_fx_delta_supported(profile)
     normalised_currency = normalise_fx_delta_currency_code(currency)
     normalised_reporting = normalise_fx_delta_currency_code(reporting_currency)
+    resolved = _resolve_supported_profile(profile)
     if normalised_currency == normalised_reporting:
-        return 0.0, ("basel_mar21_87",)
-    citation_ids: list[str] = ["basel_mar21_87"]
+        return 0.0, (_PROFILE_FX_WEIGHT_CITATION_IDS[resolved],)
+    citation_ids: list[str] = [_PROFILE_FX_WEIGHT_CITATION_IDS[resolved]]
     risk_weight = FX_DELTA_RISK_WEIGHT
     if _apply_fx_sqrt2_adjustment(
         currency=normalised_currency,
@@ -177,7 +209,7 @@ def fx_delta_risk_weight(
         profile=profile,
     ):
         risk_weight /= SQRT2
-        citation_ids.append("basel_mar21_88")
+        citation_ids.append(_PROFILE_FX_SQRT2_CITATION_IDS[resolved])
     return risk_weight, tuple(citation_ids)
 
 
@@ -208,7 +240,8 @@ def fx_delta_intra_bucket_correlation(
     fx_bucket_definition(profile, normalised_bucket1)
     fx_bucket_definition(profile, normalised_bucket2)
     del normalised_bucket1, normalised_bucket2
-    return FX_INTRA_BUCKET_CORRELATION, ("basel_mar21_86",)
+    resolved = _resolve_supported_profile(profile)
+    return FX_INTRA_BUCKET_CORRELATION, (_PROFILE_FX_BUCKET_CITATION_IDS[resolved],)
 
 
 def fx_inter_bucket_correlation(
@@ -237,14 +270,15 @@ def fx_inter_bucket_correlation(
     normalised_bucket2 = normalise_fx_delta_currency_code(bucket2)
     fx_bucket_definition(profile, normalised_bucket1)
     fx_bucket_definition(profile, normalised_bucket2)
+    resolved = _resolve_supported_profile(profile)
     if normalised_bucket1 == normalised_bucket2:
-        return FX_INTRA_BUCKET_CORRELATION, ("basel_mar21_89",)
-    return FX_INTER_BUCKET_CORRELATION, ("basel_mar21_89",)
+        return FX_INTRA_BUCKET_CORRELATION, (_PROFILE_FX_INTER_CITATION_IDS[resolved],)
+    return FX_INTER_BUCKET_CORRELATION, (_PROFILE_FX_INTER_CITATION_IDS[resolved],)
 
 
 def _ensure_fx_delta_supported(profile: SbmRegulatoryProfile | str) -> None:
     resolved = _resolve_supported_profile(profile)
-    if resolved is not SbmRegulatoryProfile.BASEL_MAR21:
+    if resolved not in PROFILE_FX_BUCKETS:
         raise UnsupportedRegulatoryFeatureError(
             f"FX delta reference data is unsupported for profile {resolved.value}"
         )
@@ -265,6 +299,7 @@ def _apply_fx_sqrt2_adjustment(
 __all__ = [
     "BASEL_FX_BUCKETS",
     "BASEL_FX_SPECIFIED_CURRENCIES",
+    "EU_CRR3_FX_BUCKETS",
     "FX_DELTA_RISK_WEIGHT",
     "FX_INTER_BUCKET_CORRELATION",
     "FX_INTRA_BUCKET_CORRELATION",

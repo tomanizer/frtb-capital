@@ -1,0 +1,50 @@
+{
+  "context": {
+    "run_id": "sbm-fx_delta_eu_crr3_v1",
+    "calculation_date": "2026-07-01",
+    "base_currency": "USD",
+    "reporting_currency": "USD",
+    "profile_id": "EU_CRR3"
+  },
+  "sensitivities": [
+    {
+      "sensitivity_id": "fx-delta-eu-crr3-v1-001",
+      "source_row_id": "row-001",
+      "desk_id": "eu-comparison-desk",
+      "legal_entity": "EU-LE-001",
+      "risk_class": "FX",
+      "risk_measure": "DELTA",
+      "bucket": "EUR",
+      "risk_factor": "EUR",
+      "amount": 2000000.0,
+      "amount_currency": "USD",
+      "sign_convention": "LONG"
+    },
+    {
+      "sensitivity_id": "fx-delta-eu-crr3-v1-002",
+      "source_row_id": "row-002",
+      "desk_id": "eu-comparison-desk",
+      "legal_entity": "EU-LE-001",
+      "risk_class": "FX",
+      "risk_measure": "DELTA",
+      "bucket": "GBP",
+      "risk_factor": "GBP",
+      "amount": -1500000.0,
+      "amount_currency": "USD",
+      "sign_convention": "SHORT"
+    },
+    {
+      "sensitivity_id": "fx-delta-eu-crr3-v1-003",
+      "source_row_id": "row-003",
+      "desk_id": "eu-comparison-desk",
+      "legal_entity": "EU-LE-001",
+      "risk_class": "FX",
+      "risk_measure": "DELTA",
+      "bucket": "MYR",
+      "risk_factor": "MYR",
+      "amount": 500000.0,
+      "amount_currency": "USD",
+      "sign_convention": "LONG"
+    }
+  ]
+}
