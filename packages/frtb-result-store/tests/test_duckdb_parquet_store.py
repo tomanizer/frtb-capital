@@ -1064,6 +1064,7 @@ def test_store_persists_dashboard_marts_and_manifest_fingerprints(tmp_path: Path
         "cva_counterparty_contributors": 0,
         "rrao_exposure_summary": 0,
         "rfet_nmrf_ses_evidence": 0,
+        "desk_eligibility": 0,
     }
     assert sorted(manifest["mart_schema_fingerprints"]) == sorted(MART_NAMES)
 

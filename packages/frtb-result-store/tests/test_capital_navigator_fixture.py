@@ -52,8 +52,9 @@ def test_capital_navigator_fixture_persists_full_suite_read_model(tmp_path: Path
     assert [node.node_id for node in store.child_nodes(run_id, "ima")] == [
         "ima-rates-desk",
         "ima-credit-desk",
+        "ima-equity-desk",
     ]
-    assert len(store.capital_tree(run_id)) == 28
+    assert len(store.capital_tree(run_id)) == 29
 
     artifacts = store.artifact_refs(run_id)
     available_artifacts = [
@@ -131,6 +132,7 @@ def test_capital_navigator_fixture_populates_component_marts(tmp_path: Path) -> 
         for row in ima_rows
     } == {
         ("credit", 1, 1, 28.0),
+        ("equity", 1, 1, 0.0),
         ("rates", 1, 1, 42.0),
     }
 

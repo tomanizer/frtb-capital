@@ -22,6 +22,9 @@ from frtb_result_store.mart_component_rows import (
     _rrao_exposure_summary_rows,
     _sbm_bucket_ladder_rows,
 )
+from frtb_result_store.mart_desk_eligibility_rows import (
+    _desk_eligibility_mart_rows,
+)
 from frtb_result_store.mart_movement_rows import (
     _movement_summary_rows,
 )
@@ -97,6 +100,7 @@ def mart_rows_for_bundle(
         "cva_counterparty_contributors": _cva_counterparty_contributor_rows(bundle),
         "rrao_exposure_summary": _rrao_exposure_summary_rows(bundle),
         "rfet_nmrf_ses_evidence": _rfet_nmrf_ses_evidence_mart_rows(bundle),
+        "desk_eligibility": _desk_eligibility_mart_rows(bundle),
     }
 
 

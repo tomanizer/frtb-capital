@@ -85,7 +85,7 @@ The adapter must not:
 | Artifact drillthrough | `GET /runs/{run_id}/artifacts`, `GET /runs/{run_id}/artifacts/{artifact_id}/page`, `GET /runs/{run_id}/artifacts/{artifact_id}/download` | Page bounded artifact rows with accepted columns, equality filters, limit, and offset; use download only through the result-store route | Browser direct Parquet/S3 reads are forbidden |
 | Metadata inspectors | `GET /runs/{run_id}/time-series`, `GET /runs/{run_id}/time-series/{time_series_id}/points`, `GET /runs/{run_id}/shocks`, `GET /runs/{run_id}/shocks/{shock_id}`, `GET /runs/{run_id}/scenario-vectors`, `GET /runs/{run_id}/scenario-vectors/{scenario_set_id}/{scenario_vector_id}/metadata`, `GET /runs/{run_id}/surfaces`, `GET /runs/{run_id}/surfaces/{surface_id}/slice` | Use metadata catalogs for selectors and badges; use node lineage to decide which metadata tabs appear | Timeline/shock/scenario/surface fixture and API hardening is tracked by #1074 and #1075 |
 | Component summaries | `component_breakdown`, `ima_desk_dashboard`, `sbm_bucket_ladder`, `drc_issuer_contributors`, `cva_counterparty_contributors`, `rrao_exposure_summary` marts | Build component panels and focused tables from read-model rows; link `node_id` and `artifact_id` back to tree and artifact pages | New dimensions or measures require result-store mart/API changes |
-| PLA and backtesting | Current run, desk, event, artifact, and metadata surfaces only where evidence exists | Render only persisted evidence; otherwise show no-data or unsupported state | PLA/backtesting desk eligibility mart is tracked by #1102 |
+| PLA and backtesting | `GET /runs/{run_id}/desk-eligibility`, `GET /runs/{run_id}/desk-eligibility/{desk_id}`; `desk_eligibility` mart; current run, event, artifact, and metadata surfaces where evidence exists | Filter by hierarchy node, desk, eligibility state, PLA state, and backtesting state; render persisted eligibility/PLA/backtesting evidence, RFET/NMRF/SES summary, capital consequence, and artifact links | Official desk approval remains an upstream governance input; the dashboard must not infer it |
 | Pivot analysis | Existing marts and artifact pages may support fixed dashboard tables | Do not create official subtotal semantics client-side | Server-side pivot aggregate query contract is tracked by #1103 |
 | Governed AI explanations | Stable evidence references from runs, nodes, artifacts, attribution, movements, and input snapshot hashes | The adapter may pass bounded evidence references to an explanation viewer when result-store provides a snapshot | Snapshot builder is tracked by #1104 |
 
@@ -98,6 +98,7 @@ semantic surfaces, not permission for the browser to query raw tables.
 | --- | --- | --- |
 | `capital_summary` | One summary row per committed run, including total capital and lifecycle fields | `run_id` |
 | `capital_tree` | Flattened capital tree for dashboard drilldown | `run_id`, `node_id`, `parent_node_id` |
+| `desk_eligibility` | PLA/backtesting desk eligibility evidence and capital consequence | `run_id`, `desk_id`, `desk_node_id`, `eligibility_state`, `pla_state`, `backtesting_state` |
 | `component_breakdown` | Component-level capital totals and counts | `run_id`, `component` |
 | `top_contributors` | Ranked persisted attribution contributors | `run_id`, `node_id`, `attribution_id`, `source_id`, `artifact_id` |
 | `residual_attribution` | Residual attribution rows and unreconciled branches | `run_id`, `node_id`, `attribution_id`, `target_id`, `artifact_id` |
@@ -223,7 +224,7 @@ dashboard contract treats these as server-side requirements, not adapter work:
 - #1075: query APIs for timelines, shock definitions, scenario vectors, and
   surface slices;
 - #1101: RFET/NMRF/SES risk-factor evidence mart;
-- #1102: PLA/backtesting desk eligibility mart;
+- #1102: PLA/backtesting desk eligibility mart and read API;
 - #1103: server-side pivot aggregate query contract with official versus
   display subtotal semantics;
 - #1104: governed AI explanation snapshot builder over bounded result-store

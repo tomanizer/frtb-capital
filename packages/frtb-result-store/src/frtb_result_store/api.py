@@ -17,6 +17,10 @@ from frtb_result_store.api_artifacts import (
     artifact_unavailable_payload,
     require_artifact_ref,
 )
+from frtb_result_store.api_desk_eligibility import (
+    desk_eligibility_detail_payload,
+    desk_eligibility_payload,
+)
 from frtb_result_store.api_metadata import register_artifact_metadata_routes
 from frtb_result_store.io import DuckDbParquetResultStore, ResultStoreConfig
 from frtb_result_store.model import (
@@ -50,6 +54,7 @@ _OPENAPI_TAGS = (
     "Regime Comparison",
     "Org Hierarchy",
     "Risk Factors",
+    "Desk Eligibility",
     "Artifacts",
     "Attribution",
     "Lineage",
@@ -123,6 +128,7 @@ def create_result_store_app(
     _register_org_hierarchy_routes(routes, result_store, HTTPException, Query)
     _register_capital_tree_routes(routes, result_store, HTTPException, Query)
     _register_risk_factor_routes(routes, result_store, HTTPException, Query)
+    _register_desk_eligibility_routes(routes, result_store, HTTPException, Query)
     _register_attribution_projection_routes(routes, result_store, HTTPException)
     _register_artifact_routes(routes, result_store, HTTPException, Query, FileResponse)
     register_artifact_metadata_routes(
@@ -235,6 +241,50 @@ def _register_risk_factor_routes(
     _register_risk_factor_lineage_route(app, result_store, http_exception_type)
     _register_risk_factor_capital_route(app, result_store, http_exception_type)
     _register_risk_factor_source_rows_route(app, result_store, http_exception_type, query)
+
+
+def _register_desk_eligibility_routes(
+    app: _RouteRegistrar,
+    result_store: DuckDbParquetResultStore,
+    http_exception_type: type[Exception],
+    query: Any,
+) -> None:
+    @app.get(
+        "/runs/{run_id:path}/desk-eligibility",
+        tags=["Desk Eligibility"],
+        summary="List PLA/backtesting desk eligibility evidence rows",
+    )
+    def list_desk_eligibility(
+        run_id: str,
+        hierarchy_node_id: str | None = None,
+        desk_id: str | None = None,
+        eligibility_state: str | None = None,
+        pla_state: str | None = None,
+        backtesting_state: str | None = None,
+        limit: int = query(default=100, ge=1, le=1000),
+        offset: int = query(default=0, ge=0),
+    ) -> dict[str, object]:
+        _require_run(result_store, run_id, http_exception_type)
+        return desk_eligibility_payload(
+            result_store,
+            run_id,
+            hierarchy_node_id=hierarchy_node_id,
+            desk_id=desk_id,
+            eligibility_state=eligibility_state,
+            pla_state=pla_state,
+            backtesting_state=backtesting_state,
+            limit=limit,
+            offset=offset,
+        )
+
+    @app.get(
+        "/runs/{run_id:path}/desk-eligibility/{desk_id}",
+        tags=["Desk Eligibility"],
+        summary="Return PLA/backtesting eligibility evidence for one desk",
+    )
+    def get_desk_eligibility(run_id: str, desk_id: str) -> dict[str, object]:
+        _require_run(result_store, run_id, http_exception_type)
+        return desk_eligibility_detail_payload(result_store, run_id, desk_id)
 
 
 def _register_risk_factor_list_route(
