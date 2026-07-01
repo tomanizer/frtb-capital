@@ -21,6 +21,7 @@ from typing import cast
 
 import numpy as np
 import numpy.typing as npt
+from frtb_common import CalculationScope
 
 from frtb_ima._mapping_utils import freeze_mapping as _freeze_mapping
 from frtb_ima.data_models import (
@@ -30,6 +31,7 @@ from frtb_ima.data_models import (
     RiskClass,
 )
 from frtb_ima.input_manifest import CapitalRunInputManifest
+from frtb_ima.org_scope import add_scope_payload, validate_scope_metadata
 from frtb_ima.regimes import CalculationContext, RegulatoryRegime
 from frtb_ima.scenario import ScenarioMetadata
 
@@ -202,6 +204,7 @@ class Position:
     risk_factor_names: tuple[str, ...]
     notional: float | None = None
     metadata: Mapping[str, str] = field(default_factory=dict)
+    org_scope: CalculationScope | None = None
 
     def __post_init__(self) -> None:
         if not self.position_id:
@@ -220,6 +223,11 @@ class Position:
             _validate_non_empty_unique(self.risk_factor_names, "risk_factor_names"),
         )
         object.__setattr__(self, "metadata", _freeze_mapping(self.metadata))
+        object.__setattr__(
+            self,
+            "org_scope",
+            validate_scope_metadata(self.org_scope, field="Position.org_scope"),
+        )
 
 
 @dataclass(frozen=True)
@@ -243,6 +251,7 @@ class RFETEvidence:
     data_pools: tuple[RFETDataPoolEvidence, ...] = ()
     new_issuance: RFETNewIssuanceEvidence | None = None
     metadata: Mapping[str, str] = field(default_factory=dict)
+    org_scope: CalculationScope | None = None
 
     def __post_init__(self) -> None:
         if not self.risk_factor_name:
@@ -260,6 +269,11 @@ class RFETEvidence:
         object.__setattr__(self, "qualitative_criteria", tuple(self.qualitative_criteria))
         object.__setattr__(self, "data_pools", data_pools)
         object.__setattr__(self, "metadata", _freeze_mapping(self.metadata))
+        object.__setattr__(
+            self,
+            "org_scope",
+            validate_scope_metadata(self.org_scope, field="RFETEvidence.org_scope"),
+        )
 
     @property
     def observation_count(self) -> int:
@@ -474,6 +488,7 @@ class CapitalRunResult:
     total_market_risk_capital: float | None = None
     notes: tuple[str, ...] = ()
     input_manifest: CapitalRunInputManifest | None = None
+    calculation_scope: CalculationScope | None = None
     require_input_manifest: bool = field(default=False, kw_only=True)
 
     def __post_init__(self) -> None:
@@ -489,6 +504,14 @@ class CapitalRunResult:
             raise ValueError("input_manifest as_of_date must match CapitalRunResult as_of_date")
         object.__setattr__(self, "desk_results", _freeze_mapping(self.desk_results))
         object.__setattr__(self, "notes", tuple(self.notes))
+        object.__setattr__(
+            self,
+            "calculation_scope",
+            validate_scope_metadata(
+                self.calculation_scope,
+                field="CapitalRunResult.calculation_scope",
+            ),
+        )
 
     def as_dict(self) -> dict[str, object]:
         """Return a serialisable dictionary for reporting and audit trails.
@@ -497,13 +520,21 @@ class CapitalRunResult:
         dict[str, object]
             Result of the operation.
         """
-        return {
-            "as_of_date": self.as_of_date.isoformat(),
-            "regime": self.regime.value,
-            "desk_results": {desk: result.as_dict() for desk, result in self.desk_results.items()},
-            "total_market_risk_capital": self.total_market_risk_capital,
-            "notes": list(self.notes),
-            "input_manifest": (
-                self.input_manifest.compact_summary() if self.input_manifest is not None else None
-            ),
-        }
+        return add_scope_payload(
+            {
+                "as_of_date": self.as_of_date.isoformat(),
+                "regime": self.regime.value,
+                "desk_results": {
+                    desk: result.as_dict() for desk, result in self.desk_results.items()
+                },
+                "total_market_risk_capital": self.total_market_risk_capital,
+                "notes": list(self.notes),
+                "input_manifest": (
+                    self.input_manifest.compact_summary()
+                    if self.input_manifest is not None
+                    else None
+                ),
+            },
+            self.calculation_scope,
+            key="calculation_scope",
+        )

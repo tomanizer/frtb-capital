@@ -14,8 +14,10 @@ from datetime import date
 
 import numpy as np
 import numpy.typing as npt
+from frtb_common import CalculationScope
 
 from frtb_ima.calendar import ObservationWindowBasis
+from frtb_ima.org_scope import add_scope_payload, validate_scope_metadata
 
 FloatVector = Sequence[float] | npt.NDArray[np.float64]
 BoolVector = Sequence[bool] | npt.NDArray[np.bool_]
@@ -93,6 +95,17 @@ class TradingDeskBacktestResult:
     calendar_basis: str = ObservationWindowBasis.OBSERVATION_COUNT_PROXY.value
     official_holiday_count: int = 0
     missing_business_dates: tuple[date, ...] = ()
+    org_scope: CalculationScope | None = None
+
+    def __post_init__(self) -> None:
+        object.__setattr__(
+            self,
+            "org_scope",
+            validate_scope_metadata(
+                self.org_scope,
+                field="TradingDeskBacktestResult.org_scope",
+            ),
+        )
 
     def level(self, confidence_level: float) -> BacktestLevelResult:
         """Return the result for one configured VaR confidence level.
@@ -118,18 +131,23 @@ class TradingDeskBacktestResult:
         dict[str, object]
             Result of the operation.
         """
-        return {
-            "window_size": self.window_size,
-            "model_eligible": self.model_eligible,
-            "start_date": self.start_date.isoformat() if self.start_date is not None else None,
-            "end_date": self.end_date.isoformat() if self.end_date is not None else None,
-            "calendar_source": self.calendar_source,
-            "calendar_version": self.calendar_version,
-            "calendar_basis": self.calendar_basis,
-            "official_holiday_count": self.official_holiday_count,
-            "missing_business_dates": [item.isoformat() for item in self.missing_business_dates],
-            "levels": [level.as_dict() for level in self.levels],
-        }
+        return add_scope_payload(
+            {
+                "window_size": self.window_size,
+                "model_eligible": self.model_eligible,
+                "start_date": self.start_date.isoformat() if self.start_date is not None else None,
+                "end_date": self.end_date.isoformat() if self.end_date is not None else None,
+                "calendar_source": self.calendar_source,
+                "calendar_version": self.calendar_version,
+                "calendar_basis": self.calendar_basis,
+                "official_holiday_count": self.official_holiday_count,
+                "missing_business_dates": [
+                    item.isoformat() for item in self.missing_business_dates
+                ],
+                "levels": [level.as_dict() for level in self.levels],
+            },
+            self.org_scope,
+        )
 
 
 @dataclass(frozen=True)

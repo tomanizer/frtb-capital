@@ -10,8 +10,10 @@ from enum import StrEnum
 
 import numpy as np
 import numpy.typing as npt
+from frtb_common import CalculationScope
 
 from frtb_ima.data_models import LiquidityHorizon
+from frtb_ima.org_scope import add_scope_payload, validate_scope_metadata
 
 
 class NMRFStressMethod(StrEnum):
@@ -52,6 +54,7 @@ class NMRFStressScenarioResult:
     generated_by_prototype: bool
     source: str = ""
     notes: str = ""
+    org_scope: CalculationScope | None = None
 
     def __post_init__(self) -> None:
         if not self.risk_factor_name:
@@ -60,6 +63,14 @@ class NMRFStressScenarioResult:
             raise TypeError("method must be an NMRFStressMethod")
         if not math.isfinite(self.ses) or self.ses < 0.0:
             raise ValueError(f"ses must be a non-negative finite value, got {self.ses}")
+        object.__setattr__(
+            self,
+            "org_scope",
+            validate_scope_metadata(
+                self.org_scope,
+                field="NMRFStressScenarioResult.org_scope",
+            ),
+        )
 
     def as_dict(self) -> dict[str, object]:
         """Return a serialisable dictionary for reporting and audit trails.
@@ -68,14 +79,17 @@ class NMRFStressScenarioResult:
         dict[str, object]
             Result of the operation.
         """
-        return {
-            "risk_factor_name": self.risk_factor_name,
-            "method": self.method.value,
-            "ses": self.ses,
-            "generated_by_prototype": self.generated_by_prototype,
-            "source": self.source,
-            "notes": self.notes,
-        }
+        return add_scope_payload(
+            {
+                "risk_factor_name": self.risk_factor_name,
+                "method": self.method.value,
+                "ses": self.ses,
+                "generated_by_prototype": self.generated_by_prototype,
+                "source": self.source,
+                "notes": self.notes,
+            },
+            self.org_scope,
+        )
 
 
 @dataclass(frozen=True)
@@ -98,6 +112,7 @@ class NMRFStressArtifact:
     scenario_ids: tuple[str, ...] = ()
     generated_by_prototype: bool = False
     notes: str = ""
+    org_scope: CalculationScope | None = None
 
     def __post_init__(self) -> None:
         if not self.risk_factor_name:
@@ -135,6 +150,11 @@ class NMRFStressArtifact:
 
         object.__setattr__(self, "losses", losses)
         object.__setattr__(self, "scenario_ids", scenario_ids)
+        object.__setattr__(
+            self,
+            "org_scope",
+            validate_scope_metadata(self.org_scope, field="NMRFStressArtifact.org_scope"),
+        )
 
     def as_dict(self) -> dict[str, object]:
         """Return a serialisable audit summary without expanding the loss vector.
@@ -143,17 +163,20 @@ class NMRFStressArtifact:
         dict[str, object]
             Result of the operation.
         """
-        return {
-            "risk_factor_name": self.risk_factor_name,
-            "method": self.method.value,
-            "loss_count": int(np.asarray(self.losses).size),
-            "liquidity_horizon": self.liquidity_horizon.value,
-            "stress_period": self.stress_period,
-            "source": self.source,
-            "scenario_ids": list(self.scenario_ids),
-            "generated_by_prototype": self.generated_by_prototype,
-            "notes": self.notes,
-        }
+        return add_scope_payload(
+            {
+                "risk_factor_name": self.risk_factor_name,
+                "method": self.method.value,
+                "loss_count": int(np.asarray(self.losses).size),
+                "liquidity_horizon": self.liquidity_horizon.value,
+                "stress_period": self.stress_period,
+                "source": self.source,
+                "scenario_ids": list(self.scenario_ids),
+                "generated_by_prototype": self.generated_by_prototype,
+                "notes": self.notes,
+            },
+            self.org_scope,
+        )
 
 
 @dataclass(frozen=True)

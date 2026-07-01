@@ -29,6 +29,15 @@ Audit record types (`CapitalRunAuditLog`, `DeskAuditRecord`) currently live in
 `frtb_ima.audit`, not `frtb-common`. Promoting a suite-level audit home requires
 a cross-cutting ADR.
 
+`CalculationContext.calculation_scope`, `CapitalRunResult.calculation_scope`,
+`DeskCapitalResult.org_scope`, `DeskAuditRecord.org_scope`,
+`CapitalRunAuditLog.calculation_scope`, and IMA evidence records for RFET,
+PLA, backtesting, NMRF stress/valuation, and stress-period calibration preserve
+optional `frtb_common.CalculationScope` metadata supplied by upstream systems.
+IMA uses the metadata only for deterministic evidence association and audit
+serialization. Enterprise hierarchy traversal, scoped rollups, and aggregate or
+source-row lookup remain downstream `frtb-result-store` responsibilities.
+
 ## Client integration
 
 | Tier | Client input | IMA path | Notes |
