@@ -37,6 +37,14 @@ RRAO batch ingress field mapping is owned by package-internal
 `build_rrao_batch_from_positions`, `build_rrao_batch_from_columns`, and
 `build_rrao_batch_from_arrow`.
 
+`RraoCalculationContext.calculation_scope`, `RraoPosition.org_scope`,
+`RraoPositionBatch.org_scopes`, `RraoCapitalLine.org_scope`, and
+`RraoCapitalResult.calculation_scope` preserve optional
+`frtb_common.CalculationScope` metadata supplied by upstream systems. RRAO uses
+the metadata only for deterministic hashes and audit serialization. Enterprise
+hierarchy traversal, rollups, and aggregate/source-row lookup remain downstream
+`frtb-result-store` responsibilities.
+
 ## Client Integration
 
 RRAO is the template package for client-facing public API docs. The suite-level

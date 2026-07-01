@@ -356,6 +356,7 @@ RRAO_BATCH_POSITION_COLUMN_SPECS: tuple[RraoBatchPositionColumnSpec, ...] = (
     ),
     RraoBatchPositionColumnSpec("source_column_maps", row._source_column_map),
     RraoBatchPositionColumnSpec("citations", row._citations),
+    RraoBatchPositionColumnSpec("org_scopes", lambda position: position.org_scope),
 )
 
 

@@ -22,6 +22,7 @@ from frtb_rrao.data_models import (
     RraoPosition,
     RraoSourceLineage,
 )
+from frtb_rrao.org_scope import validate_scope_metadata
 from frtb_rrao.validation._back_to_back import (
     _validate_back_to_back_match_fields,
 )
@@ -150,6 +151,7 @@ def _validate_position(position: RraoPosition, seen_position_ids: set[str]) -> N
         )
 
     _validate_lineage(position.lineage, position_id)
+    validate_scope_metadata(position.org_scope, field="org_scope")
     _validate_optional_fields(position)
     _validate_evidence_requirements(position)
 

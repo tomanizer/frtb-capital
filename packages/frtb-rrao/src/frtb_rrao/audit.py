@@ -19,6 +19,7 @@ from frtb_rrao.data_models import (
     RraoSubtotal,
 )
 from frtb_rrao.numeric import is_reconciled, is_zero_excluded_add_on
+from frtb_rrao.org_scope import scope_payload
 from frtb_rrao.validation import RraoInputError, validate_rrao_positions
 
 _HASH_HEX_LENGTH = 64
@@ -66,7 +67,7 @@ def serialize_rrao_result(result: RraoCapitalResult) -> dict[str, object]:
         Result of the operation.
     """
 
-    return {
+    payload: dict[str, object] = {
         "run_id": result.run_id,
         "calculation_date": result.calculation_date.isoformat(),
         "base_currency": result.base_currency,
@@ -81,6 +82,10 @@ def serialize_rrao_result(result: RraoCapitalResult) -> dict[str, object]:
         "excluded_lines": [_line_payload(line) for line in result.excluded_lines],
         "subtotals": [_subtotal_payload(subtotal) for subtotal in result.subtotals],
     }
+    calculation_scope = scope_payload(result.calculation_scope)
+    if calculation_scope is not None:
+        payload["calculation_scope"] = calculation_scope
+    return payload
 
 
 def validate_rrao_result_reconciliation(result: RraoCapitalResult) -> None:
@@ -187,7 +192,7 @@ def _raise_subtotal_reconciliation_error() -> None:
 
 
 def _line_payload(line: RraoCapitalLine) -> dict[str, object]:
-    return {
+    payload: dict[str, object] = {
         "position_id": line.position_id,
         "classification": line.classification.value,
         "evidence_type": line.evidence_type.value,
@@ -206,6 +211,10 @@ def _line_payload(line: RraoCapitalLine) -> dict[str, object]:
         else None,
         "exclusion_evidence_id": line.exclusion_evidence_id,
     }
+    org_scope = scope_payload(line.org_scope)
+    if org_scope is not None:
+        payload["org_scope"] = org_scope
+    return payload
 
 
 def _subtotal_payload(subtotal: RraoSubtotal) -> dict[str, object]:
