@@ -36,10 +36,12 @@ from datetime import date
 
 import numpy as np
 import numpy.typing as npt
+from frtb_common import CalculationScope
 
 from frtb_ima._array_utils import finite_1d_float_array
 from frtb_ima.calendar import BusinessCalendar, ObservationWindowBasis
 from frtb_ima.logging import calculation_log_extra
+from frtb_ima.org_scope import add_scope_payload, validate_scope_metadata
 from frtb_ima.regimes import (
     PLAMetricsRequired,
     RegulatoryPolicy,
@@ -66,6 +68,14 @@ class PlaResult:
     zone: str  # "GREEN", "AMBER", or "RED"
     n_hpl: int
     n_rtpl: int
+    org_scope: CalculationScope | None = None
+
+    def __post_init__(self) -> None:
+        object.__setattr__(
+            self,
+            "org_scope",
+            validate_scope_metadata(self.org_scope, field="PlaResult.org_scope"),
+        )
 
     def as_dict(self) -> dict[str, object]:
         """Return a serialisable dictionary for reporting and audit trails.
@@ -74,14 +84,17 @@ class PlaResult:
         -------
         dict[str, object]
             Serialisable dictionary with keys ``ks_statistic``, ``zone``,
-            ``n_hpl``, and ``n_rtpl``.
+            ``n_hpl``, ``n_rtpl``, and optional ``org_scope`` metadata.
         """
-        return {
-            "ks_statistic": self.ks_statistic,
-            "zone": self.zone,
-            "n_hpl": self.n_hpl,
-            "n_rtpl": self.n_rtpl,
-        }
+        return add_scope_payload(
+            {
+                "ks_statistic": self.ks_statistic,
+                "zone": self.zone,
+                "n_hpl": self.n_hpl,
+                "n_rtpl": self.n_rtpl,
+            },
+            self.org_scope,
+        )
 
 
 @dataclass(frozen=True)
@@ -92,6 +105,14 @@ class SpearmanPlaResult:
     zone: str  # "GREEN", "AMBER", or "RED"
     n_hpl: int
     n_rtpl: int
+    org_scope: CalculationScope | None = None
+
+    def __post_init__(self) -> None:
+        object.__setattr__(
+            self,
+            "org_scope",
+            validate_scope_metadata(self.org_scope, field="SpearmanPlaResult.org_scope"),
+        )
 
     def as_dict(self) -> dict[str, object]:
         """Return a serialisable dictionary for reporting and audit trails.
@@ -100,14 +121,18 @@ class SpearmanPlaResult:
         -------
         dict[str, object]
             Serialisable dictionary with keys ``spearman_correlation``,
-            ``zone``, ``n_hpl``, and ``n_rtpl``.
+            ``zone``, ``n_hpl``, ``n_rtpl``, and optional ``org_scope``
+            metadata.
         """
-        return {
-            "spearman_correlation": self.spearman_correlation,
-            "zone": self.zone,
-            "n_hpl": self.n_hpl,
-            "n_rtpl": self.n_rtpl,
-        }
+        return add_scope_payload(
+            {
+                "spearman_correlation": self.spearman_correlation,
+                "zone": self.zone,
+                "n_hpl": self.n_hpl,
+                "n_rtpl": self.n_rtpl,
+            },
+            self.org_scope,
+        )
 
 
 @dataclass(frozen=True)
@@ -126,6 +151,14 @@ class PlaWindowDiagnostics:
     calendar_basis: str = ObservationWindowBasis.OBSERVATION_COUNT_PROXY.value
     official_holiday_count: int = 0
     missing_business_dates: tuple[date, ...] = ()
+    org_scope: CalculationScope | None = None
+
+    def __post_init__(self) -> None:
+        object.__setattr__(
+            self,
+            "org_scope",
+            validate_scope_metadata(self.org_scope, field="PlaWindowDiagnostics.org_scope"),
+        )
 
     def as_dict(self) -> dict[str, object]:
         """Return a serialisable dictionary for reporting and notebooks.
@@ -136,20 +169,25 @@ class PlaWindowDiagnostics:
             Serialisable dictionary with window size, index bounds, date range,
             and calendar metadata.
         """
-        return {
-            "available_observations": self.available_observations,
-            "minimum_history": self.minimum_history,
-            "window_size": self.window_size,
-            "start_index": self.start_index,
-            "end_index_exclusive": self.end_index_exclusive,
-            "start_date": self.start_date.isoformat() if self.start_date is not None else None,
-            "end_date": self.end_date.isoformat() if self.end_date is not None else None,
-            "calendar_source": self.calendar_source,
-            "calendar_version": self.calendar_version,
-            "calendar_basis": self.calendar_basis,
-            "official_holiday_count": self.official_holiday_count,
-            "missing_business_dates": [item.isoformat() for item in self.missing_business_dates],
-        }
+        return add_scope_payload(
+            {
+                "available_observations": self.available_observations,
+                "minimum_history": self.minimum_history,
+                "window_size": self.window_size,
+                "start_index": self.start_index,
+                "end_index_exclusive": self.end_index_exclusive,
+                "start_date": self.start_date.isoformat() if self.start_date is not None else None,
+                "end_date": self.end_date.isoformat() if self.end_date is not None else None,
+                "calendar_source": self.calendar_source,
+                "calendar_version": self.calendar_version,
+                "calendar_basis": self.calendar_basis,
+                "official_holiday_count": self.official_holiday_count,
+                "missing_business_dates": [
+                    item.isoformat() for item in self.missing_business_dates
+                ],
+            },
+            self.org_scope,
+        )
 
 
 @dataclass(frozen=True)
@@ -160,6 +198,17 @@ class PlaPolicyAssessmentResult:
     diagnostics: PlaWindowDiagnostics
     spearman: SpearmanPlaResult | None = None
     zone_labels: tuple[str, str, str] = DEFAULT_ZONE_LABELS
+    org_scope: CalculationScope | None = None
+
+    def __post_init__(self) -> None:
+        object.__setattr__(
+            self,
+            "org_scope",
+            validate_scope_metadata(
+                self.org_scope,
+                field="PlaPolicyAssessmentResult.org_scope",
+            ),
+        )
 
     @property
     def ks_statistic(self) -> float:
@@ -193,12 +242,15 @@ class PlaPolicyAssessmentResult:
             Serialisable dictionary including the authoritative policy zone,
             metric details, and window diagnostics.
         """
-        return {
-            "zone": self.zone,
-            "pla": self.pla.as_dict(),
-            "spearman": self.spearman.as_dict() if self.spearman is not None else None,
-            "diagnostics": self.diagnostics.as_dict(),
-        }
+        return add_scope_payload(
+            {
+                "zone": self.zone,
+                "pla": self.pla.as_dict(),
+                "spearman": self.spearman.as_dict() if self.spearman is not None else None,
+                "diagnostics": self.diagnostics.as_dict(),
+            },
+            self.org_scope,
+        )
 
 
 FloatVector = Sequence[float] | npt.NDArray[np.float64]

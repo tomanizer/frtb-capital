@@ -19,6 +19,7 @@ from dataclasses import dataclass, field
 from datetime import date
 from pathlib import Path
 
+from frtb_common import CalculationScope
 from frtb_common.serialization import jsonable
 
 from frtb_ima._mapping_utils import empty_mapping as _empty_mapping
@@ -26,6 +27,7 @@ from frtb_ima._mapping_utils import freeze_mapping as _freeze_mapping
 from frtb_ima._version import __version__
 from frtb_ima.audit_inputs import compute_inputs_hash
 from frtb_ima.input_manifest import CapitalRunInputManifest
+from frtb_ima.org_scope import add_scope_payload, validate_scope_metadata
 from frtb_ima.regimes import (
     DEFAULT_MODEL_VERSION,
     DeskEligibilityStatus,
@@ -56,6 +58,7 @@ class DeskAuditRecord:
     nmrf_valuation: Mapping[str, object] = field(default_factory=_empty_mapping)
     input_manifest: CapitalRunInputManifest | None = field(default=None, kw_only=True)
     require_input_manifest: bool = field(default=False, kw_only=True)
+    org_scope: CalculationScope | None = None
     as_of_date: date | None = None
     notes: tuple[str, ...] = ()
     metadata: Mapping[str, object] = field(default_factory=_empty_mapping)
@@ -97,6 +100,11 @@ class DeskAuditRecord:
         object.__setattr__(self, "code_version", code_version)
         object.__setattr__(self, "policy_hash", policy_hash)
         object.__setattr__(self, "inputs_hash", str(self.inputs_hash))
+        object.__setattr__(
+            self,
+            "org_scope",
+            validate_scope_metadata(self.org_scope, field="DeskAuditRecord.org_scope"),
+        )
         object.__setattr__(self, "imcc", _freeze_mapping(self.imcc))
         object.__setattr__(self, "ses", _freeze_mapping(self.ses))
         object.__setattr__(self, "pla", _freeze_mapping(self.pla))
@@ -117,29 +125,34 @@ class DeskAuditRecord:
         dict[str, object]
             Result of the operation.
         """
-        return {
-            "run_id": self.run_id,
-            "desk_id": self.desk_id,
-            "regime": self.regime,
-            "desk_eligibility": self.desk_eligibility,
-            "model_version": self.model_version.as_dict(),
-            "code_version": self.code_version,
-            "policy_hash": self.policy_hash,
-            "inputs_hash": self.inputs_hash,
-            "as_of_date": self.as_of_date.isoformat() if self.as_of_date is not None else None,
-            "imcc": jsonable(self.imcc),
-            "ses": jsonable(self.ses),
-            "pla": jsonable(self.pla),
-            "backtesting": jsonable(self.backtesting),
-            "capital": jsonable(self.capital),
-            "nmrf_valuation": jsonable(self.nmrf_valuation),
-            "input_manifest": (
-                self.input_manifest.compact_summary() if self.input_manifest is not None else None
-            ),
-            "elapsed_seconds": self.elapsed_seconds,
-            "notes": list(self.notes),
-            "metadata": jsonable(self.metadata),
-        }
+        return add_scope_payload(
+            {
+                "run_id": self.run_id,
+                "desk_id": self.desk_id,
+                "regime": self.regime,
+                "desk_eligibility": self.desk_eligibility,
+                "model_version": self.model_version.as_dict(),
+                "code_version": self.code_version,
+                "policy_hash": self.policy_hash,
+                "inputs_hash": self.inputs_hash,
+                "as_of_date": self.as_of_date.isoformat() if self.as_of_date is not None else None,
+                "imcc": jsonable(self.imcc),
+                "ses": jsonable(self.ses),
+                "pla": jsonable(self.pla),
+                "backtesting": jsonable(self.backtesting),
+                "capital": jsonable(self.capital),
+                "nmrf_valuation": jsonable(self.nmrf_valuation),
+                "input_manifest": (
+                    self.input_manifest.compact_summary()
+                    if self.input_manifest is not None
+                    else None
+                ),
+                "elapsed_seconds": self.elapsed_seconds,
+                "notes": list(self.notes),
+                "metadata": jsonable(self.metadata),
+            },
+            self.org_scope,
+        )
 
     def to_json_line(self) -> str:
         """Return this desk audit record as one NDJSON line.
@@ -164,6 +177,7 @@ class CapitalRunAuditLog:
     inputs_hash: str = field(default="", kw_only=True)
     input_manifest: CapitalRunInputManifest | None = field(default=None, kw_only=True)
     require_input_manifest: bool = field(default=False, kw_only=True)
+    calculation_scope: CalculationScope | None = None
     as_of_date: date | None = None
     metadata: Mapping[str, object] = field(default_factory=_empty_mapping)
 
@@ -213,6 +227,14 @@ class CapitalRunAuditLog:
         object.__setattr__(self, "code_version", code_version)
         object.__setattr__(self, "policy_hash", policy_hash)
         object.__setattr__(self, "inputs_hash", inputs_hash)
+        object.__setattr__(
+            self,
+            "calculation_scope",
+            validate_scope_metadata(
+                self.calculation_scope,
+                field="CapitalRunAuditLog.calculation_scope",
+            ),
+        )
         object.__setattr__(self, "desk_records", desk_records)
         object.__setattr__(self, "metadata", _freeze_mapping(self.metadata))
 
@@ -233,21 +255,27 @@ class CapitalRunAuditLog:
         dict[str, object]
             Result of the operation.
         """
-        return {
-            "run_id": self.run_id,
-            "regime": self.regime,
-            "model_version": self.model_version.as_dict(),
-            "code_version": self.code_version,
-            "policy_hash": self.policy_hash,
-            "inputs_hash": self.inputs_hash,
-            "input_manifest": (
-                self.input_manifest.compact_summary() if self.input_manifest is not None else None
-            ),
-            "as_of_date": self.as_of_date.isoformat() if self.as_of_date is not None else None,
-            "desk_count": self.desk_count,
-            "desk_records": [record.as_dict() for record in self.desk_records],
-            "metadata": jsonable(self.metadata),
-        }
+        return add_scope_payload(
+            {
+                "run_id": self.run_id,
+                "regime": self.regime,
+                "model_version": self.model_version.as_dict(),
+                "code_version": self.code_version,
+                "policy_hash": self.policy_hash,
+                "inputs_hash": self.inputs_hash,
+                "input_manifest": (
+                    self.input_manifest.compact_summary()
+                    if self.input_manifest is not None
+                    else None
+                ),
+                "as_of_date": self.as_of_date.isoformat() if self.as_of_date is not None else None,
+                "desk_count": self.desk_count,
+                "desk_records": [record.as_dict() for record in self.desk_records],
+                "metadata": jsonable(self.metadata),
+            },
+            self.calculation_scope,
+            key="calculation_scope",
+        )
 
     def to_ndjson(self) -> str:
         """Return desk records as newline-delimited JSON.
