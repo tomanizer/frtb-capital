@@ -105,6 +105,7 @@ batch audit boundaries, SA handoff):
 - [Product requirements](PRD.md)
 - [Regulatory requirements](REGULATORY_REQUIREMENTS.md)
 - [Regulatory traceability](REGULATORY_TRACEABILITY.md)
+- [Regulatory support evidence](REGULATORY_SUPPORT_EVIDENCE.md)
 - [Regulatory assumptions](REGULATORY_ASSUMPTIONS.md)
 - [Detailed implementation requirements](DETAILED_REQUIREMENTS.md)
 - [Architecture and data design](ARCHITECTURE_AND_DATA_DESIGN.md)
