@@ -44,16 +44,17 @@ The matrix must assign exactly one status per cell from:
 
 ### SBM-NBP-002: Code–documentation parity
 
-`phase1_capital_supported_paths(profile_id)` in `validation.py` must match the
-matrix for every cell marked implemented. Tests in
+`phase1_capital_supported_paths(profile_id)` in `validation/context.py` must
+match the matrix for every cell marked implemented. Tests in
 `tests/test_sbm_support_matrix.py` must fail if parity breaks.
 
 ### SBM-NBP-003: Source manifest linkage
 
 Each profile family used for implementation must have an entry in
 `packages/frtb-sbm/docs/regulatory_sources.yml` with `section_hint` granular
-enough for reviewers to locate bucket/weight tables. `PRA_UK_CRR` may remain
-absent until SBM-NBP-020 is satisfied.
+enough for reviewers to locate bucket/weight tables. `PRA_UK_CRR` has a
+blocked-status source-register row only; it is not authority for capital
+parameters until SBM-NBP-020 adds official paragraph mappings.
 
 ### SBM-NBP-004: Basel sub-feature matrix
 
@@ -97,8 +98,8 @@ enumerated allowed list (`ensure_sbm_profile_known`).
 ### SBM-NBP-013: Blocked profile behaviour
 
 `PRA_UK_CRR` must remain unsupported fail-closed at runtime until
-SBM-NBP-020 is complete. Documentation must mark all 21 cells **blocked**, not
-planned, until a PRA source mapping issue is closed.
+SBM-NBP-020 is complete. Documentation must mark all 21 cells fail-closed at
+runtime and blocked, not planned, until a PRA source mapping issue is closed.
 
 ---
 

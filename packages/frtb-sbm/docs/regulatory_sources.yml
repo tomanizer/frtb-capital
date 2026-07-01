@@ -28,7 +28,7 @@ sources:
     reuse_note: "Link-only BIS reference; do not vendor text without permission review."
     module_paths:
       - src/frtb_sbm/data_models.py
-      - src/frtb_sbm/validation.py
+      - src/frtb_sbm/validation/context.py
       - src/frtb_sbm/regimes.py
       - src/frtb_sbm/reference_data.py
       - src/frtb_sbm/weighted_sensitivity.py
@@ -71,6 +71,18 @@ sources:
     section_hint: "Articles 325e-325az and related market-risk provisions for EU comparison profile work."
     status: comparison_reference
     reuse_note: "EU profile support is planned after the supported BASEL_MAR21 delta/vega/curvature matrix; current EU runtime requests fail closed."
+    module_paths: []
+    requirement_ids:
+      - SBM-REF-001
+
+  - id: pra_uk_crr_sbm_mapping_tbd
+    family: PRA_UK_CRR
+    jurisdiction: UK
+    title: "PRA UK CRR SBM source mapping pending"
+    url: "https://www.bankofengland.co.uk/prudential-regulation"
+    section_hint: "SBM-NBP-020 must add PRA/UK CRR market-risk article or rulebook paragraph mappings before any PRA_UK_CRR SBM cell is capital-producing."
+    status: blocked_pending_source_mapping
+    reuse_note: "Placeholder source-register row for fail-closed status only; do not use this as authority for capital parameters."
     module_paths: []
     requirement_ids:
       - SBM-REF-001

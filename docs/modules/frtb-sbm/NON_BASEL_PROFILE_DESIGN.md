@@ -34,7 +34,7 @@ semantics or Basel fixture hashes.
 
 Authoritative runtime gates:
 
-- `packages/frtb-sbm/src/frtb_sbm/validation.py` — `_PHASE1_SUPPORTED`
+- `packages/frtb-sbm/src/frtb_sbm/validation/context.py` — `_PHASE1_SUPPORTED`
 - `packages/frtb-sbm/src/frtb_sbm/regimes.py` — `UNSUPPORTED_PROFILE_REASONS`, `PROFILE_SUPPORTED_MEASURES`
 - `packages/frtb-sbm/docs/REGULATORY_TRACEABILITY.md` — documentation source for tests
 
@@ -171,7 +171,7 @@ flowchart TD
 | --- | --- |
 | `reference_data.py` | Add `US_NPR_*` bucket/weight/correlation tables; extend `PROFILE_*` dicts |
 | `regimes.py` | Move `US_NPR_2_0` from `UNSUPPORTED_PROFILE_REASONS` to `SUPPORTED_PROFILE_METADATA` when first cell ships; extend `PROFILE_SUPPORTED_MEASURES` incrementally |
-| `validation.py` | Extend `_PHASE1_SUPPORTED[US_NPR_2_0]` one cell at a time |
+| `validation/context.py` | Extend `_PHASE1_SUPPORTED[US_NPR_2_0]` one cell at a time |
 | `regulatory_sources.yml` | Add NPR table-level `section_hint` entries per implemented cell |
 | `REGULATORY_TRACEABILITY.md` | Expand non-Basel section from single profile row to 7×3 matrix |
 | `tests/fixtures/girr_delta_us_npr_v1/` | New fixture pack; leave `girr_delta_v1` untouched |
