@@ -15,6 +15,7 @@ from typing import cast
 
 import numpy as np
 import numpy.typing as npt
+from frtb_common import CalculationScope
 
 from frtb_sbm.assembly.hashes import (
     INPUT_HASH_ALGORITHM_JSON_ROW_V1,
@@ -81,6 +82,7 @@ class SbmSensitivityBatch:
     down_shock_amounts: ObjectArray | None = None
     source_column_maps: tuple[tuple[tuple[str, str], ...], ...] | None = None
     mapping_citation_ids: tuple[tuple[str, ...], ...] | None = None
+    org_scopes: tuple[CalculationScope | None, ...] | None = None
     accepted_row_dataclasses_materialized: int = 0
 
     @property
@@ -165,6 +167,7 @@ def build_sbm_batch_from_sensitivities(
     optional_arrays = _optional_arrays_from_sensitivities(validated)
     source_column_maps = _source_column_maps_from_sensitivities(validated)
     mapping_citations = _mapping_citations_from_sensitivities(validated)
+    org_scopes = _org_scopes_from_sensitivities(validated)
     batch = build_sbm_batch_from_columns(
         expected_risk_class=risk_class,
         expected_risk_measure=risk_measure,
@@ -187,6 +190,7 @@ def build_sbm_batch_from_sensitivities(
         diagnostics=diagnostics,
         source_column_maps=source_column_maps,
         mapping_citation_ids=mapping_citations,
+        org_scopes=org_scopes,
         copy_arrays=True,
         position_ids=optional_arrays["position_ids"],
         qualifiers=optional_arrays["qualifiers"],
@@ -308,6 +312,7 @@ def concatenate_sbm_batches(batches: object) -> SbmSensitivityBatch:
         down_shock_amounts=_concat_optional_arrays(validated, "down_shock_amounts"),
         source_column_maps=_concat_source_column_maps(validated),
         mapping_citation_ids=_concat_mapping_citation_ids(validated),
+        org_scopes=_concat_org_scopes(validated),
         copy_arrays=False,
     )
     return replace(
@@ -587,6 +592,15 @@ def _mapping_citations_from_sensitivities(
     return mapping_citations
 
 
+def _org_scopes_from_sensitivities(
+    sensitivities: tuple[SbmSensitivity, ...],
+) -> tuple[CalculationScope | None, ...] | None:
+    org_scopes = tuple(item.org_scope for item in sensitivities)
+    if not any(scope is not None for scope in org_scopes):
+        return None
+    return org_scopes
+
+
 def _homogeneous_path_from_sensitivities(
     sensitivities: Sequence[SbmSensitivity],
 ) -> tuple[SbmRiskClass, SbmRiskMeasure]:
@@ -710,6 +724,20 @@ def _concat_mapping_citation_ids(
             rows.extend(() for _ in range(batch.row_count))
         else:
             rows.extend(batch.mapping_citation_ids)
+    return tuple(rows)
+
+
+def _concat_org_scopes(
+    batches: Sequence[SbmSensitivityBatch],
+) -> tuple[CalculationScope | None, ...] | None:
+    if not any(batch.org_scopes is not None for batch in batches):
+        return None
+    rows: list[CalculationScope | None] = []
+    for batch in batches:
+        if batch.org_scopes is None:
+            rows.extend([None] * batch.row_count)
+        else:
+            rows.extend(batch.org_scopes)
     return tuple(rows)
 
 

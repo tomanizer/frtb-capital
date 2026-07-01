@@ -16,6 +16,7 @@ from frtb_sbm.data_models import (
     SbmSignConvention,
     SbmSourceLineage,
 )
+from frtb_sbm.org_scope import validate_scope_metadata
 from frtb_sbm.validation.coercion import (
     _coerce_enum,
     normalise_currency_code,
@@ -97,6 +98,11 @@ def _validate_sensitivity(sensitivity: SbmSensitivity, seen_sensitivity_ids: set
 
     if sensitivity.position_id is not None:
         _require_text(sensitivity.position_id, "position_id", sensitivity_id)
+    validate_scope_metadata(
+        sensitivity.org_scope,
+        field="org_scope",
+        sensitivity_id=sensitivity_id,
+    )
 
     _validate_lineage(sensitivity.lineage, sensitivity_id)
     if sensitivity.source_row_id != sensitivity.lineage.source_row_id:
