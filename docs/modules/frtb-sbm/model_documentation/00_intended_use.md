@@ -32,10 +32,11 @@ reporting-currency FX delta/vega/curvature, equity delta, and commodity delta
 as proposed-rule comparison slices under Federal Register 91 FR 14952 section
 V.A.7.a. It supports `EU_CRR3` GIRR delta/vega/curvature, FX
 delta/vega/curvature, equity delta, and commodity delta as Regulation (EU)
-2024/1623 comparison cells. It supports `PRA_UK_CRR` GIRR delta/vega/curvature
-with PRA PS1/26 Appendix 1 / PRA2026/1 citation ids. All other U.S. NPR 2.0,
-EU CRR3, and PRA UK CRR cells fail closed until profile-specific
-citations and deterministic fixtures are added.
+2024/1623 comparison cells. It supports `PRA_UK_CRR` GIRR
+delta/vega/curvature, reporting-currency FX delta/vega/curvature, equity delta,
+and commodity delta with PRA PS1/26 Appendix 1 / PRA2026/1 citation ids. All
+other U.S. NPR 2.0, EU CRR3, and PRA UK CRR cells fail closed until
+profile-specific citations and deterministic fixtures are added.
 
 Post-calculation attribution is supported for selected, differentiable delta and
 vega branches through analytical Euler `CapitalContribution` records. Curvature
@@ -48,8 +49,7 @@ available as finite difference and is separate from marginal contribution.
 - U.S. NPR 2.0 runtime capital outside GIRR delta/vega/curvature,
   reporting-currency FX delta/vega/curvature, equity delta, and commodity
   delta;
-- EU CRR3 runtime capital outside delivered cells and PRA UK CRR runtime capital
-  outside GIRR delta/vega/curvature;
+- EU CRR3 and PRA UK CRR runtime capital outside delivered cells;
 - market-data sourcing, pricing, and sensitivity generation;
 - total SA aggregation across SBM, DRC, and RRAO;
 - unsupported curvature sub-features where the package requires additional

@@ -24,7 +24,8 @@ curvature matrix. `US_NPR_2_0` produces capital for GIRR
 delta/vega/curvature, reporting-currency FX delta/vega/curvature, equity
 delta, and commodity delta. `EU_CRR3` produces capital for GIRR
 delta/vega/curvature, FX delta/vega/curvature, equity delta, and commodity
-delta. `PRA_UK_CRR` produces capital only for GIRR delta, vega, and curvature.
+delta. `PRA_UK_CRR` produces capital for GIRR delta/vega/curvature,
+reporting-currency FX delta/vega/curvature, equity delta, and commodity delta.
 All other U.S. NPR, EU CRR3, and PRA UK CRR cells fail closed until cited
 reference data exists. Do not open another PRA runtime gate without exact-cell
 PRA citations, profile-owned reference data, and deterministic fixtures.

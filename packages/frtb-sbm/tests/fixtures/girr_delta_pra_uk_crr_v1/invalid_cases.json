@@ -1,16 +1,18 @@
 [
   {
-    "case_id": "pra-uk-crr-fx-delta-unsupported",
+    "case_id": "pra-uk-crr-csr-nonsec-delta-unsupported",
     "expected_error_match": "PRA_UK_CRR",
     "sensitivity": {
-      "sensitivity_id": "pra-uk-crr-fx-delta-unsupported",
+      "sensitivity_id": "pra-uk-crr-csr-nonsec-delta-unsupported",
       "source_row_id": "row-invalid-001",
       "desk_id": "rates-desk",
       "legal_entity": "LE-001",
-      "risk_class": "FX",
+      "risk_class": "CSR_NONSEC",
       "risk_measure": "DELTA",
-      "bucket": "EUR",
-      "risk_factor": "EUR",
+      "bucket": "4",
+      "risk_factor": "BOND",
+      "qualifier": "ISS-001",
+      "tenor": "5y",
       "amount": 100000.0,
       "amount_currency": "USD",
       "sign_convention": "RECEIVE",

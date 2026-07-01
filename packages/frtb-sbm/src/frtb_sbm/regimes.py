@@ -59,7 +59,10 @@ SUPPORTED_PROFILE_METADATA: dict[SbmRegulatoryProfile, dict[str, object]] = {
             "Standardised Approach (CRR) Part"
         ),
         "publication_date": date(2026, 1, 20),
-        "status": "supported_pra_uk_crr_girr_delta_vega_curvature_comparison_slice",
+        "status": (
+            "supported_pra_uk_crr_girr_delta_vega_curvature_"
+            "fx_delta_vega_curvature_equity_commodity_delta_comparison_slice"
+        ),
         "effective_date": date(2027, 1, 1),
     },
 }
@@ -116,6 +119,11 @@ PROFILE_SUPPORTED_MEASURES: dict[
         SbmRiskClass.GIRR: frozenset(
             {SbmRiskMeasure.DELTA, SbmRiskMeasure.VEGA, SbmRiskMeasure.CURVATURE}
         ),
+        SbmRiskClass.FX: frozenset(
+            {SbmRiskMeasure.DELTA, SbmRiskMeasure.VEGA, SbmRiskMeasure.CURVATURE}
+        ),
+        SbmRiskClass.EQUITY: frozenset({SbmRiskMeasure.DELTA}),
+        SbmRiskClass.COMMODITY: frozenset({SbmRiskMeasure.DELTA}),
     },
 }
 

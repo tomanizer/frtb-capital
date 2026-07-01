@@ -69,6 +69,8 @@ def _validate_fx_vega_sensitivity(
 def _fx_vega_factor_citations(bucket_citation_id: str) -> tuple[str, ...]:
     if bucket_citation_id.startswith("us_npr_"):
         return (bucket_citation_id,)
+    if bucket_citation_id.startswith("pra_uk_crr_"):
+        return ("pra_uk_crr_325q_fx_risk_factors", bucket_citation_id)
     return ("basel_mar21_14", bucket_citation_id)
 
 

@@ -86,6 +86,16 @@ PROFILE_CURVATURE_CITATION_IDS: dict[
             "pra_uk_crr_325ax_curvature_risk_weights",
             "pra_uk_crr_325ay_curvature_correlations",
         ),
+        SbmRiskClass.FX: (
+            "pra_uk_crr_325e_components",
+            "pra_uk_crr_325g_curvature_aggregation",
+            "pra_uk_crr_325h_correlation_scenarios",
+            "pra_uk_crr_325q_fx_risk_factors",
+            "pra_uk_crr_325ax_fx_curvature_risk_weights",
+            "pra_uk_crr_325ay_curvature_correlations",
+            "pra_uk_crr_325av_fx_delta_weights",
+            "pra_uk_crr_325aw_fx_delta_inter",
+        ),
     },
 }
 
@@ -118,6 +128,7 @@ PROFILE_CURVATURE_RISK_WEIGHT_CITATION_IDS: dict[
     },
     SbmRegulatoryProfile.PRA_UK_CRR: {
         SbmRiskClass.GIRR: "pra_uk_crr_325ax_curvature_risk_weights",
+        SbmRiskClass.FX: "pra_uk_crr_325ax_fx_curvature_risk_weights",
     },
 }
 

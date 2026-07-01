@@ -130,6 +130,12 @@ def _curvature_definition_citation_ids(
                 "pra_uk_crr_325g_curvature_aggregation",
                 "pra_uk_crr_325l_girr_risk_factors",
             )
+        if risk_class is SbmRiskClass.FX:
+            return (
+                "pra_uk_crr_325e_components",
+                "pra_uk_crr_325g_curvature_aggregation",
+                "pra_uk_crr_325q_fx_risk_factors",
+            )
         raise UnsupportedRegulatoryFeatureError(
             f"PRA_UK_CRR curvature definitions are unsupported for risk_class={risk_class.value}"
         )
@@ -172,6 +178,12 @@ def _curvature_weight_rule_citation_ids(
             return (
                 "pra_uk_crr_325ax_curvature_risk_weights",
                 "pra_uk_crr_325ae_girr_delta_weights",
+            )
+        if risk_class is SbmRiskClass.FX:
+            return (
+                "pra_uk_crr_325ax_fx_curvature_risk_weights",
+                "pra_uk_crr_325av_fx_delta_weights",
+                "pra_uk_crr_325av_fx_delta_sqrt2",
             )
         raise UnsupportedRegulatoryFeatureError(
             f"PRA_UK_CRR curvature weights are unsupported for risk_class={risk_class.value}"

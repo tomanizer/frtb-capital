@@ -39,6 +39,11 @@ PRA_UK_CRR_EXPECTED_PATHS = frozenset(
         (SbmRiskClass.GIRR, SbmRiskMeasure.DELTA),
         (SbmRiskClass.GIRR, SbmRiskMeasure.VEGA),
         (SbmRiskClass.GIRR, SbmRiskMeasure.CURVATURE),
+        (SbmRiskClass.FX, SbmRiskMeasure.DELTA),
+        (SbmRiskClass.FX, SbmRiskMeasure.VEGA),
+        (SbmRiskClass.FX, SbmRiskMeasure.CURVATURE),
+        (SbmRiskClass.EQUITY, SbmRiskMeasure.DELTA),
+        (SbmRiskClass.COMMODITY, SbmRiskMeasure.DELTA),
     }
 )
 EU_CRR3_EXPECTED_PATHS = frozenset(
@@ -104,18 +109,14 @@ def test_us_npr_profile_supports_documented_comparison_cells() -> None:
                 )
 
 
-def test_pra_uk_crr_profile_supports_only_girr_delta_vega_and_curvature() -> None:
+def test_pra_uk_crr_profile_supports_delivered_comparison_cells_only() -> None:
     assert phase1_capital_supported_paths(SbmRegulatoryProfile.PRA_UK_CRR.value) == (
         PRA_UK_CRR_EXPECTED_PATHS
     )
-    for risk_measure in (
-        SbmRiskMeasure.DELTA,
-        SbmRiskMeasure.VEGA,
-        SbmRiskMeasure.CURVATURE,
-    ):
+    for risk_class, risk_measure in PRA_UK_CRR_EXPECTED_PATHS:
         ensure_sbm_risk_class_measure_supported(
             SbmRegulatoryProfile.PRA_UK_CRR.value,
-            SbmRiskClass.GIRR,
+            risk_class,
             risk_measure,
         )
 
@@ -169,7 +170,7 @@ def test_traceability_support_matrix_lists_every_basel_path() -> None:
 
     assert "| `US_NPR_2_0` | partial (8 / 21 cells) |" in traceability
     assert "| `EU_CRR3` | partial (8 / 21 cells) |" in traceability
-    assert "| `PRA_UK_CRR` | partial (3 / 21 cells) |" in traceability
+    assert "| `PRA_UK_CRR` | partial (8 / 21 cells) |" in traceability
     expected_profile_rows = (
         "| GIRR | implemented under audit | implemented under audit | "
         "implemented under audit | implemented under audit | "
@@ -177,15 +178,15 @@ def test_traceability_support_matrix_lists_every_basel_path() -> None:
         "implemented under audit | implemented under audit |",
         "| FX | implemented under audit | implemented under audit | "
         "implemented under audit | implemented under audit | "
-        "implemented under audit | implemented under audit | unsupported fail-closed | "
-        "unsupported fail-closed | unsupported fail-closed |",
+        "implemented under audit | implemented under audit | implemented under audit | "
+        "implemented under audit | implemented under audit |",
         "| Equity | implemented under audit | unsupported fail-closed | "
         "unsupported fail-closed | implemented under audit | unsupported fail-closed | "
-        "unsupported fail-closed | unsupported fail-closed | unsupported fail-closed | "
+        "unsupported fail-closed | implemented under audit | unsupported fail-closed | "
         "unsupported fail-closed |",
         "| Commodity | implemented under audit | unsupported fail-closed | "
         "unsupported fail-closed | implemented under audit | unsupported fail-closed | "
-        "unsupported fail-closed | unsupported fail-closed | unsupported fail-closed | "
+        "unsupported fail-closed | implemented under audit | unsupported fail-closed | "
         "unsupported fail-closed |",
     )
     for row in expected_profile_rows:
@@ -195,6 +196,7 @@ def test_traceability_support_matrix_lists_every_basel_path() -> None:
     assert "equity_delta_us_npr_v1" in traceability
     assert "commodity_delta_us_npr_v1" in traceability
     assert "US_NPR_CSR_MAPPING.md" in traceability
+    assert "PRA_UK_CRR_CSR_MAPPING.md" in traceability
     assert "girr_delta_eu_crr3_v1" in traceability
     assert "girr_vega_pra_uk_crr_v1" in traceability
     assert "girr_curvature_pra_uk_crr_v1" in traceability
@@ -230,6 +232,23 @@ def test_pra_source_map_and_girr_delta_runtime_support_are_documented() -> None:
     assert "PRA mirroring policy" in traceability
     assert "numerical identity is not implementation" in traceability
     assert "2027-01-01 effective date" in traceability
-    assert "| `PRA_UK_CRR` | partial (3 / 21 cells) |" in traceability
-    assert "partial (3 / 21 cells)" in traceability
-    assert "PRA_UK_CRR` GIRR delta, vega, and curvature" in traceability
+    assert "| `PRA_UK_CRR` | partial (8 / 21 cells) |" in traceability
+    assert "partial (8 / 21 cells)" in traceability
+    assert "PRA_UK_CRR` GIRR delta, vega, curvature, FX delta/vega/curvature" in traceability
+
+
+def test_pra_uk_crr_csr_mapping_is_documented_without_opening_runtime_gate() -> None:
+    docs_root = Path(__file__).resolve().parents[3] / "docs" / "modules" / "frtb-sbm"
+    mapping_path = docs_root / "PRA_UK_CRR_CSR_MAPPING.md"
+    assert mapping_path.exists()
+    mapping = mapping_path.read_text(encoding="utf-8")
+
+    assert "Article 325m" in mapping
+    assert "Articles 325ak-325al" in mapping
+    assert "Articles 325am-325ao" in mapping
+    assert "csr_nonsec_delta_pra_uk_crr_v1" in mapping
+    assert "unsupported fail-closed" in mapping
+    assert phase1_capital_supported_paths(SbmRegulatoryProfile.PRA_UK_CRR.value) == (
+        PRA_UK_CRR_EXPECTED_PATHS
+    )
+    assert (SbmRiskClass.CSR_NONSEC, SbmRiskMeasure.DELTA) not in PRA_UK_CRR_EXPECTED_PATHS

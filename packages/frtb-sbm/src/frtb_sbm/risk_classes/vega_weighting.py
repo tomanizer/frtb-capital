@@ -215,6 +215,11 @@ def _weighted_sensitivity_citation_ids(
             "us_npr_91_fr_14952_va7a_sbm_scope",
             "us_npr_91_fr_14952_va7a_fx_vega_lh_rw",
         )
+    if profile is SbmRegulatoryProfile.PRA_UK_CRR and risk_class is SbmRiskClass.FX:
+        return (
+            "pra_uk_crr_325s_vega_sensitivities",
+            "pra_uk_crr_325ax_fx_vega_risk_weights",
+        )
     return ("basel_mar21_90", "basel_mar21_91")
 
 

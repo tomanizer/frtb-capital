@@ -26,8 +26,10 @@ before capital is emitted:
   delta;
 - `EU_CRR3` runtime profile cells outside GIRR delta/vega/curvature, FX
   delta/vega/curvature, equity delta, and commodity delta;
-- `PRA_UK_CRR` runtime profile cells outside GIRR delta/vega/curvature, despite
-  source mapping to PS1/26 Appendix 1 / PRA2026/1;
+- `PRA_UK_CRR` runtime profile cells outside GIRR delta/vega/curvature,
+  reporting-currency FX delta/vega/curvature, equity delta, and commodity
+  delta, with CSR cells source-mapped in `PRA_UK_CRR_CSR_MAPPING.md` but still
+  fail-closed;
 - risk-class/measure combinations outside the supported matrix;
 - missing curvature up/down shock inputs;
 - missing FX curvature scalar evidence where MAR21.98 requires it;

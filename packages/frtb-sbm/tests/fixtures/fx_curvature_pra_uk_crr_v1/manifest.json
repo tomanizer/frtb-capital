@@ -1,0 +1,26 @@
+{
+  "calculation_date": "2026-07-01",
+  "files": {
+    "README.md": {
+      "sha256": "3e6cc250f86556d11fd3e51520b5d9e979e95c9910f66ebef557dc897337c2a3"
+    },
+    "expected_outputs.json": {
+      "sha256": "5bec4650cdc97bcb4fe5dc85e9381133fd8823aa59f39d00b9fc89b238d4ebec"
+    },
+    "invalid_cases.json": {
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+    },
+    "loader.py": {
+      "sha256": "43a024d0eb24472b6763af48c4808c6a3b66c3108a7052ac2ff6ffe7957ae915"
+    },
+    "sensitivities.json": {
+      "sha256": "56b9969ad8a9fd4a109f3bb66447b67dbaa86d1ac55268d376d788aa59822416"
+    }
+  },
+  "profile": "PRA_UK_CRR",
+  "risk_class": "FX",
+  "risk_measure": "CURVATURE",
+  "schema_version": "fx_curvature_pra_uk_crr_v1_fixture_v1",
+  "sensitivity_count": 1,
+  "total_capital": 100.0
+}
