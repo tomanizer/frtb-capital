@@ -689,11 +689,13 @@ def _translate_eu_crr3_result_citations(value: Any) -> Any:
     if is_dataclass(value) and not isinstance(value, type):
         changes: dict[str, object] = {}
         for field in fields(value):
+            translated: object
             field_value = getattr(value, field.name)
             if field.name == "citation_ids":
                 if isinstance(field_value, (tuple, list)):
+                    citation_ids = tuple(str(citation_id) for citation_id in field_value)
                     try:
-                        translated = translate_basel_citation_ids_to_eu(field_value)
+                        translated = translate_basel_citation_ids_to_eu(citation_ids)
                     except KeyError as exc:
                         raise UnsupportedRegulatoryFeatureError(
                             "EU_CRR3 result contains an unsupported Basel citation id: "
