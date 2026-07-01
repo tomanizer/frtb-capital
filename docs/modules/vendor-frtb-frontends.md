@@ -2,11 +2,11 @@
 
 ## Source PDFs reviewed
 
-- `FRTB-Standard-Approach-for-Market-Risk-Brochure-_-Oct-20191.pdf` (Bloomberg)
-- `FRTB-SA-Solution-Brochure.pdf` (S&P)
-- `TickSmith_FRTB_White_Paper_Final.pdf` (TickSmith)
+- `/Users/thomas/Downloads/FRTB-Standard-Approach-for-Market-Risk-Brochure-_-Oct-20191.pdf` (Bloomberg)
+- `/Users/thomas/Downloads/FRTB-SA-Solution-Brochure.pdf` (S&P)
+- `/Users/thomas/Downloads/TickSmith_FRTB_White_Paper_Final.pdf` (TickSmith)
 
-For comparison, screenshots were extracted from all PDFs and inspected.
+For comparison, screenshots were extracted from all PDFs into `/private/tmp/frtb_pdf_pages` and inspected.
 
 ## Purpose of this review
 
