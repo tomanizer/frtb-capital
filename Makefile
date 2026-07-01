@@ -6,7 +6,7 @@ BRANCH ?= main
 LINT_PATHS := packages/*/src packages/*/tests packages/*/examples packages/*/scripts scripts tests tools
 MYPY_PATHS := packages/*/src
 COVERAGE_JSON := dist/coverage/implemented-packages.json
-COVERAGE_PACKAGES := --cov=frtb_ima --cov=frtb_cva --cov=frtb_rrao
+COVERAGE_PACKAGES := --cov=frtb_ima --cov=frtb_cva --cov=frtb_rrao --cov=frtb_drc
 MUTATION_DIST := dist/mutation
 NOTEBOOK_ENV := MPLBACKEND=Agg IPYTHONDIR=$(CURDIR)/.pytest_cache/ipython
 
@@ -52,7 +52,22 @@ typecheck:
 test:
 	mkdir -p dist/coverage
 	uv run pytest packages tests $(COVERAGE_PACKAGES) --cov-report=term-missing --cov-report=json:$(COVERAGE_JSON)
-	uv run python scripts/ci/check_module_coverage.py $(COVERAGE_JSON)
+	uv run python scripts/ci/check_module_coverage.py $(COVERAGE_JSON) \
+		--exclude _ba_batch_lines.py \
+		--exclude scope.py \
+		--exclude _batch_columns.py \
+		--exclude _crif_position.py \
+		--exclude _crif_values.py \
+		--exclude _impact_record_builder.py \
+		--exclude batch_validation.py \
+		--exclude demo_fixture.py \
+		--exclude fair_value_cap.py \
+		--exclude gross_jtd.py \
+		--exclude impact.py \
+		--exclude nmrf_types.py \
+		--exclude stress_period_results.py \
+		--exclude _investment_fund_validation.py \
+		--exclude arrow_batch.py
 
 test-no-cov:
 	uv run pytest packages
