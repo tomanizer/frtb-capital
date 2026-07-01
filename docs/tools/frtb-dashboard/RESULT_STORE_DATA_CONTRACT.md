@@ -12,6 +12,12 @@ Authoritative result-store references:
 - [`ARTIFACT_METADATA.md`](../../modules/frtb-result-store/ARTIFACT_METADATA.md)
 - [`STORAGE_CONTRACT.md`](../../modules/frtb-result-store/STORAGE_CONTRACT.md)
 
+Companion Navigator contracts:
+
+- [`CAPITAL_AND_MOVEMENT_SEMANTICS.md`](CAPITAL_AND_MOVEMENT_SEMANTICS.md)
+- [`NAVIGATOR_STATE_AND_ROUTING.md`](NAVIGATOR_STATE_AND_ROUTING.md)
+- [`UX_AUDIT_AND_INTERACTION_CONTRACT.md`](UX_AUDIT_AND_INTERACTION_CONTRACT.md)
+
 The browser must not recalculate capital, official subtotals, attribution,
 RFET/SES, PLA status, or source-row totals. It may sort, filter, format, select,
 expand, and compose view models from result-store payloads. Any analytical

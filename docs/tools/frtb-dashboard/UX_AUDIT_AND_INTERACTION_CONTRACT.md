@@ -10,6 +10,15 @@ Scope: FRTB capital analysis across IMA, Standardised Approach components
 risk-factor evidence, attribution, source drilldown, and capital movement
 analysis across run, month, quarter, and year horizons.
 
+Companion implementation contracts:
+
+- Capital and movement semantics:
+  [`CAPITAL_AND_MOVEMENT_SEMANTICS.md`](CAPITAL_AND_MOVEMENT_SEMANTICS.md)
+- State and routing:
+  [`NAVIGATOR_STATE_AND_ROUTING.md`](NAVIGATOR_STATE_AND_ROUTING.md)
+- Result-store data boundary:
+  [`RESULT_STORE_DATA_CONTRACT.md`](RESULT_STORE_DATA_CONTRACT.md)
+
 ## 1. Regulatory and Analytical Context
 
 FRTB is not a generic dashboard problem. It is a capital-explainability problem:
