@@ -98,6 +98,7 @@ function App() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let active = true;
     const controller = new AbortController();
     const runKey = `run:${RUN_ID}:${selectedNodeId}`;
     const metadataKey = `metadata:${RUN_ID}`;
@@ -107,7 +108,10 @@ function App() {
       setOverview(cachedRun);
       setMetadata(cachedMetadata);
       setLoadingZone(null);
-      return () => controller.abort();
+      return () => {
+        active = false;
+        controller.abort();
+      };
     }
     setLoadingZone("run");
     Promise.all([
@@ -115,67 +119,99 @@ function App() {
       getMetadata(RUN_ID, controller.signal),
     ])
       .then(([runPayload, metadataPayload]) => {
+        if (!active) return;
         cache.current.set(runKey, runPayload);
         cache.current.set(metadataKey, metadataPayload);
         setOverview(runPayload);
         setMetadata(metadataPayload);
         setError(null);
+        setLoadingZone(null);
       })
       .catch((fetchError: unknown) => {
-        if (!isAbort(fetchError)) setError(String(fetchError));
-      })
-      .finally(() => setLoadingZone(null));
-    return () => controller.abort();
+        if (!active) return;
+        if (!isAbort(fetchError)) {
+          setError(String(fetchError));
+          setLoadingZone(null);
+        }
+      });
+    return () => {
+      active = false;
+      controller.abort();
+    };
   }, [cache, selectedNodeId]);
 
   useEffect(() => {
+    let active = true;
     const controller = new AbortController();
     const key = `grid:${RUN_ID}:${selectedNodeId}:${framework}:${scenario}`;
     const cachedGrid = cacheGet<GridView>(cache.current, key);
     if (cachedGrid) {
       setGrid(cachedGrid);
       setSelectedRowId(cachedGrid.rows[0]?.row_id ?? "");
-      return () => controller.abort();
+      return () => {
+        active = false;
+        controller.abort();
+      };
     }
     setLoadingZone("grid");
     getGrid(RUN_ID, framework, scenario, selectedNodeId, controller.signal)
       .then((payload) => {
+        if (!active) return;
         cache.current.set(key, payload);
         setGrid(payload);
         setSelectedRowId(payload.rows[0]?.row_id ?? "");
         setExpanded(new Set(INITIAL_EXPANDED.concat(payload.rows.filter((row) => row.level <= 1).map((row) => row.row_id))));
         setError(null);
+        setLoadingZone(null);
       })
       .catch((fetchError: unknown) => {
-        if (!isAbort(fetchError)) setError(String(fetchError));
-      })
-      .finally(() => setLoadingZone(null));
-    return () => controller.abort();
+        if (!active) return;
+        if (!isAbort(fetchError)) {
+          setError(String(fetchError));
+          setLoadingZone(null);
+        }
+      });
+    return () => {
+      active = false;
+      controller.abort();
+    };
   }, [cache, framework, scenario, selectedNodeId]);
 
   useEffect(() => {
     if (!selectedRowId) return;
+    let active = true;
     const controller = new AbortController();
     const key = `inspector:${RUN_ID}:${selectedNodeId}:${scenario}:${selectedRowId}`;
     const cachedInspector = cacheGet<InspectorView>(cache.current, key);
     if (cachedInspector) {
       setInspector(cachedInspector);
       setActiveInspectorTab(cachedInspector.tabs[0]?.key ?? "attribution");
-      return () => controller.abort();
+      return () => {
+        active = false;
+        controller.abort();
+      };
     }
     setLoadingZone("inspector");
     getInspector(RUN_ID, selectedRowId, scenario, selectedNodeId, controller.signal)
       .then((payload) => {
+        if (!active) return;
         cache.current.set(key, payload);
         setInspector(payload);
         setActiveInspectorTab(payload.tabs[0]?.key ?? "attribution");
         setError(null);
+        setLoadingZone(null);
       })
       .catch((fetchError: unknown) => {
-        if (!isAbort(fetchError)) setError(String(fetchError));
-      })
-      .finally(() => setLoadingZone(null));
-    return () => controller.abort();
+        if (!active) return;
+        if (!isAbort(fetchError)) {
+          setError(String(fetchError));
+          setLoadingZone(null);
+        }
+      });
+    return () => {
+      active = false;
+      controller.abort();
+    };
   }, [cache, scenario, selectedNodeId, selectedRowId]);
 
   const childMap = useMemo(() => childrenByParent(grid?.rows ?? []), [grid]);

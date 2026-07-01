@@ -187,7 +187,11 @@ export type InspectorView = {
   label: string;
   framework: string;
   component: string;
-  reconciliation: Record<string, unknown>;
+  reconciliation: {
+    coverage: number;
+    rows_needing_review: number;
+    status: string;
+  };
   tabs: InspectorTab[];
   attribution: AttributionRow[];
   audit_rows: AuditRow[];

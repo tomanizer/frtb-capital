@@ -242,6 +242,24 @@ def build_demo_run() -> DashboardRun:
 
     scalars = workflow["scalars"]
     assert isinstance(scalars, dict)
+    pla_workflow = workflow.get("pla")
+    capital_workflow = workflow.get("capital")
+    if isinstance(pla_workflow, dict):
+        if "zone" not in pla_workflow:
+            raise ValueError("Missing 'zone' in 'pla' workflow data")
+        if "window_size" not in pla_workflow:
+            raise ValueError("Missing 'window_size' in 'pla' workflow data")
+        pla_zone = pla_workflow["zone"]
+        pla_window_size = pla_workflow["window_size"]
+    else:
+        pla_zone = ""
+        pla_window_size = None
+    if isinstance(capital_workflow, dict):
+        if "binding_term" not in capital_workflow:
+            raise ValueError("Missing 'binding_term' in 'capital' workflow data")
+        capital_binding_term = capital_workflow["binding_term"]
+    else:
+        capital_binding_term = ""
 
     desk_record = DeskAuditRecord(
         run_id=run_id,
@@ -256,11 +274,9 @@ def build_demo_run() -> DashboardRun:
         },
         ses={"total_ses": scalars["total_ses"]},
         pla={
-            "zone": workflow["pla"]["zone"] if isinstance(workflow.get("pla"), dict) else "",
+            "zone": pla_zone,
             "ks_statistic": scalars["pla_ks_statistic"],
-            "window_size": workflow["pla"]["window_size"]
-            if isinstance(workflow.get("pla"), dict)
-            else None,
+            "window_size": pla_window_size,
         },
         backtesting=workflow["backtesting"]
         if isinstance(workflow.get("backtesting"), dict)
@@ -268,9 +284,7 @@ def build_demo_run() -> DashboardRun:
         capital={
             "models_based_capital": scalars["models_based_capital"],
             "supervisory_multiplier": scalars["supervisory_multiplier"],
-            "binding_term": workflow["capital"]["binding_term"]
-            if isinstance(workflow.get("capital"), dict)
-            else "",
+            "binding_term": capital_binding_term,
         },
         nmrf_valuation={
             "classifications": workflow.get("classifications", {}),
@@ -966,7 +980,13 @@ def _find_grid_row(
     scenario: str,
     scope: HierarchyNodeSpec,
 ) -> GridRowView | None:
-    for framework in ("SA", "IMA", "CVA"):
+    if row_id.startswith("ima"):
+        frameworks = ("IMA",)
+    elif row_id.startswith("cva"):
+        frameworks = ("CVA",)
+    else:
+        frameworks = ("SA",)
+    for framework in frameworks:
         for row in grid_view(
             run,
             framework=framework,
@@ -1348,7 +1368,7 @@ def _build_capital_tree(
     ]
     for key in sorted(drc_buckets)[:6]:
         bucket = drc_buckets[key]
-        amount = float(bucket["capital"]) if isinstance(bucket, dict) else 0.0
+        amount = float(bucket.get("capital", 0.0)) if isinstance(bucket, dict) else 0.0
         nodes.append(
             CapitalNodeView(
                 node_id=f"sa-drc-{key}",

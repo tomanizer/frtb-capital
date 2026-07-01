@@ -5,6 +5,7 @@ from __future__ import annotations
 import importlib.util
 from pathlib import Path
 from types import ModuleType
+from typing import Any
 
 
 def _load_rrao_fixture_module() -> ModuleType:
@@ -23,9 +24,9 @@ def _load_rrao_fixture_module() -> ModuleType:
     return module
 
 
-def load_rrao_context():
+def load_rrao_context() -> Any:
     return _load_rrao_fixture_module().load_context()
 
 
-def load_rrao_positions():
+def load_rrao_positions() -> Any:
     return _load_rrao_fixture_module().load_positions()

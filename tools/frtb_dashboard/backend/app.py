@@ -157,6 +157,8 @@ if FRONTEND_DIST.exists():
 
     @app.get("/{full_path:path}")
     def spa_fallback(full_path: str) -> FileResponse:
+        if full_path.startswith("api/"):
+            raise HTTPException(status_code=404, detail="Not Found")
         candidate = (FRONTEND_DIST / full_path).resolve()
         if (
             str(candidate).startswith(str(FRONTEND_DIST))
