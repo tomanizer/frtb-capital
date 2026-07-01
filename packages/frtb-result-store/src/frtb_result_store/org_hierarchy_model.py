@@ -55,6 +55,12 @@ class OrgHierarchyNode:
                 _normalize_identity_text(getattr(self, field_name)),
             )
         _validate_optional_text(self.parent_id, "parent_id")
+        if self.parent_id is not None:
+            object.__setattr__(
+                self,
+                "parent_id",
+                _normalize_identity_text(self.parent_id),
+            )
         object.__setattr__(self, "level", coerce_org_level(self.level, "level"))
         _require_plain_date(self.effective_from, "effective_from")
         if self.effective_to is not None:
@@ -108,7 +114,10 @@ class OrgSliceKeys:
                 _normalize_identity_text(getattr(self, field_name)),
             )
         for field_name in OPTIONAL_KEY_FIELDS:
-            _validate_optional_text(getattr(self, field_name), field_name)
+            value = getattr(self, field_name)
+            _validate_optional_text(value, field_name)
+            if value is not None:
+                object.__setattr__(self, field_name, _normalize_identity_text(value))
 
 
 @dataclass(frozen=True, slots=True)

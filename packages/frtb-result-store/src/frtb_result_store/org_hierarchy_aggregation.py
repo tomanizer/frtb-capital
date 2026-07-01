@@ -64,17 +64,18 @@ def aggregate_by_org_hierarchy(
         for node in hierarchy.nodes
         if node.version_id == version_id and node.active_on(as_of_date)
     )
+    scoped_rows = tuple(
+        row
+        for row in rows
+        if row.org_keys.hierarchy_id == hierarchy.hierarchy_id
+        and row.org_keys.version_id == version_id
+    )
     active_hierarchy = OrgHierarchy(hierarchy_id=hierarchy.hierarchy_id, nodes=active_nodes)
-    validate_org_hierarchy(active_hierarchy, rows, as_of_date=as_of_date)
+    validate_org_hierarchy(active_hierarchy, scoped_rows, as_of_date=as_of_date)
 
     node_map = single_version_node_map(active_nodes)
     contribution_rows: dict[str, list[OrgCapitalResultRow]] = defaultdict(list)
-    for row in rows:
-        if (
-            row.org_keys.hierarchy_id != hierarchy.hierarchy_id
-            or row.org_keys.version_id != version_id
-        ):
-            continue
+    for row in scoped_rows:
         chain = ancestor_chain(deepest_node_id(row.org_keys), node_map)
         for node in chain:
             if any(
@@ -112,7 +113,7 @@ def source_rows_for_org_aggregate(
     """
 
     _require_non_empty_text(aggregate_row_id, "aggregate_row_id")
-    validate_org_hierarchy(hierarchy, rows)
+    validate_org_hierarchy(hierarchy)
     target_node = next(
         (
             node
@@ -126,16 +127,23 @@ def source_rows_for_org_aggregate(
             "aggregate_row_id does not identify an organisation aggregate",
             field="aggregate_row_id",
         )
-    node_map = single_version_node_map(
-        tuple(node for node in hierarchy.nodes if node.version_id == target_node.version_id)
+    scoped_nodes = tuple(
+        node for node in hierarchy.nodes if node.version_id == target_node.version_id
     )
+    candidate_rows = tuple(
+        row
+        for row in rows
+        if row.org_keys.hierarchy_id == target_node.hierarchy_id
+        and row.org_keys.version_id == target_node.version_id
+    )
+    target_hierarchy = OrgHierarchy(
+        hierarchy_id=target_node.hierarchy_id,
+        nodes=scoped_nodes,
+    )
+    validate_org_hierarchy(target_hierarchy, candidate_rows)
+    node_map = single_version_node_map(scoped_nodes)
     scoped_rows: list[OrgCapitalResultRow] = []
-    for row in rows:
-        if (
-            row.org_keys.hierarchy_id != target_node.hierarchy_id
-            or row.org_keys.version_id != target_node.version_id
-        ):
-            continue
+    for row in candidate_rows:
         chain = ancestor_chain(deepest_node_id(row.org_keys), node_map)
         if any(node.node_id == target_node.node_id for node in chain):
             scoped_rows.append(row)

@@ -45,8 +45,12 @@ def validate_org_hierarchy(
     if as_of_date is not None:
         resolve_org_hierarchy_version(hierarchy, as_of_date)
     node_index = _node_index(hierarchy.nodes)
+    version_node_maps = {
+        version_key: single_version_node_map(nodes)
+        for version_key, nodes in nodes_by_version.items()
+    }
     for row in rows:
-        _validate_row_mapping(row, node_index)
+        _validate_row_mapping(row, node_index, version_node_maps)
 
 
 def resolve_org_hierarchy_version(hierarchy: OrgHierarchy, as_of_date: date) -> str:
@@ -210,8 +214,14 @@ def _validate_version_nodes(
     version_key: tuple[str, str],
     nodes: Sequence[OrgHierarchyNode],
 ) -> None:
-    node_ids = [node.node_id for node in nodes]
-    duplicate_ids = sorted({node_id for node_id in node_ids if node_ids.count(node_id) > 1})
+    seen: set[str] = set()
+    duplicate_ids_set: set[str] = set()
+    for node in nodes:
+        if node.node_id in seen:
+            duplicate_ids_set.add(node.node_id)
+        else:
+            seen.add(node.node_id)
+    duplicate_ids = sorted(duplicate_ids_set)
     if duplicate_ids:
         raise ResultStoreContractError(
             f"duplicate org hierarchy nodes: {', '.join(duplicate_ids)}",
@@ -248,6 +258,7 @@ def _validate_version_nodes(
 def _validate_row_mapping(
     row: OrgCapitalResultRow,
     node_index: Mapping[tuple[str, str, str], OrgHierarchyNode],
+    version_node_maps: Mapping[tuple[str, str], Mapping[str, OrgHierarchyNode]],
 ) -> None:
     if not isinstance(row, OrgCapitalResultRow):
         raise ResultStoreContractError("rows must contain OrgCapitalResultRow values", field="rows")
@@ -266,12 +277,12 @@ def _validate_row_mapping(
                 f"{field_name} must identify a {expected_level.value} node",
                 field=field_name,
             )
-    version_nodes = tuple(
-        node
-        for (hierarchy_id, version_id, _), node in node_index.items()
-        if hierarchy_id == keys.hierarchy_id and version_id == keys.version_id
-    )
-    node_map = single_version_node_map(version_nodes)
+    node_map = version_node_maps.get((keys.hierarchy_id, keys.version_id))
+    if node_map is None:
+        raise ResultStoreContractError(
+            f"hierarchy version not found: {keys.version_id}",
+            field="version_id",
+        )
     chain_ids = {node.node_id for node in ancestor_chain(deepest_node_id(keys), node_map)}
     for field_name, node_id in supplied_ids.items():
         if node_id not in chain_ids:
