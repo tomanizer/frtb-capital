@@ -31,7 +31,7 @@ Use detail endpoints for rows.
 | --- | --- | --- |
 | Time series | `GET /runs/{run_id}/time-series` | `GET /runs/{run_id}/time-series/{time_series_id}/points` |
 | Shocks | `GET /runs/{run_id}/shocks` | `GET /runs/{run_id}/shocks/{shock_id}` |
-| Scenario vectors | `GET /runs/{run_id}/scenario-vectors` | `GET /runs/{run_id}/scenario-vectors/{scenario_vector_id}/metadata` |
+| Scenario vectors | `GET /runs/{run_id}/scenario-vectors` | `GET /runs/{run_id}/scenario-vectors/{scenario_set_id}/{scenario_vector_id}/metadata` |
 | Surfaces | `GET /runs/{run_id}/surfaces` | `GET /runs/{run_id}/surfaces/{surface_id}/slice` |
 
 Catalog rows include:

@@ -22,9 +22,6 @@ class ShockDirection(StrEnum):
 
     UP = "UP"
     DOWN = "DOWN"
-    ABSOLUTE = "ABSOLUTE"
-    RELATIVE = "RELATIVE"
-    PARALLEL = "PARALLEL"
 
 
 class SurfaceAxisKind(StrEnum):

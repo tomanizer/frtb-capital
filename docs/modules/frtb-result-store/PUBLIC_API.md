@@ -116,7 +116,7 @@ GET /runs/{run_id}/time-series/{time_series_id}/points
 GET /runs/{run_id}/shocks
 GET /runs/{run_id}/shocks/{shock_id}
 GET /runs/{run_id}/scenario-vectors
-GET /runs/{run_id}/scenario-vectors/{scenario_vector_id}/metadata
+GET /runs/{run_id}/scenario-vectors/{scenario_set_id}/{scenario_vector_id}/metadata
 GET /runs/{run_id}/surfaces
 GET /runs/{run_id}/surfaces/{surface_id}/slice
 ```

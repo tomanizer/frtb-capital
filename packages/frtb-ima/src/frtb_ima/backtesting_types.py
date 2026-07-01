@@ -158,12 +158,12 @@ class TradingDeskBacktestResult:
                 "time_series": {
                     "apl": self.apl_time_series_id,
                     "hpl": self.hpl_time_series_id,
-                "var": {
-                    str(confidence_level): time_series_id
-                    for confidence_level, time_series_id in sorted(
-                        self.var_time_series_ids.items()
-                    )
-                },
+                    "var": {
+                        str(confidence_level): time_series_id
+                        for confidence_level, time_series_id in sorted(
+                            self.var_time_series_ids.items()
+                        )
+                    },
                 },
                 "levels": [level.as_dict() for level in self.levels],
             },

@@ -132,7 +132,7 @@ def test_artifact_metadata_api_serves_timelines_shocks_scenarios_and_surfaces(
     assert shock["rows"][0]["shock_direction"] == "UP"
 
     scenario = client.get(
-        f"/runs/{run.run_id}/scenario-vectors/scenario-vector-rtpl/metadata"
+        f"/runs/{run.run_id}/scenario-vectors/scenario-set-250d/scenario-vector-rtpl/metadata"
     ).json()
     assert scenario["rows"][0]["scenario_label"] == "RTPL day 1"
 

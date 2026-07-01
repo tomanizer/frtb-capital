@@ -251,11 +251,11 @@ class PlaPolicyAssessmentResult:
                 "pla": self.pla.as_dict(),
                 "spearman": self.spearman.as_dict() if self.spearman is not None else None,
                 "diagnostics": self.diagnostics.as_dict(),
-            "time_series": {
-                "hpl": self.hpl_time_series_id,
-                "rtpl": self.rtpl_time_series_id,
-                "upl": self.upl_time_series_id,
-            },
+                "time_series": {
+                    "hpl": self.hpl_time_series_id,
+                    "rtpl": self.rtpl_time_series_id,
+                    "upl": self.upl_time_series_id,
+                },
             },
             self.org_scope,
         )

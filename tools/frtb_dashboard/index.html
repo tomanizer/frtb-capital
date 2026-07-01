@@ -382,8 +382,8 @@
       "scenario-vectors": {
         list: "scenario-vectors",
         listKey: "scenario_vectors",
-        detail: row => `scenario-vectors/${encodeURIComponent(row.partition_values.scenario_vector_id)}/metadata`,
-        semantic: row => row.partition_values.scenario_vector_id || row.artifact_id,
+        detail: row => `scenario-vectors/${encodeURIComponent(row.partition_values.scenario_set_id)}/${encodeURIComponent(row.partition_values.scenario_vector_id)}/metadata`,
+        semantic: row => `${row.partition_values.scenario_set_id || "-"} / ${row.partition_values.scenario_vector_id || row.artifact_id}`,
       },
       "surfaces": {
         list: "surfaces",

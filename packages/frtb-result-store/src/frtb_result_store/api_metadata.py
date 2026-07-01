@@ -7,6 +7,7 @@ from typing import Any, Protocol
 
 from frtb_result_store.api_metadata_helpers import (
     artifact_ref_for_partition_value,
+    artifact_ref_for_partition_values,
     filtered_artifact_page,
     metadata_refs_payload,
 )
@@ -178,29 +179,35 @@ def _register_scenario_vector_metadata_routes(
         )
 
     @app.get(
-        "/runs/{run_id:path}/scenario-vectors/{scenario_vector_id}/metadata",
+        "/runs/{run_id:path}/scenario-vectors/{scenario_set_id}/{scenario_vector_id}/metadata",
         tags=["Artifacts"],
         summary="Return one scenario-vector metadata page",
     )
     def scenario_vector_metadata(
         run_id: str,
+        scenario_set_id: str,
         scenario_vector_id: str,
         limit: int = query(default=100, ge=1, le=1000),
         offset: int = query(default=0, ge=0),
     ) -> dict[str, object]:
         require_run(result_store, run_id, http_exception_type)
-        ref = artifact_ref_for_partition_value(
+        ref = artifact_ref_for_partition_values(
             result_store,
             run_id,
             ArtifactType.SCENARIO_VECTOR_METADATA,
-            "scenario_vector_id",
-            scenario_vector_id,
+            {
+                "scenario_set_id": scenario_set_id,
+                "scenario_vector_id": scenario_vector_id,
+            },
             http_exception_type,
         )
         return filtered_artifact_page(
             result_store,
             ref,
-            (f"scenario_vector_id={scenario_vector_id}",),
+            (
+                f"scenario_set_id={scenario_set_id}",
+                f"scenario_vector_id={scenario_vector_id}",
+            ),
             limit,
             offset,
             http_exception_type,

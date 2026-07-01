@@ -52,6 +52,28 @@ def artifact_ref_for_partition_value(
     )
 
 
+def artifact_ref_for_partition_values(
+    result_store: DuckDbParquetResultStore,
+    run_id: str,
+    artifact_type: ArtifactType,
+    partition_values: Mapping[str, str],
+    http_exception_type: type[Exception],
+) -> ArtifactRef:
+    """Return the artifact ref matching all requested semantic partition values."""
+    refs = result_store.artifact_refs(run_id, artifact_type=artifact_type)
+    for ref in refs:
+        partitions = ref.metadata.get("partition_values")
+        if not isinstance(partitions, Mapping):
+            continue
+        if all(partitions.get(key) == value for key, value in partition_values.items()):
+            return ref
+    requested = ", ".join(f"{key}={value}" for key, value in partition_values.items())
+    raise http_exception_type(  # type: ignore[call-arg]
+        status_code=404,
+        detail=f"{artifact_type.value} artifact not found for partitions: {requested}",
+    )
+
+
 def filtered_artifact_page(
     result_store: DuckDbParquetResultStore,
     ref: ArtifactRef,

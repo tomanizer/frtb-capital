@@ -465,7 +465,9 @@ def _assert_metadata_artifact_pages(client: TestClient, run_id: str) -> None:
         }
     ]
 
-    scenario = client.get(f"/runs/{run_id}/scenario-vectors/scenario-vector-rtpl/metadata")
+    scenario = client.get(
+        f"/runs/{run_id}/scenario-vectors/scenario-set-250d/scenario-vector-rtpl/metadata"
+    )
     assert scenario.status_code == 200, scenario.text
     scenario_payload = scenario.json()
     assert scenario_payload["row_count"] == len(IMA_SCENARIO_VECTOR_ROWS)
