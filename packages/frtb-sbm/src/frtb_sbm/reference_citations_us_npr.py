@@ -95,6 +95,30 @@ US_NPR_2_0_CITATIONS: dict[str, SbmCitation] = {
             "sensitivities for the initial NPR comparison-profile FX slice."
         ),
     ),
+    "us_npr_91_fr_14952_va7a_fx_delta_weights": SbmCitation(
+        source_id="us_npr_2_0_91_fr_14952",
+        location="91 FR 15020, section V.A.7.a",
+        url=US_NPR_2_0_URL,
+        note="FX delta risk-weight treatment for the reporting-currency NPR comparison slice.",
+    ),
+    "us_npr_91_fr_14952_va7a_fx_delta_sqrt2": SbmCitation(
+        source_id="us_npr_2_0_91_fr_14952",
+        location="91 FR 15020, section V.A.7.a",
+        url=US_NPR_2_0_URL,
+        note="Specified-currency square-root-of-two FX risk-weight adjustment.",
+    ),
+    "us_npr_91_fr_14952_va7a_fx_delta_intra": SbmCitation(
+        source_id="us_npr_2_0_91_fr_14952",
+        location="91 FR 15020, section V.A.7.a",
+        url=US_NPR_2_0_URL,
+        note="FX delta same-bucket correlation treatment.",
+    ),
+    "us_npr_91_fr_14952_va7a_fx_delta_inter": SbmCitation(
+        source_id="us_npr_2_0_91_fr_14952",
+        location="91 FR 15020, section V.A.7.a",
+        url=US_NPR_2_0_URL,
+        note="FX delta inter-bucket correlation treatment.",
+    ),
     "us_npr_91_fr_14952_va7a_fx_base_currency_approval": SbmCitation(
         source_id="us_npr_2_0_91_fr_14952",
         location="91 FR 15020, section V.A.7.a",

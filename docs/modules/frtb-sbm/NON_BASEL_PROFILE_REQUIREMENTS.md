@@ -349,12 +349,20 @@ The first `US_NPR_2_0` FX runtime slice must support reporting-currency FX risk
 factors only. The policy citation ids are:
 
 - `us_npr_91_fr_14952_va7a_fx_reporting_currency`;
+- `us_npr_91_fr_14952_va7a_fx_delta_weights`;
+- `us_npr_91_fr_14952_va7a_fx_delta_sqrt2`;
+- `us_npr_91_fr_14952_va7a_fx_delta_intra`;
+- `us_npr_91_fr_14952_va7a_fx_delta_inter`;
 - `us_npr_91_fr_14952_va7a_fx_base_currency_approval`.
 
 Both ids cite Federal Register 91 FR 15020 section V.A.7.a in
 `reference_citations_us_npr.py`. The FX delta implementation must use
 profile-owned NPR FX reference data and must not infer base-currency approval
 from `SbmCalculationContext.base_currency`.
+
+The `fx_delta_us_npr_v1` fixture pack records row, batch, and Arrow parity for
+the reporting-currency FX delta path. FX vega and curvature remain unsupported
+fail-closed for `US_NPR_2_0`.
 
 ### SBM-NBP-044: NPR FX base-currency treatment fails closed
 
@@ -443,11 +451,11 @@ must reflect the cited profile — not Basel shortcuts.
 | Requirement | Current evidence | Remaining target |
 | --- | --- | --- |
 | SBM-NBP-001 | Met (design + traceability link; `US_NPR_2_0` and `PRA_UK_CRR` partial matrices) | Maintain in traceability |
-| SBM-NBP-002 | Met for Basel, `US_NPR_2_0` GIRR delta/vega/curvature, and `PRA_UK_CRR` GIRR delta via `test_sbm_support_matrix.py` | Extend for each new cell |
-| SBM-NBP-010 | Enforced for the implemented NPR GIRR delta/vega/curvature and PRA GIRR delta slices through profile-owned citations and fixture citation checks | Extend for each new cell |
+| SBM-NBP-002 | Met for Basel, `US_NPR_2_0` GIRR delta/vega/curvature/FX delta, and `PRA_UK_CRR` GIRR delta via `test_sbm_support_matrix.py` | Extend for each new cell |
+| SBM-NBP-010 | Enforced for the implemented NPR GIRR delta/vega/curvature/FX delta and PRA GIRR delta slices through profile-owned citations and fixture citation checks | Extend for each new cell |
 | SBM-NBP-013 | Met for exact-cell PRA gating | Preserve as PRA coverage expands |
 | SBM-NBP-030–039 | Met for `US_NPR_2_0` GIRR delta/vega/curvature with `girr_delta_us_npr_v1`, `girr_vega_us_npr_v1`, `girr_curvature_us_npr_v1`, and for `PRA_UK_CRR` GIRR delta with `girr_delta_pra_uk_crr_v1`; supported cells have row/batch/Arrow tests | Extend to later cells |
-| SBM-NBP-043–044 | Met for the NPR FX policy decision through reporting-currency citation ids, `SbmRunControls.fx_risk_factor_basis`, and fail-closed base-currency validation tests | Preserve when implementing FX delta |
+| SBM-NBP-043–044 | Met for NPR FX delta through `fx_delta_us_npr_v1`, reporting-currency citation ids, `SbmRunControls.fx_risk_factor_basis`, and fail-closed base-currency validation tests | Preserve as FX vega/curvature are evaluated |
 | SBM-NBP-040–042 | Met for unsupported NPR cells, EU cells, and unsupported PRA cells through fail-closed tests | Preserve as coverage expands |
 | SBM-NBP-060 | Required for implementation PRs | Run before push |
 
@@ -457,7 +465,7 @@ must reflect the cited profile — not Basel shortcuts.
 
 Use these titles when splitting implementation work:
 
-1. **SBM NPR FX policy and FX delta** — resolve reporting-currency policy before opening FX runtime.
+1. **SBM NPR FX vega and curvature** — add profile-owned references and fixtures after FX delta.
 2. **SBM NPR non-GIRR delta** — equity, commodity, and CSR NPR mappings.
 3. **SBM EU CRR3 GIRR delta** — article mapping + first EU cell (blocked on legal mapping review).
 4. **SBM PRA UK CRR next cells** — SBM-NBP-020 prerequisite satisfied by

@@ -13,6 +13,7 @@ The committed fixtures currently include:
 - `girr_vega_v1`
 - `girr_vega_us_npr_v1`
 - `girr_curvature_us_npr_v1`
+- `fx_delta_us_npr_v1`
 - `non_girr_vega_v1`
 - `fx_delta_v1`
 - `equity_delta_v1`
@@ -142,10 +143,10 @@ The canonical risk measures are:
 - `CURVATURE`
 
 `BASEL_MAR21` is implemented for supported delta, vega, and curvature paths
-across the seven SBM risk classes. `US_NPR_2_0` is implemented only for the GIRR
-delta, GIRR vega, and GIRR curvature comparison fixtures. Unsupported profiles or unsupported
-sub-features must fail closed through package errors before any capital result
-is emitted.
+across the seven SBM risk classes. `US_NPR_2_0` is implemented only for GIRR
+delta, GIRR vega, GIRR curvature, and reporting-currency FX delta comparison
+fixtures. Unsupported profiles or unsupported sub-features must fail closed
+through package errors before any capital result is emitted.
 
 Path-specific input requirements are enforced by validation and batch builders:
 

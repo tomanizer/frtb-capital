@@ -2,10 +2,10 @@
 
 ## Risk-Class Scope Matrix
 
-`BASEL_MAR21` is the canonical capital-producing profile. `US_NPR_2_0` and
-`PRA_UK_CRR` also have one capital-producing comparison cell, GIRR delta.
-`EU_CRR3` remains runtime fail-closed, and every PRA cell outside GIRR delta
-remains fail-closed.
+`BASEL_MAR21` is the canonical capital-producing profile. `US_NPR_2_0` has
+GIRR delta, GIRR vega, GIRR curvature, and reporting-currency FX delta
+comparison cells. `PRA_UK_CRR` has GIRR delta only. `EU_CRR3` remains runtime
+fail-closed, and every PRA cell outside GIRR delta remains fail-closed.
 
 | Risk class | Delta | Vega | Curvature | Notes |
 | --- | --- | --- | --- | --- |
@@ -22,7 +22,7 @@ remains fail-closed.
 Unsupported paths raise `UnsupportedRegulatoryFeatureError` or `SbmInputError`
 before capital is emitted:
 
-- `US_NPR_2_0` runtime profile cells outside GIRR delta, GIRR vega, and GIRR curvature;
+- `US_NPR_2_0` runtime profile cells outside GIRR delta, GIRR vega, GIRR curvature, and FX delta;
 - `US_NPR_2_0` FX base-currency treatment, which remains unsupported until
   prior-supervisory-approval and translation-risk evidence are represented
   explicitly in runtime controls and fixtures;

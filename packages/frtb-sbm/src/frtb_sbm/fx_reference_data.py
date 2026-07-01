@@ -48,13 +48,44 @@ BASEL_FX_BUCKETS: tuple[SbmFxBucketDefinition, ...] = tuple(
     SbmFxBucketDefinition(currency, currency, "basel_mar21_86")
     for currency in sorted(BASEL_FX_SPECIFIED_CURRENCIES)
 )
+US_NPR_FX_SPECIFIED_CURRENCIES = BASEL_FX_SPECIFIED_CURRENCIES
+US_NPR_FX_BUCKETS: tuple[SbmFxBucketDefinition, ...] = tuple(
+    SbmFxBucketDefinition(
+        currency,
+        currency,
+        "us_npr_91_fr_14952_va7a_fx_reporting_currency",
+    )
+    for currency in sorted(US_NPR_FX_SPECIFIED_CURRENCIES)
+)
 
 PROFILE_FX_BUCKETS: dict[SbmRegulatoryProfile, tuple[SbmFxBucketDefinition, ...]] = {
     SbmRegulatoryProfile.BASEL_MAR21: BASEL_FX_BUCKETS,
+    SbmRegulatoryProfile.US_NPR_2_0: US_NPR_FX_BUCKETS,
 }
 
 PROFILE_FX_SPECIFIED_CURRENCIES: dict[SbmRegulatoryProfile, frozenset[str]] = {
     SbmRegulatoryProfile.BASEL_MAR21: BASEL_FX_SPECIFIED_CURRENCIES,
+    SbmRegulatoryProfile.US_NPR_2_0: US_NPR_FX_SPECIFIED_CURRENCIES,
+}
+
+PROFILE_FX_DELTA_RISK_WEIGHT_CITATION_IDS: dict[SbmRegulatoryProfile, str] = {
+    SbmRegulatoryProfile.BASEL_MAR21: "basel_mar21_87",
+    SbmRegulatoryProfile.US_NPR_2_0: "us_npr_91_fr_14952_va7a_fx_delta_weights",
+}
+
+PROFILE_FX_DELTA_SQRT2_CITATION_IDS: dict[SbmRegulatoryProfile, str] = {
+    SbmRegulatoryProfile.BASEL_MAR21: "basel_mar21_88",
+    SbmRegulatoryProfile.US_NPR_2_0: "us_npr_91_fr_14952_va7a_fx_delta_sqrt2",
+}
+
+PROFILE_FX_DELTA_INTRA_BUCKET_CITATION_IDS: dict[SbmRegulatoryProfile, str] = {
+    SbmRegulatoryProfile.BASEL_MAR21: "basel_mar21_86",
+    SbmRegulatoryProfile.US_NPR_2_0: "us_npr_91_fr_14952_va7a_fx_delta_intra",
+}
+
+PROFILE_FX_DELTA_INTER_BUCKET_CITATION_IDS: dict[SbmRegulatoryProfile, str] = {
+    SbmRegulatoryProfile.BASEL_MAR21: "basel_mar21_89",
+    SbmRegulatoryProfile.US_NPR_2_0: "us_npr_91_fr_14952_va7a_fx_delta_inter",
 }
 
 
@@ -136,10 +167,11 @@ def fx_bucket_definition(
     for bucket in PROFILE_FX_BUCKETS[_resolve_supported_profile(profile)]:
         if bucket.bucket_id == normalised:
             return bucket
+    resolved = _resolve_supported_profile(profile)
     return SbmFxBucketDefinition(
         bucket_id=normalised,
         currency=normalised,
-        citation_id="basel_mar21_86",
+        citation_id=PROFILE_FX_DELTA_INTRA_BUCKET_CITATION_IDS[resolved],
     )
 
 
@@ -165,11 +197,12 @@ def fx_delta_risk_weight(
     """
 
     _ensure_fx_delta_supported(profile)
+    resolved = _resolve_supported_profile(profile)
     normalised_currency = normalise_fx_delta_currency_code(currency)
     normalised_reporting = normalise_fx_delta_currency_code(reporting_currency)
     if normalised_currency == normalised_reporting:
-        return 0.0, ("basel_mar21_87",)
-    citation_ids: list[str] = ["basel_mar21_87"]
+        return 0.0, (PROFILE_FX_DELTA_RISK_WEIGHT_CITATION_IDS[resolved],)
+    citation_ids: list[str] = [PROFILE_FX_DELTA_RISK_WEIGHT_CITATION_IDS[resolved]]
     risk_weight = FX_DELTA_RISK_WEIGHT
     if _apply_fx_sqrt2_adjustment(
         currency=normalised_currency,
@@ -177,7 +210,7 @@ def fx_delta_risk_weight(
         profile=profile,
     ):
         risk_weight /= SQRT2
-        citation_ids.append("basel_mar21_88")
+        citation_ids.append(PROFILE_FX_DELTA_SQRT2_CITATION_IDS[resolved])
     return risk_weight, tuple(citation_ids)
 
 
@@ -208,7 +241,8 @@ def fx_delta_intra_bucket_correlation(
     fx_bucket_definition(profile, normalised_bucket1)
     fx_bucket_definition(profile, normalised_bucket2)
     del normalised_bucket1, normalised_bucket2
-    return FX_INTRA_BUCKET_CORRELATION, ("basel_mar21_86",)
+    resolved = _resolve_supported_profile(profile)
+    return FX_INTRA_BUCKET_CORRELATION, (PROFILE_FX_DELTA_INTRA_BUCKET_CITATION_IDS[resolved],)
 
 
 def fx_inter_bucket_correlation(
@@ -237,14 +271,15 @@ def fx_inter_bucket_correlation(
     normalised_bucket2 = normalise_fx_delta_currency_code(bucket2)
     fx_bucket_definition(profile, normalised_bucket1)
     fx_bucket_definition(profile, normalised_bucket2)
+    resolved = _resolve_supported_profile(profile)
     if normalised_bucket1 == normalised_bucket2:
-        return FX_INTRA_BUCKET_CORRELATION, ("basel_mar21_89",)
-    return FX_INTER_BUCKET_CORRELATION, ("basel_mar21_89",)
+        return FX_INTRA_BUCKET_CORRELATION, (PROFILE_FX_DELTA_INTER_BUCKET_CITATION_IDS[resolved],)
+    return FX_INTER_BUCKET_CORRELATION, (PROFILE_FX_DELTA_INTER_BUCKET_CITATION_IDS[resolved],)
 
 
 def _ensure_fx_delta_supported(profile: SbmRegulatoryProfile | str) -> None:
     resolved = _resolve_supported_profile(profile)
-    if resolved is not SbmRegulatoryProfile.BASEL_MAR21:
+    if resolved not in PROFILE_FX_BUCKETS:
         raise UnsupportedRegulatoryFeatureError(
             f"FX delta reference data is unsupported for profile {resolved.value}"
         )
@@ -269,7 +304,13 @@ __all__ = [
     "FX_INTER_BUCKET_CORRELATION",
     "FX_INTRA_BUCKET_CORRELATION",
     "PROFILE_FX_BUCKETS",
+    "PROFILE_FX_DELTA_INTER_BUCKET_CITATION_IDS",
+    "PROFILE_FX_DELTA_INTRA_BUCKET_CITATION_IDS",
+    "PROFILE_FX_DELTA_RISK_WEIGHT_CITATION_IDS",
+    "PROFILE_FX_DELTA_SQRT2_CITATION_IDS",
     "PROFILE_FX_SPECIFIED_CURRENCIES",
+    "US_NPR_FX_BUCKETS",
+    "US_NPR_FX_SPECIFIED_CURRENCIES",
     "fx_bucket_definition",
     "fx_buckets_for_profile",
     "fx_delta_intra_bucket_correlation",

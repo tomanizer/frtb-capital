@@ -20,8 +20,9 @@ and do not constitute independent model validation. Do not treat outputs as
 production regulatory capital.
 
 `BASEL_MAR21` produces phase-1 capital for the supported delta, vega, and
-curvature matrix. `US_NPR_2_0` produces capital for GIRR delta, GIRR vega, and
-GIRR curvature only; `PRA_UK_CRR` produces capital only for GIRR delta. All
+curvature matrix. `US_NPR_2_0` produces capital for GIRR delta, GIRR vega,
+GIRR curvature, and reporting-currency FX delta only; `PRA_UK_CRR` produces
+capital only for GIRR delta. All
 other U.S. NPR, EU CRR3, and PRA UK CRR cells fail closed until cited reference
 data exists. `PRA_UK_CRR` GIRR delta uses PS1/26 Appendix 1 / PRA2026/1
 Articles 325c, 325h, and 325ae-325ag; do not open another PRA runtime gate

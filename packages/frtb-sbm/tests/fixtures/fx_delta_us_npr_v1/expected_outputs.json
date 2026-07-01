@@ -1,0 +1,99 @@
+{
+  "profile_id": "US_NPR_2_0",
+  "profile_hash": "27bd34222ebd9720a69816109489ca599f2927a6a55599b12b47d9ac4fe36b4f",
+  "input_hash": "df872964bd0c24e60f97f43fa5f30bc2995f0e188756526c9c59e51252a56eab",
+  "total_capital": 221680.4639109114,
+  "warnings": [],
+  "selected_portfolio_scenario": "LOW",
+  "portfolio_scenario_totals": {
+    "HIGH": 176857.8905965507,
+    "LOW": 221680.4639109114,
+    "MEDIUM": 200525.4865921267
+  },
+  "risk_classes": [
+    {
+      "risk_class": "FX",
+      "risk_measure": "DELTA",
+      "selected_capital": 221680.4639109114,
+      "selected_scenario": "LOW",
+      "citation_ids": [
+        "us_npr_91_fr_14952_va7a_correlation_scenarios",
+        "us_npr_91_fr_14952_va7a_sbm_scope",
+        "us_npr_91_fr_14952_va7a_fx_delta_intra",
+        "us_npr_91_fr_14952_va7a_fx_delta_inter"
+      ]
+    }
+  ],
+  "scenario_totals": {
+    "HIGH": 176857.8905965507,
+    "LOW": 221680.4639109114,
+    "MEDIUM": 200525.4865921267
+  },
+  "buckets": [
+    [
+      {
+        "bucket_id": "EUR",
+        "kb": 212132.03435596422,
+        "sb": 212132.03435596422,
+        "citation_ids": [
+          "us_npr_91_fr_14952_va7a_sbm_scope",
+          "us_npr_91_fr_14952_va7a_fx_delta_intra"
+        ]
+      },
+      {
+        "bucket_id": "GBP",
+        "kb": 159099.02576697318,
+        "sb": -159099.02576697318,
+        "citation_ids": [
+          "us_npr_91_fr_14952_va7a_sbm_scope",
+          "us_npr_91_fr_14952_va7a_fx_delta_intra"
+        ]
+      },
+      {
+        "bucket_id": "MYR",
+        "kb": 75000.0,
+        "sb": 75000.0,
+        "citation_ids": [
+          "us_npr_91_fr_14952_va7a_sbm_scope",
+          "us_npr_91_fr_14952_va7a_fx_delta_intra"
+        ]
+      }
+    ]
+  ],
+  "weighted_sensitivities": [
+    [
+      [
+        {
+          "sensitivity_id": "eur-usd",
+          "risk_weight": 0.10606601717798211,
+          "scaled_amount": 212132.03435596422,
+          "citation_ids": [
+            "us_npr_91_fr_14952_va7a_fx_delta_weights",
+            "us_npr_91_fr_14952_va7a_fx_delta_sqrt2"
+          ]
+        }
+      ],
+      [
+        {
+          "sensitivity_id": "gbp-usd",
+          "risk_weight": 0.10606601717798211,
+          "scaled_amount": -159099.02576697318,
+          "citation_ids": [
+            "us_npr_91_fr_14952_va7a_fx_delta_weights",
+            "us_npr_91_fr_14952_va7a_fx_delta_sqrt2"
+          ]
+        }
+      ],
+      [
+        {
+          "sensitivity_id": "myr-usd",
+          "risk_weight": 0.15,
+          "scaled_amount": 75000.0,
+          "citation_ids": [
+            "us_npr_91_fr_14952_va7a_fx_delta_weights"
+          ]
+        }
+      ]
+    ]
+  ]
+}
