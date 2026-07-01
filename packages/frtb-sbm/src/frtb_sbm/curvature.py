@@ -103,6 +103,7 @@ from frtb_sbm.data_models import (
 from frtb_sbm.equity_reference_data import (
     EQUITY_SPOT_RISK_FACTOR,
 )
+from frtb_sbm.org_scope import scope_at, single_scope_metadata, unique_scope_metadata
 from frtb_sbm.reference_data import (
     curvature_citation_ids,
     normalise_fx_delta_currency_code,
@@ -515,6 +516,8 @@ def _build_curvature_factors(
                 sensitivity_ids=tuple(item.sensitivity_id for item in ordered),
                 source_row_ids=tuple(item.source_row_id for item in ordered),
                 citation_ids=citations,
+                org_scope=single_scope_metadata(item.org_scope for item in ordered),
+                contributing_org_scopes=unique_scope_metadata(item.org_scope for item in ordered),
             )
         )
     return tuple(factors)
@@ -578,6 +581,12 @@ def _build_curvature_factors_from_batch(
                     _text_at(batch.source_row_ids, index) for index in row_indices
                 ),
                 citation_ids=citations,
+                org_scope=single_scope_metadata(
+                    scope_at(batch.org_scopes, index) for index in row_indices
+                ),
+                contributing_org_scopes=unique_scope_metadata(
+                    scope_at(batch.org_scopes, index) for index in row_indices
+                ),
             )
         )
     return tuple(factors)

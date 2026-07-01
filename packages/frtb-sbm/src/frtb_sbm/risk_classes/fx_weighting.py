@@ -14,6 +14,7 @@ from frtb_common import UnsupportedRegulatoryFeatureError
 from frtb_sbm.batch import SbmSensitivityBatch, sorted_fx_delta_batch_indices
 from frtb_sbm.data_models import SbmRiskClass, SbmRiskMeasure, SbmSensitivity, WeightedSensitivity
 from frtb_sbm.kernel.weighting import _optional_axis_value
+from frtb_sbm.org_scope import scope_at
 from frtb_sbm.reference_data import fx_bucket_definition, fx_delta_risk_weight
 from frtb_sbm.regimes import ensure_profile_supports_risk_class_measure
 from frtb_sbm.validation import SbmInputError, sort_sensitivities_deterministic
@@ -81,6 +82,7 @@ def weight_fx_delta_sensitivity_batch(
                 scaled_amount=amount * risk_weight,
                 citation_ids=citation_ids,
                 qualifier=_optional_axis_value(batch.qualifiers, index),
+                org_scope=scope_at(batch.org_scopes, index),
             )
         )
     return tuple(weighted)
@@ -148,6 +150,7 @@ def weight_fx_delta_sensitivities(
                 scaled_amount=scaled_amount,
                 citation_ids=citation_ids,
                 qualifier=sensitivity.qualifier,
+                org_scope=sensitivity.org_scope,
             )
         )
     return tuple(weighted)

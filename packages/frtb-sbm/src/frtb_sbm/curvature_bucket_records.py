@@ -91,6 +91,8 @@ def _curvature_factor_to_weighted_sensitivity(
         factor_key=tuple(factor.factor_id.split("|")),
         contributing_sensitivity_ids=factor.sensitivity_ids,
         contributing_source_row_ids=factor.source_row_ids,
+        org_scope=factor.org_scope,
+        contributing_org_scopes=factor.contributing_org_scopes,
     )
 
 

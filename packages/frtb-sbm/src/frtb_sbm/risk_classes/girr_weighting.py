@@ -15,6 +15,7 @@ from frtb_common import UnsupportedRegulatoryFeatureError
 from frtb_sbm.batch import SbmSensitivityBatch, sorted_girr_vega_batch_indices
 from frtb_sbm.data_models import SbmRiskClass, SbmRiskMeasure, SbmSensitivity, WeightedSensitivity
 from frtb_sbm.kernel.weighting import _liquidity_horizon_at, _required_optional_axis_value
+from frtb_sbm.org_scope import scope_at
 from frtb_sbm.reference_data import (
     girr_bucket_definition,
     girr_delta_risk_weight,
@@ -82,6 +83,7 @@ def weight_girr_delta_sensitivities(
                 scaled_amount=scaled_amount,
                 citation_ids=citation_ids,
                 qualifier=sensitivity.tenor,
+                org_scope=sensitivity.org_scope,
             )
         )
     return tuple(weighted)
@@ -146,6 +148,7 @@ def weight_girr_vega_sensitivities(
                 citation_ids=citation_ids,
                 qualifier=sensitivity.option_tenor,
                 liquidity_horizon_days=horizon,
+                org_scope=sensitivity.org_scope,
             )
         )
     return tuple(weighted)
@@ -208,6 +211,7 @@ def weight_girr_vega_sensitivity_batch(
                 citation_ids=citation_ids,
                 qualifier=_required_optional_axis_value(batch.option_tenors, index, "option_tenor"),
                 liquidity_horizon_days=horizon,
+                org_scope=scope_at(batch.org_scopes, index),
             )
         )
     return tuple(weighted)

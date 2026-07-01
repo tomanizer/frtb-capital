@@ -16,6 +16,7 @@ from frtb_sbm._citations import merge_citation_ids as _merge_citation_ids
 from frtb_sbm.batch import SbmSensitivityBatch, sorted_sbm_batch_indices
 from frtb_sbm.data_models import SbmRiskClass, SbmRiskMeasure, SbmSensitivity, WeightedSensitivity
 from frtb_sbm.kernel.weighting import _liquidity_horizon_at, _optional_axis_value
+from frtb_sbm.org_scope import scope_at
 from frtb_sbm.reference_data import vega_liquidity_horizon_days, vega_risk_weight
 from frtb_sbm.regimes import ensure_profile_supports_risk_class_measure
 from frtb_sbm.risk_classes.vega_validation import (
@@ -108,6 +109,7 @@ def weight_non_girr_vega_sensitivities(
                 qualifier=sensitivity.qualifier,
                 liquidity_horizon_days=horizon,
                 factor_key=factor_key,
+                org_scope=sensitivity.org_scope,
             )
         )
     return tuple(weighted)
@@ -188,6 +190,7 @@ def weight_non_girr_vega_sensitivity_batch(
                 qualifier=_optional_axis_value(batch.qualifiers, index),
                 liquidity_horizon_days=horizon,
                 factor_key=factor_key,
+                org_scope=scope_at(batch.org_scopes, index),
             )
         )
     return tuple(weighted)

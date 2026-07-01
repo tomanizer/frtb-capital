@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from frtb_common import UnsupportedRegulatoryFeatureError
+from frtb_common import CalculationScope, UnsupportedRegulatoryFeatureError
 
 from frtb_sbm._citations import merge_citation_ids as _merge_citation_ids
 from frtb_sbm.data_models import SbmRiskClass, SbmSensitivity
@@ -32,6 +32,8 @@ class _CurvatureFactor:
     sensitivity_ids: tuple[str, ...]
     source_row_ids: tuple[str, ...]
     citation_ids: tuple[str, ...]
+    org_scope: CalculationScope | None = None
+    contributing_org_scopes: tuple[CalculationScope, ...] = ()
 
 
 def _curvature_factor_key(sensitivity: SbmSensitivity) -> tuple[str, ...]:
