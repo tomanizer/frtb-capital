@@ -10,6 +10,7 @@ from frtb_drc._batch_order import sorted_position_indices as _sorted_indices
 from frtb_drc._hashing import hash_payload
 from frtb_drc.data_models import DrcCalculationContext, DrcRiskClass
 from frtb_drc.fair_value_cap import fair_value_cap_hash_payload
+from frtb_drc.org_scope import scope_at, scope_payload
 from frtb_drc.risk_weight_evidence import effective_risk_weights, risk_weight_evidence_hash_payload
 
 if TYPE_CHECKING:
@@ -143,7 +144,7 @@ def _position_payload(batch: DrcPositionBatch, index: int) -> dict[str, object]:
             "source_row_id": batch.source_row_ids[index],
             "source_column_map": dict(batch.source_column_maps[index]),
         }
-    return {
+    payload: dict[str, object] = {
         "position_id": batch.position_ids[index],
         "source_row_id": batch.source_row_ids[index],
         "desk_id": batch.desk_ids[index],
@@ -170,6 +171,10 @@ def _position_payload(batch: DrcPositionBatch, index: int) -> dict[str, object]:
         "lineage": lineage,
         "citation_ids": list(batch.citation_ids[index]),
     }
+    org_scope = scope_payload(scope_at(batch.org_scopes, index))
+    if org_scope is not None:
+        payload["org_scope"] = org_scope
+    return payload
 
 
 def _optional_float_payload(value: float) -> float | None:

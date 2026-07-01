@@ -1,6 +1,6 @@
 # FRTB-DRC Model Documentation Pack
 
-This pack documents the current partial-runtime `frtb-drc` scope for model
+This pack documents the implemented multi-profile `frtb-drc` scope for model
 validation, engineering review, and audit planning. It complements the planning
 documents under `docs/modules/frtb-drc/`.
 

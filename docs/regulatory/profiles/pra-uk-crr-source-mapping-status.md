@@ -1,4 +1,4 @@
-# PRA UK CRR profile source-mapping status (IMA and RRAO)
+# PRA UK CRR profile source-mapping status
 
 Canonical status for the `PRA_UK_CRR` profile across capital packages. Parent
 audit: [#507](https://github.com/tomanizer/frtb-capital/issues/507). Suite regime
@@ -26,6 +26,8 @@ by `mapped_and_cited` entries and fixture-backed tests.
 | Package | Profile enum | Policy retrieval | Capital runtime | Primary guard |
 | --- | --- | --- | --- | --- |
 | `frtb-ima` | `PRA_UK_CRR` | Allowed (`get_policy`) | `mapped_and_cited` partial runtime | `tests/fixtures/ima_pra` replay; RFET/NMRF/IMCC capital for supported synthetic inputs |
+| `frtb-sbm` | `PRA_UK_CRR` | Allowed (`resolve_sbm_profile`) | `mapped_and_cited` partial runtime | GIRR delta supported with PRA-owned Articles 325c, 325h, and 325ae-325ag citation ids plus `girr_delta_pra_uk_crr_v1`; all other PRA SBM cells remain fail-closed. |
+| `frtb-drc` | `PRA_UK_CRR` | Allowed (`get_rule_profile`) | `mapped_and_cited` runtime | Non-securitisation replay via `tests/fixtures/drc_pra_nonsec_v1`; securitisation non-CTP replay via `tests/fixtures/drc_pra_sec_nonctp_v1`; CTP replay via `tests/fixtures/drc_pra_ctp_v1` |
 | `frtb-rrao` | `PRA_UK_CRR` | Allowed (`resolve_rrao_profile`) | `mapped_and_cited` partial runtime | `tests/fixtures/rrao_pra` replay; investment-fund paths remain fail-closed |
 
 Do not implement PRA capital by silently reusing Basel, U.S. NPR, or EU defaults.
@@ -44,6 +46,27 @@ component.
 | `src/frtb_ima/pla.py` EU/PRA Spearman path | `comparison_only` | KS + Spearman thresholds cited for EU RTS comparison; not UK capital. |
 | Fed NPR / ECB comparison tests | `out_of_scope` | Other profiles remain governed by their own rows. |
 
+## DRC inventory (`packages/frtb-drc`)
+
+| Location | Classification | Notes |
+| --- | --- | --- |
+| `docs/regulatory/sources.yml` `uk_pra_ps1_26_basel_3_1_final_rules` | `placeholder_reference` | Policy-statement anchor for UK Basel 3.1 market-risk final rules; not enough by itself to emit DRC capital. |
+| `docs/regulatory/sources.yml` `uk_pra_2026_1_market_risk_part` | `placeholder_reference` | Link-only PRA Rulebook legal-instrument source for Market Risk Part Articles 325v-325ad. |
+| `src/frtb_drc/regime_citations_eu_pra.py` `PRA_DRC_ARTICLE_325V` | `mapped_and_cited` partial runtime | DRC scope source-map id for supported PRA non-securitisation and securitisation non-CTP paths. |
+| `src/frtb_drc/regime_citations_eu_pra.py` `PRA_DRC_ARTICLE_325W`, `PRA_DRC_ARTICLE_325X`, `PRA_DRC_ARTICLE_325Y` | `mapped_and_cited` | Non-securitisation runtime citations for gross JTD/LGD, netting/maturity, bucket/risk-weight/HBR/category mechanics. |
+| `src/frtb_drc/regime_citations_eu_pra.py` `PRA_DRC_ARTICLE_325Z`, `PRA_DRC_ARTICLE_325AA` | `mapped_and_cited` | Securitisation non-CTP runtime citations for gross/net JTD, bucket/risk-weight/HBR/category, and fair-value-cap mechanics. |
+| `src/frtb_drc/regime_citations_eu_pra.py` `PRA_DRC_ARTICLE_325AB`, `PRA_DRC_ARTICLE_325AC`, `PRA_DRC_ARTICLE_325AD` | `mapped_and_cited` | CTP runtime citations for scope/gross JTD, netting/replication/decomposition, bucket/risk-weight/category mechanics. |
+| `src/frtb_drc/regimes.py` `_PRA_UK_CRR_PROFILE` | `mapped_and_cited` runtime | `NON_SECURITISATION`, `SECURITISATION_NON_CTP`, and `CORRELATION_TRADING_PORTFOLIO` are supported. |
+| `docs/modules/frtb-drc/PROFILE_SUPPORT_MATRIX.md` | `mapped_and_cited` runtime | Lists all PRA DRC risk classes as supported with precise source-map ids and maintenance next steps. |
+| `tests/fixtures/drc_pra_nonsec_v1/` | `mapped_and_cited` | Deterministic PRA_UK_CRR non-securitisation capital replay pack. |
+| `tests/fixtures/drc_pra_sec_nonctp_v1/` | `mapped_and_cited` | Deterministic PRA_UK_CRR securitisation non-CTP capital replay pack. |
+| `tests/fixtures/drc_pra_ctp_v1/` | `mapped_and_cited` | Deterministic PRA_UK_CRR CTP capital replay pack. |
+
+The DRC PRA source-map ids are not capital authority by themselves. A child
+issue must promote a cell only when the implementation adds profile-owned
+reference data, deterministic fixtures, citation propagation, support-matrix
+updates, and fail-closed tests for the still-unsupported cells.
+
 ## RRAO inventory (`packages/frtb-rrao`)
 
 | Location | Classification | Notes |
@@ -54,14 +77,32 @@ component.
 | `src/frtb_rrao/regimes.py` `PRA_UK_CRR` metadata | `mapped_and_cited` | Supported profile with effective date 2027-01-01. |
 | Investment fund inclusion paths | `unsupported_fail_closed` | Empty `PROFILE_INVESTMENT_FUND_RULES` for PRA, same as EU. |
 
+## SBM inventory (`packages/frtb-sbm`)
+
+| Location | Classification | Notes |
+| --- | --- | --- |
+| `packages/frtb-sbm/docs/regulatory_sources.yml` `uk_pra_ps1_26_sbm_asa` | `mapped_and_cited` partial | PS1/26 Appendix 1 / PRA2026/1 Articles 325c-325ay mapped to SBM planning topics; Articles 325c, 325h, and 325ae-325ag are used by the GIRR delta runtime slice. |
+| `packages/frtb-sbm/docs/REGULATORY_TRACEABILITY.md` PRA rows | `mapped_and_cited` partial | `PRA_UK_CRR` GIRR delta is implemented under audit; PRA vega, curvature, and non-GIRR cells remain runtime fail-closed. |
+| `src/frtb_sbm/regimes.py` `PRA_UK_CRR` metadata | `mapped_and_cited` partial | Profile resolution succeeds with 2027-01-01 effective date and GIRR delta only in `PROFILE_SUPPORTED_MEASURES`. |
+| `packages/frtb-sbm/tests/fixtures/girr_delta_pra_uk_crr_v1/` | `mapped_and_cited` | Deterministic PRA_UK_CRR GIRR delta row/batch/Arrow replay pack. |
+
 ## Follow-up implementation issues (not in #507 scope)
 
 1. [#512](https://github.com/tomanizer/frtb-capital/issues/512) — IMA PRA RFET,
    NMRF, and capital-runtime enablement with `ima_pra` fixtures (delivered).
 2. [#513](https://github.com/tomanizer/frtb-capital/issues/513) — RRAO PRA
    Article 325u mapping and `rrao_pra` fixtures (delivered).
+3. [#1046](https://github.com/tomanizer/frtb-capital/issues/1046) — SBM PRA UK
+   CRR comparison-profile expansion roadmap.
+4. [#1064](https://github.com/tomanizer/frtb-capital/issues/1064) — SBM PRA
+   source-map documentation and manifest update.
+5. [#1000](https://github.com/tomanizer/frtb-capital/issues/1000) — DRC
+   promotion roadmap. PRA DRC runtime work delivered #1004 non-securitisation,
+   #1005 securitisation non-CTP, and #1006 CTP.
 
 ## Crosswalk pointers
 
 - [`docs/regulatory/crosswalk/frtb-ima.yml`](../crosswalk/frtb-ima.yml)
+- [`packages/frtb-sbm/docs/REGULATORY_TRACEABILITY.md`](../../../packages/frtb-sbm/docs/REGULATORY_TRACEABILITY.md)
+- [`docs/regulatory/crosswalk/frtb-drc.yml`](../crosswalk/frtb-drc.yml)
 - [`docs/regulatory/crosswalk/frtb-rrao.yml`](../crosswalk/frtb-rrao.yml)

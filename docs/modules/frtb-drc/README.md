@@ -6,8 +6,9 @@
 
 - Package directory: `packages/frtb-drc`
 - Import name: `frtb_drc`
-- Implementation status: partial runtime; supported U.S. NPR 2.0 and Basel MAR22 row/batch paths for non-securitisation, securitisation non-CTP, and CTP; supported EU CRR3 row/batch path for non-securitisation
-- Validation status: pending
+- Implementation status: supported runtime for U.S. NPR 2.0, Basel MAR22, EU CRR3, and PRA UK CRR row/batch paths for non-securitisation, securitisation non-CTP, and CTP
+- Validation status: available for committed synthetic row, batch, fixture,
+  attribution, and support-matrix evidence
 
 The package is importable and exposes `calculate_drc_capital` for supported
 U.S. NPR 2.0 and Basel MAR22 non-securitisation, securitisation non-CTP, and
@@ -28,8 +29,16 @@ MAR22.36-MAR22.45 CTP contracts and typed MAR22.42 banking-book
 securitisation risk-weight evidence. EU CRR3 non-securitisation is supported
 through cited Article 325w gross JTD/LGD, Article 325x netting/maturity,
 Article 325y bucket/risk-weight/HBR/category mechanics, and ECAI-to-CQS
-mapping evidence. EU CRR3 securitisation non-CTP, EU CRR3 CTP, and all UK PRA
-paths fail closed until their profile-specific mappings are implemented.
+mapping evidence. EU CRR3 securitisation non-CTP is supported through Article
+325z/325aa row, batch, Arrow, typed risk-weight, fair-value-cap, and offset
+evidence. EU CRR3 CTP is supported through Article 325ab-325ad row, batch,
+Arrow, typed risk-weight, decomposition, and offset evidence. PRA UK CRR
+non-securitisation is supported through Article 325w, Article 325x, and
+Article 325y row, batch, Arrow, and fixture evidence. PRA UK CRR
+securitisation non-CTP is supported through Article 325z and Article 325aa row,
+batch, Arrow, typed risk-weight, fair-value-cap, and offset evidence. PRA UK
+CRR CTP is supported through Article 325ab-325ad row, batch, Arrow, typed
+risk-weight, decomposition, and offset evidence.
 Securitisation non-CTP and CTP sub-scope without supplied risk weights or
 explicit replication evidence also fails closed.
 
@@ -95,6 +104,8 @@ batch audit boundaries, SA handoff):
 
 - [Product requirements](PRD.md)
 - [Regulatory requirements](REGULATORY_REQUIREMENTS.md)
+- [Regulatory traceability](REGULATORY_TRACEABILITY.md)
+- [Regulatory assumptions](REGULATORY_ASSUMPTIONS.md)
 - [Detailed implementation requirements](DETAILED_REQUIREMENTS.md)
 - [Architecture and data design](ARCHITECTURE_AND_DATA_DESIGN.md)
 - [Decisions and implementation plan](DECISIONS_AND_PLAN.md)

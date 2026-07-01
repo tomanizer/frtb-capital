@@ -29,7 +29,7 @@ systems and controls outside the capital kernel.
 ## Suitability
 
 The implementation preserves the calculation drivers that determine DRC for the
-supported partial-runtime paths:
+supported U.S. NPR 2.0, Basel MAR22, EU CRR3, and PRA UK CRR paths:
 
 - gross default exposure is calculated before netting;
 - maturity scaling is applied per position;

@@ -2,7 +2,8 @@
 
 Regulatory traceability:
     Basel MAR21.1 scope validation, U.S. NPR 2.0 section V.A.7.a profile
-    gating, and SBM-NFR-004 fail-closed unsupported-feature handling.
+    gating, PRA PS1/26 Appendix 1 Articles 325c, 325h, and 325ae-325ag, and
+    SBM-NFR-004 fail-closed unsupported-feature handling.
 """
 
 from __future__ import annotations
@@ -21,6 +22,7 @@ from frtb_sbm.data_models import (
     SbmRunControls,
     SbmSensitivity,
 )
+from frtb_sbm.org_scope import validate_scope_metadata
 from frtb_sbm.validation.coercion import (
     coerce_pairwise_evidence_mode,
     coerce_risk_class,
@@ -62,7 +64,11 @@ _PHASE1_SUPPORTED: dict[str, frozenset[tuple[SbmRiskClass, SbmRiskMeasure]]] = {
         }
     ),
     SbmRegulatoryProfile.EU_CRR3.value: frozenset(),
-    SbmRegulatoryProfile.PRA_UK_CRR.value: frozenset(),
+    SbmRegulatoryProfile.PRA_UK_CRR.value: frozenset(
+        {
+            (SbmRiskClass.GIRR, SbmRiskMeasure.DELTA),
+        }
+    ),
 }
 
 _CURVATURE_CAPITAL_REQUIREMENT_ID = "SBM-CURV-001"
@@ -87,6 +93,7 @@ def validate_sbm_calculation_context(context: SbmCalculationContext) -> SbmCalcu
     _validate_citation_policy(context.citation_policy)
     ensure_sbm_profile_known(context.profile_id)
     _validate_run_controls(context.run_controls)
+    validate_scope_metadata(context.calculation_scope, field="calculation_scope")
     if context.desk_id is not None and context.desk_id != context.desk_id.strip():
         raise SbmInputError(
             "desk_id must not contain leading or trailing whitespace",

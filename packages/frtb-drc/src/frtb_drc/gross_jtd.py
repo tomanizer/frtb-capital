@@ -17,6 +17,7 @@ from frtb_drc.reference_data import get_lgd_rule
 from frtb_drc.regimes import (
     BASEL_MAR22_PROFILE_ID,
     EU_CRR3_PROFILE_ID,
+    PRA_UK_CRR_PROFILE_ID,
     US_NPR_2_0_PROFILE_ID,
     ensure_risk_class_supported,
     get_rule_profile,
@@ -26,6 +27,7 @@ from frtb_drc.validation import DrcInputError, validate_position, validate_posit
 _US_NPR_FORMULA_CITATIONS = ("BASEL_MAR22_11", "BASEL_MAR22_13", "US_NPR_210_A_1_II")
 _BASEL_FORMULA_CITATIONS = ("BASEL_MAR22_11", "BASEL_MAR22_13")
 _EU_CRR3_FORMULA_CITATIONS = ("EU_CRR3_ARTICLE_325W",)
+_PRA_FORMULA_CITATIONS = ("PRA_DRC_ARTICLE_325W",)
 
 
 def calculate_gross_jtd(
@@ -94,6 +96,7 @@ def calculate_gross_jtd(
             *position.citation_ids,
         ),
         branch_metadata=branch_metadata,
+        org_scope=position.org_scope,
     )
 
 
@@ -186,10 +189,14 @@ def _gross_jtd_formula_citations(profile_id: str) -> tuple[str, ...]:
         return _BASEL_FORMULA_CITATIONS
     if profile_id == EU_CRR3_PROFILE_ID:
         return _EU_CRR3_FORMULA_CITATIONS
+    if profile_id == PRA_UK_CRR_PROFILE_ID:
+        return _PRA_FORMULA_CITATIONS
     return _US_NPR_FORMULA_CITATIONS
 
 
 def _market_value_cap_citation(profile_id: str) -> str:
+    if profile_id == PRA_UK_CRR_PROFILE_ID:
+        return "PRA_DRC_ARTICLE_325W"
     if profile_id == EU_CRR3_PROFILE_ID:
         return "EU_CRR3_ARTICLE_325W"
     if profile_id == US_NPR_2_0_PROFILE_ID:

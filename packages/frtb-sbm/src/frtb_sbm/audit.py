@@ -27,6 +27,7 @@ from frtb_sbm.data_models import (
     WeightedSensitivity,
 )
 from frtb_sbm.numeric import is_reconciled
+from frtb_sbm.org_scope import scope_payload
 from frtb_sbm.validation import SbmInputError, validate_sbm_sensitivities
 
 _HASH_HEX_LENGTH = 64
@@ -271,12 +272,16 @@ def _curvature_bucket_branch_payload(
 
 
 def _run_context_payload(context: SbmRunContextSummary) -> dict[str, object]:
-    return {
+    payload: dict[str, object] = {
         "run_id": context.run_id,
         "calculation_date": context.calculation_date.isoformat(),
         "base_currency": context.base_currency,
         "reporting_currency": context.reporting_currency,
     }
+    calculation_scope = scope_payload(context.calculation_scope)
+    if calculation_scope is not None:
+        payload["calculation_scope"] = calculation_scope
+    return payload
 
 
 def _bucket_payload(bucket: BucketCapital) -> dict[str, object]:
@@ -317,6 +322,16 @@ def _weighted_sensitivity_payload(item: WeightedSensitivity) -> dict[str, object
         payload["contributing_sensitivity_ids"] = list(item.contributing_sensitivity_ids)
     if item.contributing_source_row_ids:
         payload["contributing_source_row_ids"] = list(item.contributing_source_row_ids)
+    org_scope = scope_payload(item.org_scope)
+    if org_scope is not None:
+        payload["org_scope"] = org_scope
+    if item.contributing_org_scopes:
+        contributing_scopes: list[dict[str, object]] = []
+        for scope in item.contributing_org_scopes:
+            scope_record = scope_payload(scope)
+            if scope_record is not None:
+                contributing_scopes.append(scope_record)
+        payload["contributing_org_scopes"] = contributing_scopes
     return payload
 
 

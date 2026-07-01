@@ -28,7 +28,7 @@ sources:
     reuse_note: "Link-only BIS reference; do not vendor text without permission review."
     module_paths:
       - src/frtb_sbm/data_models.py
-      - src/frtb_sbm/validation.py
+      - src/frtb_sbm/validation/context.py
       - src/frtb_sbm/regimes.py
       - src/frtb_sbm/reference_data.py
       - src/frtb_sbm/weighted_sensitivity.py
@@ -71,6 +71,35 @@ sources:
     section_hint: "Articles 325e-325az and related market-risk provisions for EU comparison profile work."
     status: comparison_reference
     reuse_note: "EU profile support is planned after the supported BASEL_MAR21 delta/vega/curvature matrix; current EU runtime requests fail closed."
+    module_paths: []
+    requirement_ids:
+      - SBM-REF-001
+
+  - id: uk_pra_ps1_26_sbm_asa
+    family: PRA_UK_CRR
+    jurisdiction: UK
+    title: "PS1/26 and PRA2026/1, Market Risk: Advanced Standardised Approach (CRR) Part"
+    url: "https://www.bankofengland.co.uk/-/media/boe/files/prudential-regulation/policy-statement/2026/january/ps126app1.pdf"
+    section_hint: "Final PRA Rulebook CRR Firms Instrument 2026, Annex I, Market Risk: Advanced Standardised Approach (CRR) Part. Articles 325c-325h cover ASA/SBM structure, delta/vega/curvature aggregation, and correlation scenarios; Articles 325l-325u cover SBM risk-factor and sensitivity definitions; Articles 325ae-325ay cover GIRR, CSR, equity, commodity, FX, vega, and curvature weights/correlations."
+    status: final_rule_reference
+    reuse_note: "Final UK PRA source map. Articles 325c, 325h, and 325ae-325ag now support the PRA_UK_CRR GIRR delta runtime slice with profile-owned citations and girr_delta_pra_uk_crr_v1 fixtures; remaining runtime cells still need profile-owned citation ids, reference data, fixtures, and support-matrix updates."
+    module_paths:
+      - src/frtb_sbm/reference_citations_pra_uk_crr.py
+      - src/frtb_sbm/girr_reference_tables.py
+      - src/frtb_sbm/reference_profiles.py
+      - src/frtb_sbm/regimes.py
+      - src/frtb_sbm/validation/context.py
+    requirement_ids:
+      - SBM-REF-001
+
+  - id: uk_pra_cp16_22_market_risk
+    family: PRA_UK_CRR
+    jurisdiction: UK
+    title: "CP16/22 Chapter 6, Implementation of the Basel 3.1 standards: Market risk"
+    url: "https://www.bankofengland.co.uk/prudential-regulation/publication/2022/november/implementation-of-the-basel-3-1-standards/market-risk"
+    section_hint: "Historical consultation and policy rationale for the PRA market-risk framework. PS1/26 and PRA2026/1 Appendix 1 supersede it for final rule parameters."
+    status: historical_context
+    reuse_note: "Use for design rationale only; do not use as final authority where PS1/26 or PRA2026/1 provides a rule."
     module_paths: []
     requirement_ids:
       - SBM-REF-001

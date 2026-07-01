@@ -13,6 +13,7 @@ from frtb_drc.data_models import (
 from frtb_drc.validation import (
     BASEL_MAR22_PROFILE_ID,
     EU_CRR3_PROFILE_ID,
+    PRA_UK_CRR_PROFILE_ID,
     US_NPR_2_0_PROFILE_ID,
 )
 
@@ -22,12 +23,15 @@ if TYPE_CHECKING:
 _US_NPR_FORMULA_CITATIONS = ("BASEL_MAR22_11", "BASEL_MAR22_13", "US_NPR_210_A_1_II")
 _BASEL_FORMULA_CITATIONS = ("BASEL_MAR22_11", "BASEL_MAR22_13")
 _EU_CRR3_FORMULA_CITATIONS = ("EU_CRR3_ARTICLE_325W",)
+_PRA_FORMULA_CITATIONS = ("PRA_DRC_ARTICLE_325W",)
 _US_NPR_NETTING_CITATION = "US_NPR_210_B_2"
 _BASEL_NETTING_CITATION = "BASEL_MAR22_19"
 _EU_CRR3_NETTING_CITATION = "EU_CRR3_ARTICLE_325X"
+_PRA_NETTING_CITATION = "PRA_DRC_ARTICLE_325X"
 _US_NPR_ZERO_CATEGORY_CITATION = "US_NPR_210_B_3_III"
 _BASEL_ZERO_CATEGORY_CITATION = "BASEL_MAR22_26"
 _EU_CRR3_ZERO_CATEGORY_CITATION = "EU_CRR3_ARTICLE_325Y_3_5"
+_PRA_ZERO_CATEGORY_CITATION = "PRA_DRC_ARTICLE_325Y"
 _SEC_NON_CTP_GROSS_CITATIONS = ("US_NPR_210_C_1", "BASEL_MAR22_27")
 _SEC_NON_CTP_FAIR_VALUE_CAP_CITATIONS = ("US_NPR_210_C_3_III", "BASEL_MAR22_34")
 _SEC_NON_CTP_NETTING_CITATIONS = (
@@ -64,6 +68,22 @@ _BASEL_SEC_NON_CTP_BATCH_CITATIONS = (
     "BASEL_MAR22_34",
     "BASEL_MAR22_35",
 )
+_EU_CRR3_SEC_NON_CTP_GROSS_CITATIONS = ("EU_CRR3_ARTICLE_325Z",)
+_EU_CRR3_SEC_NON_CTP_FAIR_VALUE_CAP_CITATIONS = ("EU_CRR3_ARTICLE_325AA",)
+_EU_CRR3_SEC_NON_CTP_NETTING_CITATIONS = ("EU_CRR3_ARTICLE_325Z",)
+_EU_CRR3_SEC_NON_CTP_BATCH_CITATIONS = (
+    *_EU_CRR3_SEC_NON_CTP_GROSS_CITATIONS,
+    *_EU_CRR3_SEC_NON_CTP_NETTING_CITATIONS,
+    "EU_CRR3_ARTICLE_325AA",
+)
+_PRA_SEC_NON_CTP_GROSS_CITATIONS = ("PRA_DRC_ARTICLE_325Z",)
+_PRA_SEC_NON_CTP_FAIR_VALUE_CAP_CITATIONS = ("PRA_DRC_ARTICLE_325AA",)
+_PRA_SEC_NON_CTP_NETTING_CITATIONS = ("PRA_DRC_ARTICLE_325Z",)
+_PRA_SEC_NON_CTP_BATCH_CITATIONS = (
+    *_PRA_SEC_NON_CTP_GROSS_CITATIONS,
+    *_PRA_SEC_NON_CTP_NETTING_CITATIONS,
+    "PRA_DRC_ARTICLE_325AA",
+)
 _CTP_GROSS_CITATIONS = ("US_NPR_210_D_1",)
 _BASEL_CTP_GROSS_CITATIONS = ("BASEL_MAR22_36", "BASEL_MAR22_37")
 _CTP_NETTING_CITATIONS = ("US_NPR_210_D_2",)
@@ -84,6 +104,20 @@ _BASEL_CTP_BATCH_CITATIONS = (
     "BASEL_MAR22_42",
     "BASEL_MAR22_44",
     "BASEL_MAR22_45",
+)
+_EU_CRR3_CTP_GROSS_CITATIONS = ("EU_CRR3_ARTICLE_325AB",)
+_EU_CRR3_CTP_NETTING_CITATIONS = ("EU_CRR3_ARTICLE_325AC",)
+_EU_CRR3_CTP_BATCH_CITATIONS = (
+    *_EU_CRR3_CTP_GROSS_CITATIONS,
+    *_EU_CRR3_CTP_NETTING_CITATIONS,
+    "EU_CRR3_ARTICLE_325AD",
+)
+_PRA_CTP_GROSS_CITATIONS = ("PRA_DRC_ARTICLE_325AB",)
+_PRA_CTP_NETTING_CITATIONS = ("PRA_DRC_ARTICLE_325AC",)
+_PRA_CTP_BATCH_CITATIONS = (
+    *_PRA_CTP_GROSS_CITATIONS,
+    *_PRA_CTP_NETTING_CITATIONS,
+    "PRA_DRC_ARTICLE_325AD",
 )
 
 
@@ -162,16 +196,38 @@ def batch_api_citations(profile_id: str, risk_class: DrcRiskClass) -> tuple[str,
             "EU_CRR3_ARTICLE_325Y_6",
             "EU_CRR3_ECAI_CQS_MAPPING",
         )
+    if profile_id == PRA_UK_CRR_PROFILE_ID and risk_class is DrcRiskClass.NON_SECURITISATION:
+        return (
+            "PRA_DRC_ARTICLE_325W",
+            "PRA_DRC_ARTICLE_325X",
+            "PRA_DRC_ARTICLE_325Y",
+        )
     if profile_id == BASEL_MAR22_PROFILE_ID and risk_class is DrcRiskClass.SECURITISATION_NON_CTP:
         return _BASEL_SEC_NON_CTP_BATCH_CITATIONS
+    if profile_id == EU_CRR3_PROFILE_ID and risk_class is DrcRiskClass.SECURITISATION_NON_CTP:
+        return _EU_CRR3_SEC_NON_CTP_BATCH_CITATIONS
+    if profile_id == PRA_UK_CRR_PROFILE_ID and risk_class is DrcRiskClass.SECURITISATION_NON_CTP:
+        return _PRA_SEC_NON_CTP_BATCH_CITATIONS
     if (
         profile_id == BASEL_MAR22_PROFILE_ID
         and risk_class is DrcRiskClass.CORRELATION_TRADING_PORTFOLIO
     ):
         return _BASEL_CTP_BATCH_CITATIONS
+    if (
+        profile_id == EU_CRR3_PROFILE_ID
+        and risk_class is DrcRiskClass.CORRELATION_TRADING_PORTFOLIO
+    ):
+        return _EU_CRR3_CTP_BATCH_CITATIONS
+    if (
+        profile_id == PRA_UK_CRR_PROFILE_ID
+        and risk_class is DrcRiskClass.CORRELATION_TRADING_PORTFOLIO
+    ):
+        return _PRA_CTP_BATCH_CITATIONS
     if profile_id == BASEL_MAR22_PROFILE_ID:
         return ()
     if profile_id == EU_CRR3_PROFILE_ID:
+        return ()
+    if profile_id == PRA_UK_CRR_PROFILE_ID:
         return ()
     return ("US_NPR_210_SCOPE",)
 
@@ -194,6 +250,8 @@ def nonsec_formula_citations(profile_id: str) -> tuple[str, ...]:
         return _BASEL_FORMULA_CITATIONS
     if profile_id == EU_CRR3_PROFILE_ID:
         return _EU_CRR3_FORMULA_CITATIONS
+    if profile_id == PRA_UK_CRR_PROFILE_ID:
+        return _PRA_FORMULA_CITATIONS
     return _US_NPR_FORMULA_CITATIONS
 
 
@@ -215,6 +273,8 @@ def nonsec_netting_citation(profile_id: str) -> str:
         return _BASEL_NETTING_CITATION
     if profile_id == EU_CRR3_PROFILE_ID:
         return _EU_CRR3_NETTING_CITATION
+    if profile_id == PRA_UK_CRR_PROFILE_ID:
+        return _PRA_NETTING_CITATION
     return _US_NPR_NETTING_CITATION
 
 
@@ -236,6 +296,8 @@ def zero_nonsec_category_citation(profile_id: str) -> str:
         return _BASEL_ZERO_CATEGORY_CITATION
     if profile_id == EU_CRR3_PROFILE_ID:
         return _EU_CRR3_ZERO_CATEGORY_CITATION
+    if profile_id == PRA_UK_CRR_PROFILE_ID:
+        return _PRA_ZERO_CATEGORY_CITATION
     return _US_NPR_ZERO_CATEGORY_CITATION
 
 
@@ -255,6 +317,10 @@ def sec_non_ctp_gross_citations(profile_id: str) -> tuple[str, ...]:
 
     if profile_id == BASEL_MAR22_PROFILE_ID:
         return _BASEL_SEC_NON_CTP_GROSS_CITATIONS
+    if profile_id == EU_CRR3_PROFILE_ID:
+        return _EU_CRR3_SEC_NON_CTP_GROSS_CITATIONS
+    if profile_id == PRA_UK_CRR_PROFILE_ID:
+        return _PRA_SEC_NON_CTP_GROSS_CITATIONS
     return _SEC_NON_CTP_GROSS_CITATIONS
 
 
@@ -274,6 +340,10 @@ def sec_non_ctp_fair_value_cap_citations(profile_id: str) -> tuple[str, ...]:
 
     if profile_id == BASEL_MAR22_PROFILE_ID:
         return _BASEL_SEC_NON_CTP_FAIR_VALUE_CAP_CITATIONS
+    if profile_id == EU_CRR3_PROFILE_ID:
+        return _EU_CRR3_SEC_NON_CTP_FAIR_VALUE_CAP_CITATIONS
+    if profile_id == PRA_UK_CRR_PROFILE_ID:
+        return _PRA_SEC_NON_CTP_FAIR_VALUE_CAP_CITATIONS
     return _SEC_NON_CTP_FAIR_VALUE_CAP_CITATIONS
 
 
@@ -293,6 +363,10 @@ def sec_non_ctp_netting_citations(profile_id: str) -> tuple[str, ...]:
 
     if profile_id == BASEL_MAR22_PROFILE_ID:
         return _BASEL_SEC_NON_CTP_NETTING_CITATIONS
+    if profile_id == EU_CRR3_PROFILE_ID:
+        return _EU_CRR3_SEC_NON_CTP_NETTING_CITATIONS
+    if profile_id == PRA_UK_CRR_PROFILE_ID:
+        return _PRA_SEC_NON_CTP_NETTING_CITATIONS
     return _SEC_NON_CTP_NETTING_CITATIONS
 
 
@@ -312,6 +386,10 @@ def sec_non_ctp_batch_citations(profile_id: str) -> tuple[str, ...]:
 
     if profile_id == BASEL_MAR22_PROFILE_ID:
         return _BASEL_SEC_NON_CTP_BATCH_CITATIONS
+    if profile_id == EU_CRR3_PROFILE_ID:
+        return _EU_CRR3_SEC_NON_CTP_BATCH_CITATIONS
+    if profile_id == PRA_UK_CRR_PROFILE_ID:
+        return _PRA_SEC_NON_CTP_BATCH_CITATIONS
     return _SEC_NON_CTP_BATCH_CITATIONS
 
 
@@ -331,6 +409,10 @@ def ctp_netting_citations(profile_id: str) -> tuple[str, ...]:
 
     if profile_id == BASEL_MAR22_PROFILE_ID:
         return _BASEL_CTP_NETTING_CITATIONS
+    if profile_id == EU_CRR3_PROFILE_ID:
+        return _EU_CRR3_CTP_NETTING_CITATIONS
+    if profile_id == PRA_UK_CRR_PROFILE_ID:
+        return _PRA_CTP_NETTING_CITATIONS
     return _CTP_NETTING_CITATIONS
 
 
@@ -350,6 +432,10 @@ def ctp_batch_citations(profile_id: str) -> tuple[str, ...]:
 
     if profile_id == BASEL_MAR22_PROFILE_ID:
         return _BASEL_CTP_BATCH_CITATIONS
+    if profile_id == EU_CRR3_PROFILE_ID:
+        return _EU_CRR3_CTP_BATCH_CITATIONS
+    if profile_id == PRA_UK_CRR_PROFILE_ID:
+        return _PRA_CTP_BATCH_CITATIONS
     return _CTP_BATCH_CITATIONS
 
 

@@ -39,9 +39,16 @@ from frtb_drc.kernel.securitisation_gross import (
     fair_value_capped_gross_jtd as _fair_value_capped_gross_jtd,
 )
 from frtb_drc.maturity import scale_gross_jtds
+from frtb_drc.org_scope import single_scope_metadata, unique_scope_metadata
 from frtb_drc.reference_data import get_bucket_definition
 from frtb_drc.regimes import (
     BASEL_MAR22_PROFILE_ID as _BASEL_MAR22_PROFILE_ID,
+)
+from frtb_drc.regimes import (
+    EU_CRR3_PROFILE_ID as _EU_CRR3_PROFILE_ID,
+)
+from frtb_drc.regimes import (
+    PRA_UK_CRR_PROFILE_ID as _PRA_UK_CRR_PROFILE_ID,
 )
 from frtb_drc.regimes import (
     US_NPR_2_0_PROFILE_ID,
@@ -82,6 +89,18 @@ _BASEL_BUCKET_CITATIONS = (
 _BASEL_HBR_CITATIONS = ("BASEL_MAR22_33",)
 _BASEL_CATEGORY_CITATIONS = ("BASEL_MAR22_35",)
 _BASEL_FAIR_VALUE_CAP_CITATIONS = ("BASEL_MAR22_34",)
+_EU_CRR3_GROSS_CITATIONS = ("EU_CRR3_ARTICLE_325Z",)
+_EU_CRR3_NETTING_CITATIONS = ("EU_CRR3_ARTICLE_325Z",)
+_EU_CRR3_BUCKET_CITATIONS = ("EU_CRR3_ARTICLE_325AA",)
+_EU_CRR3_HBR_CITATIONS = ("EU_CRR3_ARTICLE_325AA",)
+_EU_CRR3_CATEGORY_CITATIONS = ("EU_CRR3_ARTICLE_325AA",)
+_EU_CRR3_FAIR_VALUE_CAP_CITATIONS = ("EU_CRR3_ARTICLE_325AA",)
+_PRA_GROSS_CITATIONS = ("PRA_DRC_ARTICLE_325Z",)
+_PRA_NETTING_CITATIONS = ("PRA_DRC_ARTICLE_325Z",)
+_PRA_BUCKET_CITATIONS = ("PRA_DRC_ARTICLE_325AA",)
+_PRA_HBR_CITATIONS = ("PRA_DRC_ARTICLE_325AA",)
+_PRA_CATEGORY_CITATIONS = ("PRA_DRC_ARTICLE_325AA",)
+_PRA_FAIR_VALUE_CAP_CITATIONS = ("PRA_DRC_ARTICLE_325AA",)
 
 
 @dataclass(frozen=True)
@@ -263,6 +282,7 @@ def calculate_securitisation_non_ctp_gross_jtd(
             (*_gross_citations(profile_id), *citations, *position.citation_ids)
         ),
         branch_metadata=branch_metadata,
+        org_scope=position.org_scope,
     )
 
 
@@ -569,6 +589,10 @@ def _net_securitisation_non_ctp_group(
                 citations=_netting_citations(profile_id),
             ),
         ),
+        org_scope=single_scope_metadata(item.gross_jtd.org_scope for item in exposures),
+        contributing_org_scopes=unique_scope_metadata(
+            item.gross_jtd.org_scope for item in exposures
+        ),
     )
 
 
@@ -709,36 +733,60 @@ def _representative_scaled_jtd_id(items: Sequence[SecuritisationNonCtpNettingInp
 def _gross_citations(profile_id: str) -> tuple[str, ...]:
     if profile_id == _BASEL_MAR22_PROFILE_ID:
         return _BASEL_GROSS_CITATIONS
+    if profile_id == _EU_CRR3_PROFILE_ID:
+        return _EU_CRR3_GROSS_CITATIONS
+    if profile_id == _PRA_UK_CRR_PROFILE_ID:
+        return _PRA_GROSS_CITATIONS
     return _GROSS_CITATIONS
 
 
 def _netting_citations(profile_id: str) -> tuple[str, ...]:
     if profile_id == _BASEL_MAR22_PROFILE_ID:
         return _BASEL_NETTING_CITATIONS
+    if profile_id == _EU_CRR3_PROFILE_ID:
+        return _EU_CRR3_NETTING_CITATIONS
+    if profile_id == _PRA_UK_CRR_PROFILE_ID:
+        return _PRA_NETTING_CITATIONS
     return _NETTING_CITATIONS
 
 
 def _bucket_citations(profile_id: str) -> tuple[str, ...]:
     if profile_id == _BASEL_MAR22_PROFILE_ID:
         return _BASEL_BUCKET_CITATIONS
+    if profile_id == _EU_CRR3_PROFILE_ID:
+        return _EU_CRR3_BUCKET_CITATIONS
+    if profile_id == _PRA_UK_CRR_PROFILE_ID:
+        return _PRA_BUCKET_CITATIONS
     return _BUCKET_CITATIONS
 
 
 def _hbr_citations(profile_id: str) -> tuple[str, ...]:
     if profile_id == _BASEL_MAR22_PROFILE_ID:
         return _BASEL_HBR_CITATIONS
+    if profile_id == _EU_CRR3_PROFILE_ID:
+        return _EU_CRR3_HBR_CITATIONS
+    if profile_id == _PRA_UK_CRR_PROFILE_ID:
+        return _PRA_HBR_CITATIONS
     return _HBR_CITATIONS
 
 
 def _category_citations(profile_id: str) -> tuple[str, ...]:
     if profile_id == _BASEL_MAR22_PROFILE_ID:
         return _BASEL_CATEGORY_CITATIONS
+    if profile_id == _EU_CRR3_PROFILE_ID:
+        return _EU_CRR3_CATEGORY_CITATIONS
+    if profile_id == _PRA_UK_CRR_PROFILE_ID:
+        return _PRA_CATEGORY_CITATIONS
     return _CATEGORY_CITATIONS
 
 
 def _fair_value_cap_citations(profile_id: str) -> tuple[str, ...]:
     if profile_id == _BASEL_MAR22_PROFILE_ID:
         return _BASEL_FAIR_VALUE_CAP_CITATIONS
+    if profile_id == _EU_CRR3_PROFILE_ID:
+        return _EU_CRR3_FAIR_VALUE_CAP_CITATIONS
+    if profile_id == _PRA_UK_CRR_PROFILE_ID:
+        return _PRA_FAIR_VALUE_CAP_CITATIONS
     return _FAIR_VALUE_CAP_CITATIONS
 
 

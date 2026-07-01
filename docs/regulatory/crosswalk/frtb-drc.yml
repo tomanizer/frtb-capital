@@ -1,34 +1,158 @@
 schema_version: 1
 component: frtb-drc
-status: scaffolded
+status: implemented
 source_register: ../sources.yml
+planning_docs:
+  - docs/modules/frtb-drc/PROFILE_SUPPORT_MATRIX.md
+  - docs/modules/frtb-drc/REGULATORY_REQUIREMENTS.md
+  - docs/regulatory/profiles/pra-uk-crr-source-mapping-status.md
 
 requirements:
   - id: DRC-JTD-001
     topic: Gross and net jump-to-default calculation
     source_refs:
       - basel_bcbs_d457_2019_market_risk
+      - eu_crr3_2024_1623
       - eu_eba_rts_gross_jtd_default_risk
+      - uk_pra_ps1_26_basel_3_1_final_rules
+      - uk_pra_2026_1_market_risk_part
     code_refs:
-      - packages/frtb-drc/src/frtb_drc/
+      - packages/frtb-drc/src/frtb_drc/gross_jtd.py
+      - packages/frtb-drc/src/frtb_drc/maturity.py
+      - packages/frtb-drc/src/frtb_drc/netting.py
+      - packages/frtb-drc/src/frtb_drc/kernel/nonsec.py
+      - packages/frtb-drc/src/frtb_drc/kernel/securitisation.py
+      - packages/frtb-drc/src/frtb_drc/kernel/ctp.py
     test_refs:
-      - packages/frtb-drc/tests/
-    coverage_status: not_implemented
+      - packages/frtb-drc/tests/test_drc_gross_jtd.py
+      - packages/frtb-drc/tests/test_drc_maturity.py
+      - packages/frtb-drc/tests/test_drc_netting.py
+      - packages/frtb-drc/tests/test_drc_securitisation.py
+      - packages/frtb-drc/tests/test_drc_ctp.py
+    coverage_status: partially_implemented_under_audit
     challenger_refs:
       - frtb_net_frtb
       - ankitjha67_baselkit
-    notes: "Separate non-securitisation, securitisation non-CTP, and CTP cases."
+    notes: "US_NPR_2_0, BASEL_MAR22, EU_CRR3, and PRA_UK_CRR non-securitisation, securitisation non-CTP, and CTP paths are capital-producing."
 
   - id: DRC-HBR-001
     topic: Hedge benefit ratio and netting constraints
     source_refs:
       - basel_bcbs_d457_2019_market_risk
+      - eu_crr3_2024_1623
       - eu_eba_rts_gross_jtd_default_risk
+      - uk_pra_2026_1_market_risk_part
     code_refs:
-      - packages/frtb-drc/src/frtb_drc/
+      - packages/frtb-drc/src/frtb_drc/capital.py
+      - packages/frtb-drc/src/frtb_drc/kernel/nonsec.py
+      - packages/frtb-drc/src/frtb_drc/kernel/securitisation.py
+      - packages/frtb-drc/src/frtb_drc/kernel/ctp.py
     test_refs:
-      - packages/frtb-drc/tests/
-    coverage_status: not_implemented
+      - packages/frtb-drc/tests/test_drc_capital.py
+      - packages/frtb-drc/tests/test_drc_securitisation.py
+      - packages/frtb-drc/tests/test_drc_ctp.py
+      - packages/frtb-drc/tests/test_drc_attribution.py
+    coverage_status: partially_implemented_under_audit
     challenger_refs:
       - frtb_net_frtb
-    notes: "Keep issuer, seniority, maturity, and tranche grouping auditable."
+    notes: "Supported paths preserve issuer/tranche grouping, HBR inputs, bucket/category totals, and attribution-ready lineage across U.S. NPR 2.0, Basel MAR22, EU CRR3, and PRA UK CRR paths."
+
+  - id: DRC-EU-SEC-001
+    topic: EU CRR3 securitisation non-CTP DRC runtime support
+    source_refs:
+      - eu_crr3_2024_1623
+      - eu_eba_rts_gross_jtd_default_risk
+    code_refs:
+      - packages/frtb-drc/src/frtb_drc/regime_citations_eu_pra.py
+      - packages/frtb-drc/src/frtb_drc/regimes.py
+      - packages/frtb-drc/src/frtb_drc/reference_data.py
+      - packages/frtb-drc/src/frtb_drc/kernel/securitisation.py
+      - packages/frtb-drc/src/frtb_drc/assembly/citations.py
+      - packages/frtb-drc/src/frtb_drc/adapters/arrow.py
+    test_refs:
+      - packages/frtb-drc/tests/test_drc_regimes.py
+      - packages/frtb-drc/tests/test_drc_securitisation.py
+      - packages/frtb-drc/tests/test_drc_arrow_batch.py
+      - packages/frtb-drc/tests/fixtures/drc_eu_sec_nonctp_v1
+    coverage_status: implemented_with_fixture
+    notes: "Source-map ids `EU_CRR3_ARTICLE_325Z` and `EU_CRR3_ARTICLE_325AA` are runtime citations for #1002. Row, batch, Arrow, fixture, evidence-fail-closed, attribution, and citation tests cover the supported path."
+
+  - id: DRC-EU-CTP-001
+    topic: EU CRR3 CTP DRC runtime support
+    source_refs:
+      - eu_crr3_2024_1623
+      - eu_eba_rts_gross_jtd_default_risk
+    code_refs:
+      - packages/frtb-drc/src/frtb_drc/regime_citations_eu_pra.py
+      - packages/frtb-drc/src/frtb_drc/regimes.py
+      - packages/frtb-drc/src/frtb_drc/reference_data.py
+      - packages/frtb-drc/src/frtb_drc/kernel/ctp.py
+      - packages/frtb-drc/src/frtb_drc/assembly/citations.py
+      - packages/frtb-drc/src/frtb_drc/adapters/arrow.py
+    test_refs:
+      - packages/frtb-drc/tests/test_drc_regimes.py
+      - packages/frtb-drc/tests/test_drc_ctp.py
+      - packages/frtb-drc/tests/test_drc_arrow_batch.py
+      - packages/frtb-drc/tests/fixtures/drc_eu_ctp_v1
+    coverage_status: implemented_with_fixture
+    notes: "Source-map ids `EU_CRR3_ARTICLE_325AB`, `EU_CRR3_ARTICLE_325AC`, and `EU_CRR3_ARTICLE_325AD` are runtime citations for #1003. Row, batch, Arrow, fixture, evidence-fail-closed, attribution, and citation tests cover the supported path."
+
+  - id: DRC-PRA-001
+    topic: PRA UK CRR non-securitisation DRC runtime support
+    source_refs:
+      - uk_pra_ps1_26_basel_3_1_final_rules
+      - uk_pra_2026_1_market_risk_part
+    code_refs:
+      - packages/frtb-drc/src/frtb_drc/regime_citations_eu_pra.py
+      - packages/frtb-drc/src/frtb_drc/regimes.py
+      - packages/frtb-drc/src/frtb_drc/reference_data.py
+      - packages/frtb-drc/src/frtb_drc/kernel/nonsec.py
+      - packages/frtb-drc/src/frtb_drc/assembly/citations.py
+      - packages/frtb-drc/src/frtb_drc/adapters/arrow.py
+    test_refs:
+      - packages/frtb-drc/tests/test_drc_regimes.py
+      - packages/frtb-drc/tests/test_drc_reference_data.py
+      - packages/frtb-drc/tests/test_drc_arrow_batch.py
+      - packages/frtb-drc/tests/fixtures/drc_pra_nonsec_v1
+    coverage_status: implemented_with_fixture
+    notes: "Source-map ids `PRA_DRC_ARTICLE_325W`, `PRA_DRC_ARTICLE_325X`, and `PRA_DRC_ARTICLE_325Y` are runtime citations for #1004. Row, batch, Arrow, fixture, attribution, and citation tests cover the supported non-securitisation path."
+
+  - id: DRC-PRA-SEC-001
+    topic: PRA UK CRR securitisation non-CTP DRC runtime support
+    source_refs:
+      - uk_pra_ps1_26_basel_3_1_final_rules
+      - uk_pra_2026_1_market_risk_part
+    code_refs:
+      - packages/frtb-drc/src/frtb_drc/regime_citations_eu_pra.py
+      - packages/frtb-drc/src/frtb_drc/regimes.py
+      - packages/frtb-drc/src/frtb_drc/reference_data.py
+      - packages/frtb-drc/src/frtb_drc/kernel/securitisation.py
+      - packages/frtb-drc/src/frtb_drc/assembly/citations.py
+      - packages/frtb-drc/src/frtb_drc/adapters/arrow.py
+    test_refs:
+      - packages/frtb-drc/tests/test_drc_regimes.py
+      - packages/frtb-drc/tests/test_drc_securitisation.py
+      - packages/frtb-drc/tests/test_drc_arrow_batch.py
+      - packages/frtb-drc/tests/fixtures/drc_pra_sec_nonctp_v1
+    coverage_status: implemented_with_fixture
+    notes: "Source-map ids `PRA_DRC_ARTICLE_325Z` and `PRA_DRC_ARTICLE_325AA` are runtime citations for #1005. Row, batch, Arrow, fixture, evidence-fail-closed, attribution, and citation tests cover the supported securitisation non-CTP path."
+
+  - id: DRC-PRA-CTP-001
+    topic: PRA UK CRR CTP DRC runtime support
+    source_refs:
+      - uk_pra_ps1_26_basel_3_1_final_rules
+      - uk_pra_2026_1_market_risk_part
+    code_refs:
+      - packages/frtb-drc/src/frtb_drc/regime_citations_eu_pra.py
+      - packages/frtb-drc/src/frtb_drc/regimes.py
+      - packages/frtb-drc/src/frtb_drc/reference_data.py
+      - packages/frtb-drc/src/frtb_drc/kernel/ctp.py
+      - packages/frtb-drc/src/frtb_drc/assembly/citations.py
+      - packages/frtb-drc/src/frtb_drc/adapters/arrow.py
+    test_refs:
+      - packages/frtb-drc/tests/test_drc_regimes.py
+      - packages/frtb-drc/tests/test_drc_ctp.py
+      - packages/frtb-drc/tests/test_drc_arrow_batch.py
+      - packages/frtb-drc/tests/fixtures/drc_pra_ctp_v1
+    coverage_status: implemented_with_fixture
+    notes: "Source-map ids `PRA_DRC_ARTICLE_325AB`, `PRA_DRC_ARTICLE_325AC`, and `PRA_DRC_ARTICLE_325AD` are runtime citations for #1006. Row, batch, Arrow, fixture, evidence-fail-closed, attribution, and citation tests cover the supported CTP path."

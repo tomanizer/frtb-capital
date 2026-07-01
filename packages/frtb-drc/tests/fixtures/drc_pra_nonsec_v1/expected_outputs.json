@@ -1,0 +1,88 @@
+{
+  "buckets": {
+    "CORPORATE": {
+      "capital": 2.025,
+      "floor_applied": false,
+      "hbr": 0.75,
+      "weighted_long": 2.6999999999999997,
+      "weighted_short": 0.8999999999999999
+    },
+    "LOCAL_GOVERNMENT_MUNICIPAL": {
+      "capital": 0.44999999999999996,
+      "floor_applied": false,
+      "hbr": 1.0,
+      "weighted_long": 0.44999999999999996,
+      "weighted_short": 0.0
+    },
+    "SOVEREIGN": {
+      "capital": 1.5,
+      "floor_applied": false,
+      "hbr": 1.0,
+      "weighted_long": 1.5,
+      "weighted_short": 0.0
+    }
+  },
+  "category_capital": 3.9749999999999996,
+  "citations": [
+    "PRA_DRC_ARTICLE_325W",
+    "PRA_DRC_ARTICLE_325X",
+    "PRA_DRC_ARTICLE_325Y"
+  ],
+  "fixture_id": "drc_pra_nonsec_v1",
+  "gross": {
+    "pra-corp-alpha-long": 75.0,
+    "pra-corp-alpha-short": 30.0,
+    "pra-corp-beta-short": 15.0,
+    "pra-muni-short-maturity": 60.0,
+    "pra-sovereign-long": 75.0
+  },
+  "input_count": 5,
+  "input_hash": "82802f3dbc8b952d001a9987267261cccf090a943eadadc47701f2794f81b938",
+  "maturity_weights": {
+    "pra-corp-alpha-long": 1.0,
+    "pra-corp-alpha-short": 1.0,
+    "pra-corp-beta-short": 1.0,
+    "pra-muni-short-maturity": 0.25,
+    "pra-sovereign-long": 1.0
+  },
+  "net": {
+    "net-corporate-issuer-alpha-senior_debt-long": {
+      "amount": 45.0,
+      "bucket": "CORPORATE",
+      "direction": "LONG",
+      "issuer": "issuer-alpha",
+      "rejected_offsets": []
+    },
+    "net-corporate-issuer-beta-senior_debt-short": {
+      "amount": 15.0,
+      "bucket": "CORPORATE",
+      "direction": "SHORT",
+      "issuer": "issuer-beta",
+      "rejected_offsets": []
+    },
+    "net-local-government-municipal-municipality-a-senior_debt-long": {
+      "amount": 15.0,
+      "bucket": "LOCAL_GOVERNMENT_MUNICIPAL",
+      "direction": "LONG",
+      "issuer": "municipality-a",
+      "rejected_offsets": []
+    },
+    "net-sovereign-sovereign-a-senior_debt-long": {
+      "amount": 75.0,
+      "bucket": "SOVEREIGN",
+      "direction": "LONG",
+      "issuer": "sovereign-a",
+      "rejected_offsets": []
+    }
+  },
+  "profile_hash": "ed2afdf26165cc5a4d1c3719758a4b11b5d0d1eec501bbafcb4a073401162626",
+  "result_json_sha256": "92d07c88acce0c7aaddd628f9b1956e6a463359a128cec1ef028f750f7745375",
+  "scaled": {
+    "pra-corp-alpha-long": 75.0,
+    "pra-corp-alpha-short": 30.0,
+    "pra-corp-beta-short": 15.0,
+    "pra-muni-short-maturity": 15.0,
+    "pra-sovereign-long": 75.0
+  },
+  "total_drc": 3.9749999999999996
+}

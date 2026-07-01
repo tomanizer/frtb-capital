@@ -25,16 +25,16 @@ semantics or Basel fixture hashes.
 | Layer | BASEL_MAR21 | Non-Basel profiles |
 | --- | --- | --- |
 | `SbmRegulatoryProfile` enum | `BASEL_MAR21` | `US_NPR_2_0`, `EU_CRR3`, `PRA_UK_CRR` |
-| `phase1_capital_supported_paths()` | 21 cells (7×3) | `US_NPR_2_0` GIRR delta; EU/PRA empty frozenset |
-| `resolve_sbm_profile()` / `get_sbm_rule_profile()` | Supported | `US_NPR_2_0` supported for GIRR delta; EU/PRA fail closed via `UNSUPPORTED_PROFILE_REASONS` |
-| `PROFILE_*` reference-data maps in `reference_data.py` | Populated | NPR GIRR delta populated; other non-Basel lookup paths fail closed |
-| Fixture packs under `tests/fixtures/` | 7 packs (`*_v1`) | `girr_delta_us_npr_v1` |
-| `REGULATORY_TRACEABILITY.md` | Full 7×3 matrix | `US_NPR_2_0` partial; EU/PRA unsupported fail-closed / blocked |
-| Enforcement tests | `test_sbm_support_matrix.py`, `test_sbm_unsupported_features.py` | NPR one-cell support + fail-closed tests for remaining cells |
+| `phase1_capital_supported_paths()` | 21 cells (7×3) | `US_NPR_2_0` and `PRA_UK_CRR` GIRR delta; EU empty frozenset |
+| `resolve_sbm_profile()` / `get_sbm_rule_profile()` | Supported | `US_NPR_2_0` and `PRA_UK_CRR` supported for GIRR delta; EU fails closed via `UNSUPPORTED_PROFILE_REASONS` |
+| `PROFILE_*` reference-data maps in `reference_data.py` | Populated | NPR and PRA GIRR delta populated; other non-Basel lookup paths fail closed |
+| Fixture packs under `tests/fixtures/` | 7 packs (`*_v1`) | `girr_delta_us_npr_v1`, `girr_delta_pra_uk_crr_v1` |
+| `REGULATORY_TRACEABILITY.md` | Full 7×3 matrix | `US_NPR_2_0` and `PRA_UK_CRR` partial; EU unsupported fail-closed |
+| Enforcement tests | `test_sbm_support_matrix.py`, `test_sbm_unsupported_features.py` | NPR/PRA one-cell support + fail-closed tests for remaining cells |
 
 Authoritative runtime gates:
 
-- `packages/frtb-sbm/src/frtb_sbm/validation.py` — `_PHASE1_SUPPORTED`
+- `packages/frtb-sbm/src/frtb_sbm/validation/context.py` — `_PHASE1_SUPPORTED`
 - `packages/frtb-sbm/src/frtb_sbm/regimes.py` — `UNSUPPORTED_PROFILE_REASONS`, `PROFILE_SUPPORTED_MEASURES`
 - `packages/frtb-sbm/docs/REGULATORY_TRACEABILITY.md` — documentation source for tests
 
@@ -56,7 +56,9 @@ conflate them with profile expansion:
 
 - **US_NPR_2_0** — capital-producing for non-sec, sec non-CTP, CTP (proposed-rule citations, e.g. `US_NPR_210_B_1_IV`).
 - **BASEL_MAR22** — partial (non-sec row/batch).
-- **EU_CRR3**, **PRA_UK_CRR** — fail closed until cited tables exist.
+- **EU_CRR3** — fail closed until cited tables exist.
+- **PRA_UK_CRR** — partial; GIRR delta is capital-producing with PRA-owned
+  citations and `girr_delta_pra_uk_crr_v1`, while other PRA cells fail closed.
 
 SBM should mirror this pattern: profile-owned reference data, deterministic
 profile hash, per-cell support flags, and no silent fallback to Basel tables when
@@ -68,7 +70,7 @@ a non-Basel profile is selected.
 | --- | --- | --- |
 | `US_NPR_2_0` | [91 FR 14952](https://www.govinfo.gov/app/details/FR-2026-03-27/2026-05959) | Section V.A.7.a; pages ~91 FR 15037 (six-step SBM process) |
 | `EU_CRR3` | [Regulation (EU) 2024/1623](https://eur-lex.europa.eu/eli/reg/2024/1623/oj/eng) | Articles 325e–325az (market-risk / SA) |
-| `PRA_UK_CRR` | UK CRR as applied by PRA | **Blocked:** no PRA-specific SBM table mapping in repo yet; needs source register entry before implementation |
+| `PRA_UK_CRR` | [PRA PS1/26 Appendix 1](https://www.bankofengland.co.uk/-/media/boe/files/prudential-regulation/policy-statement/2026/january/ps126app1.pdf), Market Risk: Advanced Standardised Approach (CRR) Part | Articles 325c-325ay are source-mapped. GIRR delta uses Articles 325c, 325h, and 325ae-325ag; remaining runtime cells still fail closed until exact-cell citations, reference data, and fixtures land. |
 
 U.S. NPR 2.0 material is **proposed-rule comparison only**; outputs must not be
 described as final regulatory capital.
@@ -82,7 +84,7 @@ Status labels match `REGULATORY_TRACEABILITY.md`:
 | **Implemented under audit** | Cited runtime path + synthetic fixture; `ValidationStatus.PENDING` |
 | **Unsupported fail-closed** | Explicit `UnsupportedRegulatoryFeatureError` or `SbmInputError` |
 | **Planned** | Issue-backed; source mapped; no capital yet |
-| **Blocked** | Cannot implement until regulatory source mapping is agreed |
+| **Blocked** | Cannot implement until prerequisite source or policy mapping is agreed |
 | **Out of scope** | Belongs outside `frtb-sbm` (e.g. SA composition in orchestration) |
 
 ### Profile × risk-class × measure (21 cells per profile)
@@ -92,19 +94,19 @@ Status labels match `REGULATORY_TRACEABILITY.md`:
 | `BASEL_MAR21` | 21 / 21 | 21 implemented under audit |
 | `US_NPR_2_0` | 1 / 21 | GIRR delta implemented under audit; 20 unsupported fail-closed |
 | `EU_CRR3` | 0 / 21 | 21 unsupported fail-closed |
-| `PRA_UK_CRR` | 0 / 21 | 21 unsupported fail-closed |
+| `PRA_UK_CRR` | 1 / 21 | GIRR delta implemented under audit; 20 unsupported fail-closed |
 
 Per-class detail for non-Basel profiles (all measures share the same status until a cell lands):
 
 | Risk class | `US_NPR_2_0` | `EU_CRR3` | `PRA_UK_CRR` |
 | --- | --- | --- | --- |
-| GIRR | Delta implemented under audit; vega/curvature unsupported fail-closed | Planned | Blocked |
-| FX | Planned | Planned | Blocked |
-| Equity | Planned | Planned | Blocked |
-| Commodity | Planned | Planned | Blocked |
-| CSR non-sec | Planned | Planned | Blocked |
-| CSR sec non-CTP | Planned | Planned | Blocked |
-| CSR sec CTP | Planned | Planned | Blocked |
+| GIRR | Delta implemented under audit; vega/curvature unsupported fail-closed | Planned | Delta implemented under audit; vega/curvature unsupported fail-closed |
+| FX | Planned | Planned | Planned after PS1/26 source map; runtime fail-closed |
+| Equity | Planned | Planned | Planned after PS1/26 source map; runtime fail-closed |
+| Commodity | Planned | Planned | Planned after PS1/26 source map; runtime fail-closed |
+| CSR non-sec | Planned | Planned | Planned after PS1/26 source map; runtime fail-closed |
+| CSR sec non-CTP | Planned | Planned | Planned after PS1/26 source map; runtime fail-closed |
+| CSR sec CTP | Planned | Planned | Planned after PS1/26 source map; runtime fail-closed |
 
 ### First implementation cell
 
@@ -171,7 +173,7 @@ flowchart TD
 | --- | --- |
 | `reference_data.py` | Add `US_NPR_*` bucket/weight/correlation tables; extend `PROFILE_*` dicts |
 | `regimes.py` | Move `US_NPR_2_0` from `UNSUPPORTED_PROFILE_REASONS` to `SUPPORTED_PROFILE_METADATA` when first cell ships; extend `PROFILE_SUPPORTED_MEASURES` incrementally |
-| `validation.py` | Extend `_PHASE1_SUPPORTED[US_NPR_2_0]` one cell at a time |
+| `validation/context.py` | Extend `_PHASE1_SUPPORTED[US_NPR_2_0]` one cell at a time |
 | `regulatory_sources.yml` | Add NPR table-level `section_hint` entries per implemented cell |
 | `REGULATORY_TRACEABILITY.md` | Expand non-Basel section from single profile row to 7×3 matrix |
 | `tests/fixtures/girr_delta_us_npr_v1/` | New fixture pack; leave `girr_delta_v1` untouched |
@@ -187,7 +189,7 @@ collisions:
 | `US_NPR_SBM_<section>_<table>` | `US_NPR_SBM_V_A_7_a_GIRR_RW` | U.S. SBM risk weights |
 | `basel_mar21_*` | (existing) | Basel only |
 | `EU_CRR3_ART_325*` | `EU_CRR3_ART_325r` | EU bucket/weight articles |
-| `PRA_UK_CRR_*` | TBD | Blocked until PRA mapping issue |
+| `PRA_UK_CRR_*` | `PRA_UK_CRR_ART_325*_...` | Use PS1/26 Appendix 1 / PRA2026/1 article ids; only GIRR delta is open today, and later cells remain fail-closed until exact-cell citations and fixtures land |
 
 ### Data flow for first slice
 
@@ -211,7 +213,7 @@ NPR-labelled** — never by reusing Basel profile id or silent alias.
 | **2** | NPR GIRR vega + curvature | Expand matrix rows |
 | **3** | NPR FX / equity / commodity / CSR (delta → vega → curvature per class) | Comparison-profile coverage |
 | **4** | `EU_CRR3` — start with GIRR delta after article mapping | EU comparison |
-| **5** | `PRA_UK_CRR` — blocked until PRA source register + mapping issue | UK comparison |
+| **5** | `PRA_UK_CRR` — source mapped to PS1/26 Appendix 1; implement one cell at a time after exact-cell citations and fixtures | UK comparison |
 
 Each phase is **one package PR** unless an ADR documents a cross-cutting
 regulatory definition change.
@@ -224,6 +226,12 @@ regulatory definition change.
 | Shared citation type moves to `frtb-common` | ADR (cross-package) |
 | Material numerical change to existing Basel fixture | ADR + explicit hash update in PR |
 | PRA UK diverges from EU CRR3 | Separate profile; do not alias |
+
+PRA mirroring policy: numerical identity with Basel MAR21 or EU CRR3 is not
+implementation evidence. Each PRA cell requires exact PRA2026/1 article
+citations, `PRA_UK_CRR` output identity, a PRA profile hash, and deterministic
+`*_pra_uk_crr_v1` fixture evidence. PRA effective-date metadata should use
+2027-01-01 for PS1/26 / PRA2026/1-derived runtime slices.
 
 ## Test strategy
 
@@ -245,7 +253,9 @@ regulatory definition change.
 
 ## Open questions / follow-up issues
 
-1. **PRA UK CRR** — Create mapping issue for PRA-consolidated SBM articles vs EU CRR3 divergence.
+1. **PRA UK CRR** — Implement the first source-mapped PRA cell only after
+   exact-cell citations, profile-owned reference data, and fixture evidence are
+   added; record PRA-vs-EU divergence in that PR.
 2. **NPR table transcription** — Confirm GIRR bucket/weight tables at 91 FR ~15037–15050 against legal review; synthetic fixtures until external vectors exist.
 3. **CRIF profile column** — Whether NPR runs require adapter profile hints in CRIF metadata (adapter-only; not kernel).
 4. **Equity repo under NPR** — Whether U.S. proposal treats repo delta/vega/curvature like Basel; until cited, remain fail-closed under NPR.

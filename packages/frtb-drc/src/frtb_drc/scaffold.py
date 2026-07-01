@@ -44,6 +44,7 @@ from frtb_drc.kernel.securitisation import (
     securitisation_non_ctp_context_input_hash,
     validate_securitisation_non_ctp_context,
 )
+from frtb_drc.org_scope import validate_scope_metadata
 from frtb_drc.regimes import (
     DrcRuleProfile,
     ensure_risk_class_supported,
@@ -56,8 +57,8 @@ PACKAGE_METADATA = CapitalComponentMetadata(
     package_name="frtb-drc",
     import_name="frtb_drc",
     component_name="Standardised Approach default risk charge",
-    implementation_status=ImplementationStatus.PARTIAL,
-    validation_status=ValidationStatus.PENDING,
+    implementation_status=ImplementationStatus.IMPLEMENTED,
+    validation_status=ValidationStatus.AVAILABLE,
 )
 
 
@@ -194,6 +195,7 @@ def calculate_drc_capital(
             securitisation_non_ctp_positions,
             context,
         ),
+        calculation_scope=context.calculation_scope,
     )
     result = replace(
         result,
@@ -221,6 +223,7 @@ def _validate_context(context: DrcCalculationContext) -> None:
         raise DrcInputError("profile_id must be non-empty")
     if context.citation_policy.strip() == "":
         raise DrcInputError("citation_policy must be non-empty")
+    validate_scope_metadata(context.calculation_scope, field="context.calculation_scope")
     validate_fx_rates(context)
     validate_securitisation_non_ctp_context(context)
     validate_ctp_context(context)

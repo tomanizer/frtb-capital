@@ -24,6 +24,7 @@ from frtb_sbm.data_models import (
     SbmSensitivity,
     SbmSourceLineage,
 )
+from frtb_sbm.org_scope import scope_at, scope_payload
 from frtb_sbm.reference_data import profile_reference_payload
 
 if TYPE_CHECKING:
@@ -218,6 +219,9 @@ def sensitivity_payload(sensitivity: SbmSensitivity) -> dict[str, object]:
     for field_name, value in optional_fields.items():
         if value is not None:
             payload[field_name] = value
+    org_scope = scope_payload(sensitivity.org_scope)
+    if org_scope is not None:
+        payload["org_scope"] = org_scope
     return payload
 
 
@@ -300,6 +304,9 @@ def sensitivity_payloads_from_batch(
             batch.down_shock_amounts,
             row_index,
         )
+        org_scope = scope_payload(scope_at(batch.org_scopes, row_index))
+        if org_scope is not None:
+            payload["org_scope"] = org_scope
         yield payload
 
 

@@ -12,7 +12,13 @@ from frtb_drc._validation_utils import require_text as _required_text
 from frtb_drc.data_models import DrcCalculationContext, DrcRiskClass
 from frtb_drc.fair_value_cap import validate_fair_value_cap_evidence
 from frtb_drc.fx import validate_fx_rates
-from frtb_drc.regimes import DrcRuleProfile, ensure_risk_class_supported
+from frtb_drc.org_scope import validate_scope_metadata
+from frtb_drc.regimes import (
+    EU_CRR3_PROFILE_ID,
+    PRA_UK_CRR_PROFILE_ID,
+    DrcRuleProfile,
+    ensure_risk_class_supported,
+)
 from frtb_drc.risk_weight_evidence import effective_risk_weights
 from frtb_drc.validation import (
     DrcInputError,
@@ -25,6 +31,9 @@ from frtb_drc.validation import (
 
 if TYPE_CHECKING:
     from frtb_drc.batch import DrcPositionBatch
+
+_COMPLETE_SEC_NON_CTP_EVIDENCE_PROFILES = {EU_CRR3_PROFILE_ID, PRA_UK_CRR_PROFILE_ID}
+_COMPLETE_CTP_EVIDENCE_PROFILES = {EU_CRR3_PROFILE_ID, PRA_UK_CRR_PROFILE_ID}
 
 
 def validate_batch_context(context: DrcCalculationContext) -> None:
@@ -47,6 +56,7 @@ def validate_batch_context(context: DrcCalculationContext) -> None:
         raise DrcInputError("citation_policy must be non-empty")
     if context.citation_policy.strip().lower() != "strict":
         raise DrcInputError(f"unsupported citation_policy: {context.citation_policy}")
+    validate_scope_metadata(context.calculation_scope, field="context.calculation_scope")
     validate_fx_rates(context)
     effective_risk_weights(context, risk_class=DrcRiskClass.SECURITISATION_NON_CTP)
     validate_fair_value_cap_evidence(
@@ -117,13 +127,13 @@ def validate_supported_batch_run(
             batch,
             context.securitisation_non_ctp_offset_groups,
             field_name="context.securitisation_non_ctp_offset_groups",
-            require_all=False,
+            require_all=context.profile_id in _COMPLETE_SEC_NON_CTP_EVIDENCE_PROFILES,
         )
         _validate_context_position_map(
             batch,
             context.securitisation_non_ctp_fair_value_cap_evidence,
             field_name="context.securitisation_non_ctp_fair_value_cap_evidence",
-            require_all=False,
+            require_all=context.profile_id in _COMPLETE_SEC_NON_CTP_EVIDENCE_PROFILES,
         )
     elif risk_class is DrcRiskClass.CORRELATION_TRADING_PORTFOLIO:
         risk_weights = effective_risk_weights(
@@ -139,7 +149,7 @@ def validate_supported_batch_run(
             batch,
             context.ctp_offset_groups,
             field_name="context.ctp_offset_groups",
-            require_all=False,
+            require_all=context.profile_id in _COMPLETE_CTP_EVIDENCE_PROFILES,
         )
 
 
@@ -242,6 +252,11 @@ def _validate_common_batch_fields(batch: DrcPositionBatch) -> None:
             raise DrcInputError(f"{field_name} values must be finite when present")
     if bool(np.any(~batch.lineage_present)):
         raise DrcInputError("lineage is required")
+    if batch.org_scopes is not None:
+        if len(batch.org_scopes) != batch.row_count:
+            raise DrcInputError("org_scopes length does not match position_ids")
+        for index, scope in enumerate(batch.org_scopes):
+            validate_scope_metadata(scope, field=f"org_scopes[{index}]")
     _raise_first_mismatch(
         batch.lineage_source_systems,
         "",

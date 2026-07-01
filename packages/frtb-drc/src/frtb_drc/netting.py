@@ -16,9 +16,11 @@ from frtb_drc.data_models import (
     NetJtd,
     RejectedOffset,
 )
+from frtb_drc.org_scope import single_scope_metadata, unique_scope_metadata
 from frtb_drc.regimes import (
     BASEL_MAR22_PROFILE_ID,
     EU_CRR3_PROFILE_ID,
+    PRA_UK_CRR_PROFILE_ID,
     US_NPR_2_0_PROFILE_ID,
     ensure_risk_class_supported,
     get_rule_profile,
@@ -28,6 +30,7 @@ from frtb_drc.validation import DrcInputError
 _US_NPR_NETTING_CITATION = "US_NPR_210_B_2"
 _BASEL_NETTING_CITATION = "BASEL_MAR22_19"
 _EU_CRR3_NETTING_CITATION = "EU_CRR3_ARTICLE_325X"
+_PRA_NETTING_CITATION = "PRA_DRC_ARTICLE_325X"
 
 _SENIORITY_RANK: dict[DrcSeniority, int] = {
     DrcSeniority.COVERED_BOND: 0,
@@ -303,6 +306,10 @@ def _net_record(
         position_ids=tuple(item.gross_jtd.position_id for item in source_items),
         scaled_jtd_ids=tuple(item.scaled_jtd.scaled_jtd_id for item in source_items),
         rejected_offsets=rejected_offsets,
+        org_scope=single_scope_metadata(item.gross_jtd.org_scope for item in source_items),
+        contributing_org_scopes=unique_scope_metadata(
+            item.gross_jtd.org_scope for item in source_items
+        ),
     )
 
 
@@ -354,4 +361,6 @@ def _netting_citation(profile_id: str) -> str:
         return _BASEL_NETTING_CITATION
     if profile_id == EU_CRR3_PROFILE_ID:
         return _EU_CRR3_NETTING_CITATION
+    if profile_id == PRA_UK_CRR_PROFILE_ID:
+        return _PRA_NETTING_CITATION
     return _US_NPR_NETTING_CITATION

@@ -8,6 +8,7 @@ from typing import cast
 
 import frtb_common.batch_arrays as _batch_arrays
 import numpy as np
+from frtb_common import CalculationScope
 
 from frtb_drc._batch_columns import BoolArray, FloatArray, ObjectArray
 from frtb_drc._batch_order import sorted_position_indices as _sorted_indices
@@ -149,6 +150,7 @@ class DrcPositionBatch:
     source_hash: str | None = None
     handoff_hash: str | None = None
     diagnostics: tuple[Mapping[str, object], ...] = ()
+    org_scopes: tuple[CalculationScope | None, ...] | None = None
 
     @property
     def row_count(self) -> int:
@@ -362,6 +364,7 @@ def calculate_drc_capital_from_batch(
         )
         if risk_class is DrcRiskClass.SECURITISATION_NON_CTP
         else (),
+        calculation_scope=context.calculation_scope,
     )
     result = replace(
         result,

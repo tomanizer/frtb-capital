@@ -6,9 +6,10 @@ securitisation non-CTP, and correlation trading portfolio (CTP). Mixed risk
 classes must be split into class-specific batches before calculation; batch
 entrypoints fail closed when incompatible classes are mixed.
 
-Outputs are not final regulatory capital. U.S. NPR 2.0 content is proposed-rule
-comparison material. Basel MAR22 profile support is paragraph-scoped and
-documented in [PROFILE_SUPPORT_MATRIX.md](PROFILE_SUPPORT_MATRIX.md).
+Outputs are not final regulatory capital. U.S. NPR 2.0, EU CRR3, and PRA UK
+CRR content is proposed-rule or comparison material. Basel MAR22, EU CRR3, and
+PRA UK CRR profile support is paragraph/article-scoped and documented in
+[PROFILE_SUPPORT_MATRIX.md](PROFILE_SUPPORT_MATRIX.md).
 
 ## Stable surface
 
@@ -29,6 +30,11 @@ Reference overlays are documented in
 [`docs/CLIENT_REFERENCE_DATA.md`](../../CLIENT_REFERENCE_DATA.md). The
 high-volume batch boundary is summarized in
 [`docs/performance/frtb-drc-arrow-batch-triage.md`](../../performance/frtb-drc-arrow-batch-triage.md).
+`DrcCalculationContext.calculation_scope`, `DrcPosition.org_scope`, and
+`DrcPositionBatch.org_scopes` preserve supplied organisation identifiers on
+DRC inputs, intermediates, net JTD records, and result envelopes so downstream
+result-store or orchestration layers can build hierarchy rollups. `frtb-drc`
+does not traverse enterprise hierarchy trees or apply rollup rules.
 Column and position batch builders physically live in
 `frtb_drc.adapters.positions`; `frtb_drc.batch` and the top-level `frtb_drc`
 module remain stable import paths for existing callers.
@@ -98,8 +104,8 @@ the total delta. `validate_drc_impact_reconciliation` verifies that invariant.
 | DRC class | Arrow spec | Normalizer | Builder | Context requirements |
 | --- | --- | --- | --- | --- |
 | Non-securitisation | `DRC_NONSEC_ARROW_COLUMN_SPECS` | `normalize_drc_nonsec_arrow_table` | `build_drc_nonsec_batch_from_arrow(..., profile_id=...)` | `DrcCalculationContext` with run id, calculation date, base currency, and profile id; builder `profile_id` must match the calculation context for non-default profiles; FX rates required for non-base-currency rows. |
-| Securitisation non-CTP | `DRC_SECURITISATION_NON_CTP_ARROW_COLUMN_SPECS` | `normalize_drc_securitisation_non_ctp_arrow_table` | `build_drc_securitisation_non_ctp_batch_from_arrow` | `US_NPR_2_0` accepts position-id keyed `securitisation_non_ctp_risk_weights` or typed evidence; `BASEL_MAR22` requires typed `DrcRiskWeightEvidence`. Fair-value cap and offset-group maps are used where supplied and profile-supported. |
-| CTP | `DRC_CTP_ARROW_COLUMN_SPECS` | `normalize_drc_ctp_arrow_table` | `build_drc_ctp_batch_from_arrow` | Position-id keyed `ctp_risk_weights`, `ctp_risk_weight_evidence`, and `ctp_offset_groups` where needed for offset treatment. |
+| Securitisation non-CTP | `DRC_SECURITISATION_NON_CTP_ARROW_COLUMN_SPECS` | `normalize_drc_securitisation_non_ctp_arrow_table` | `build_drc_securitisation_non_ctp_batch_from_arrow` | `US_NPR_2_0` accepts position-id keyed `securitisation_non_ctp_risk_weights` or typed evidence; Basel MAR22, EU CRR3, and PRA UK CRR require typed `DrcRiskWeightEvidence`. Fair-value cap and offset-group maps are required where profile mechanics use them. |
+| CTP | `DRC_CTP_ARROW_COLUMN_SPECS` | `normalize_drc_ctp_arrow_table` | `build_drc_ctp_batch_from_arrow` | Position-id keyed legacy maps remain for U.S. compatibility; Basel MAR22, EU CRR3, and PRA UK CRR require typed `ctp_risk_weight_evidence` and `ctp_offset_groups` where needed for replication/decomposition and offset treatment. |
 
 ## CRIF / Vendor Ingress
 

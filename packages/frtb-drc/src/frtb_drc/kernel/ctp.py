@@ -30,8 +30,11 @@ from frtb_drc.data_models import (
     RejectedOffset,
 )
 from frtb_drc.maturity import scale_gross_jtds
+from frtb_drc.org_scope import single_scope_metadata, unique_scope_metadata
 from frtb_drc.regimes import (
     BASEL_MAR22_PROFILE_ID,
+    EU_CRR3_PROFILE_ID,
+    PRA_UK_CRR_PROFILE_ID,
     US_NPR_2_0_PROFILE_ID,
     ensure_risk_class_supported,
     get_rule_profile,
@@ -61,6 +64,16 @@ _US_NPR_HBR_CITATIONS = ("US_NPR_210_D_3_IV",)
 _BASEL_HBR_CITATIONS = ("BASEL_MAR22_44",)
 _US_NPR_CATEGORY_CITATIONS = ("US_NPR_210_D_3_V",)
 _BASEL_CATEGORY_CITATIONS = ("BASEL_MAR22_45",)
+_EU_CRR3_GROSS_CITATIONS = ("EU_CRR3_ARTICLE_325AB",)
+_EU_CRR3_NETTING_CITATIONS = ("EU_CRR3_ARTICLE_325AC",)
+_EU_CRR3_BUCKET_CITATIONS = ("EU_CRR3_ARTICLE_325AD",)
+_EU_CRR3_HBR_CITATIONS = ("EU_CRR3_ARTICLE_325AD",)
+_EU_CRR3_CATEGORY_CITATIONS = ("EU_CRR3_ARTICLE_325AD",)
+_PRA_GROSS_CITATIONS = ("PRA_DRC_ARTICLE_325AB",)
+_PRA_NETTING_CITATIONS = ("PRA_DRC_ARTICLE_325AC",)
+_PRA_BUCKET_CITATIONS = ("PRA_DRC_ARTICLE_325AD",)
+_PRA_HBR_CITATIONS = ("PRA_DRC_ARTICLE_325AD",)
+_PRA_CATEGORY_CITATIONS = ("PRA_DRC_ARTICLE_325AD",)
 
 
 @dataclass(frozen=True)
@@ -215,6 +228,7 @@ def calculate_ctp_gross_jtd(
         pnl_component=0.0,
         gross_jtd=abs(position.market_value),
         citations=merge_citations((*_ctp_gross_citations(profile_id), *position.citation_ids)),
+        org_scope=position.org_scope,
     )
 
 
@@ -433,6 +447,13 @@ def _validate_ctp_context(
             "context.ctp_offset_groups contains unused CTP position ids: "
             + ", ".join(unused_offset_groups)
         )
+    if context.profile_id in {EU_CRR3_PROFILE_ID, PRA_UK_CRR_PROFILE_ID}:
+        missing_offset_groups = sorted(position_ids - set(context.ctp_offset_groups))
+        if missing_offset_groups:
+            raise DrcInputError(
+                f"context.ctp_offset_groups is required for {context.profile_id} CTP positions: "
+                + ", ".join(missing_offset_groups)
+            )
 
 
 def _ctp_capital_inputs(
@@ -618,6 +639,10 @@ def _net_ctp_group(
                 citations=_ctp_netting_citations(profile_id),
             ),
         ),
+        org_scope=single_scope_metadata(item.gross_jtd.org_scope for item in exposures),
+        contributing_org_scopes=unique_scope_metadata(
+            item.gross_jtd.org_scope for item in exposures
+        ),
     )
 
 
@@ -707,30 +732,50 @@ def _zero_ctp_category(*, profile_id: str = US_NPR_2_0_PROFILE_ID) -> CategoryDr
 def _ctp_gross_citations(profile_id: str) -> tuple[str, ...]:
     if profile_id == BASEL_MAR22_PROFILE_ID:
         return _BASEL_GROSS_CITATIONS
+    if profile_id == EU_CRR3_PROFILE_ID:
+        return _EU_CRR3_GROSS_CITATIONS
+    if profile_id == PRA_UK_CRR_PROFILE_ID:
+        return _PRA_GROSS_CITATIONS
     return _US_NPR_GROSS_CITATIONS
 
 
 def _ctp_netting_citations(profile_id: str) -> tuple[str, ...]:
     if profile_id == BASEL_MAR22_PROFILE_ID:
         return _BASEL_NETTING_CITATIONS
+    if profile_id == EU_CRR3_PROFILE_ID:
+        return _EU_CRR3_NETTING_CITATIONS
+    if profile_id == PRA_UK_CRR_PROFILE_ID:
+        return _PRA_NETTING_CITATIONS
     return _US_NPR_NETTING_CITATIONS
 
 
 def _ctp_bucket_citations(profile_id: str) -> tuple[str, ...]:
     if profile_id == BASEL_MAR22_PROFILE_ID:
         return _BASEL_BUCKET_CITATIONS
+    if profile_id == EU_CRR3_PROFILE_ID:
+        return _EU_CRR3_BUCKET_CITATIONS
+    if profile_id == PRA_UK_CRR_PROFILE_ID:
+        return _PRA_BUCKET_CITATIONS
     return _US_NPR_BUCKET_CITATIONS
 
 
 def _ctp_hbr_citations(profile_id: str) -> tuple[str, ...]:
     if profile_id == BASEL_MAR22_PROFILE_ID:
         return _BASEL_HBR_CITATIONS
+    if profile_id == EU_CRR3_PROFILE_ID:
+        return _EU_CRR3_HBR_CITATIONS
+    if profile_id == PRA_UK_CRR_PROFILE_ID:
+        return _PRA_HBR_CITATIONS
     return _US_NPR_HBR_CITATIONS
 
 
 def _ctp_category_citations(profile_id: str) -> tuple[str, ...]:
     if profile_id == BASEL_MAR22_PROFILE_ID:
         return _BASEL_CATEGORY_CITATIONS
+    if profile_id == EU_CRR3_PROFILE_ID:
+        return _EU_CRR3_CATEGORY_CITATIONS
+    if profile_id == PRA_UK_CRR_PROFILE_ID:
+        return _PRA_CATEGORY_CITATIONS
     return _US_NPR_CATEGORY_CITATIONS
 
 

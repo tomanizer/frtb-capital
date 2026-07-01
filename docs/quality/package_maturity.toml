@@ -89,7 +89,7 @@ package = "frtb-drc"
 import_name = "frtb_drc"
 path = "packages/frtb-drc"
 module_docs = "docs/modules/frtb-drc"
-maturity = "partial_runtime"
+maturity = "implemented"
 component_type = "capital"
 metadata_object = "frtb_drc:PACKAGE_METADATA"
 calculation_entrypoint = "frtb_drc:calculate_drc_capital"
@@ -102,6 +102,30 @@ path = "packages/frtb-drc/tests/test_drc_public_api.py"
 [[packages.required_tests]]
 id = "unsupported-runtime-paths"
 path = "packages/frtb-drc/tests/test_drc_public_api.py"
+
+[[packages.required_tests]]
+id = "support-matrix"
+path = "packages/frtb-drc/tests/test_drc_regimes.py"
+
+[[packages.required_tests]]
+id = "arrow-batch-parity"
+path = "packages/frtb-drc/tests/test_drc_arrow_batch.py"
+
+[[packages.required_tests]]
+id = "reference-data-citations"
+path = "packages/frtb-drc/tests/test_drc_reference_data.py"
+
+[[packages.required_tests]]
+id = "securitisation-fixtures"
+path = "packages/frtb-drc/tests/test_drc_securitisation.py"
+
+[[packages.required_tests]]
+id = "ctp-fixtures"
+path = "packages/frtb-drc/tests/test_drc_ctp.py"
+
+[[packages.required_tests]]
+id = "pra-nonsec-fixture"
+path = "packages/frtb-drc/tests/test_drc_pra_nonsec_fixture.py"
 
 [[packages.required_tests]]
 id = "attribution"
@@ -238,6 +262,7 @@ component_type = "capital"
 metadata_object = "frtb_sbm:PACKAGE_METADATA"
 calculation_entrypoint = "frtb_sbm:calculate_sbm_capital"
 attribution_status = "shared_projection"
+notes = "Basel MAR21 has 21/21 cells implemented under audit; US_NPR_2_0 and PRA_UK_CRR have GIRR delta only; EU_CRR3 fails closed. PRA_UK_CRR GIRR delta is source-mapped to PRA PS1/26 Appendix 1 / PRA2026/1 and fixture-backed by girr_delta_pra_uk_crr_v1. See ADR 0048 and packages/frtb-sbm/docs/REGULATORY_TRACEABILITY.md."
 
 [[packages.required_tests]]
 id = "public-api"
@@ -249,6 +274,10 @@ path = "packages/frtb-sbm/tests/test_sbm_unsupported_features.py"
 
 [[packages.required_tests]]
 id = "support-matrix"
+path = "packages/frtb-sbm/tests/test_sbm_support_matrix.py"
+
+[[packages.required_tests]]
+id = "comparison-profile-matrix"
 path = "packages/frtb-sbm/tests/test_sbm_support_matrix.py"
 
 [[packages.required_tests]]

@@ -24,6 +24,7 @@ from frtb_drc.netting import NettingInput, calculate_net_jtds
 from frtb_drc.regimes import (
     BASEL_MAR22_PROFILE_ID,
     EU_CRR3_PROFILE_ID,
+    PRA_UK_CRR_PROFILE_ID,
     US_NPR_2_0_PROFILE_ID,
     ensure_risk_class_supported,
     get_rule_profile,
@@ -33,9 +34,11 @@ from frtb_drc.validation import DrcInputError
 _US_NPR_ZERO_CATEGORY_CITATION = "US_NPR_210_B_3_III"
 _BASEL_ZERO_CATEGORY_CITATION = "BASEL_MAR22_26"
 _EU_CRR3_ZERO_CATEGORY_CITATION = "EU_CRR3_ARTICLE_325Y_3_5"
+_PRA_ZERO_CATEGORY_CITATION = "PRA_DRC_ARTICLE_325Y"
 _US_NPR_NONSEC_NETTING_CITATION = "US_NPR_210_B_2"
 _BASEL_NONSEC_NETTING_CITATION = "BASEL_MAR22_19"
 _EU_CRR3_NONSEC_NETTING_CITATION = "EU_CRR3_ARTICLE_325X"
+_PRA_NONSEC_NETTING_CITATION = "PRA_DRC_ARTICLE_325X"
 
 
 @dataclass(frozen=True)
@@ -124,6 +127,8 @@ def nonsec_netting_citation(profile_id: str) -> str:
         return _BASEL_NONSEC_NETTING_CITATION
     if profile_id == EU_CRR3_PROFILE_ID:
         return _EU_CRR3_NONSEC_NETTING_CITATION
+    if profile_id == PRA_UK_CRR_PROFILE_ID:
+        return _PRA_NONSEC_NETTING_CITATION
     return _US_NPR_NONSEC_NETTING_CITATION
 
 
@@ -198,6 +203,8 @@ def _zero_nonsec_category_citation(profile_id: str) -> str:
         return _BASEL_ZERO_CATEGORY_CITATION
     if profile_id == EU_CRR3_PROFILE_ID:
         return _EU_CRR3_ZERO_CATEGORY_CITATION
+    if profile_id == PRA_UK_CRR_PROFILE_ID:
+        return _PRA_ZERO_CATEGORY_CITATION
     return _US_NPR_ZERO_CATEGORY_CITATION
 
 

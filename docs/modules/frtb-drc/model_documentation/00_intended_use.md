@@ -46,14 +46,26 @@ Supported profile coverage is:
   typed MAR22.42 banking-book securitisation risk-weight evidence.
 - `EU_CRR3`: non-securitisation row and batch paths using Article 325w
   gross JTD/LGD, Article 325x netting and maturity weighting, Article 325y
-  bucket/risk-weight/HBR/category mechanics, and ECAI/CQS mapping evidence.
+  bucket/risk-weight/HBR/category mechanics, and ECAI/CQS mapping evidence;
+  securitisation non-CTP row and batch paths using Article 325z, Article
+  325aa, typed banking-book securitisation risk-weight evidence,
+  fair-value-cap evidence, and explicit offset-group evidence; CTP row and
+  batch paths using Article 325ab, Article 325ac, Article 325ad, typed
+  banking-book securitisation risk-weight evidence, decomposition evidence, and
+  explicit offset-group evidence.
+- PRA UK CRR non-securitisation row and batch paths using Article 325w,
+  Article 325x, Article 325y, and deterministic fixture evidence.
+- PRA UK CRR securitisation non-CTP row and batch paths using Article 325z,
+  Article 325aa, typed risk-weight, fair-value-cap, offset, and deterministic
+  fixture evidence.
+- PRA UK CRR CTP row and batch paths using Article 325ab, Article 325ac,
+  Article 325ad, typed risk-weight, decomposition, offset, and deterministic
+  fixture evidence.
 
-Known fail-closed profile paths are:
+Known fail-closed profile paths for the current rule-profile matrix are:
 
-- `EU_CRR3` securitisation non-CTP and CTP, pending Articles 325z-325ad and
-  related securitisation/CTP mappings.
-- `PRA_UK_CRR` for all DRC risk classes, pending PRA PS1/26 Chapter 3 and
-  Appendix 1 rulebook paragraph mappings.
+- None for the known DRC rule profiles listed in
+  [`PROFILE_SUPPORT_MATRIX.md`](../PROFILE_SUPPORT_MATRIX.md).
 
 Regulatory anchors for the supported path are recorded in
 [`REGULATORY_REQUIREMENTS.md`](../REGULATORY_REQUIREMENTS.md) and

@@ -9,7 +9,7 @@ from enum import StrEnum
 from types import MappingProxyType
 from typing import TypeVar
 
-from frtb_common import dataclass_as_dict
+from frtb_common import CalculationScope, dataclass_as_dict
 from frtb_common.attribution import CapitalContribution
 
 
@@ -234,7 +234,11 @@ class DrcFairValueCapEvidence(_DrcAsDictMixin):
 
 @dataclass(frozen=True)
 class DrcCalculationContext(_DrcAsDictMixin):
-    """Run-scoped calculation metadata supplied to the public API."""
+    """Run-scoped calculation metadata supplied to the public API.
+
+    ``calculation_scope`` is preserved for downstream hierarchy rollups. DRC
+    does not traverse enterprise organisation trees.
+    """
 
     run_id: str
     calculation_date: date
@@ -255,6 +259,7 @@ class DrcCalculationContext(_DrcAsDictMixin):
     ctp_risk_weights: Mapping[str, float] = field(default_factory=dict)
     ctp_risk_weight_evidence: Mapping[str, DrcRiskWeightEvidence] = field(default_factory=dict)
     ctp_offset_groups: Mapping[str, str] = field(default_factory=dict)
+    calculation_scope: CalculationScope | None = None
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "fx_rates", MappingProxyType(dict(self.fx_rates)))
@@ -317,7 +322,11 @@ class BranchMetadata(_DrcAsDictMixin):
 
 @dataclass(frozen=True)
 class DrcPosition(_DrcAsDictMixin):
-    """Canonical default-risk exposure before calculation."""
+    """Canonical default-risk exposure before calculation.
+
+    ``org_scope`` carries optional upstream organisation identifiers for audit
+    and result-store drilldown. Missing metadata remains explicit as ``None``.
+    """
 
     position_id: str
     source_row_id: str
@@ -344,6 +353,7 @@ class DrcPosition(_DrcAsDictMixin):
     is_covered_bond: bool = False
     lineage: DrcSourceLineage | None = None
     citation_ids: tuple[str, ...] = ()
+    org_scope: CalculationScope | None = None
 
     def __post_init__(self) -> None:
         object.__setattr__(
@@ -393,6 +403,7 @@ class GrossJtd(_DrcAsDictMixin):
     gross_jtd: float
     citations: tuple[str, ...]
     branch_metadata: tuple[BranchMetadata, ...] = ()
+    org_scope: CalculationScope | None = None
 
     def __post_init__(self) -> None:
         object.__setattr__(
@@ -423,6 +434,7 @@ class MaturityScaledJtd(_DrcAsDictMixin):
     floor_applied: bool
     citations: tuple[str, ...]
     branch_metadata: tuple[BranchMetadata, ...] = ()
+    org_scope: CalculationScope | None = None
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "citations", tuple(self.citations))
@@ -463,6 +475,8 @@ class NetJtd(_DrcAsDictMixin):
     scaled_jtd_ids: tuple[str, ...]
     rejected_offsets: tuple[RejectedOffset, ...] = ()
     branch_metadata: tuple[BranchMetadata, ...] = ()
+    org_scope: CalculationScope | None = None
+    contributing_org_scopes: tuple[CalculationScope, ...] = ()
 
     def __post_init__(self) -> None:
         object.__setattr__(
@@ -479,6 +493,7 @@ class NetJtd(_DrcAsDictMixin):
         object.__setattr__(self, "scaled_jtd_ids", tuple(self.scaled_jtd_ids))
         object.__setattr__(self, "rejected_offsets", tuple(self.rejected_offsets))
         object.__setattr__(self, "branch_metadata", tuple(self.branch_metadata))
+        object.__setattr__(self, "contributing_org_scopes", tuple(self.contributing_org_scopes))
 
 
 @dataclass(frozen=True)
@@ -577,6 +592,7 @@ class DrcCapitalResult(_DrcAsDictMixin):
     risk_weight_evidence: tuple[DrcRiskWeightEvidence, ...] = ()
     fair_value_cap_evidence: tuple[DrcFairValueCapEvidence, ...] = ()
     attribution_records: tuple[CapitalContribution, ...] = ()
+    calculation_scope: CalculationScope | None = None
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "categories", tuple(self.categories))
