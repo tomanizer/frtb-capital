@@ -10,8 +10,10 @@ from __future__ import annotations
 from frtb_sbm.commodity_reference_data import (
     commodity_bucket_definition,
     commodity_buckets_for_profile,
+    commodity_delta_intra_bucket_citation_ids,
     commodity_delta_intra_bucket_correlation,
     commodity_delta_risk_weight,
+    commodity_inter_bucket_citation_ids,
     commodity_inter_bucket_correlation,
 )
 from frtb_sbm.csr_nonsec_reference_data import (
@@ -27,8 +29,10 @@ from frtb_sbm.curvature_reference_data import curvature_citation_ids, curvature_
 from frtb_sbm.equity_reference_data import (
     equity_bucket_definition,
     equity_buckets_for_profile,
+    equity_delta_intra_bucket_citation_ids,
     equity_delta_intra_bucket_correlation,
     equity_delta_risk_weight,
+    equity_inter_bucket_citation_ids,
     equity_inter_bucket_correlation,
 )
 from frtb_sbm.fx_reference_data import (
@@ -140,8 +144,10 @@ __all__ = [
     "citations_for_profile",
     "commodity_bucket_definition",
     "commodity_buckets_for_profile",
+    "commodity_delta_intra_bucket_citation_ids",
     "commodity_delta_intra_bucket_correlation",
     "commodity_delta_risk_weight",
+    "commodity_inter_bucket_citation_ids",
     "commodity_inter_bucket_correlation",
     "correlation_scenario_definition",
     "correlation_scenarios_for_profile",
@@ -156,8 +162,10 @@ __all__ = [
     "curvature_risk_weight",
     "equity_bucket_definition",
     "equity_buckets_for_profile",
+    "equity_delta_intra_bucket_citation_ids",
     "equity_delta_intra_bucket_correlation",
     "equity_delta_risk_weight",
+    "equity_inter_bucket_citation_ids",
     "equity_inter_bucket_correlation",
     "fx_bucket_definition",
     "fx_buckets_for_profile",

@@ -106,11 +106,11 @@ and
 
 | Profile | Current runtime status | Planning status |
 | --- | --- | --- |
-| `US_NPR_2_0` | partial (6 / 21 cells) | GIRR delta, vega, curvature, and FX delta, vega, and curvature implemented under audit; all other cells unsupported fail-closed. Proposed-rule material only. |
+| `US_NPR_2_0` | partial (8 / 21 cells) | GIRR delta, vega, curvature; FX delta, vega, curvature; and equity and commodity delta implemented under audit; all other cells unsupported fail-closed. Proposed-rule material only. |
 | `EU_CRR3` | unsupported fail-closed (0 / 21 cells) | planned after article-level mapping (Regulation (EU) 2024/1623, Arts. 325e-325az). |
 | `PRA_UK_CRR` | partial (1 / 21 cells) | source-mapped under SBM-NBP-020; `PRA_UK_CRR` GIRR delta implemented under audit with PRA PS1/26 Appendix 1 / PRA2026/1 Articles 325c, 325h, and 325ae-325ag citations; all other PRA cells unsupported fail-closed. |
 
-Except for `US_NPR_2_0` GIRR delta, GIRR vega, GIRR curvature, FX delta, FX vega, FX curvature, and
+Except for `US_NPR_2_0` GIRR delta, GIRR vega, GIRR curvature, FX delta, FX vega, FX curvature, equity delta, commodity delta, and
 `PRA_UK_CRR` GIRR delta, every risk-class and measure combination for non-Basel
 profiles remains unsupported fail-closed. Basel MAR21 sub-features that are
 unsupported within `BASEL_MAR21` (for example equity repo vega/curvature) are
@@ -121,8 +121,9 @@ documented in the BASEL matrix above, not as non-Basel backlog.
 `US_NPR_2_0` GIRR delta is fixture-backed by `girr_delta_us_npr_v1`; GIRR vega
 is fixture-backed by `girr_vega_us_npr_v1`; GIRR curvature is fixture-backed by
 `girr_curvature_us_npr_v1`; FX delta, vega, and curvature are fixture-backed by
-`fx_delta_us_npr_v1`, `fx_vega_us_npr_v1`, and `fx_curvature_us_npr_v1`.
-All six carry U.S. NPR profile-owned citation ids.
+`fx_delta_us_npr_v1`, `fx_vega_us_npr_v1`, and `fx_curvature_us_npr_v1`; and
+equity and commodity delta are fixture-backed by `equity_delta_us_npr_v1` and
+`commodity_delta_us_npr_v1`. All eight carry U.S. NPR profile-owned citation ids.
 `PRA_UK_CRR` GIRR delta is fixture-backed by `girr_delta_pra_uk_crr_v1` and
 carries PRA-owned citation ids. All other entries in this table fail closed
 before capital is emitted. For FX, the `US_NPR_2_0` policy is
@@ -135,8 +136,8 @@ translation-risk evidence are implemented.
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | GIRR | implemented under audit | implemented under audit | implemented under audit | unsupported fail-closed | unsupported fail-closed | unsupported fail-closed | implemented under audit | unsupported fail-closed | unsupported fail-closed |
 | FX | implemented under audit | implemented under audit | implemented under audit | unsupported fail-closed | unsupported fail-closed | unsupported fail-closed | unsupported fail-closed | unsupported fail-closed | unsupported fail-closed |
-| Equity | unsupported fail-closed | unsupported fail-closed | unsupported fail-closed | unsupported fail-closed | unsupported fail-closed | unsupported fail-closed | unsupported fail-closed | unsupported fail-closed | unsupported fail-closed |
-| Commodity | unsupported fail-closed | unsupported fail-closed | unsupported fail-closed | unsupported fail-closed | unsupported fail-closed | unsupported fail-closed | unsupported fail-closed | unsupported fail-closed | unsupported fail-closed |
+| Equity | implemented under audit | unsupported fail-closed | unsupported fail-closed | unsupported fail-closed | unsupported fail-closed | unsupported fail-closed | unsupported fail-closed | unsupported fail-closed | unsupported fail-closed |
+| Commodity | implemented under audit | unsupported fail-closed | unsupported fail-closed | unsupported fail-closed | unsupported fail-closed | unsupported fail-closed | unsupported fail-closed | unsupported fail-closed | unsupported fail-closed |
 | CSR non-securitisation | unsupported fail-closed | unsupported fail-closed | unsupported fail-closed | unsupported fail-closed | unsupported fail-closed | unsupported fail-closed | unsupported fail-closed | unsupported fail-closed | unsupported fail-closed |
 | CSR securitisation non-CTP | unsupported fail-closed | unsupported fail-closed | unsupported fail-closed | unsupported fail-closed | unsupported fail-closed | unsupported fail-closed | unsupported fail-closed | unsupported fail-closed | unsupported fail-closed |
 | CSR securitisation CTP | unsupported fail-closed | unsupported fail-closed | unsupported fail-closed | unsupported fail-closed | unsupported fail-closed | unsupported fail-closed | unsupported fail-closed | unsupported fail-closed | unsupported fail-closed |
@@ -157,7 +158,7 @@ translation-risk evidence are implemented.
 | Source family | Primary references used by this package | Package status |
 | --- | --- | --- |
 | Basel Standardised Approach | Basel Framework MAR20 and MAR21. MAR20.4 places SBM in the SA stack. MAR21.1-MAR21.101 define risk classes, measures, weights, buckets, and aggregation. | Implemented for supported phase-1 Basel slices. |
-| U.S. NPR 2.0 | Federal Register 91 FR 14952, March 27, 2026. Section V.A.7.a defines the standardized non-default process. | Partial comparison profile: GIRR delta, vega, curvature, and FX delta, vega, curvature implemented under audit; proposed-rule material only. |
+| U.S. NPR 2.0 | Federal Register 91 FR 14952, March 27, 2026. Section V.A.7.a defines the standardized non-default process. | Partial comparison profile: GIRR delta, vega, curvature; FX delta, vega, curvature; and equity and commodity delta implemented under audit; proposed-rule material only. |
 | EU CRR3 | Regulation (EU) 2024/1623 Articles 325e-325az. | Planned comparison profile; EU CRR3 runtime cells fail closed until article-level mappings and deterministic fixtures are added. |
 | PRA UK CRR | PRA PS1/26 Appendix 1 / PRA2026/1, Market Risk: Advanced Standardised Approach (CRR) Part, Articles 325c-325ay. | Partial comparison profile: GIRR delta implemented under audit with PRA-owned citations and `girr_delta_pra_uk_crr_v1`; all other PRA UK CRR runtime cells fail closed until exact-cell citations, profile-owned reference data, and fixtures are added. |
 | ISDA CRIF | CRIF field convention. | Adapter inspiration only; not a regulatory source. |

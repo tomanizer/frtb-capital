@@ -182,6 +182,72 @@ US_NPR_2_0_CITATIONS: dict[str, SbmCitation] = {
             "explicit translation-risk evidence before runtime support can open."
         ),
     ),
+    "us_npr_91_fr_14952_va7a_equity_delta_factors": SbmCitation(
+        source_id="us_npr_2_0_91_fr_14952",
+        location="91 FR 15267, section ll.225(b)(4)(ii)",
+        url=US_NPR_2_0_URL,
+        note="Equity delta spot-price risk-factor definition for the NPR comparison slice.",
+    ),
+    "us_npr_91_fr_14952_va7a_equity_delta_buckets": SbmCitation(
+        source_id="us_npr_2_0_91_fr_14952",
+        location="91 FR 15228, Table 8 to section ll.209",
+        url=US_NPR_2_0_URL,
+        note="Equity delta buckets by market cap, economy, sector, and index treatment.",
+    ),
+    "us_npr_91_fr_14952_va7a_equity_delta_weights": SbmCitation(
+        source_id="us_npr_2_0_91_fr_14952",
+        location="91 FR 15228, Table 8 to section ll.209",
+        url=US_NPR_2_0_URL,
+        note="Equity delta spot and repo risk weights.",
+    ),
+    "us_npr_91_fr_14952_va7a_equity_delta_intra": SbmCitation(
+        source_id="us_npr_2_0_91_fr_14952",
+        location="91 FR 15228-15230, section ll.209(a)(5)(iii)",
+        url=US_NPR_2_0_URL,
+        note="Equity delta same-bucket spot, repo, issuer, and index correlation treatment.",
+    ),
+    "us_npr_91_fr_14952_va7a_equity_delta_other_sector": SbmCitation(
+        source_id="us_npr_2_0_91_fr_14952",
+        location="91 FR 15230, section ll.209(a)(5)(iii)",
+        url=US_NPR_2_0_URL,
+        note="Equity bucket 11 other-sector absolute-weight aggregation treatment.",
+    ),
+    "us_npr_91_fr_14952_va7a_equity_delta_inter": SbmCitation(
+        source_id="us_npr_2_0_91_fr_14952",
+        location="91 FR 15230, section ll.209(a)(5)(iv)",
+        url=US_NPR_2_0_URL,
+        note="Equity delta cross-bucket correlation treatment.",
+    ),
+    "us_npr_91_fr_14952_va7a_commodity_delta_factors": SbmCitation(
+        source_id="us_npr_2_0_91_fr_14952",
+        location="91 FR 15267-15268, section ll.225(b)(6)(ii)",
+        url=US_NPR_2_0_URL,
+        note="Commodity delta spot-price risk-factor definition for the NPR comparison slice.",
+    ),
+    "us_npr_91_fr_14952_va7a_commodity_delta_buckets": SbmCitation(
+        source_id="us_npr_2_0_91_fr_14952",
+        location="91 FR 15230, Table 9 to section ll.209",
+        url=US_NPR_2_0_URL,
+        note="Commodity delta buckets, including the commodity-index bucket.",
+    ),
+    "us_npr_91_fr_14952_va7a_commodity_delta_weights": SbmCitation(
+        source_id="us_npr_2_0_91_fr_14952",
+        location="91 FR 15230, Table 9 to section ll.209",
+        url=US_NPR_2_0_URL,
+        note="Commodity delta risk weights.",
+    ),
+    "us_npr_91_fr_14952_va7a_commodity_delta_intra": SbmCitation(
+        source_id="us_npr_2_0_91_fr_14952",
+        location="91 FR 15231, Table 10 to section ll.209",
+        url=US_NPR_2_0_URL,
+        note="Commodity delta intra-bucket commodity, tenor, and basis correlation treatment.",
+    ),
+    "us_npr_91_fr_14952_va7a_commodity_delta_inter": SbmCitation(
+        source_id="us_npr_2_0_91_fr_14952",
+        location="91 FR 15231, section ll.209(a)(6)(iv)",
+        url=US_NPR_2_0_URL,
+        note="Commodity delta cross-bucket correlation treatment, including bucket 12.",
+    ),
     "us_npr_91_fr_14952_va7a_girr_special_factors": SbmCitation(
         source_id="us_npr_2_0_91_fr_14952",
         location="91 FR 15020, section V.A.7.a",

@@ -1,17 +1,18 @@
 [
   {
-    "case_id": "npr-equity-delta-unsupported",
+    "case_id": "npr-equity-vega-unsupported",
     "expected_error_match": "US_NPR_2_0",
     "sensitivity": {
-      "sensitivity_id": "us-npr-equity-delta-unsupported",
+      "sensitivity_id": "us-npr-equity-vega-unsupported",
       "source_row_id": "row-invalid-001",
       "desk_id": "equity-desk",
       "legal_entity": "LE-001",
       "risk_class": "EQUITY",
-      "risk_measure": "DELTA",
+      "risk_measure": "VEGA",
       "bucket": "1",
       "risk_factor": "SPOT",
       "qualifier": "Issuer A",
+      "option_tenor": "1y",
       "amount": 100000.0,
       "amount_currency": "USD",
       "sign_convention": "RECEIVE"

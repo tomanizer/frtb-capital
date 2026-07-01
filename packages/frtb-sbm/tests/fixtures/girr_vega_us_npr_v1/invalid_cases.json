@@ -21,20 +21,22 @@
     }
   },
   {
-    "case_id": "npr-equity-delta-unsupported",
+    "case_id": "npr-equity-curvature-unsupported",
     "expected_error_match": "US_NPR_2_0",
     "sensitivity": {
-      "sensitivity_id": "us-npr-equity-delta-unsupported",
+      "sensitivity_id": "us-npr-equity-curvature-unsupported",
       "source_row_id": "row-invalid-202",
       "desk_id": "equity-desk",
       "legal_entity": "LE-001",
       "risk_class": "EQUITY",
-      "risk_measure": "DELTA",
+      "risk_measure": "CURVATURE",
       "bucket": "1",
       "risk_factor": "SPOT",
       "qualifier": "Issuer A",
       "amount": 100000.0,
       "amount_currency": "USD",
+      "up_shock_amount": 100000.0,
+      "down_shock_amount": -100000.0,
       "sign_convention": "RECEIVE"
     }
   },

@@ -45,7 +45,7 @@ def test_unknown_profile_fails_closed() -> None:
 @pytest.mark.parametrize(
     ("risk_class", "risk_measure"),
     [
-        (SbmRiskClass.EQUITY, SbmRiskMeasure.DELTA),
+        (SbmRiskClass.EQUITY, SbmRiskMeasure.VEGA),
         (SbmRiskClass.COMMODITY, SbmRiskMeasure.CURVATURE),
         (SbmRiskClass.CSR_NONSEC, SbmRiskMeasure.DELTA),
     ],
@@ -73,10 +73,12 @@ def test_ensure_sbm_run_supported_rejects_scope_mismatch() -> None:
 def test_ensure_sbm_capital_paths_supported_rejects_unsupported_npr_cell() -> None:
     sensitivity = sample_sensitivity(
         risk_class=SbmRiskClass.COMMODITY,
-        risk_measure=SbmRiskMeasure.DELTA,
+        risk_measure=SbmRiskMeasure.CURVATURE,
         bucket="1",
         risk_factor="Coal",
         tenor=None,
+        up_shock_amount=10.0,
+        down_shock_amount=-5.0,
     )
     with pytest.raises(UnsupportedRegulatoryFeatureError, match="US_NPR_2_0"):
         ensure_sbm_capital_paths_supported(

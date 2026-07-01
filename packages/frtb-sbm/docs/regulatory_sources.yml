@@ -48,7 +48,7 @@ sources:
     jurisdiction: US
     title: "Federal Register 91 FR 14952, Regulatory Capital Rule market-risk proposal"
     url: "https://www.govinfo.gov/app/details/FR-2026-03-27/2026-05959"
-    section_hint: "Section V.A.7.a describes the standardized non-default capital requirement; the current implementation uses profile-owned GIRR delta, vega, curvature, and FX delta, vega, curvature bucket, tenor, shock, weight, correlation, and scenario citation ids for the US_NPR_2_0 comparison slice. FX uses reporting-currency treatment; prior-supervisory-approval base-currency treatment remains fail-closed."
+    section_hint: "Section V.A.7.a describes the standardized non-default capital requirement; the current implementation uses profile-owned GIRR delta, vega, curvature; FX delta, vega, curvature; and equity and commodity delta bucket, tenor, shock, weight, correlation, and scenario citation ids for the US_NPR_2_0 comparison slice. FX uses reporting-currency treatment; prior-supervisory-approval base-currency treatment remains fail-closed."
     status: proposed_rule_reference
     reuse_note: "GovInfo is the primary U.S. NPR source link for this package. Outputs are proposed-rule comparison material only."
     module_paths:

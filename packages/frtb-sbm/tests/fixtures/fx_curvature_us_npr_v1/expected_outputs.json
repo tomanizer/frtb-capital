@@ -1,208 +1,21 @@
 {
-  "buckets": [
-    [
-      {
-        "bucket_id": "EUR",
-        "citation_ids": [
-          "us_npr_91_fr_14952_va7a_sbm_scope",
-          "us_npr_91_fr_14952_va7a_fx_curvature_intra",
-          "us_npr_91_fr_14952_va7a_fx_delta_intra"
-        ],
-        "kb": 70000.0,
-        "sb": 70000.0
-      },
-      {
-        "bucket_id": "GBP",
-        "citation_ids": [
-          "us_npr_91_fr_14952_va7a_sbm_scope",
-          "us_npr_91_fr_14952_va7a_fx_curvature_intra",
-          "us_npr_91_fr_14952_va7a_fx_delta_intra"
-        ],
-        "kb": 90000.0,
-        "sb": 90000.0
-      },
-      {
-        "bucket_id": "MYR",
-        "citation_ids": [
-          "us_npr_91_fr_14952_va7a_sbm_scope",
-          "us_npr_91_fr_14952_va7a_fx_curvature_intra",
-          "us_npr_91_fr_14952_va7a_fx_delta_intra"
-        ],
-        "kb": 0.0,
-        "sb": -20000.0
-      }
-    ]
-  ],
-  "curvature_branches": [
-    {
-      "citation_ids": [
-        "us_npr_91_fr_14952_va7a_fx_curvature_factors",
-        "us_npr_91_fr_14952_va7a_fx_curvature_shocks",
-        "us_npr_91_fr_14952_va7a_fx_curvature_intra",
-        "us_npr_91_fr_14952_va7a_fx_curvature_inter",
-        "us_npr_91_fr_14952_va7a_fx_curvature_scenarios"
-      ],
-      "down_shock_amount": -120000.0,
-      "selected_branch": "down",
-      "sensitivity_id": "us-npr-eur-fx-curv",
-      "up_shock_amount": 70000.0
-    },
-    {
-      "citation_ids": [
-        "us_npr_91_fr_14952_va7a_fx_curvature_factors",
-        "us_npr_91_fr_14952_va7a_fx_curvature_shocks",
-        "us_npr_91_fr_14952_va7a_fx_curvature_intra",
-        "us_npr_91_fr_14952_va7a_fx_curvature_inter",
-        "us_npr_91_fr_14952_va7a_fx_curvature_scenarios"
-      ],
-      "down_shock_amount": 90000.0,
-      "selected_branch": "up",
-      "sensitivity_id": "us-npr-gbp-fx-curv",
-      "up_shock_amount": -40000.0
-    },
-    {
-      "citation_ids": [
-        "us_npr_91_fr_14952_va7a_fx_curvature_factors",
-        "us_npr_91_fr_14952_va7a_fx_curvature_shocks",
-        "us_npr_91_fr_14952_va7a_fx_curvature_intra",
-        "us_npr_91_fr_14952_va7a_fx_curvature_inter",
-        "us_npr_91_fr_14952_va7a_fx_curvature_scenarios"
-      ],
-      "down_shock_amount": -60000.0,
-      "selected_branch": "down",
-      "sensitivity_id": "us-npr-myr-fx-curv",
-      "up_shock_amount": -20000.0
-    }
-  ],
-  "curvature_bucket_branches": [
-    {
-      "bucket_id": "EUR",
-      "citation_ids": [
-        "us_npr_91_fr_14952_va7a_sbm_scope",
-        "us_npr_91_fr_14952_va7a_fx_curvature_intra",
-        "us_npr_91_fr_14952_va7a_fx_delta_intra"
-      ],
-      "rejected_branch": "down",
-      "rejected_bucket_capital": 0.0,
-      "scenario": "LOW",
-      "selected_branch": "up",
-      "selected_bucket_capital": 70000.0
-    },
-    {
-      "bucket_id": "GBP",
-      "citation_ids": [
-        "us_npr_91_fr_14952_va7a_sbm_scope",
-        "us_npr_91_fr_14952_va7a_fx_curvature_intra",
-        "us_npr_91_fr_14952_va7a_fx_delta_intra"
-      ],
-      "rejected_branch": "up",
-      "rejected_bucket_capital": 0.0,
-      "scenario": "LOW",
-      "selected_branch": "down",
-      "selected_bucket_capital": 90000.0
-    },
-    {
-      "bucket_id": "MYR",
-      "citation_ids": [
-        "us_npr_91_fr_14952_va7a_sbm_scope",
-        "us_npr_91_fr_14952_va7a_fx_curvature_intra",
-        "us_npr_91_fr_14952_va7a_fx_delta_intra"
-      ],
-      "rejected_branch": "down",
-      "rejected_bucket_capital": 0.0,
-      "scenario": "LOW",
-      "selected_branch": "up",
-      "selected_bucket_capital": 0.0
-    },
-    {
-      "bucket_id": "EUR",
-      "citation_ids": [
-        "us_npr_91_fr_14952_va7a_sbm_scope",
-        "us_npr_91_fr_14952_va7a_fx_curvature_intra",
-        "us_npr_91_fr_14952_va7a_fx_delta_intra"
-      ],
-      "rejected_branch": "down",
-      "rejected_bucket_capital": 0.0,
-      "scenario": "MEDIUM",
-      "selected_branch": "up",
-      "selected_bucket_capital": 70000.0
-    },
-    {
-      "bucket_id": "GBP",
-      "citation_ids": [
-        "us_npr_91_fr_14952_va7a_sbm_scope",
-        "us_npr_91_fr_14952_va7a_fx_curvature_intra",
-        "us_npr_91_fr_14952_va7a_fx_delta_intra"
-      ],
-      "rejected_branch": "up",
-      "rejected_bucket_capital": 0.0,
-      "scenario": "MEDIUM",
-      "selected_branch": "down",
-      "selected_bucket_capital": 90000.0
-    },
-    {
-      "bucket_id": "MYR",
-      "citation_ids": [
-        "us_npr_91_fr_14952_va7a_sbm_scope",
-        "us_npr_91_fr_14952_va7a_fx_curvature_intra",
-        "us_npr_91_fr_14952_va7a_fx_delta_intra"
-      ],
-      "rejected_branch": "down",
-      "rejected_bucket_capital": 0.0,
-      "scenario": "MEDIUM",
-      "selected_branch": "up",
-      "selected_bucket_capital": 0.0
-    },
-    {
-      "bucket_id": "EUR",
-      "citation_ids": [
-        "us_npr_91_fr_14952_va7a_sbm_scope",
-        "us_npr_91_fr_14952_va7a_fx_curvature_intra",
-        "us_npr_91_fr_14952_va7a_fx_delta_intra"
-      ],
-      "rejected_branch": "down",
-      "rejected_bucket_capital": 0.0,
-      "scenario": "HIGH",
-      "selected_branch": "up",
-      "selected_bucket_capital": 70000.0
-    },
-    {
-      "bucket_id": "GBP",
-      "citation_ids": [
-        "us_npr_91_fr_14952_va7a_sbm_scope",
-        "us_npr_91_fr_14952_va7a_fx_curvature_intra",
-        "us_npr_91_fr_14952_va7a_fx_delta_intra"
-      ],
-      "rejected_branch": "up",
-      "rejected_bucket_capital": 0.0,
-      "scenario": "HIGH",
-      "selected_branch": "down",
-      "selected_bucket_capital": 90000.0
-    },
-    {
-      "bucket_id": "MYR",
-      "citation_ids": [
-        "us_npr_91_fr_14952_va7a_sbm_scope",
-        "us_npr_91_fr_14952_va7a_fx_curvature_intra",
-        "us_npr_91_fr_14952_va7a_fx_delta_intra"
-      ],
-      "rejected_branch": "down",
-      "rejected_bucket_capital": 0.0,
-      "scenario": "HIGH",
-      "selected_branch": "up",
-      "selected_bucket_capital": 0.0
-    }
-  ],
+  "profile_id": "US_NPR_2_0",
+  "profile_hash": "f1848abb3ec8ca5c177a3062c6ea2c268cf06ae035051f19ecb63a9161d395f3",
   "input_hash": "43ebdcd60d80c43ac101c4aaf3576c0d84bb0f1292104719f1411fa82dc1fb14",
+  "total_capital": 125658.26673959816,
+  "warnings": [],
+  "selected_portfolio_scenario": "HIGH",
   "portfolio_scenario_totals": {
     "HIGH": 125658.26673959816,
     "LOW": 121136.28688382354,
     "MEDIUM": 123417.9889643321
   },
-  "profile_hash": "80da8c39260d3e160875e27222ebc32fee9bb79b5f0a3e095a1ec3a732858742",
-  "profile_id": "US_NPR_2_0",
   "risk_classes": [
     {
+      "risk_class": "FX",
+      "risk_measure": "CURVATURE",
+      "selected_capital": 125658.26673959816,
+      "selected_scenario": "HIGH",
       "citation_ids": [
         "us_npr_91_fr_14952_va7a_fx_curvature_scenarios",
         "us_npr_91_fr_14952_va7a_sbm_scope",
@@ -212,11 +25,7 @@
         "us_npr_91_fr_14952_va7a_fx_delta_inter",
         "us_npr_91_fr_14952_va7a_fx_curvature_factors",
         "us_npr_91_fr_14952_va7a_fx_curvature_shocks"
-      ],
-      "risk_class": "FX",
-      "risk_measure": "CURVATURE",
-      "selected_capital": 125658.26673959816,
-      "selected_scenario": "HIGH"
+      ]
     }
   ],
   "scenario_totals": {
@@ -224,29 +33,47 @@
     "LOW": 121136.28688382354,
     "MEDIUM": 123417.9889643321
   },
-  "selected_portfolio_scenario": "HIGH",
-  "total_capital": 125658.26673959816,
-  "warnings": [],
+  "buckets": [
+    [
+      {
+        "bucket_id": "EUR",
+        "kb": 70000.0,
+        "sb": 70000.0,
+        "citation_ids": [
+          "us_npr_91_fr_14952_va7a_sbm_scope",
+          "us_npr_91_fr_14952_va7a_fx_curvature_intra",
+          "us_npr_91_fr_14952_va7a_fx_delta_intra"
+        ]
+      },
+      {
+        "bucket_id": "GBP",
+        "kb": 90000.0,
+        "sb": 90000.0,
+        "citation_ids": [
+          "us_npr_91_fr_14952_va7a_sbm_scope",
+          "us_npr_91_fr_14952_va7a_fx_curvature_intra",
+          "us_npr_91_fr_14952_va7a_fx_delta_intra"
+        ]
+      },
+      {
+        "bucket_id": "MYR",
+        "kb": 0.0,
+        "sb": -20000.0,
+        "citation_ids": [
+          "us_npr_91_fr_14952_va7a_sbm_scope",
+          "us_npr_91_fr_14952_va7a_fx_curvature_intra",
+          "us_npr_91_fr_14952_va7a_fx_delta_intra"
+        ]
+      }
+    ]
+  ],
   "weighted_sensitivities": [
     [
       [
         {
-          "citation_ids": [
-            "us_npr_91_fr_14952_va7a_fx_curvature_factors",
-            "us_npr_91_fr_14952_va7a_fx_curvature_shocks",
-            "us_npr_91_fr_14952_va7a_fx_curvature_intra",
-            "us_npr_91_fr_14952_va7a_fx_curvature_inter",
-            "us_npr_91_fr_14952_va7a_fx_curvature_scenarios",
-            "us_npr_91_fr_14952_va7a_fx_delta_weights",
-            "us_npr_91_fr_14952_va7a_fx_delta_sqrt2"
-          ],
+          "sensitivity_id": "EUR|EUR",
           "risk_weight": 1.0,
           "scaled_amount": 70000.0,
-          "sensitivity_id": "EUR|EUR"
-        }
-      ],
-      [
-        {
           "citation_ids": [
             "us_npr_91_fr_14952_va7a_fx_curvature_factors",
             "us_npr_91_fr_14952_va7a_fx_curvature_shocks",
@@ -255,14 +82,14 @@
             "us_npr_91_fr_14952_va7a_fx_curvature_scenarios",
             "us_npr_91_fr_14952_va7a_fx_delta_weights",
             "us_npr_91_fr_14952_va7a_fx_delta_sqrt2"
-          ],
+          ]
+        }
+      ],
+      [
+        {
+          "sensitivity_id": "GBP|GBP",
           "risk_weight": 1.0,
           "scaled_amount": 90000.0,
-          "sensitivity_id": "GBP|GBP"
-        }
-      ],
-      [
-        {
           "citation_ids": [
             "us_npr_91_fr_14952_va7a_fx_curvature_factors",
             "us_npr_91_fr_14952_va7a_fx_curvature_shocks",
@@ -271,12 +98,185 @@
             "us_npr_91_fr_14952_va7a_fx_curvature_scenarios",
             "us_npr_91_fr_14952_va7a_fx_delta_weights",
             "us_npr_91_fr_14952_va7a_fx_delta_sqrt2"
-          ],
+          ]
+        }
+      ],
+      [
+        {
+          "sensitivity_id": "MYR|MYR",
           "risk_weight": 1.0,
           "scaled_amount": -20000.0,
-          "sensitivity_id": "MYR|MYR"
+          "citation_ids": [
+            "us_npr_91_fr_14952_va7a_fx_curvature_factors",
+            "us_npr_91_fr_14952_va7a_fx_curvature_shocks",
+            "us_npr_91_fr_14952_va7a_fx_curvature_intra",
+            "us_npr_91_fr_14952_va7a_fx_curvature_inter",
+            "us_npr_91_fr_14952_va7a_fx_curvature_scenarios",
+            "us_npr_91_fr_14952_va7a_fx_delta_weights",
+            "us_npr_91_fr_14952_va7a_fx_delta_sqrt2"
+          ]
         }
       ]
     ]
+  ],
+  "curvature_branches": [
+    {
+      "sensitivity_id": "us-npr-eur-fx-curv",
+      "selected_branch": "down",
+      "up_shock_amount": 70000.0,
+      "down_shock_amount": -120000.0,
+      "citation_ids": [
+        "us_npr_91_fr_14952_va7a_fx_curvature_factors",
+        "us_npr_91_fr_14952_va7a_fx_curvature_shocks",
+        "us_npr_91_fr_14952_va7a_fx_curvature_intra",
+        "us_npr_91_fr_14952_va7a_fx_curvature_inter",
+        "us_npr_91_fr_14952_va7a_fx_curvature_scenarios"
+      ]
+    },
+    {
+      "sensitivity_id": "us-npr-gbp-fx-curv",
+      "selected_branch": "up",
+      "up_shock_amount": -40000.0,
+      "down_shock_amount": 90000.0,
+      "citation_ids": [
+        "us_npr_91_fr_14952_va7a_fx_curvature_factors",
+        "us_npr_91_fr_14952_va7a_fx_curvature_shocks",
+        "us_npr_91_fr_14952_va7a_fx_curvature_intra",
+        "us_npr_91_fr_14952_va7a_fx_curvature_inter",
+        "us_npr_91_fr_14952_va7a_fx_curvature_scenarios"
+      ]
+    },
+    {
+      "sensitivity_id": "us-npr-myr-fx-curv",
+      "selected_branch": "down",
+      "up_shock_amount": -20000.0,
+      "down_shock_amount": -60000.0,
+      "citation_ids": [
+        "us_npr_91_fr_14952_va7a_fx_curvature_factors",
+        "us_npr_91_fr_14952_va7a_fx_curvature_shocks",
+        "us_npr_91_fr_14952_va7a_fx_curvature_intra",
+        "us_npr_91_fr_14952_va7a_fx_curvature_inter",
+        "us_npr_91_fr_14952_va7a_fx_curvature_scenarios"
+      ]
+    }
+  ],
+  "curvature_bucket_branches": [
+    {
+      "bucket_id": "EUR",
+      "scenario": "LOW",
+      "selected_branch": "up",
+      "selected_bucket_capital": 70000.0,
+      "rejected_branch": "down",
+      "rejected_bucket_capital": 0.0,
+      "citation_ids": [
+        "us_npr_91_fr_14952_va7a_sbm_scope",
+        "us_npr_91_fr_14952_va7a_fx_curvature_intra",
+        "us_npr_91_fr_14952_va7a_fx_delta_intra"
+      ]
+    },
+    {
+      "bucket_id": "GBP",
+      "scenario": "LOW",
+      "selected_branch": "down",
+      "selected_bucket_capital": 90000.0,
+      "rejected_branch": "up",
+      "rejected_bucket_capital": 0.0,
+      "citation_ids": [
+        "us_npr_91_fr_14952_va7a_sbm_scope",
+        "us_npr_91_fr_14952_va7a_fx_curvature_intra",
+        "us_npr_91_fr_14952_va7a_fx_delta_intra"
+      ]
+    },
+    {
+      "bucket_id": "MYR",
+      "scenario": "LOW",
+      "selected_branch": "up",
+      "selected_bucket_capital": 0.0,
+      "rejected_branch": "down",
+      "rejected_bucket_capital": 0.0,
+      "citation_ids": [
+        "us_npr_91_fr_14952_va7a_sbm_scope",
+        "us_npr_91_fr_14952_va7a_fx_curvature_intra",
+        "us_npr_91_fr_14952_va7a_fx_delta_intra"
+      ]
+    },
+    {
+      "bucket_id": "EUR",
+      "scenario": "MEDIUM",
+      "selected_branch": "up",
+      "selected_bucket_capital": 70000.0,
+      "rejected_branch": "down",
+      "rejected_bucket_capital": 0.0,
+      "citation_ids": [
+        "us_npr_91_fr_14952_va7a_sbm_scope",
+        "us_npr_91_fr_14952_va7a_fx_curvature_intra",
+        "us_npr_91_fr_14952_va7a_fx_delta_intra"
+      ]
+    },
+    {
+      "bucket_id": "GBP",
+      "scenario": "MEDIUM",
+      "selected_branch": "down",
+      "selected_bucket_capital": 90000.0,
+      "rejected_branch": "up",
+      "rejected_bucket_capital": 0.0,
+      "citation_ids": [
+        "us_npr_91_fr_14952_va7a_sbm_scope",
+        "us_npr_91_fr_14952_va7a_fx_curvature_intra",
+        "us_npr_91_fr_14952_va7a_fx_delta_intra"
+      ]
+    },
+    {
+      "bucket_id": "MYR",
+      "scenario": "MEDIUM",
+      "selected_branch": "up",
+      "selected_bucket_capital": 0.0,
+      "rejected_branch": "down",
+      "rejected_bucket_capital": 0.0,
+      "citation_ids": [
+        "us_npr_91_fr_14952_va7a_sbm_scope",
+        "us_npr_91_fr_14952_va7a_fx_curvature_intra",
+        "us_npr_91_fr_14952_va7a_fx_delta_intra"
+      ]
+    },
+    {
+      "bucket_id": "EUR",
+      "scenario": "HIGH",
+      "selected_branch": "up",
+      "selected_bucket_capital": 70000.0,
+      "rejected_branch": "down",
+      "rejected_bucket_capital": 0.0,
+      "citation_ids": [
+        "us_npr_91_fr_14952_va7a_sbm_scope",
+        "us_npr_91_fr_14952_va7a_fx_curvature_intra",
+        "us_npr_91_fr_14952_va7a_fx_delta_intra"
+      ]
+    },
+    {
+      "bucket_id": "GBP",
+      "scenario": "HIGH",
+      "selected_branch": "down",
+      "selected_bucket_capital": 90000.0,
+      "rejected_branch": "up",
+      "rejected_bucket_capital": 0.0,
+      "citation_ids": [
+        "us_npr_91_fr_14952_va7a_sbm_scope",
+        "us_npr_91_fr_14952_va7a_fx_curvature_intra",
+        "us_npr_91_fr_14952_va7a_fx_delta_intra"
+      ]
+    },
+    {
+      "bucket_id": "MYR",
+      "scenario": "HIGH",
+      "selected_branch": "up",
+      "selected_bucket_capital": 0.0,
+      "rejected_branch": "down",
+      "rejected_bucket_capital": 0.0,
+      "citation_ids": [
+        "us_npr_91_fr_14952_va7a_sbm_scope",
+        "us_npr_91_fr_14952_va7a_fx_curvature_intra",
+        "us_npr_91_fr_14952_va7a_fx_delta_intra"
+      ]
+    }
   ]
 }

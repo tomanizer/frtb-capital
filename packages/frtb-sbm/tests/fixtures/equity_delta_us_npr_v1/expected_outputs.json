@@ -1,0 +1,117 @@
+{
+  "profile_id": "US_NPR_2_0",
+  "profile_hash": "f1848abb3ec8ca5c177a3062c6ea2c268cf06ae035051f19ecb63a9161d395f3",
+  "input_hash": "d2e293b18cf7a6038ff69e7f10d710b97369c9ee0df1726e949b37640680a29a",
+  "total_capital": 1510949.951603295,
+  "warnings": [],
+  "selected_portfolio_scenario": "LOW",
+  "portfolio_scenario_totals": {
+    "HIGH": 1503863.056847265,
+    "LOW": 1510949.951603295,
+    "MEDIUM": 1507410.6689950153
+  },
+  "risk_classes": [
+    {
+      "risk_class": "EQUITY",
+      "risk_measure": "DELTA",
+      "selected_capital": 1510949.951603295,
+      "selected_scenario": "LOW",
+      "citation_ids": [
+        "us_npr_91_fr_14952_va7a_correlation_scenarios",
+        "us_npr_91_fr_14952_va7a_equity_delta_intra",
+        "us_npr_91_fr_14952_va7a_equity_delta_inter"
+      ]
+    }
+  ],
+  "scenario_totals": {
+    "HIGH": 1503863.056847265,
+    "LOW": 1510949.951603295,
+    "MEDIUM": 1507410.6689950153
+  },
+  "buckets": [
+    [
+      {
+        "bucket_id": "11",
+        "kb": 1260000.0,
+        "sb": 140000.0,
+        "citation_ids": [
+          "us_npr_91_fr_14952_va7a_equity_delta_other_sector"
+        ]
+      },
+      {
+        "bucket_id": "5",
+        "kb": 619782.2752789886,
+        "sb": 301500.0,
+        "citation_ids": [
+          "us_npr_91_fr_14952_va7a_equity_delta_intra"
+        ]
+      },
+      {
+        "bucket_id": "6",
+        "kb": 525000.0,
+        "sb": 525000.0,
+        "citation_ids": [
+          "us_npr_91_fr_14952_va7a_equity_delta_intra"
+        ]
+      }
+    ]
+  ],
+  "weighted_sensitivities": [
+    [
+      [
+        {
+          "sensitivity_id": "eq11-spot-x",
+          "risk_weight": 0.7,
+          "scaled_amount": 700000.0,
+          "citation_ids": [
+            "us_npr_91_fr_14952_va7a_equity_delta_weights"
+          ]
+        },
+        {
+          "sensitivity_id": "eq11-spot-y",
+          "risk_weight": 0.7,
+          "scaled_amount": -560000.0,
+          "citation_ids": [
+            "us_npr_91_fr_14952_va7a_equity_delta_weights"
+          ]
+        }
+      ],
+      [
+        {
+          "sensitivity_id": "eq5-repo-a",
+          "risk_weight": 0.003,
+          "scaled_amount": 1500.0,
+          "citation_ids": [
+            "us_npr_91_fr_14952_va7a_equity_delta_weights"
+          ]
+        },
+        {
+          "sensitivity_id": "eq5-spot-a",
+          "risk_weight": 0.3,
+          "scaled_amount": 600000.0,
+          "citation_ids": [
+            "us_npr_91_fr_14952_va7a_equity_delta_weights"
+          ]
+        },
+        {
+          "sensitivity_id": "eq5-spot-b",
+          "risk_weight": 0.3,
+          "scaled_amount": -300000.0,
+          "citation_ids": [
+            "us_npr_91_fr_14952_va7a_equity_delta_weights"
+          ]
+        }
+      ],
+      [
+        {
+          "sensitivity_id": "eq6-spot-c",
+          "risk_weight": 0.35,
+          "scaled_amount": 525000.0,
+          "citation_ids": [
+            "us_npr_91_fr_14952_va7a_equity_delta_weights"
+          ]
+        }
+      ]
+    ]
+  ]
+}

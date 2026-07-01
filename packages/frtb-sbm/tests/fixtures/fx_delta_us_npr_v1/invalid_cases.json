@@ -30,18 +30,19 @@
     }
   },
   {
-    "case_id": "unsupported_equity_delta",
+    "case_id": "unsupported_equity_vega",
     "expected_error_match": "US_NPR_2_0",
     "sensitivity": {
-      "sensitivity_id": "equity-delta-001",
-      "source_row_id": "row-equity-delta",
+      "sensitivity_id": "equity-vega-001",
+      "source_row_id": "row-equity-vega",
       "desk_id": "equity-desk",
       "legal_entity": "LE-001",
       "risk_class": "EQUITY",
-      "risk_measure": "DELTA",
+      "risk_measure": "VEGA",
       "bucket": "1",
       "risk_factor": "SPOT",
       "qualifier": "Issuer A",
+      "option_tenor": "1y",
       "amount": 1000000.0,
       "amount_currency": "USD",
       "sign_convention": "LONG"

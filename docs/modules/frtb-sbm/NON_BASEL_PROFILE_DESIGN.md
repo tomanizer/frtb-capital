@@ -28,7 +28,7 @@ semantics or Basel fixture hashes.
 | Layer | BASEL_MAR21 | Non-Basel profiles |
 | --- | --- | --- |
 | `SbmRegulatoryProfile` enum | `BASEL_MAR21` | `US_NPR_2_0`, `EU_CRR3`, `PRA_UK_CRR` |
-| `phase1_capital_supported_paths()` | 21 cells (7×3) | `US_NPR_2_0` GIRR delta, vega, curvature, and FX delta, vega, curvature; `PRA_UK_CRR` GIRR delta; EU empty frozenset |
+| `phase1_capital_supported_paths()` | 21 cells (7×3) | `US_NPR_2_0` GIRR delta, vega, curvature; FX delta, vega, curvature; equity delta; commodity delta; `PRA_UK_CRR` GIRR delta; EU empty frozenset |
 | `resolve_sbm_profile()` / `get_sbm_rule_profile()` | Supported | `US_NPR_2_0` supported for GIRR delta/vega/curvature and FX delta/vega/curvature and `PRA_UK_CRR` supported for GIRR delta; EU fails closed via `UNSUPPORTED_PROFILE_REASONS` |
 | `PROFILE_*` reference-data maps in `reference_data.py` | Populated | NPR GIRR delta/vega/curvature and FX delta/vega/curvature and PRA GIRR delta populated; other non-Basel lookup paths fail closed |
 | Fixture packs under `tests/fixtures/` | 7 non-Basel packs (`*_v1`) | `girr_delta_us_npr_v1`, `girr_vega_us_npr_v1`, `girr_curvature_us_npr_v1`, `fx_delta_us_npr_v1`, `fx_vega_us_npr_v1`, `fx_curvature_us_npr_v1`, `girr_delta_pra_uk_crr_v1` |
@@ -95,7 +95,7 @@ Status labels match `REGULATORY_TRACEABILITY.md`:
 | Profile | Cells | Runtime today |
 | --- | ---: | --- |
 | `BASEL_MAR21` | 21 / 21 | 21 implemented under audit |
-| `US_NPR_2_0` | 6 / 21 | GIRR delta, vega, curvature, and FX delta, vega, curvature implemented under audit; 15 unsupported fail-closed |
+| `US_NPR_2_0` | 8 / 21 | GIRR delta, vega, curvature; FX delta, vega, curvature; equity delta; and commodity delta implemented under audit; 13 unsupported fail-closed |
 | `EU_CRR3` | 0 / 21 | 21 unsupported fail-closed |
 | `PRA_UK_CRR` | 1 / 21 | GIRR delta implemented under audit; 20 unsupported fail-closed |
 
@@ -105,8 +105,8 @@ Per-class detail for non-Basel profiles (all measures share the same status unti
 | --- | --- | --- | --- |
 | GIRR | Delta, vega, and curvature implemented under audit | Planned | Delta implemented under audit; vega/curvature unsupported fail-closed |
 | FX | Delta, vega, and curvature implemented under audit | Planned | Planned after PS1/26 source map; runtime fail-closed |
-| Equity | Planned | Planned | Planned after PS1/26 source map; runtime fail-closed |
-| Commodity | Planned | Planned | Planned after PS1/26 source map; runtime fail-closed |
+| Equity | Delta implemented under audit; vega/curvature planned | Planned | Planned after PS1/26 source map; runtime fail-closed |
+| Commodity | Delta implemented under audit; vega/curvature planned | Planned | Planned after PS1/26 source map; runtime fail-closed |
 | CSR non-sec | Planned | Planned | Planned after PS1/26 source map; runtime fail-closed |
 | CSR sec non-CTP | Planned | Planned | Planned after PS1/26 source map; runtime fail-closed |
 | CSR sec CTP | Planned | Planned | Planned after PS1/26 source map; runtime fail-closed |

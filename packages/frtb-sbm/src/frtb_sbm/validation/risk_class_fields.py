@@ -199,11 +199,9 @@ def _validate_equity_delta_fields(sensitivity: SbmSensitivity) -> None:
     from frtb_sbm.equity_reference_data import (
         EQUITY_REPO_RISK_FACTOR,
         EQUITY_SPOT_RISK_FACTOR,
-        equity_bucket_definition,
     )
 
     sensitivity_id = sensitivity.sensitivity_id
-    equity_bucket_definition(SbmRegulatoryProfile.BASEL_MAR21.value, sensitivity.bucket)
     risk_factor = sensitivity.risk_factor.strip().upper()
     if risk_factor not in {EQUITY_SPOT_RISK_FACTOR, EQUITY_REPO_RISK_FACTOR}:
         raise SbmInputError(
@@ -217,12 +215,10 @@ def _validate_equity_vega_fields(sensitivity: SbmSensitivity) -> None:
     from frtb_sbm.equity_reference_data import (
         EQUITY_REPO_RISK_FACTOR,
         EQUITY_SPOT_RISK_FACTOR,
-        equity_bucket_definition,
     )
     from frtb_sbm.reference_data import girr_vega_option_tenor_definition
 
     sensitivity_id = sensitivity.sensitivity_id
-    equity_bucket_definition(SbmRegulatoryProfile.BASEL_MAR21.value, sensitivity.bucket)
     risk_factor = sensitivity.risk_factor.strip().upper()
     if risk_factor == EQUITY_REPO_RISK_FACTOR:
         raise UnsupportedRegulatoryFeatureError(
@@ -241,16 +237,13 @@ def _validate_equity_vega_fields(sensitivity: SbmSensitivity) -> None:
 
 
 def _validate_commodity_delta_fields(sensitivity: SbmSensitivity) -> None:
-    from frtb_sbm.commodity_reference_data import commodity_bucket_definition
-
-    commodity_bucket_definition(SbmRegulatoryProfile.BASEL_MAR21.value, sensitivity.bucket)
+    _require_text(sensitivity.bucket, "bucket", sensitivity.sensitivity_id)
 
 
 def _validate_commodity_vega_fields(sensitivity: SbmSensitivity) -> None:
-    from frtb_sbm.commodity_reference_data import commodity_bucket_definition
     from frtb_sbm.reference_data import girr_vega_option_tenor_definition
 
-    commodity_bucket_definition(SbmRegulatoryProfile.BASEL_MAR21.value, sensitivity.bucket)
+    _require_text(sensitivity.bucket, "bucket", sensitivity.sensitivity_id)
     girr_vega_option_tenor_definition(
         SbmRegulatoryProfile.BASEL_MAR21.value,
         sensitivity.option_tenor or "",

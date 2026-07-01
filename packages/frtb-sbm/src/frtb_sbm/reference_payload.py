@@ -336,11 +336,25 @@ def _add_fx_curvature_payload(payload: dict[str, object], profile: SbmRegulatory
     }
 
 
+def _add_us_npr_equity_commodity_delta_payload(
+    payload: dict[str, object],
+    profile: SbmRegulatoryProfile,
+) -> None:
+    if profile is not SbmRegulatoryProfile.US_NPR_2_0:
+        return
+    from frtb_sbm.commodity_reference_data import commodity_reference_payload
+    from frtb_sbm.equity_reference_data import equity_reference_payload
+
+    payload.update(equity_reference_payload(profile))
+    payload.update(commodity_reference_payload(profile))
+
+
 def _add_basel_curvature_and_non_girr_payloads(
     payload: dict[str, object],
     profile: SbmRegulatoryProfile,
 ) -> None:
     if profile is not SbmRegulatoryProfile.BASEL_MAR21:
+        _add_us_npr_equity_commodity_delta_payload(payload, profile)
         return
     payload["curvature_parameters"] = {
         "citation_ids": list(curvature_citation_ids(profile)),

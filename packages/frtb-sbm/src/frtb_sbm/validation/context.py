@@ -43,6 +43,8 @@ _PHASE1_SUPPORTED: dict[str, frozenset[tuple[SbmRiskClass, SbmRiskMeasure]]] = {
             (SbmRiskClass.FX, SbmRiskMeasure.DELTA),
             (SbmRiskClass.FX, SbmRiskMeasure.VEGA),
             (SbmRiskClass.FX, SbmRiskMeasure.CURVATURE),
+            (SbmRiskClass.EQUITY, SbmRiskMeasure.DELTA),
+            (SbmRiskClass.COMMODITY, SbmRiskMeasure.DELTA),
         }
     ),
     SbmRegulatoryProfile.BASEL_MAR21.value: frozenset(

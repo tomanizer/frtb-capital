@@ -30,6 +30,8 @@ US_NPR_EXPECTED_PATHS = frozenset(
         (SbmRiskClass.FX, SbmRiskMeasure.DELTA),
         (SbmRiskClass.FX, SbmRiskMeasure.VEGA),
         (SbmRiskClass.FX, SbmRiskMeasure.CURVATURE),
+        (SbmRiskClass.EQUITY, SbmRiskMeasure.DELTA),
+        (SbmRiskClass.COMMODITY, SbmRiskMeasure.DELTA),
     }
 )
 PRA_UK_CRR_EXPECTED_PATHS = frozenset({(SbmRiskClass.GIRR, SbmRiskMeasure.DELTA)})
@@ -62,7 +64,7 @@ def test_basel_phase1_support_matrix_covers_every_risk_class_measure() -> None:
         )
 
 
-def test_us_npr_profile_supports_girr_and_fx_delta_vega_curvature() -> None:
+def test_us_npr_profile_supports_girr_fx_and_non_girr_delta() -> None:
     assert phase1_capital_supported_paths(SbmRegulatoryProfile.US_NPR_2_0.value) == (
         US_NPR_EXPECTED_PATHS
     )
@@ -95,6 +97,16 @@ def test_us_npr_profile_supports_girr_and_fx_delta_vega_curvature() -> None:
         SbmRegulatoryProfile.US_NPR_2_0.value,
         SbmRiskClass.FX,
         SbmRiskMeasure.CURVATURE,
+    )
+    ensure_sbm_risk_class_measure_supported(
+        SbmRegulatoryProfile.US_NPR_2_0.value,
+        SbmRiskClass.EQUITY,
+        SbmRiskMeasure.DELTA,
+    )
+    ensure_sbm_risk_class_measure_supported(
+        SbmRegulatoryProfile.US_NPR_2_0.value,
+        SbmRiskClass.COMMODITY,
+        SbmRiskMeasure.DELTA,
     )
 
     for risk_class in SbmRiskClass:
@@ -184,7 +196,7 @@ def test_traceability_support_matrix_lists_every_basel_path() -> None:
         row = f"| {label} | {implemented} | {implemented} | {implemented} |"
         assert row in traceability
 
-    assert "| `US_NPR_2_0` | partial (6 / 21 cells) |" in traceability
+    assert "| `US_NPR_2_0` | partial (8 / 21 cells) |" in traceability
     assert "| `PRA_UK_CRR` | partial (1 / 21 cells) |" in traceability
     assert f"| `{SbmRegulatoryProfile.EU_CRR3.value}` | unsupported fail-closed" in traceability
     assert (

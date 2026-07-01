@@ -27,6 +27,11 @@ _COMMODITY_WEIGHT_CITATION = "basel_mar21_82"
 _COMMODITY_INTRA_CITATION = "basel_mar21_83"
 _COMMODITY_INTER_CITATION = "basel_mar21_85"
 
+_US_NPR_COMMODITY_BUCKET_CITATION = "us_npr_91_fr_14952_va7a_commodity_delta_buckets"
+_US_NPR_COMMODITY_WEIGHT_CITATION = "us_npr_91_fr_14952_va7a_commodity_delta_weights"
+_US_NPR_COMMODITY_INTRA_CITATION = "us_npr_91_fr_14952_va7a_commodity_delta_intra"
+_US_NPR_COMMODITY_INTER_CITATION = "us_npr_91_fr_14952_va7a_commodity_delta_inter"
+
 
 @dataclass(frozen=True)
 class SbmCommodityBucketDefinition:
@@ -61,8 +66,65 @@ _BASEL_COMMODITY_BUCKETS: tuple[SbmCommodityBucketDefinition, ...] = (
     SbmCommodityBucketDefinition("11", "other_commodity", 0.50, 0.15, _COMMODITY_BUCKET_CITATION),
 )
 
+_US_NPR_COMMODITY_BUCKETS: tuple[SbmCommodityBucketDefinition, ...] = (
+    SbmCommodityBucketDefinition(
+        "1", "energy_solid_combustibles", 0.30, 0.55, _US_NPR_COMMODITY_BUCKET_CITATION
+    ),
+    SbmCommodityBucketDefinition(
+        "2", "energy_liquid_combustibles", 0.35, 0.95, _US_NPR_COMMODITY_BUCKET_CITATION
+    ),
+    SbmCommodityBucketDefinition(
+        "3", "energy_carbon_trading", 0.60, 0.40, _US_NPR_COMMODITY_BUCKET_CITATION
+    ),
+    SbmCommodityBucketDefinition("4", "freight", 0.80, 0.80, _US_NPR_COMMODITY_BUCKET_CITATION),
+    SbmCommodityBucketDefinition(
+        "5", "metals_non_precious", 0.40, 0.60, _US_NPR_COMMODITY_BUCKET_CITATION
+    ),
+    SbmCommodityBucketDefinition(
+        "6",
+        "gaseous_combustibles_electricity",
+        0.45,
+        0.65,
+        _US_NPR_COMMODITY_BUCKET_CITATION,
+    ),
+    SbmCommodityBucketDefinition(
+        "7", "precious_metals", 0.20, 0.55, _US_NPR_COMMODITY_BUCKET_CITATION
+    ),
+    SbmCommodityBucketDefinition(
+        "8", "grains_oilseed", 0.35, 0.45, _US_NPR_COMMODITY_BUCKET_CITATION
+    ),
+    SbmCommodityBucketDefinition(
+        "9", "livestock_dairy", 0.25, 0.15, _US_NPR_COMMODITY_BUCKET_CITATION
+    ),
+    SbmCommodityBucketDefinition(
+        "10", "forestry_agriculturals", 0.35, 0.40, _US_NPR_COMMODITY_BUCKET_CITATION
+    ),
+    SbmCommodityBucketDefinition(
+        "11", "other_commodity", 0.50, 0.15, _US_NPR_COMMODITY_BUCKET_CITATION
+    ),
+    SbmCommodityBucketDefinition(
+        "12", "commodity_index", 0.30, 0.50, _US_NPR_COMMODITY_BUCKET_CITATION
+    ),
+)
+
 _PROFILE_COMMODITY_BUCKETS: dict[SbmRegulatoryProfile, tuple[SbmCommodityBucketDefinition, ...]] = {
     SbmRegulatoryProfile.BASEL_MAR21: _BASEL_COMMODITY_BUCKETS,
+    SbmRegulatoryProfile.US_NPR_2_0: _US_NPR_COMMODITY_BUCKETS,
+}
+
+_PROFILE_COMMODITY_WEIGHT_CITATION_IDS: dict[SbmRegulatoryProfile, tuple[str, ...]] = {
+    SbmRegulatoryProfile.BASEL_MAR21: (_COMMODITY_WEIGHT_CITATION,),
+    SbmRegulatoryProfile.US_NPR_2_0: (_US_NPR_COMMODITY_WEIGHT_CITATION,),
+}
+
+_PROFILE_COMMODITY_INTRA_CITATION_IDS: dict[SbmRegulatoryProfile, tuple[str, ...]] = {
+    SbmRegulatoryProfile.BASEL_MAR21: (_COMMODITY_INTRA_CITATION,),
+    SbmRegulatoryProfile.US_NPR_2_0: (_US_NPR_COMMODITY_INTRA_CITATION,),
+}
+
+_PROFILE_COMMODITY_INTER_CITATION_IDS: dict[SbmRegulatoryProfile, tuple[str, ...]] = {
+    SbmRegulatoryProfile.BASEL_MAR21: (_COMMODITY_INTER_CITATION,),
+    SbmRegulatoryProfile.US_NPR_2_0: (_US_NPR_COMMODITY_INTER_CITATION,),
 }
 
 
@@ -132,8 +194,9 @@ def commodity_delta_risk_weight(
     tuple[float, tuple[str, ...]]
     """
 
+    resolved = ensure_sbm_profile_known(profile if isinstance(profile, str) else profile.value)
     bucket = commodity_bucket_definition(profile, bucket_id)
-    return bucket.risk_weight, (_COMMODITY_WEIGHT_CITATION,)
+    return bucket.risk_weight, _PROFILE_COMMODITY_WEIGHT_CITATION_IDS[resolved]
 
 
 def commodity_delta_intra_bucket_correlation(
@@ -159,6 +222,7 @@ def commodity_delta_intra_bucket_correlation(
     """
 
     _ensure_commodity_delta_supported(profile)
+    resolved = ensure_sbm_profile_known(profile if isinstance(profile, str) else profile.value)
     bucket = commodity_bucket_definition(profile, bucket_id)
     commodity_a_norm = _require_text(commodity_a, "risk_factor")
     commodity_b_norm = _require_text(commodity_b, "risk_factor")
@@ -174,7 +238,28 @@ def commodity_delta_intra_bucket_correlation(
 
     rho_tenor = 1.0 if tenor_a_norm == tenor_b_norm else COMMODITY_TENOR_CORRELATION
     rho_location = 1.0 if location_a_norm == location_b_norm else COMMODITY_LOCATION_CORRELATION
-    return rho_cty * rho_tenor * rho_location, (_COMMODITY_INTRA_CITATION,)
+    return rho_cty * rho_tenor * rho_location, _PROFILE_COMMODITY_INTRA_CITATION_IDS[resolved]
+
+
+def commodity_delta_intra_bucket_citation_ids(
+    profile: SbmRegulatoryProfile | str,
+) -> tuple[str, ...]:
+    """Return profile-owned commodity delta intra-bucket correlation citation ids.
+
+    Parameters
+    ----------
+    profile : SbmRegulatoryProfile | str
+        Regulatory profile that owns the commodity delta intra-bucket correlation rule.
+
+    Returns
+    -------
+    tuple[str, ...]
+        Citation identifiers for commodity delta intra-bucket correlations.
+    """
+
+    _ensure_commodity_delta_supported(profile)
+    resolved = ensure_sbm_profile_known(profile if isinstance(profile, str) else profile.value)
+    return _PROFILE_COMMODITY_INTRA_CITATION_IDS[resolved]
 
 
 def commodity_inter_bucket_correlation(
@@ -199,15 +284,36 @@ def commodity_inter_bucket_correlation(
     """
 
     _ensure_commodity_delta_supported(profile)
+    resolved = ensure_sbm_profile_known(profile if isinstance(profile, str) else profile.value)
     b1 = _require_commodity_bucket_number(bucket1)
     b2 = _require_commodity_bucket_number(bucket2)
     commodity_bucket_definition(profile, str(b1))
     commodity_bucket_definition(profile, str(b2))
+    citation_ids = _PROFILE_COMMODITY_INTER_CITATION_IDS[resolved]
     if b1 == b2:
-        return 1.0, (_COMMODITY_INTER_CITATION,)
+        return 1.0, citation_ids
     if b1 == 11 or b2 == 11:
-        return 0.0, (_COMMODITY_INTER_CITATION,)
-    return 0.20, (_COMMODITY_INTER_CITATION,)
+        return 0.0, citation_ids
+    return 0.20, citation_ids
+
+
+def commodity_inter_bucket_citation_ids(profile: SbmRegulatoryProfile | str) -> tuple[str, ...]:
+    """Return profile-owned commodity delta inter-bucket correlation citation ids.
+
+    Parameters
+    ----------
+    profile : SbmRegulatoryProfile | str
+        Regulatory profile that owns the commodity delta inter-bucket correlation rule.
+
+    Returns
+    -------
+    tuple[str, ...]
+        Citation identifiers for commodity delta inter-bucket correlations.
+    """
+
+    _ensure_commodity_delta_supported(profile)
+    resolved = ensure_sbm_profile_known(profile if isinstance(profile, str) else profile.value)
+    return _PROFILE_COMMODITY_INTER_CITATION_IDS[resolved]
 
 
 def commodity_reference_payload(profile: SbmRegulatoryProfile | str) -> dict[str, object]:
@@ -242,7 +348,7 @@ def commodity_reference_payload(profile: SbmRegulatoryProfile | str) -> dict[str
 
 def _ensure_commodity_delta_supported(profile: SbmRegulatoryProfile | str) -> None:
     resolved = ensure_sbm_profile_known(profile if isinstance(profile, str) else profile.value)
-    if resolved is not SbmRegulatoryProfile.BASEL_MAR21:
+    if resolved not in _PROFILE_COMMODITY_BUCKETS:
         raise UnsupportedRegulatoryFeatureError(
             f"commodity delta reference data is unsupported for profile {resolved.value}"
         )
@@ -257,9 +363,9 @@ def _require_commodity_bucket_number(bucket_id: str) -> int:
             "commodity bucket_id must be a numeric bucket label",
             field="bucket_id",
         ) from exc
-    if bucket_number < 1 or bucket_number > 11:
+    if bucket_number < 1 or bucket_number > 12:
         raise SbmInputError(
-            "commodity bucket_id must be between 1 and 11",
+            "commodity bucket_id must be between 1 and 12",
             field="bucket_id",
         )
     return bucket_number
@@ -306,8 +412,10 @@ __all__ = [
     "SbmCommodityBucketDefinition",
     "commodity_bucket_definition",
     "commodity_buckets_for_profile",
+    "commodity_delta_intra_bucket_citation_ids",
     "commodity_delta_intra_bucket_correlation",
     "commodity_delta_risk_weight",
+    "commodity_inter_bucket_citation_ids",
     "commodity_inter_bucket_correlation",
     "commodity_reference_payload",
 ]
