@@ -67,6 +67,10 @@ from frtb_rrao.regimes import (
     RraoRuleProfile,
     get_rrao_rule_profile,
 )
+from frtb_rrao.risk_factor_metadata import (
+    RraoRiskFactorMetadataRow,
+    build_rrao_risk_factor_metadata_rows,
+)
 from frtb_rrao.scaffold import PACKAGE_METADATA, calculate_rrao_capital
 from frtb_rrao.validation import (
     RraoInputError,
@@ -100,6 +104,7 @@ __all__ = [
     "RraoPositionBatch",
     "RraoRegulatoryProfile",
     "RraoRejectedRow",
+    "RraoRiskFactorMetadataRow",
     "RraoRuleProfile",
     "RraoSourceLineage",
     "RraoSubtotal",
@@ -113,6 +118,7 @@ __all__ = [
     "build_rrao_batch_from_columns",
     "build_rrao_batch_from_positions",
     "build_rrao_contribution_bundle",
+    "build_rrao_risk_factor_metadata_rows",
     "calculate_rrao_attribution",
     "calculate_rrao_capital",
     "calculate_rrao_capital_from_batch",

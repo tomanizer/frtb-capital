@@ -39,6 +39,13 @@ from frtb_orchestration.manifest import (
     run_standardised_approach_from_manifest,
     validate_capital_run_manifest,
 )
+from frtb_orchestration.risk_factor_views import (
+    RiskFactorAggregateView,
+    RiskFactorCapitalViewRow,
+    RiskFactorEvidenceViewRow,
+    RiskFactorViewStatus,
+    build_risk_factor_aggregate_view,
+)
 from frtb_orchestration.scaffold import (
     PACKAGE_METADATA,
     aggregate_suite_attribution,
@@ -104,6 +111,10 @@ __all__ = [
     "ManifestInputTableValidation",
     "ManifestValidationResult",
     "OrchestrationInputError",
+    "RiskFactorAggregateView",
+    "RiskFactorCapitalViewRow",
+    "RiskFactorEvidenceViewRow",
+    "RiskFactorViewStatus",
     "SaManifestRunResult",
     "ScopeCapitalView",
     "ScopeComponentCapital",
@@ -123,6 +134,7 @@ __all__ = [
     "SuiteEvidenceComponent",
     "__version__",
     "aggregate_suite_attribution",
+    "build_risk_factor_aggregate_view",
     "build_suite_artifact_evidence_view",
     "build_suite_attribution_report",
     "calculate_suite_capital",

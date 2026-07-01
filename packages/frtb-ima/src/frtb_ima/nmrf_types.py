@@ -10,7 +10,12 @@ from enum import StrEnum
 
 import numpy as np
 import numpy.typing as npt
-from frtb_common import CalculationScope
+from frtb_common import (
+    CalculationScope,
+    RiskFactorId,
+    RiskFactorMappingVersion,
+    RiskFactorPrimitiveError,
+)
 
 from frtb_ima.data_models import LiquidityHorizon
 from frtb_ima.org_scope import add_scope_payload, validate_scope_metadata
@@ -60,6 +65,8 @@ class NMRFStressScenarioResult:
     surface_id: str = ""
     surface_point_id: str = ""
     org_scope: CalculationScope | None = None
+    risk_factor_id: str | None = None
+    risk_factor_mapping_version: str | None = None
 
     def __post_init__(self) -> None:
         if not self.risk_factor_name:
@@ -76,6 +83,8 @@ class NMRFStressScenarioResult:
                 field="NMRFStressScenarioResult.org_scope",
             ),
         )
+        _validate_optional_risk_factor_id(self.risk_factor_id)
+        _validate_optional_mapping_version(self.risk_factor_mapping_version)
 
     def as_dict(self) -> dict[str, object]:
         """Return a serialisable dictionary for reporting and audit trails.
@@ -93,6 +102,8 @@ class NMRFStressScenarioResult:
                 "source": self.source,
                 "notes": self.notes,
                 "artifact_id": self.artifact_id,
+                "risk_factor_id": self.risk_factor_id,
+                "risk_factor_mapping_version": self.risk_factor_mapping_version,
                 "scenario_vector_id": self.scenario_vector_id,
                 "shock_id": self.shock_id,
                 "surface_id": self.surface_id,
@@ -129,6 +140,8 @@ class NMRFStressArtifact:
     generated_by_prototype: bool = False
     notes: str = ""
     org_scope: CalculationScope | None = None
+    risk_factor_id: str | None = None
+    risk_factor_mapping_version: str | None = None
 
     def __post_init__(self) -> None:
         if not self.risk_factor_name:
@@ -171,6 +184,8 @@ class NMRFStressArtifact:
             "org_scope",
             validate_scope_metadata(self.org_scope, field="NMRFStressArtifact.org_scope"),
         )
+        _validate_optional_risk_factor_id(self.risk_factor_id)
+        _validate_optional_mapping_version(self.risk_factor_mapping_version)
 
     def as_dict(self) -> dict[str, object]:
         """Return a serialisable audit summary without expanding the loss vector.
@@ -189,6 +204,8 @@ class NMRFStressArtifact:
                 "source": self.source,
                 "scenario_ids": list(self.scenario_ids),
                 "artifact_id": self.artifact_id,
+                "risk_factor_id": self.risk_factor_id,
+                "risk_factor_mapping_version": self.risk_factor_mapping_version,
                 "scenario_set_id": self.scenario_set_id,
                 "scenario_vector_id": self.scenario_vector_id,
                 "shock_id": self.shock_id,
@@ -308,6 +325,24 @@ def _as_loss_array(
     result = arr.astype(np.float64, copy=True)
     result.flags.writeable = False
     return result
+
+
+def _validate_optional_risk_factor_id(value: str | None) -> None:
+    if value is None or value == "":
+        return
+    try:
+        RiskFactorId(value)
+    except RiskFactorPrimitiveError as exc:
+        raise ValueError(str(exc)) from exc
+
+
+def _validate_optional_mapping_version(value: str | None) -> None:
+    if value is None or value == "":
+        return
+    try:
+        RiskFactorMappingVersion(value)
+    except RiskFactorPrimitiveError as exc:
+        raise ValueError(str(exc)) from exc
 
 
 __all__ = [

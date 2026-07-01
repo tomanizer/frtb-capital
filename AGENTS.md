@@ -83,6 +83,11 @@ All U.S. NPR 2.0 / Basel FRTB / EU CRR3 / PRA UK CRR content is proposed-rule or
   component packages and `frtb-orchestration` may preserve IDs/provenance, but
   must not import `frtb_result_store`, fetch artifact payloads, infer market
   data, construct shocks, or perform pricing/interpolation inside kernels.
+  Canonical risk-factor metadata follows the same ownership split: common owns
+  value primitives, result-store owns snapshots/read APIs, components preserve
+  supplied IDs and provenance, orchestration composes resolved views, and
+  Navigator consumes APIs without client-side regulatory classification. See
+  [`docs/RISK_FACTOR_METADATA_OWNERSHIP.md`](docs/RISK_FACTOR_METADATA_OWNERSHIP.md).
 - **One package per PR** unless the change is genuinely cross-cutting (regulatory definition change, shared type update). Cross-cutting PRs must reference an ADR.
 - **Per-package versioning.** Bump only the affected package's version.
 - **Material changes need ADRs.** See [`CONTRIBUTING.md`](CONTRIBUTING.md).
