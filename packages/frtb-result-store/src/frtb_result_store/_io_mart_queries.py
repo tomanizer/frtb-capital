@@ -454,6 +454,9 @@ class StoreMartQueryMixin:
         for f in filters:
             parsed_filters.extend(x.strip() for x in f.split(",") if x.strip())
 
+        if not parsed_measures:
+            raise ResultStoreContractError("At least one measure must be specified", field="measures")
+
         valid_dimensions = set(DIMENSION_COLUMNS + ["node_type"])
         for dim in parsed_rows:
             if dim not in valid_dimensions:
@@ -473,6 +476,9 @@ class StoreMartQueryMixin:
             for dim in DIMENSION_COLUMNS:
                 val = getattr(node, dim, None)
                 if val is not None and val != "":
+                    from enum import Enum
+                    if isinstance(val, Enum):
+                        val = val.value
                     populated[dim] = val
             key = (frozenset(populated.keys()), tuple(sorted(populated.items())))
             if key not in official_nodes_map:
@@ -500,7 +506,7 @@ class StoreMartQueryMixin:
             elif "=" in f:
                 key, val = f.split("=", 1)
             else:
-                continue
+                raise ResultStoreContractError(f"Invalid filter format: {f!r}", field="filters")
 
             key = key.strip()
             val = val.strip()
