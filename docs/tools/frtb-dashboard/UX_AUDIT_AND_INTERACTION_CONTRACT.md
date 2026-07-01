@@ -185,6 +185,60 @@ Current endpoint contract:
 - `GET /api/runs/{run_id}/nodes/{node_id}` is a future hook for hierarchy-node
   summary drilldown.
 
+Result-store boundary:
+
+The production Capital Navigator should meet data through `frtb-result-store`,
+not through dashboard-owned synthetic aggregators. The dashboard may keep a thin
+adapter while fixtures mature, but the authoritative boundary should be the
+read-only result-store API and persisted marts.
+
+Existing result-store surfaces that map directly to Navigator needs:
+
+- Runs and status: `GET /runs`, `GET /runs/{run_id}`, `GET
+  /runs/{run_id}/events`, and `GET /run-groups`.
+- Top-of-house and component capital: `capital_summary`, `component_breakdown`,
+  and `GET /runs/{run_id}/capital-tree`.
+- Node drilldown: `GET /runs/{run_id}/nodes/{node_id}`, child nodes, measures,
+  attribution, and lineage.
+- Movement: `GET /runs/{run_id}/movements` backed by `movement_summary`.
+- Attribution: `top_contributors`, `residual_attribution`,
+  `unsupported_attribution`, and node-level attribution endpoints.
+- Organisation hierarchy: `GET /runs/{run_id}/org-hierarchy`,
+  `/org-hierarchy/nodes/{node_id}/children`, `/aggregate`, and `/source-rows`.
+- Component marts: `ima_desk_dashboard`, `sbm_bucket_ladder`,
+  `drc_issuer_contributors`, `cva_counterparty_contributors`, and
+  `rrao_exposure_summary`.
+- Artifact drillthrough: `GET /runs/{run_id}/artifacts`, artifact page, and
+  artifact download/S3 URI handoff.
+
+Navigator adapter responsibilities:
+
+- Translate `NavigatorState` into result-store query parameters.
+- Compose a small number of result-store calls into one UI view model when this
+  improves latency and consistency.
+- Preserve result-store IDs (`run_id`, `node_id`, `artifact_id`,
+  `attribution_id`, hierarchy node IDs) in UI state and AI explanation
+  snapshots.
+- Render no-data, unsupported, stale, residual, and synthetic states based on
+  result-store rows and diagnostics rather than UI inference.
+- Never recalculate capital, source-row totals, official subtotals, or
+  attribution in the browser.
+
+Result-store gaps for the expanded UX:
+
+- RFET/NMRF/SES needs dedicated marts or artifacts with canonical
+  `risk_factor_id`, observation evidence, modellability state, usage mapping,
+  SES amount, movement, stress period, and liquidity horizon.
+- PLA/backtesting needs a desk eligibility mart with desk status, test metrics,
+  thresholds/profile, exception counts, source hashes, and capital consequence.
+- Time-series drivers need historical risk-factor/value/capital movement rows,
+  not only current-run capital-tree rows.
+- Pivot support needs a server-side aggregate query contract with allowed
+  dimensions, allowed measures, subtotal reconciliation flags, and paging.
+- AI explanations need a server-side snapshot builder that pulls bounded,
+  entitlement-safe result-store rows and artifact pages before calling an
+  external or internal model service.
+
 Target mental model:
 
 ```text
