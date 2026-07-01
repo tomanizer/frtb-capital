@@ -2,7 +2,7 @@
   "calculation_date": "2026-07-01",
   "files": {
     "expected_outputs.json": {
-      "sha256": "bb07e34b82459a7b929a5d02557e8df5b90f7dcb90160556082b32505039f518"
+      "sha256": "7808ccd9c191a23574c5592eba467413ad6985513dead8ef0a442a7bca4f5e6a"
     },
     "invalid_cases.json": {
       "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"

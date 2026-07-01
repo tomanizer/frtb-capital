@@ -50,7 +50,9 @@
               "factor_key": [
                 "EUR",
                 "1y"
-              ]
+              ],
+              "source_system": "synthetic-sbm-fixture",
+              "source_row_id": "row-001"
             }
           ],
           "floor_applied": false,

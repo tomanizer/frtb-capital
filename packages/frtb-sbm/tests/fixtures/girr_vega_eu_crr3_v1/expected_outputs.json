@@ -41,7 +41,9 @@
               "citation_ids": [
                 "eu_crr3_92"
               ],
-              "qualifier": "1y"
+              "qualifier": "1y",
+              "source_system": "synthetic-sbm-fixture",
+              "source_row_id": "row-001"
             },
             {
               "sensitivity_id": "girr-vega-eu-crr3-v1-002",
@@ -54,7 +56,9 @@
               "citation_ids": [
                 "eu_crr3_92"
               ],
-              "qualifier": "5y"
+              "qualifier": "5y",
+              "source_system": "synthetic-sbm-fixture",
+              "source_row_id": "row-002"
             }
           ],
           "floor_applied": false,
@@ -82,7 +86,9 @@
               "citation_ids": [
                 "eu_crr3_92"
               ],
-              "qualifier": "5y"
+              "qualifier": "5y",
+              "source_system": "synthetic-sbm-fixture",
+              "source_row_id": "row-003"
             }
           ],
           "floor_applied": false,

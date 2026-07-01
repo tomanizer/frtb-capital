@@ -239,17 +239,20 @@ def _register_risk_factor_list_route(
         offset: int = query(default=0, ge=0),
     ) -> dict[str, object]:
         _require_run(result_store, run_id, http_exception_type)
-        return _risk_factor_jsonable(
-            result_store.list_risk_factors(
-                run_id,
-                search=search,
-                risk_class=risk_class,
-                bucket_id=bucket_id,
-                snapshot_id=snapshot_id,
-                limit=limit,
-                offset=offset,
+        try:
+            return _risk_factor_jsonable(
+                result_store.list_risk_factors(
+                    run_id,
+                    search=search,
+                    risk_class=risk_class,
+                    bucket_id=bucket_id,
+                    snapshot_id=snapshot_id,
+                    limit=limit,
+                    offset=offset,
+                )
             )
-        )
+        except ResultStoreContractError as exc:
+            _raise_risk_factor_query_error(exc, http_exception_type)
 
 
 def _register_risk_factor_detail_route(
@@ -268,9 +271,12 @@ def _register_risk_factor_detail_route(
         snapshot_id: str | None = None,
     ) -> dict[str, object]:
         _require_run(result_store, run_id, http_exception_type)
-        return _risk_factor_jsonable(
-            result_store.get_risk_factor(run_id, risk_factor_id, snapshot_id=snapshot_id)
-        )
+        try:
+            return _risk_factor_jsonable(
+                result_store.get_risk_factor(run_id, risk_factor_id, snapshot_id=snapshot_id)
+            )
+        except ResultStoreContractError as exc:
+            _raise_risk_factor_query_error(exc, http_exception_type)
 
 
 def _register_risk_factor_lineage_route(
@@ -289,13 +295,16 @@ def _register_risk_factor_lineage_route(
         snapshot_id: str | None = None,
     ) -> dict[str, object]:
         _require_run(result_store, run_id, http_exception_type)
-        return _risk_factor_jsonable(
-            result_store.risk_factor_lineage(
-                run_id,
-                risk_factor_id,
-                snapshot_id=snapshot_id,
+        try:
+            return _risk_factor_jsonable(
+                result_store.risk_factor_lineage(
+                    run_id,
+                    risk_factor_id,
+                    snapshot_id=snapshot_id,
+                )
             )
-        )
+        except ResultStoreContractError as exc:
+            _raise_risk_factor_query_error(exc, http_exception_type)
 
 
 def _register_risk_factor_capital_route(
@@ -314,9 +323,12 @@ def _register_risk_factor_capital_route(
         framework: str | None = None,
     ) -> dict[str, object]:
         _require_run(result_store, run_id, http_exception_type)
-        return _to_jsonable(
-            result_store.risk_factor_capital(run_id, risk_factor_id, framework=framework)
-        )
+        try:
+            return _risk_factor_jsonable(
+                result_store.risk_factor_capital(run_id, risk_factor_id, framework=framework)
+            )
+        except ResultStoreContractError as exc:
+            _raise_risk_factor_query_error(exc, http_exception_type)
 
 
 def _register_risk_factor_source_rows_route(
@@ -338,29 +350,67 @@ def _register_risk_factor_source_rows_route(
         offset: int = query(default=0, ge=0),
     ) -> dict[str, object]:
         _require_run(result_store, run_id, http_exception_type)
-        return _risk_factor_jsonable(
-            result_store.risk_factor_source_rows(
-                run_id,
-                risk_factor_id,
-                snapshot_id=snapshot_id,
-                limit=limit,
-                offset=offset,
+        try:
+            return _risk_factor_jsonable(
+                result_store.risk_factor_source_rows(
+                    run_id,
+                    risk_factor_id,
+                    snapshot_id=snapshot_id,
+                    limit=limit,
+                    offset=offset,
+                )
             )
-        )
+        except ResultStoreContractError as exc:
+            _raise_risk_factor_query_error(exc, http_exception_type)
 
 
 def _risk_factor_jsonable(payload: object) -> dict[str, object]:
     return cast(dict[str, object], _collapse_value_wrappers(_to_jsonable(payload)))
 
 
-def _collapse_value_wrappers(payload: object) -> object:
+def _collapse_value_wrappers(
+    payload: object,
+    *,
+    preserve_value_wrappers: bool = False,
+) -> object:
     if isinstance(payload, Mapping):
-        if set(payload) == {"value"} and isinstance(payload.get("value"), str):
+        if (
+            not preserve_value_wrappers
+            and set(payload) == {"value"}
+            and isinstance(payload.get("value"), str)
+        ):
             return payload["value"]
-        return {str(key): _collapse_value_wrappers(value) for key, value in payload.items()}
+        return _collapse_mapping_value_wrappers(payload, preserve_value_wrappers)
     if isinstance(payload, Sequence) and not isinstance(payload, str | bytes | bytearray):
-        return [_collapse_value_wrappers(value) for value in payload]
+        return [
+            _collapse_value_wrappers(
+                value,
+                preserve_value_wrappers=preserve_value_wrappers,
+            )
+            for value in payload
+        ]
     return payload
+
+
+def _collapse_mapping_value_wrappers(
+    payload: Mapping[object, object],
+    preserve_value_wrappers: bool,
+) -> dict[str, object]:
+    collapsed: dict[str, object] = {}
+    for key, value in payload.items():
+        key_text = str(key)
+        preserve_child = preserve_value_wrappers or (
+            key_text == "metadata" and not _looks_like_record_payload(value)
+        )
+        collapsed[key_text] = _collapse_value_wrappers(
+            value,
+            preserve_value_wrappers=preserve_child,
+        )
+    return collapsed
+
+
+def _looks_like_record_payload(value: object) -> bool:
+    return isinstance(value, Mapping) and "run_id" in value and "risk_factor_id" in value
 
 
 def _register_capital_tree_routes(
@@ -706,6 +756,13 @@ def _raise_org_query_error(
 ) -> NoReturn:
     status_code = 404 if exc.field == "node_id" else 422
     raise http_exception_type(status_code=status_code, detail=str(exc)) from exc  # type: ignore[call-arg]
+
+
+def _raise_risk_factor_query_error(
+    exc: ResultStoreContractError,
+    http_exception_type: type[Exception],
+) -> NoReturn:
+    raise http_exception_type(status_code=422, detail=str(exc)) from exc  # type: ignore[call-arg]
 
 
 def _run_payload(store: DuckDbParquetResultStore, run: CalculationRun) -> dict[str, object]:

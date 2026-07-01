@@ -37,7 +37,9 @@
               "citation_ids": [
                 "eu_crr3_77"
               ],
-              "qualifier": "ISS-X"
+              "qualifier": "ISS-X",
+              "source_system": "synthetic-sbm-fixture",
+              "source_row_id": "row-005"
             },
             {
               "sensitivity_id": "equity-delta-eu-crr3-v1-006",
@@ -50,7 +52,9 @@
               "citation_ids": [
                 "eu_crr3_77"
               ],
-              "qualifier": "ISS-Y"
+              "qualifier": "ISS-Y",
+              "source_system": "synthetic-sbm-fixture",
+              "source_row_id": "row-006"
             }
           ],
           "floor_applied": false,
@@ -77,7 +81,9 @@
               "citation_ids": [
                 "eu_crr3_77"
               ],
-              "qualifier": "ISS-A"
+              "qualifier": "ISS-A",
+              "source_system": "synthetic-sbm-fixture",
+              "source_row_id": "row-001"
             },
             {
               "sensitivity_id": "equity-delta-eu-crr3-v1-002",
@@ -90,7 +96,9 @@
               "citation_ids": [
                 "eu_crr3_77"
               ],
-              "qualifier": "ISS-A"
+              "qualifier": "ISS-A",
+              "source_system": "synthetic-sbm-fixture",
+              "source_row_id": "row-002"
             },
             {
               "sensitivity_id": "equity-delta-eu-crr3-v1-003",
@@ -103,7 +111,9 @@
               "citation_ids": [
                 "eu_crr3_77"
               ],
-              "qualifier": "ISS-B"
+              "qualifier": "ISS-B",
+              "source_system": "synthetic-sbm-fixture",
+              "source_row_id": "row-003"
             }
           ],
           "floor_applied": false,
@@ -130,7 +140,9 @@
               "citation_ids": [
                 "eu_crr3_77"
               ],
-              "qualifier": "ISS-C"
+              "qualifier": "ISS-C",
+              "source_system": "synthetic-sbm-fixture",
+              "source_row_id": "row-004"
             }
           ],
           "floor_applied": false,

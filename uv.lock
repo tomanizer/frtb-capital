@@ -942,7 +942,7 @@ dev = [
 
 [[package]]
 name = "frtb-common"
-version = "0.1.2"
+version = "0.1.1"
 source = { editable = "packages/frtb-common" }
 dependencies = [
     { name = "numpy" },
@@ -1052,7 +1052,7 @@ requires-dist = [
 
 [[package]]
 name = "frtb-result-store"
-version = "0.1.1"
+version = "0.1.0"
 source = { editable = "packages/frtb-result-store" }
 dependencies = [
     { name = "frtb-common" },
@@ -1128,7 +1128,7 @@ provides-extras = ["dev", "notebooks"]
 
 [[package]]
 name = "frtb-sbm"
-version = "0.8.1"
+version = "0.8.0"
 source = { editable = "packages/frtb-sbm" }
 dependencies = [
     { name = "frtb-common" },

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
+from dataclasses import replace
 from datetime import UTC, date, datetime
 from pathlib import Path
 
@@ -259,12 +260,81 @@ def test_risk_factor_api_serves_metadata_lineage_and_drilldown_states(tmp_path: 
     missing_capital = client.get(f"/runs/{run.run_id}/risk-factors/rf-2/capital").json()
     assert missing_capital["state"] == "no_data"
     assert missing_capital["contribution"] is None
+    invalid_framework = client.get(
+        f"/runs/{run.run_id}/risk-factors/rf-1/capital",
+        params={"framework": "NOT_A_COMPONENT"},
+    )
+    assert invalid_framework.status_code == 422
 
     bad_limit = client.get(
         f"/runs/{run.run_id}/risk-factors/rf-1/source-rows",
         params={"limit": 0},
     )
     assert bad_limit.status_code == 422
+
+
+def test_risk_factor_api_defaults_to_latest_snapshot_and_preserves_metadata(
+    tmp_path: Path,
+) -> None:
+    run = _run("US_NPR_2_0", None, None)
+    snapshot, records, mappings = _risk_factor_metadata_fixture(run)
+    latest_records = (
+        replace(
+            records[0],
+            metadata={"vendor_payload": {"value": "preserve-as-metadata"}},
+        ),
+        records[1],
+    )
+    older_snapshot = replace(
+        snapshot,
+        snapshot_id="risk-factor-snapshot-previous",
+        mapping_version="synthetic-taxonomy-v0",
+        effective_date=date(2026, 6, 2),
+    )
+    older_records = (
+        replace(
+            records[0],
+            snapshot_id=older_snapshot.snapshot_id,
+            mapping_version=older_snapshot.mapping_version,
+            display_name="Previous USD OIS 5Y",
+            source_row_id="previous-row-1",
+        ),
+    )
+    older_mappings = (
+        replace(
+            mappings[0],
+            snapshot_id=older_snapshot.snapshot_id,
+            mapping_version=older_snapshot.mapping_version,
+            source_row_id="previous-row-1",
+        ),
+    )
+    store = DuckDbParquetResultStore(tmp_path / "result-store")
+    store.write_bundle(
+        _bundle(
+            run,
+            risk_factor_snapshots=(older_snapshot, snapshot),
+            risk_factor_metadata=(*older_records, *latest_records),
+            risk_factor_source_mappings=(*older_mappings, *mappings),
+        )
+    )
+    client = TestClient(create_result_store_app(store))
+
+    listing = client.get(
+        f"/runs/{run.run_id}/risk-factors",
+        params={"search": "usd", "risk_class": "girr", "limit": 10},
+    ).json()
+    assert listing["total_count"] == 2
+    assert {item["mapping_version"] for item in listing["items"]} == {"synthetic-taxonomy-v1"}
+
+    detail = client.get(f"/runs/{run.run_id}/risk-factors/rf-1").json()
+    assert detail["metadata"]["display_name"] == "USD OIS 5Y"
+    assert detail["metadata"]["metadata"]["vendor_payload"] == {"value": "preserve-as-metadata"}
+
+    lineage = client.get(f"/runs/{run.run_id}/risk-factors/rf-1/lineage").json()
+    assert [row["source_row_id"] for row in lineage["lineage"]] == ["row-1", "row-1-rfet"]
+
+    source_rows = client.get(f"/runs/{run.run_id}/risk-factors/rf-1/source-rows").json()
+    assert [row["source_row_id"] for row in source_rows["rows"]] == ["row-1", "row-1-rfet"]
 
 
 def test_attribution_explain_projection_api_serves_residual_and_unsupported(

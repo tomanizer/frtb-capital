@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, cast
 
 from frtb_result_store._io_risk_factor_query_utils import (
     _framework_value,
@@ -73,6 +73,7 @@ class StoreRiskFactorQueryMixin:
         """
 
         limit, offset = _validate_page_window(limit, offset)
+        snapshot_id = _default_risk_factor_snapshot_id(self, run_id, snapshot_id)
         records = self.risk_factor_metadata_by_classification(
             run_id,
             risk_class=risk_class,
@@ -169,6 +170,7 @@ class StoreRiskFactorQueryMixin:
             explicit no-data state.
         """
 
+        snapshot_id = _default_risk_factor_snapshot_id(self, run_id, snapshot_id)
         mappings = self.risk_factor_source_mappings(
             run_id,
             snapshot_id=snapshot_id,
@@ -262,6 +264,7 @@ class StoreRiskFactorQueryMixin:
         """
 
         limit, offset = _validate_page_window(limit, offset)
+        snapshot_id = _default_risk_factor_snapshot_id(self, run_id, snapshot_id)
         mappings = self.risk_factor_source_mappings(
             run_id,
             snapshot_id=snapshot_id,
@@ -377,10 +380,11 @@ class StoreRiskFactorQueryMixin:
             Matching record, or ``None`` when absent.
         """
 
+        snapshot_id = _default_risk_factor_snapshot_id(self, run_id, snapshot_id)
         records = tuple(
             record
             for record in self.risk_factor_metadata(run_id, snapshot_id=snapshot_id)
-            if record.risk_factor_id.value == risk_factor_id
+            if str(record.risk_factor_id) == risk_factor_id
         )
         if len(records) > 1:
             raise ResultStoreContractError(
@@ -416,15 +420,18 @@ class StoreRiskFactorQueryMixin:
             Deterministically ordered matching records.
         """
 
-        records = self.risk_factor_metadata(run_id, snapshot_id=snapshot_id)
+        records = cast(
+            tuple[RiskFactorMetadataRecord, ...],
+            self.risk_factor_metadata(run_id, snapshot_id=snapshot_id),
+        )
         if risk_class is not None:
             risk_class = risk_class.upper()
-            records = tuple(record for record in records if record.risk_class.value == risk_class)
+            records = tuple(record for record in records if str(record.risk_class) == risk_class)
         if bucket_id is not None:
             records = tuple(
                 record
                 for record in records
-                if record.bucket_id is not None and record.bucket_id.value == bucket_id
+                if record.bucket_id is not None and str(record.bucket_id) == bucket_id
             )
         return records
 
@@ -454,22 +461,39 @@ class StoreRiskFactorQueryMixin:
 
         if not self.run_exists(run_id):
             return ()
+        where = ["run_id = ?"]
+        params: list[object] = [run_id]
+        if snapshot_id is not None:
+            where.append("snapshot_id = ?")
+            params.append(snapshot_id)
+        if risk_factor_id is not None:
+            where.append("risk_factor_id = ?")
+            params.append(risk_factor_id)
         rows = self._fetchall(
             "risk_factor_source_mappings",
-            """
+            f"""
             SELECT run_id, snapshot_id, risk_factor_id, source_system, source_row_id,
                    mapping_version, relationship, source_hash, metadata_json
-            FROM {table}
-            WHERE run_id = ?
+            FROM {{table}}
+            WHERE {" AND ".join(where)}
             ORDER BY snapshot_id, risk_factor_id, source_system, source_row_id, relationship
             """,
-            (run_id,),
+            tuple(params),
         )
-        mappings = tuple(_risk_factor_source_mapping_from_row(row) for row in rows)
-        if snapshot_id is not None:
-            mappings = tuple(mapping for mapping in mappings if mapping.snapshot_id == snapshot_id)
-        if risk_factor_id is not None:
-            mappings = tuple(
-                mapping for mapping in mappings if mapping.risk_factor_id.value == risk_factor_id
-            )
-        return mappings
+        return tuple(_risk_factor_source_mapping_from_row(row) for row in rows)
+
+
+def _default_risk_factor_snapshot_id(
+    store: Any,
+    run_id: str,
+    snapshot_id: str | None,
+) -> str | None:
+    if snapshot_id is not None:
+        return snapshot_id
+    snapshots = cast(
+        tuple[RiskFactorMetadataSnapshot, ...],
+        store.risk_factor_snapshots(run_id),
+    )
+    if not snapshots:
+        return None
+    return snapshots[-1].snapshot_id

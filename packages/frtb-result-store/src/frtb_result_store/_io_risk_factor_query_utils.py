@@ -46,11 +46,11 @@ def _page(
 
 def _record_search_text(record: RiskFactorMetadataRecord) -> str:
     fields: Iterable[object | None] = (
-        record.risk_factor_id.value,
+        str(record.risk_factor_id),
         record.display_name,
-        record.risk_class.value,
-        record.risk_factor_type.value,
-        record.mapping_version,
+        str(record.risk_class),
+        str(record.risk_factor_type),
+        str(record.mapping_version),
         _optional_value(record.bucket_id),
         record.bucket_label,
         _optional_value(record.sensitivity_type),
@@ -62,10 +62,10 @@ def _record_search_text(record: RiskFactorMetadataRecord) -> str:
         record.counterparty_id,
         record.commodity_id,
         record.equity_id,
-        record.status.value,
-        record.rfet_evidence_state.value,
-        record.modellability_state.value,
-        record.nmrf_state.value,
+        str(record.status),
+        str(record.rfet_evidence_state),
+        str(record.modellability_state),
+        str(record.nmrf_state),
         record.stress_period_id,
         record.source_system,
         record.source_row_id,
@@ -128,7 +128,13 @@ def _numeric_or_zero(value: object) -> float:
 def _framework_value(framework: FrtbComponent | str | None) -> str | None:
     if framework is None:
         return None
-    return FrtbComponent(framework).value
+    try:
+        return FrtbComponent(framework).value
+    except ValueError as exc:
+        raise ResultStoreContractError(
+            f"invalid framework: {framework}",
+            field="framework",
+        ) from exc
 
 
 def _optional_value(value: object | None) -> object | None:

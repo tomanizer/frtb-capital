@@ -37,7 +37,9 @@
               "citation_ids": [
                 "eu_crr3_82"
               ],
-              "qualifier": "NYMEX"
+              "qualifier": "NYMEX",
+              "source_system": "synthetic-sbm-fixture",
+              "source_row_id": "row-001"
             },
             {
               "sensitivity_id": "commodity-delta-eu-crr3-v1-002",
@@ -50,7 +52,9 @@
               "citation_ids": [
                 "eu_crr3_82"
               ],
-              "qualifier": "NYMEX"
+              "qualifier": "NYMEX",
+              "source_system": "synthetic-sbm-fixture",
+              "source_row_id": "row-002"
             },
             {
               "sensitivity_id": "commodity-delta-eu-crr3-v1-003",
@@ -63,7 +67,9 @@
               "citation_ids": [
                 "eu_crr3_82"
               ],
-              "qualifier": "ICE"
+              "qualifier": "ICE",
+              "source_system": "synthetic-sbm-fixture",
+              "source_row_id": "row-003"
             }
           ],
           "floor_applied": false,
@@ -90,7 +96,9 @@
               "citation_ids": [
                 "eu_crr3_82"
               ],
-              "qualifier": "LME"
+              "qualifier": "LME",
+              "source_system": "synthetic-sbm-fixture",
+              "source_row_id": "row-004"
             }
           ],
           "floor_applied": false,

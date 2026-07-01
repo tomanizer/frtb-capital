@@ -280,7 +280,7 @@ def _validate_bundle_risk_factor_metadata(bundle: ResultBundle) -> None:
                 f"risk-factor metadata references unknown snapshot: {record.snapshot_id}",
                 field="risk_factor_metadata",
             )
-        key = (record.snapshot_id, record.risk_factor_id.value)
+        key = (record.snapshot_id, str(record.risk_factor_id))
         record_keys.append("\x1f".join(key))
         known_record_keys.add(key)
     duplicate_records = _duplicate_values(record_keys)
@@ -298,10 +298,10 @@ def _validate_bundle_risk_factor_metadata(bundle: ResultBundle) -> None:
                 f"risk-factor source mapping references unknown snapshot: {mapping.snapshot_id}",
                 field="risk_factor_source_mappings",
             )
-        if (mapping.snapshot_id, mapping.risk_factor_id.value) not in known_record_keys:
+        if (mapping.snapshot_id, str(mapping.risk_factor_id)) not in known_record_keys:
             raise ResultStoreContractError(
                 "risk-factor source mapping references unknown risk_factor_id: "
-                f"{mapping.risk_factor_id.value}",
+                f"{mapping.risk_factor_id}",
                 field="risk_factor_source_mappings",
             )
         source_keys.append(

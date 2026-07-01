@@ -13,6 +13,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass, field
 from datetime import date, datetime
 from enum import StrEnum
+from typing import Any, cast
 
 from frtb_common import (
     BucketId,
@@ -182,7 +183,7 @@ def _coerce_primitive(value: object, primitive: type[object], field: str) -> obj
     if isinstance(value, primitive):
         return value
     try:
-        return primitive(value)
+        return cast(Any, primitive)(value)
     except (RiskFactorPrimitiveError, TypeError, ValueError) as exc:
         raise ResultStoreContractError(str(exc), field=field) from exc
 
