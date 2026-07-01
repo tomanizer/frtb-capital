@@ -304,10 +304,15 @@
 
     <section class="context">
       <div class="seg" id="familyTabs">
+        <button data-family="risk-factors">Risk factors</button>
         <button data-family="time-series" class="active">Time series</button>
         <button data-family="shocks">Shocks</button>
         <button data-family="scenario-vectors">Scenarios</button>
         <button data-family="surfaces">Surfaces</button>
+      </div>
+      <div class="field">
+        <label for="riskFactorSearch">Search</label>
+        <input id="riskFactorSearch" placeholder="risk factor, bucket, source">
       </div>
       <span class="eyebrow">Grouping</span>
       <span class="status">Metadata family > semantic partition</span>
@@ -364,9 +369,17 @@
       lineage: [],
       abort: null,
       tab: "detail",
+      search: "",
     };
 
     const familyConfig = {
+      "risk-factors": {
+        list: "risk-factors",
+        listKey: "items",
+        detail: row => `risk-factors/${encodeURIComponent(row.risk_factor_id)}`,
+        semantic: row => row.risk_factor_id,
+        mode: "riskFactors",
+      },
       "time-series": {
         list: "time-series",
         listKey: "time_series",
@@ -396,6 +409,10 @@
     const $ = id => document.getElementById(id);
 
     $("loadRun").addEventListener("click", loadAll);
+    $("riskFactorSearch").addEventListener("input", event => {
+      state.search = event.target.value.trim().toLowerCase();
+      renderCatalog();
+    });
     $("familyTabs").addEventListener("click", event => {
       const button = event.target.closest("button[data-family]");
       if (!button) return;
@@ -455,10 +472,9 @@
       const controller = new AbortController();
       state.abort = controller;
       try {
-        const detailPath = familyConfig[state.family].detail(row);
-        const detail = await fetchJson(detailPath, controller.signal);
+        const detail = await fetchDetail(row, controller.signal);
         state.detail = detail;
-        $("detailKpi").textContent = String(detail.returned ?? 0);
+        $("detailKpi").textContent = String(detail.returned ?? detail.lineage_count ?? 0);
         renderInspector();
       } catch (error) {
         if (error.name !== "AbortError") {
@@ -469,9 +485,9 @@
     }
 
     function renderCatalog() {
-      const rows = state.catalog[state.family] || [];
+      const rows = filteredRows(state.catalog[state.family] || []);
       const counts = rows.reduce((acc, row) => {
-        const status = row.artifact_status || "AVAILABLE";
+        const status = rowStatus(row);
         acc[status] = (acc[status] || 0) + 1;
         return acc;
       }, { AVAILABLE: 0, NO_DATA: 0, UNSUPPORTED: 0 });
@@ -484,15 +500,24 @@
       rows.forEach((row, index) => {
         const tr = document.createElement("tr");
         tr.tabIndex = 0;
-        const status = row.artifact_status || "AVAILABLE";
+        const status = rowStatus(row);
         const semantic = familyConfig[state.family].semantic(row);
+        const role = familyConfig[state.family].mode === "riskFactors"
+          ? `${row.risk_class || "-"} / ${row.risk_factor_type || "-"}`
+          : row.navigator_role || "-";
+        const component = familyConfig[state.family].mode === "riskFactors"
+          ? row.bucket_id || row.bucket_label || "-"
+          : row.component || "-";
+        const artifact = familyConfig[state.family].mode === "riskFactors"
+          ? row.mapping_version || row.source_row_id || "-"
+          : row.artifact_id;
         tr.innerHTML = `
           <td><span class="chip ${statusClass(status)}">${escapeHtml(status)}</span></td>
-          <td>${escapeHtml(row.navigator_role || "-")}</td>
+          <td>${escapeHtml(role)}</td>
           <td title="${escapeHtml(semantic)}">${escapeHtml(semantic)}</td>
-          <td>${escapeHtml(row.component || "-")}</td>
-          <td class="num">${row.row_count ?? 0}</td>
-          <td title="${escapeHtml(row.artifact_id)}">${escapeHtml(row.artifact_id)}</td>
+          <td>${escapeHtml(component)}</td>
+          <td class="num">${row.row_count ?? row.lineage_count ?? 0}</td>
+          <td title="${escapeHtml(artifact)}">${escapeHtml(artifact)}</td>
         `;
         tr.addEventListener("click", () => selectRow(row, tr));
         tr.addEventListener("keydown", event => {
@@ -520,7 +545,7 @@
       $("reconStrip").textContent = detail
         ? `row_count ${detail.row_count ?? "-"} | filtered ${detail.filtered_row_count ?? "-"} | returned ${detail.returned ?? "-"}`
         : "row_count - | filtered - | returned -";
-      $("lineageRail").innerHTML = `<span class="lineage-token">${escapeHtml(selected.artifact_id)}</span><span class="lineage-token">${escapeHtml(selected.navigator_role || "metadata")}</span>`;
+      $("lineageRail").innerHTML = lineageTokens(selected);
 
       if (!detail) {
         $("inspectorBody").innerHTML = `<div class="message">Loading detail rows for <strong>${escapeHtml(semantic)}</strong>.</div>`;
@@ -531,7 +556,11 @@
         return;
       }
       if (state.tab === "lineage") {
-        $("inspectorBody").innerHTML = lineageTable(selected);
+        $("inspectorBody").innerHTML = lineageTable(selected, detail);
+        return;
+      }
+      if (detail.mode === "risk_factor") {
+        $("inspectorBody").innerHTML = riskFactorDetailTable(detail);
         return;
       }
       if (detail.mode === "artifact_unavailable") {
@@ -551,7 +580,10 @@
       return `<table><thead><tr>${columns.map(column => `<th>${escapeHtml(column)}</th>`).join("")}</tr></thead><tbody>${rows.map(row => `<tr>${columns.map(column => `<td title="${escapeHtml(String(row[column] ?? ""))}">${escapeHtml(String(row[column] ?? ""))}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
     }
 
-    function lineageTable(row) {
+    function lineageTable(row, detail) {
+      if (detail?.mode === "risk_factor") {
+        return rowsTable(detail.lineage?.lineage || []);
+      }
       return `<table><thead><tr><th>source</th><th>value</th></tr></thead><tbody>
         <tr><td>artifact_id</td><td>${escapeHtml(row.artifact_id)}</td></tr>
         <tr><td>component</td><td>${escapeHtml(row.component || "")}</td></tr>
@@ -559,6 +591,86 @@
         <tr><td>partition_values</td><td>${escapeHtml(JSON.stringify(row.partition_values || {}))}</td></tr>
         <tr><td>status</td><td>${escapeHtml(row.artifact_status || "AVAILABLE")}</td></tr>
       </tbody></table>`;
+    }
+
+    function riskFactorDetailTable(detail) {
+      const metadata = detail.metadata?.metadata || detail.metadata || {};
+      const capital = detail.capital || {};
+      const sourceRows = detail.sourceRows?.rows || [];
+      const rows = [
+        { section: "metadata", key: "risk_factor_id", value: metadata.risk_factor_id || detail.risk_factor_id },
+        { section: "metadata", key: "display_name", value: metadata.display_name },
+        { section: "metadata", key: "risk_class", value: metadata.risk_class },
+        { section: "metadata", key: "risk_factor_type", value: metadata.risk_factor_type },
+        { section: "metadata", key: "bucket", value: [metadata.bucket_id, metadata.bucket_label].filter(Boolean).join(" / ") },
+        { section: "metadata", key: "mapping_version", value: metadata.mapping_version },
+        { section: "IMA", key: "rfet", value: metadata.rfet_evidence_state || "no_data" },
+        { section: "IMA", key: "modellability", value: metadata.modellability_state || "no_data" },
+        { section: "IMA", key: "liquidity_horizon_days", value: metadata.liquidity_horizon_days ?? "no_data" },
+        { section: "IMA", key: "nmrf", value: metadata.nmrf_state || "no_data" },
+        { section: "capital", key: "state", value: capital.state || "no_data" },
+        { section: "capital", key: "contribution", value: capital.contribution ?? "no_data" },
+        { section: "source", key: "source_rows", value: sourceRows.length },
+      ];
+      return rowsTable(rows);
+    }
+
+    async function fetchDetail(row, signal) {
+      if (familyConfig[state.family].mode !== "riskFactors") {
+        return fetchJson(familyConfig[state.family].detail(row), signal);
+      }
+      const id = encodeURIComponent(row.risk_factor_id);
+      const [metadata, lineage, capital, sourceRows] = await Promise.all([
+        fetchJson(`risk-factors/${id}`, signal),
+        fetchJson(`risk-factors/${id}/lineage`, signal),
+        fetchJson(`risk-factors/${id}/capital`, signal),
+        fetchJson(`risk-factors/${id}/source-rows?limit=100`, signal),
+      ]);
+      return {
+        mode: "risk_factor",
+        risk_factor_id: row.risk_factor_id,
+        metadata,
+        lineage,
+        capital,
+        sourceRows,
+        row_count: sourceRows.total_count || lineage.lineage_count || 0,
+        filtered_row_count: sourceRows.total_count || 0,
+        returned: sourceRows.rows?.length || 0,
+      };
+    }
+
+    function filteredRows(rows) {
+      if (familyConfig[state.family].mode !== "riskFactors" || !state.search) return rows;
+      return rows.filter(row => riskFactorSearchHaystack(row).includes(state.search));
+    }
+
+    function riskFactorSearchHaystack(row) {
+      return [
+        row.risk_factor_id,
+        row.display_name,
+        row.risk_class,
+        row.risk_factor_type,
+        row.bucket_id,
+        row.bucket_label,
+        row.mapping_version,
+        row.source_row_id,
+        row.status,
+      ].filter(value => value !== null && value !== undefined).join(" ").toLowerCase();
+    }
+
+    function rowStatus(row) {
+      if (familyConfig[state.family].mode !== "riskFactors") return row.artifact_status || "AVAILABLE";
+      const status = String(row.status || "active").toLowerCase();
+      if (status === "no_data") return "NO_DATA";
+      if (status === "unsupported") return "UNSUPPORTED";
+      return "AVAILABLE";
+    }
+
+    function lineageTokens(row) {
+      if (familyConfig[state.family].mode === "riskFactors") {
+        return `<span class="lineage-token">${escapeHtml(row.risk_factor_id)}</span><span class="lineage-token">${escapeHtml(row.mapping_version || "mapping")}</span>`;
+      }
+      return `<span class="lineage-token">${escapeHtml(row.artifact_id)}</span><span class="lineage-token">${escapeHtml(row.navigator_role || "metadata")}</span>`;
     }
 
     function unavailableView(detail) {

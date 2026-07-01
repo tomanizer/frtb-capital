@@ -9,7 +9,13 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import numpy.typing as npt
-from frtb_common import ColumnSpec, TabularLogicalType
+from frtb_common import (
+    ColumnSpec,
+    RiskFactorId,
+    RiskFactorMappingVersion,
+    RiskFactorPrimitiveError,
+    TabularLogicalType,
+)
 
 from frtb_ima.adapters._mapping_hash import stable_mapping_hash
 from frtb_ima.data_models import LiquidityHorizon, RiskClass
@@ -20,6 +26,12 @@ if TYPE_CHECKING:
 IMA_RISK_FACTOR_MASTER_TARGET = "ima_risk_factor_master"
 IMA_RISK_FACTOR_MASTER_ARROW_COLUMN_SPECS: tuple[ColumnSpec, ...] = (
     ColumnSpec("risk_factor_name", logical_type=TabularLogicalType.STRING),
+    ColumnSpec("risk_factor_id", logical_type=TabularLogicalType.STRING, required=False),
+    ColumnSpec(
+        "risk_factor_mapping_version",
+        logical_type=TabularLogicalType.STRING,
+        required=False,
+    ),
     ColumnSpec("risk_class", logical_type=TabularLogicalType.STRING),
     ColumnSpec("liquidity_horizon", logical_type=TabularLogicalType.INTEGER),
     ColumnSpec("bucket", logical_type=TabularLogicalType.STRING, required=False),
@@ -70,6 +82,8 @@ class RiskFactorMasterBatch:
     """Accepted canonical risk-factor master rows with lineage and hashes."""
 
     risk_factor_names: npt.NDArray[np.str_]
+    risk_factor_ids: npt.NDArray[np.str_]
+    risk_factor_mapping_versions: npt.NDArray[np.str_]
     risk_classes: npt.NDArray[np.str_]
     liquidity_horizons: npt.NDArray[np.int64]
     buckets: npt.NDArray[np.str_]
@@ -84,6 +98,11 @@ class RiskFactorMasterBatch:
         arrays = {
             "risk_factor_names": _readonly_string_array(
                 self.risk_factor_names, "risk_factor_names"
+            ),
+            "risk_factor_ids": _readonly_string_array(self.risk_factor_ids, "risk_factor_ids"),
+            "risk_factor_mapping_versions": _readonly_string_array(
+                self.risk_factor_mapping_versions,
+                "risk_factor_mapping_versions",
             ),
             "risk_classes": _readonly_string_array(self.risk_classes, "risk_classes"),
             "liquidity_horizons": _readonly_int_array(
@@ -102,6 +121,8 @@ class RiskFactorMasterBatch:
             raise ValueError("risk_factor_names cannot contain empty values")
         if bool(np.any(arrays["source_row_ids"] == "")):
             raise ValueError("source_row_ids cannot contain empty values")
+        _validate_optional_risk_factor_ids(arrays["risk_factor_ids"])
+        _validate_optional_mapping_versions(arrays["risk_factor_mapping_versions"])
         for name, array in arrays.items():
             object.__setattr__(self, name, array)
         if not self.input_hash:
@@ -147,6 +168,46 @@ class RiskFactorMasterBatch:
         result: dict[str, RiskClass] = {}
         for name, risk_class in zip(self.risk_factor_names, self.risk_classes, strict=True):
             result[str(name)] = RiskClass(str(risk_class))
+        return result
+
+    def risk_factor_id_by_name(self) -> dict[str, str]:
+        """Return supplied stable risk-factor IDs keyed by risk-factor name.
+
+        Returns
+        -------
+        dict[str, str]
+            Risk-factor name to stable ID for rows where the upstream mapping
+            provided an ID.
+        """
+
+        result: dict[str, str] = {}
+        for name, risk_factor_id in zip(
+            self.risk_factor_names,
+            self.risk_factor_ids,
+            strict=True,
+        ):
+            if str(risk_factor_id):
+                result[str(name)] = str(risk_factor_id)
+        return result
+
+    def mapping_version_by_name(self) -> dict[str, str]:
+        """Return supplied mapping versions keyed by risk-factor name.
+
+        Returns
+        -------
+        dict[str, str]
+            Risk-factor name to mapping-version token for rows where the
+            upstream mapping provided a version.
+        """
+
+        result: dict[str, str] = {}
+        for name, mapping_version in zip(
+            self.risk_factor_names,
+            self.risk_factor_mapping_versions,
+            strict=True,
+        ):
+            if str(mapping_version):
+                result[str(name)] = str(mapping_version)
         return result
 
 
@@ -216,6 +277,8 @@ def input_hash_for_risk_factor_master_batch(batch: RiskFactorMasterBatch) -> str
     return stable_mapping_hash(
         {
             "risk_factor_names": batch.risk_factor_names.tolist(),
+            "risk_factor_ids": batch.risk_factor_ids.tolist(),
+            "risk_factor_mapping_versions": batch.risk_factor_mapping_versions.tolist(),
             "risk_classes": batch.risk_classes.tolist(),
             "liquidity_horizons": batch.liquidity_horizons.tolist(),
             "buckets": batch.buckets.tolist(),
@@ -248,3 +311,21 @@ def _readonly_1d(arr: npt.NDArray[Any], name: str) -> npt.NDArray[Any]:
     arr = arr.copy()
     arr.flags.writeable = False
     return arr
+
+
+def _validate_optional_risk_factor_ids(values: npt.NDArray[Any]) -> None:
+    for value in values:
+        if str(value):
+            try:
+                RiskFactorId(str(value))
+            except RiskFactorPrimitiveError as exc:
+                raise ValueError(f"invalid risk_factor_id: {value}") from exc
+
+
+def _validate_optional_mapping_versions(values: npt.NDArray[Any]) -> None:
+    for value in values:
+        if str(value):
+            try:
+                RiskFactorMappingVersion(str(value))
+            except RiskFactorPrimitiveError as exc:
+                raise ValueError(f"invalid risk_factor_mapping_version: {value}") from exc

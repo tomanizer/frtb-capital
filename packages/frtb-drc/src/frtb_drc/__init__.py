@@ -151,6 +151,10 @@ from frtb_drc.regimes import (
     get_rule_profile,
     profile_content_hash,
 )
+from frtb_drc.risk_factor_metadata import (
+    DrcRiskFactorMetadataRow,
+    build_drc_risk_factor_metadata_rows,
+)
 from frtb_drc.risk_weight_evidence import risk_weight_evidence_by_position
 from frtb_drc.scaffold import PACKAGE_METADATA, calculate_drc_capital
 from frtb_drc.validation import DrcInputError, validate_position, validate_positions
@@ -201,6 +205,7 @@ __all__ = [
     "DrcProfileSupportCell",
     "DrcRejectedCrifRow",
     "DrcRiskClass",
+    "DrcRiskFactorMetadataRow",
     "DrcRiskWeightEvidence",
     "DrcRuleProfile",
     "DrcSeniority",
@@ -227,6 +232,7 @@ __all__ = [
     "build_drc_nonsec_batch_from_arrow",
     "build_drc_nonsec_batch_from_columns",
     "build_drc_nonsec_batch_from_positions",
+    "build_drc_risk_factor_metadata_rows",
     "build_drc_risk_weight_evidence_from_arrow",
     "build_drc_securitisation_non_ctp_batch_from_arrow",
     "build_drc_securitisation_non_ctp_batch_from_columns",

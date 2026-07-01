@@ -16,7 +16,12 @@ from datetime import date, datetime
 from enum import Enum, StrEnum
 from types import MappingProxyType
 
-from frtb_common import CalculationScope
+from frtb_common import (
+    CalculationScope,
+    RiskFactorId,
+    RiskFactorMappingVersion,
+    RiskFactorPrimitiveError,
+)
 
 from frtb_ima.org_scope import add_scope_payload, validate_scope_metadata
 
@@ -51,11 +56,34 @@ class ModellabilityStatus(StrEnum):
 
 @dataclass(frozen=True)
 class RiskFactor:
-    """A single risk factor with its assigned liquidity horizon."""
+    """A single risk factor with its assigned liquidity horizon.
+
+    Optional stable ID and mapping-version fields are supplied by upstream
+    metadata owners. IMA preserves them for audit and Navigator drilldown but
+    does not own the canonical risk-factor metadata store.
+    """
 
     name: str
     risk_class: RiskClass
     liquidity_horizon: LiquidityHorizon
+    risk_factor_id: str | None = None
+    risk_factor_mapping_version: str | None = None
+    bucket: str | None = None
+    source_row_id: str | None = None
+
+    def __post_init__(self) -> None:
+        if not self.name:
+            raise ValueError("name must be non-empty")
+        if not isinstance(self.risk_class, RiskClass):
+            object.__setattr__(self, "risk_class", RiskClass(self.risk_class))
+        if not isinstance(self.liquidity_horizon, LiquidityHorizon):
+            object.__setattr__(
+                self,
+                "liquidity_horizon",
+                LiquidityHorizon(self.liquidity_horizon),
+            )
+        _validate_optional_risk_factor_id(self.risk_factor_id)
+        _validate_optional_mapping_version(self.risk_factor_mapping_version)
 
 
 @dataclass(frozen=True)
@@ -80,6 +108,8 @@ class RealPriceObservation:
     verifiability_reason: str = ""
     data_pool_id: str = ""
     vendor_audit_evidence_id: str = ""
+    risk_factor_id: str | None = None
+    risk_factor_mapping_version: str | None = None
 
     def __post_init__(self) -> None:
         if not self.risk_factor_name:
@@ -93,6 +123,8 @@ class RealPriceObservation:
             raise TypeError("observation_timestamp must be a datetime.datetime when provided")
         if not isinstance(self.verifiable, bool):
             raise TypeError("verifiable must be a bool")
+        _validate_optional_risk_factor_id(self.risk_factor_id)
+        _validate_optional_mapping_version(self.risk_factor_mapping_version)
 
 
 @dataclass(frozen=True)
@@ -197,3 +229,21 @@ class DeskCapitalResult:
             },
             self.org_scope,
         )
+
+
+def _validate_optional_risk_factor_id(value: str | None) -> None:
+    if value is None or value == "":
+        return
+    try:
+        RiskFactorId(value)
+    except RiskFactorPrimitiveError as exc:
+        raise ValueError(str(exc)) from exc
+
+
+def _validate_optional_mapping_version(value: str | None) -> None:
+    if value is None or value == "":
+        return
+    try:
+        RiskFactorMappingVersion(value)
+    except RiskFactorPrimitiveError as exc:
+        raise ValueError(str(exc)) from exc

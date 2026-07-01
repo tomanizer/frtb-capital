@@ -24,7 +24,7 @@ def select(paths: set[str]) -> tuple[str, ...]:
 
 
 def test_single_package_runtime_change_selects_package_tests() -> None:
-    assert select({"packages/frtb-sbm/src/frtb_sbm/capital.py"}) == ("packages/frtb-sbm/tests",)
+    assert select({"packages/frtb-sbm/src/frtb_sbm/capital.py"}) == ("packages", "tests")
 
 
 def test_common_runtime_change_selects_full_suite() -> None:
@@ -33,8 +33,8 @@ def test_common_runtime_change_selects_full_suite() -> None:
 
 def test_ci_script_change_selects_tooling_tests() -> None:
     assert select({"scripts/ci/check_code_drift.py"}) == (
-        "packages/frtb-common/tests",
         "tests",
+        "packages/frtb-common/tests",
     )
 
 
@@ -47,13 +47,11 @@ def test_root_test_fixture_change_selects_root_tests() -> None:
 
 
 def test_package_example_python_change_selects_package_tests() -> None:
-    assert select({"packages/frtb-sbm/examples/sbm_notebook_data.py"}) == (
-        "packages/frtb-sbm/tests",
-    )
+    assert select({"packages/frtb-sbm/examples/sbm_notebook_data.py"}) == ("packages", "tests")
 
 
 def test_package_script_python_change_selects_package_tests() -> None:
-    assert select({"packages/frtb-drc/scripts/generate_fixture.py"}) == ("packages/frtb-drc/tests",)
+    assert select({"packages/frtb-drc/scripts/generate_fixture.py"}) == ("packages", "tests")
 
 
 def test_common_package_support_python_change_selects_full_suite() -> None:
