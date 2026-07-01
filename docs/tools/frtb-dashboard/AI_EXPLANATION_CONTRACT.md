@@ -81,7 +81,8 @@ AiExplanationRequest:
     capital_view: binding | framework
     framework: SA | IMA | CVA | null
     scenario: Binding | Base | High | Low
-    time_window: current | day | month | quarter | year | custom
+    time_window: current | prior_run | prior_business_day | month_end | quarter_end | year_on_year | custom
+    custom_window: object | null
     grid_mode: capital_stack | drivers | evidence | source_rows | eligibility | rfet_register | time_series | pivot
     row_id: string | null
     desk_id: string | null
@@ -138,6 +139,27 @@ AiExplanationInputSnapshot:
     currency: string
     generated_at: datetime
   navigator_state_hash: string
+  navigator_state:
+    baseline_run_id: string | null
+    hierarchy_node_id: string
+    analysis_mode: capital | hierarchy | desk | pla | rfet_nmrf | risk_factor | pivot
+    capital_view: binding | framework
+    framework: SA | IMA | CVA | null
+    scenario: Binding | Base | High | Low
+    time_window: current | prior_run | prior_business_day | month_end | quarter_end | year_on_year | custom
+    custom_window: object | null
+    grid_mode: capital_stack | drivers | evidence | source_rows | eligibility | rfet_register | time_series | pivot
+    row_id: string | null
+    desk_id: string | null
+    risk_factor_id: string | null
+    artifact_id: string | null
+    selected_drilldown_target: string | null
+    inspector_tab: summary | attribution | source | model | diagnostics | lineage | explanation
+    filters: object
+    sort: object
+    pivot_rows: list[string]
+    pivot_columns: list[string]
+    column_preset: capital | movement | evidence | source | compact
   target:
     target_type: view | panel | row | desk | risk_factor | source_rows
     target_id: string
@@ -271,11 +293,14 @@ AiExplanationResponse:
   requested_at: datetime
   generated_at: datetime
   status: complete | partial | refused | failed
-  limitation_summary: string
-  summary:
+  failure_code: string | null
+  limitation_summary: string | null
+  summary: object | null
+    # Required when status is complete or partial; null for refused or failed.
     text: string
     evidence_refs: list[string]
-  findings:
+  findings: list[object]
+    # Required to contain at least one item when status is complete.
     - finding_id: string
       kind: fact | inference | limitation | next_action
       severity: info | watch | warning | critical
@@ -303,10 +328,11 @@ Response validation rules:
 - `complete` responses require at least one summary evidence reference and at
   least one finding.
 - `partial` responses must begin with `limitation_summary`.
-- `refused` responses must include a limitation code and must not include
-  unsupported analytical claims.
-- `failed` responses must include a stable failure code suitable for UI display
-  and audit.
+- `refused` responses must include `failure_code` or a limitation code and must
+  not include unsupported analytical claims. `summary` may be null and
+  `findings` may be empty.
+- `failed` responses must include a stable `failure_code` suitable for UI
+  display and audit. `summary` may be null and `findings` may be empty.
 - Each `fact`, `inference`, and `next_action` finding must cite at least one
   supplied evidence ref unless it is a pure limitation about missing data.
 - Inferences must be labelled as inferences and must not be rendered as facts.
