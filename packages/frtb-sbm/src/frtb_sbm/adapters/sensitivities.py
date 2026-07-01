@@ -114,6 +114,10 @@ def build_sbm_batch_from_columns(
     risk_factor_ids: Iterable[object] | None = None,
     risk_factor_mapping_versions: Iterable[object] | None = None,
     bucket_labels: Iterable[object] | None = None,
+    up_shock_ids: Iterable[object] | None = None,
+    down_shock_ids: Iterable[object] | None = None,
+    surface_ids: Iterable[object] | None = None,
+    surface_point_ids: Iterable[object] | None = None,
     source_column_maps: tuple[tuple[tuple[str, str], ...], ...] | None = None,
     mapping_citation_ids: tuple[tuple[str, ...], ...] | None = None,
     org_scopes: Iterable[object] | None = None,
@@ -131,6 +135,8 @@ def build_sbm_batch_from_columns(
     source_hash, handoff_hash, diagnostics, position_ids, qualifiers, option_tenors,
     liquidity_horizon_days, maturities, up_shock_amounts, down_shock_amounts, risk_factor_ids,
     risk_factor_mapping_versions, bucket_labels, source_column_maps, mapping_citation_ids,
+    liquidity_horizon_days, maturities, up_shock_amounts, down_shock_amounts, up_shock_ids,
+    down_shock_ids, surface_ids, surface_point_ids, source_column_maps, mapping_citation_ids,
     copy_arrays
         See function signature for types and defaults.
 
@@ -247,6 +253,10 @@ def _optional_arrays_from_columns(
         ("risk_factor_ids", "risk_factor_id"),
         ("risk_factor_mapping_versions", "risk_factor_mapping_version"),
         ("bucket_labels", "bucket_label"),
+        ("up_shock_ids", "up_shock_id"),
+        ("down_shock_ids", "down_shock_id"),
+        ("surface_ids", "surface_id"),
+        ("surface_point_ids", "surface_point_id"),
     )
     return {
         name: optional_array(
@@ -325,6 +335,10 @@ def _batch_with_hash(
         risk_factor_ids=optional["risk_factor_ids"],
         risk_factor_mapping_versions=optional["risk_factor_mapping_versions"],
         bucket_labels=optional["bucket_labels"],
+        up_shock_ids=optional["up_shock_ids"],
+        down_shock_ids=optional["down_shock_ids"],
+        surface_ids=optional["surface_ids"],
+        surface_point_ids=optional["surface_point_ids"],
         source_column_maps=source_column_maps,
         mapping_citation_ids=mapping_citation_ids,
         org_scopes=org_scopes,

@@ -4,6 +4,8 @@ from dataclasses import FrozenInstanceError
 from datetime import date
 
 import pytest
+from frtb_sbm.assembly.hashes import sensitivity_payload, sensitivity_payloads_from_batch
+from frtb_sbm.batch import build_sbm_batch_from_sensitivities
 from frtb_sbm import (
     DEFAULT_PAIRWISE_EVIDENCE_LIMIT,
     BucketCapital,
@@ -76,6 +78,35 @@ def test_sbm_sensitivity_is_frozen_and_carries_lineage() -> None:
     assert sensitivity.mapping_citation_ids == ("basel_mar21_girr",)
     with pytest.raises(FrozenInstanceError):
         sensitivity.amount = 0.0  # type: ignore[misc]
+
+
+def test_sbm_sensitivity_preserves_optional_shock_and_surface_provenance() -> None:
+    sensitivity = SbmSensitivity(
+        **{
+            **sample_sensitivity().__dict__,
+            "risk_measure": SbmRiskMeasure.CURVATURE,
+            "up_shock_amount": 125.0,
+            "down_shock_amount": -125.0,
+            "up_shock_id": "shock-up-001",
+            "down_shock_id": "shock-down-001",
+            "surface_id": "surface-usd-swaption-vol",
+            "surface_point_id": "surface-usd-swaption-vol:3m:5y",
+        }
+    )
+
+    payload = sensitivity_payload(sensitivity)
+    batch_payload = next(
+        iter(sensitivity_payloads_from_batch(build_sbm_batch_from_sensitivities((sensitivity,))))
+    )
+
+    assert payload["up_shock_id"] == "shock-up-001"
+    assert payload["down_shock_id"] == "shock-down-001"
+    assert payload["surface_id"] == "surface-usd-swaption-vol"
+    assert payload["surface_point_id"] == "surface-usd-swaption-vol:3m:5y"
+    assert batch_payload["up_shock_id"] == "shock-up-001"
+    assert batch_payload["down_shock_id"] == "shock-down-001"
+    assert batch_payload["surface_id"] == "surface-usd-swaption-vol"
+    assert batch_payload["surface_point_id"] == "surface-usd-swaption-vol:3m:5y"
 
 
 def test_public_result_model_covers_weighted_bucket_risk_class_and_total() -> None:

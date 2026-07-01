@@ -153,6 +153,7 @@ def build_cva_netting_set_batch_from_netting_sets(
         source_row_ids=[item.source_row_id for item in validated],
         carved_out_to_ba_cva=[item.carved_out_to_ba_cva for item in validated],
         discount_factor_explicit=[item.discount_factor_explicit for item in validated],
+        exposure_time_series_ids=[item.exposure_time_series_id for item in validated],
         lineage_source_systems=[_lineage_source_system(item.lineage) for item in validated],
         lineage_source_files=[_lineage_source_file(item.lineage) for item in validated],
         lineage_source_row_ids=[
@@ -298,6 +299,9 @@ def build_sa_cva_sensitivity_batch_from_sensitivities(
         tenors=[item.tenor for item in validated],
         volatility_inputs=[item.volatility_input for item in validated],
         hedge_ids=[item.hedge_id for item in validated],
+        volatility_surface_ids=[item.volatility_surface_id for item in validated],
+        volatility_surface_point_ids=[item.volatility_surface_point_id for item in validated],
+        shock_ids=[item.shock_id for item in validated],
         index_treatments=[
             None if item.index_treatment is None else item.index_treatment.value
             for item in validated

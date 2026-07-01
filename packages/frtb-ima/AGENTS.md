@@ -73,6 +73,10 @@ introducing `adapters/`, `validation/`, `kernel/`, or `assembly/`.
 - Include explanatory comments for regulatory formulas.
 - Do not introduce web/API calls.
 - Do not require proprietary market data.
+- Time-series, scenario-vector, shock, and surface IDs may be preserved on IMA
+  evidence/result records for lineage. Do not import `frtb_result_store`, fetch
+  stored artifacts, source market data, create missing UPL vectors, or generate
+  pricing/shock payloads inside IMA kernels.
 
 ## Review focus
 

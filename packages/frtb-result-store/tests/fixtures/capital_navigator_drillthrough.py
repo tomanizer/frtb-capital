@@ -12,8 +12,13 @@ from fixtures.capital_navigator_drillthrough_component_rows import (
     CVA_ROWS,
     DRC_ROWS,
     IMA_ROWS,
+    IMA_SCENARIO_VECTOR_ROWS,
+    RFET_OBSERVATION_TIMELINE_ROWS,
     RRAO_ROWS,
     SBM_ROWS,
+    SBM_CURVATURE_SHOCK_DOWN_ROWS,
+    SBM_CURVATURE_SHOCK_UP_ROWS,
+    USD_SWAPTION_VOL_SURFACE_ROWS,
 )
 
 
@@ -50,4 +55,9 @@ _ROWS_BY_ARTIFACT = {
     "navigator-rrao-exposures": RRAO_ROWS,
     "navigator-cva-exposures": CVA_ROWS,
     "navigator-suite-attribution": ATTRIBUTION_ROWS,
+    "navigator-rfet-observation-timeline": RFET_OBSERVATION_TIMELINE_ROWS,
+    "navigator-sbm-curvature-shock-up": SBM_CURVATURE_SHOCK_UP_ROWS,
+    "navigator-sbm-curvature-shock-down": SBM_CURVATURE_SHOCK_DOWN_ROWS,
+    "navigator-ima-scenario-vector": IMA_SCENARIO_VECTOR_ROWS,
+    "navigator-usd-swaption-vol-surface": USD_SWAPTION_VOL_SURFACE_ROWS,
 }

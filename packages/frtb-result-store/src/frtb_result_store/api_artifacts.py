@@ -50,6 +50,22 @@ def artifact_page_payload(
     http_exception_type: type[Exception],
     to_jsonable: Jsonable,
 ) -> dict[str, object]:
+    unavailable = _unavailable_payload(ref)
+    if unavailable is not None:
+        return {
+            "artifact": to_jsonable(ref),
+            "mode": "artifact_unavailable",
+            "limit": limit,
+            "offset": offset,
+            "row_count": ref.row_count,
+            "returned": 0,
+            "filtered_row_count": 0,
+            "next_offset": None,
+            "columns": [],
+            "filters": {},
+            "rows": [],
+            **unavailable,
+        }
     path = artifact_download_path(store, ref, http_exception_type)
     if path is None:
         return {
@@ -85,6 +101,12 @@ def artifact_page_payload(
     }
 
 
+def artifact_unavailable_payload(ref: ArtifactRef) -> dict[str, object] | None:
+    """Return explicit unavailable status payload for no-data/unsupported refs."""
+
+    return _unavailable_payload(ref)
+
+
 def _artifact_file_path(store: DuckDbParquetResultStore, ref: ArtifactRef) -> Path | None:
     parsed = urlparse(ref.uri)
     if parsed.scheme == "file":
@@ -99,6 +121,16 @@ def _artifact_file_path(store: DuckDbParquetResultStore, ref: ArtifactRef) -> Pa
         return None
     prefix = f"{root_uri}/"
     return root / unquote(ref.uri.removeprefix(prefix)) if ref.uri.startswith(prefix) else None
+
+
+def _unavailable_payload(ref: ArtifactRef) -> dict[str, object] | None:
+    status = ref.metadata.get("artifact_status", "AVAILABLE")
+    if status == "AVAILABLE":
+        return None
+    return {
+        "artifact_status": status,
+        "status_reason": ref.metadata.get("status_reason", ""),
+    }
 
 
 def _require_existing_parquet(

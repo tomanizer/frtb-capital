@@ -60,3 +60,6 @@ introducing `adapters/`, `validation/`, `kernel/`, or `assembly/`.
 - Do not create a `frtb-sa` package; SA composition belongs in
   `frtb-orchestration`.
 - Do not emit successful placeholder capital.
+- Curvature shock IDs and vega surface/surface-point IDs are lineage metadata
+  only. Do not import `frtb_result_store`, fetch shock/surface artifacts, infer
+  surface axes, or generate missing market-data payloads inside SBM kernels.

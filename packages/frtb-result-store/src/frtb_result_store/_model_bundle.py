@@ -34,6 +34,7 @@ from frtb_result_store.model_validation import (
     _validate_bundle_attributions,
     _validate_bundle_edges,
     _validate_bundle_hierarchy,
+    _validate_bundle_lineage,
     _validate_bundle_measures,
     _validate_bundle_movements,
     _validate_bundle_risk_factor_metadata,
@@ -83,6 +84,7 @@ class ResultBundle:
                 field="hierarchy_nodes",
             )
         known_nodes = set(node_ids) | set(hierarchy_node_ids)
+        known_results = known_nodes | {artifact.artifact_id for artifact in self.artifacts}
         for node in self.nodes:
             _require_run_id(node.run_id, run_id, "nodes")
         _validate_bundle_edges(self.edges, run_id, known_nodes)
@@ -91,8 +93,7 @@ class ResultBundle:
             _require_run_id(artifact.run_id, run_id, "artifacts")
         for manifest in self.input_manifests:
             _require_run_id(manifest.run_id, run_id, "input_manifests")
-        for lineage in self.lineage:
-            _require_run_id(lineage.run_id, run_id, "lineage")
+        _validate_bundle_lineage(self.lineage, run_id, known_results)
         _validate_bundle_attributions(self.attributions, run_id, known_nodes)
         _validate_bundle_movements(self.movement_results, run_id, known_nodes)
         _validate_bundle_risk_factor_metadata(self)

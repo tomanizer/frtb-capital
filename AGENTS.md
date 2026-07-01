@@ -77,6 +77,12 @@ All U.S. NPR 2.0 / Basel FRTB / EU CRR3 / PRA UK CRR content is proposed-rule or
 ## Workspace discipline
 
 - **No sibling imports between capital packages.** `frtb-ima` must not import from `frtb-sbm`, `frtb-drc`, `frtb-rrao`, `frtb-cva`, etc. Shared types go in `frtb-common`.
+- **No result-store lookup in capital packages or orchestration.** Time-series,
+  shock, scenario-vector, and surface metadata is persisted and served by
+  `frtb-result-store`. `frtb-common` may define stable ID/coordinate primitives;
+  component packages and `frtb-orchestration` may preserve IDs/provenance, but
+  must not import `frtb_result_store`, fetch artifact payloads, infer market
+  data, construct shocks, or perform pricing/interpolation inside kernels.
 - **One package per PR** unless the change is genuinely cross-cutting (regulatory definition change, shared type update). Cross-cutting PRs must reference an ADR.
 - **Per-package versioning.** Bump only the affected package's version.
 - **Material changes need ADRs.** See [`CONTRIBUTING.md`](CONTRIBUTING.md).

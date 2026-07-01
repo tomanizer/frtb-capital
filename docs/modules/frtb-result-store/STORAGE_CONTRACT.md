@@ -65,11 +65,59 @@ artifact must satisfy:
 - a stored `schema_fingerprint` on the corresponding `ArtifactRef` row;
 - a URI that resolves to staged or published Parquet for local backends.
 
+Artifact IDs are stable for identical run/type/schema/partition/hint inputs and
+partition-sensitive when a scenario vector, shock, time series, or surface slice
+changes identity. Consumers may use the ID for audit links, but semantic
+selection should prefer the persisted partition metadata such as
+`time_series_id`, `shock_id`, `scenario_vector_id`, or `surface_id`.
+Any artifact ref that declares `partition_keys` must also carry matching
+non-empty `metadata.partition_values`; missing partition metadata is rejected so
+catalog/detail routing cannot silently become ambiguous.
+Full-table or multi-partition artifacts should leave `partition_keys` empty and
+expose queryable row columns through the paged artifact/detail APIs instead.
+Within one committed run, `(artifact_type, partition_values)` must be unique for
+partitioned artifact refs. Duplicate semantic partitions are rejected before
+manifest commit.
+
 During `write_bundle`, the store validates:
 
 - required and conditional artifact expectations before manifest commit;
 - staged artifact schema against the registry fingerprint;
-- that every `ArtifactRef` URI target exists at commit time.
+- that every `ArtifactRef` URI target exists at commit time;
+- that attribution `artifact_id` values and artifact/input-snapshot lineage
+  sources resolve to artifacts or input snapshots committed in the same bundle.
+
+The common metadata/evidence artifact schemas are:
+
+| Schema id | Artifact type | Purpose |
+| --- | --- | --- |
+| `common.time_series.v1` | `TIME_SERIES` | RFET observations, PLA/backtesting vectors, UPL vectors, or other fixture-backed timelines. |
+| `common.shock_definition.v1` | `SHOCK_DEFINITION` | SBM curvature shocks or other stored shock definitions with direction, type, magnitude, source, and mapping provenance. |
+| `common.scenario_vector_metadata.v1` | `SCENARIO_VECTOR_METADATA` | Scenario-set/vector metadata linking dense arrays to scenario ids, dates, labels, and source rows. |
+| `common.surface_grid.v1` | `SURFACE_GRID` | Surface or grid points with explicit axes, coordinates, values, risk-factor links, and source row provenance. |
+
+Readers serve these artifact families through paged read APIs. Missing datasets
+must remain explicit no-data or unsupported states; callers must not synthesize
+UPL, CRIF, stress-vector, or full-surface evidence that is not present in a
+committed artifact.
+Paged artifact responses expose both the committed artifact `row_count` and the
+query-specific `filtered_row_count`/`returned` counters. Dashboard clients
+should use those counters to reconcile aggregate artifact refs to detail pages
+instead of treating the currently displayed page as the full population.
+
+Artifact availability is represented on `ArtifactRef.metadata` with
+`artifact_status`:
+
+- `AVAILABLE` — default; the artifact URI points to readable stored evidence.
+- `NO_DATA` — the run explicitly lacks this dataset, for example no UPL vector
+  in the fixture.
+- `UNSUPPORTED` — the dataset is outside the implemented package/profile scope.
+
+`NO_DATA` and `UNSUPPORTED` refs must carry a non-empty `status_reason`. This
+lets Navigator and API clients render honest empty states without interpreting
+capital-package internals or faking missing artifact payloads. Unavailable refs
+must also use `row_count=0`, `format="none"`, and a status-specific URI:
+`NO_DATA` uses `no-data://...`; `UNSUPPORTED` uses `unsupported://...`.
 
 Manifests record:
 

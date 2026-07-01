@@ -4,8 +4,10 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from dataclasses import dataclass, field
+from enum import StrEnum
+from urllib.parse import urlparse
 
-from frtb_result_store.model_enums import ArtifactType, FrtbComponent
+from frtb_result_store.model_enums import ArtifactType, FrtbComponent, ResultStoreContractError
 from frtb_result_store.model_validation import (
     _coerce_enum,
     _freeze_metadata,
@@ -14,6 +16,14 @@ from frtb_result_store.model_validation import (
     _require_text_tuple,
     _validate_optional_text,
 )
+
+
+class ArtifactAvailabilityStatus(StrEnum):
+    """Availability status for a stored artifact reference."""
+
+    AVAILABLE = "AVAILABLE"
+    NO_DATA = "NO_DATA"
+    UNSUPPORTED = "UNSUPPORTED"
 
 
 @dataclass(frozen=True, slots=True)
@@ -51,6 +61,16 @@ class ArtifactRef:
             "partition_keys",
             _require_text_tuple(self.partition_keys, "partition_keys"),
         )
+        _validate_artifact_availability(
+            metadata=self.metadata,
+            row_count=self.row_count,
+            uri=self.uri,
+            format=self.format,
+        )
+        _validate_partition_values(
+            metadata=self.metadata,
+            partition_keys=self.partition_keys,
+        )
         _freeze_metadata(self, self.metadata)
 
 
@@ -74,3 +94,63 @@ class LineageRef:
         _require_non_empty_text(self.relationship, "relationship")
         _validate_optional_text(self.source_hash, "source_hash")
         _freeze_metadata(self, self.metadata)
+
+
+def _validate_artifact_availability(
+    *,
+    metadata: Mapping[str, object],
+    row_count: int,
+    uri: str,
+    format: str,
+) -> None:
+    raw_status = metadata.get("artifact_status", ArtifactAvailabilityStatus.AVAILABLE.value)
+    try:
+        status = ArtifactAvailabilityStatus(raw_status)
+    except ValueError as exc:
+        raise ResultStoreContractError(
+            f"invalid artifact_status: {raw_status}",
+            field="artifact_status",
+        ) from exc
+    reason = metadata.get("status_reason", "")
+    if status is not ArtifactAvailabilityStatus.AVAILABLE:
+        _require_non_empty_text(reason, "status_reason")
+        if row_count != 0:
+            raise ResultStoreContractError(
+                "unavailable artifact refs must have row_count=0",
+                field="row_count",
+            )
+        if format != "none":
+            raise ResultStoreContractError(
+                "unavailable artifact refs must use format='none'",
+                field="format",
+            )
+        required_scheme = "no-data" if status is ArtifactAvailabilityStatus.NO_DATA else "unsupported"
+        if urlparse(uri).scheme != required_scheme:
+            raise ResultStoreContractError(
+                f"{status.value} artifact refs must use {required_scheme}:// URIs",
+                field="uri",
+            )
+
+
+def _validate_partition_values(
+    *,
+    metadata: Mapping[str, object],
+    partition_keys: tuple[str, ...],
+) -> None:
+    if not partition_keys:
+        return
+    raw_partition_values = metadata.get("partition_values")
+    if not isinstance(raw_partition_values, Mapping):
+        raise ResultStoreContractError(
+            "artifact refs with partition_keys require metadata.partition_values",
+            field="metadata",
+        )
+    missing = sorted(key for key in partition_keys if key not in raw_partition_values)
+    if missing:
+        raise ResultStoreContractError(
+            f"artifact partition value missing: {', '.join(missing)}",
+            field="metadata",
+        )
+    for key in partition_keys:
+        _require_non_empty_text(key, "partition_keys")
+        _require_non_empty_text(raw_partition_values[key], "partition_values")

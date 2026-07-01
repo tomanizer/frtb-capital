@@ -215,6 +215,7 @@ def netting_set_payload(netting_set: CvaNettingSet) -> dict[str, object]:
         "sign_convention": netting_set.sign_convention,
         "uses_imm_ead": netting_set.uses_imm_ead,
         "carved_out_to_ba_cva": netting_set.carved_out_to_ba_cva,
+        "exposure_time_series_id": netting_set.exposure_time_series_id,
         "source_row_id": netting_set.source_row_id,
         "lineage": lineage_payload(netting_set.lineage),
     }
@@ -296,6 +297,9 @@ def sensitivity_payload(sensitivity: SaCvaSensitivity) -> dict[str, object]:
         "amount_currency": sensitivity.amount_currency,
         "sign_convention": sensitivity.sign_convention,
         "volatility_input": sensitivity.volatility_input,
+        "volatility_surface_id": sensitivity.volatility_surface_id,
+        "volatility_surface_point_id": sensitivity.volatility_surface_point_id,
+        "shock_id": sensitivity.shock_id,
         "hedge_id": sensitivity.hedge_id,
         "index_treatment": sensitivity.index_treatment.value
         if sensitivity.index_treatment is not None
@@ -391,6 +395,9 @@ def batch_netting_set_payload(batch: Any, index: int) -> dict[str, object]:
         "sign_convention": batch.sign_conventions[index],
         "uses_imm_ead": bool(batch.uses_imm_eads[index]),
         "carved_out_to_ba_cva": bool(batch.carved_out_to_ba_cva[index]),
+        "exposure_time_series_id": _optional_batch_text(
+            batch.exposure_time_series_ids, index
+        ),
         "source_row_id": batch.source_row_ids[index],
         "lineage": batch_lineage_payload(batch, index),
     }
@@ -470,6 +477,11 @@ def batch_sensitivity_payload(batch: Any, index: int) -> dict[str, object]:
         "amount_currency": batch.amount_currencies[index],
         "sign_convention": batch.sign_conventions[index],
         "volatility_input": _optional_float_value(batch.volatility_inputs[index]),
+        "volatility_surface_id": _optional_batch_text(batch.volatility_surface_ids, index),
+        "volatility_surface_point_id": _optional_batch_text(
+            batch.volatility_surface_point_ids, index
+        ),
+        "shock_id": _optional_batch_text(batch.shock_ids, index),
         "hedge_id": batch.hedge_ids[index],
         "index_treatment": batch.index_treatments[index],
         "index_max_sector_weight": _optional_float_value(batch.index_max_sector_weights[index]),
@@ -527,3 +539,14 @@ def _optional_float_value(value: object) -> float | None:
     if not math.isfinite(number):
         raise CvaInputError("value must be finite", field="optional numeric field")
     return number
+
+
+def _optional_batch_text(values: Any, index: int) -> str | None:
+    if values is None:
+        return None
+    value = values[index]
+    if value is None:
+        return None
+    if isinstance(value, (float, np.floating)) and math.isnan(float(value)):
+        return None
+    return str(value)

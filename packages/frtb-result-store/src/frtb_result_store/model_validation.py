@@ -15,6 +15,7 @@ if TYPE_CHECKING:
     from frtb_result_store.model_entities import (
         CapitalAttributionRecord,
         CapitalEdge,
+        LineageRef,
         CapitalMeasure,
         MovementResult,
         ResultBundle,
@@ -233,6 +234,50 @@ def _validate_bundle_attributions(
             raise ResultStoreContractError(
                 f"attribution node not found: {attribution.node_id}",
                 field="attributions",
+            )
+
+
+def _validate_bundle_lineage(
+    lineage_refs: tuple[LineageRef, ...],
+    run_id: str,
+    known_results: set[str],
+) -> None:
+    for lineage in lineage_refs:
+        _require_run_id(lineage.run_id, run_id, "lineage")
+        if lineage.result_id not in known_results:
+            raise ResultStoreContractError(
+                f"lineage result not found: {lineage.result_id}",
+                field="lineage",
+            )
+
+
+def _validate_bundle_artifact_sources(
+    bundle: ResultBundle,
+    known_artifacts: set[str],
+) -> None:
+    known_input_snapshots = (
+        {manifest.input_snapshot_id for manifest in bundle.input_manifests}
+        | {bundle.run.input_snapshot_id}
+    )
+    for attribution in bundle.attributions:
+        if attribution.artifact_id is not None and attribution.artifact_id not in known_artifacts:
+            raise ResultStoreContractError(
+                f"attribution artifact not found: {attribution.artifact_id}",
+                field="attributions",
+            )
+    for lineage in bundle.lineage:
+        if lineage.source_type == "artifact" and lineage.source_id not in known_artifacts:
+            raise ResultStoreContractError(
+                f"lineage artifact source not found: {lineage.source_id}",
+                field="lineage",
+            )
+        if (
+            lineage.source_type == "input_snapshot"
+            and lineage.source_id not in known_input_snapshots
+        ):
+            raise ResultStoreContractError(
+                f"lineage input snapshot source not found: {lineage.source_id}",
+                field="lineage",
             )
 
 

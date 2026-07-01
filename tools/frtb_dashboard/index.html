@@ -1,0 +1,602 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FRTB Capital Navigator</title>
+  <style>
+    :root {
+      --canvas: #f7f8fa;
+      --panel: #ffffff;
+      --rail: #eef1f4;
+      --line: #dfe3e8;
+      --ink: #1a1f24;
+      --muted: #5b6570;
+      --blue: #1f6feb;
+      --blue-soft: #e8f0fe;
+      --green: #1a7f43;
+      --red: #c1362c;
+      --amber: #9a6700;
+      --mono: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+      --sans: "Aptos Narrow", "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      background: var(--canvas);
+      color: var(--ink);
+      font-family: var(--sans);
+      font-size: 12px;
+      overflow: hidden;
+    }
+
+    button, input, select {
+      font: inherit;
+      color: inherit;
+    }
+
+    .app {
+      height: 100vh;
+      display: grid;
+      grid-template-rows: 44px 32px minmax(0, 58fr) minmax(0, 42fr);
+      border-top: 1px solid var(--line);
+    }
+
+    .ribbon, .context {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 10px;
+      border-bottom: 1px solid var(--line);
+      background: var(--rail);
+      white-space: nowrap;
+    }
+
+    .ribbon { background: #fff; }
+    .brand {
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      margin-right: 8px;
+    }
+
+    .field {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      min-width: 0;
+    }
+
+    .field label, .eyebrow {
+      color: var(--muted);
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+
+    .field input {
+      height: 24px;
+      border: 1px solid var(--line);
+      background: #fff;
+      padding: 2px 6px;
+      min-width: 270px;
+      font-family: var(--mono);
+      font-size: 11px;
+    }
+
+    .kpi {
+      display: grid;
+      grid-template-columns: auto auto auto;
+      gap: 6px;
+      align-items: baseline;
+      padding-left: 10px;
+      border-left: 1px solid var(--line);
+      font-family: var(--mono);
+    }
+
+    .kpi b { font-size: 12px; }
+    .delta { color: var(--muted); }
+
+    .seg {
+      display: inline-flex;
+      border: 1px solid var(--line);
+      background: #fff;
+    }
+
+    .seg button {
+      height: 23px;
+      border: 0;
+      border-right: 1px solid var(--line);
+      background: transparent;
+      padding: 0 10px;
+      cursor: pointer;
+    }
+
+    .seg button:last-child { border-right: 0; }
+    .seg button.active {
+      color: #fff;
+      background: var(--blue);
+    }
+
+    .context .spacer { flex: 1; }
+    .status {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .blotter, .inspector {
+      min-height: 0;
+      background: var(--panel);
+      border-bottom: 1px solid var(--line);
+      display: grid;
+      grid-template-rows: 28px minmax(0, 1fr);
+    }
+
+    .toolbar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 10px;
+      border-bottom: 1px solid var(--line);
+      background: #fafbfc;
+    }
+
+    .toolbar .title {
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      font-size: 10px;
+    }
+
+    .toolbar .counts {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .grid-wrap {
+      min-height: 0;
+      overflow: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+      font-size: 12px;
+    }
+
+    th, td {
+      height: 24px;
+      border-bottom: 1px solid var(--line);
+      padding: 2px 7px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    th {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      background: #f3f5f7;
+      color: var(--muted);
+      text-align: left;
+      text-transform: uppercase;
+      letter-spacing: .07em;
+      font-size: 10px;
+      font-weight: 700;
+    }
+
+    td.num, th.num {
+      text-align: right;
+      font-family: var(--mono);
+      font-size: 11px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    tr[tabindex] { cursor: pointer; }
+    tr.selected { background: var(--blue-soft); outline: 1px solid var(--blue); outline-offset: -1px; }
+    tr:focus { outline: 1px solid var(--blue); outline-offset: -1px; }
+
+    .chip {
+      display: inline-block;
+      min-width: 68px;
+      border: 1px solid var(--line);
+      padding: 1px 5px;
+      font-family: var(--mono);
+      font-size: 10px;
+      text-align: center;
+      background: #fff;
+    }
+
+    .chip.available { color: var(--green); border-color: #a7d7b7; }
+    .chip.no-data { color: var(--amber); border-color: #eac875; }
+    .chip.unsupported { color: var(--red); border-color: #efb0aa; }
+
+    .inspector {
+      border-bottom: 0;
+      grid-template-rows: 30px 34px minmax(0, 1fr);
+    }
+
+    .tabs {
+      display: flex;
+      gap: 0;
+      border-bottom: 1px solid var(--line);
+      background: var(--rail);
+    }
+
+    .tabs button {
+      border: 0;
+      border-right: 1px solid var(--line);
+      background: transparent;
+      padding: 0 14px;
+      cursor: pointer;
+    }
+
+    .tabs button.active {
+      background: #fff;
+      color: var(--blue);
+      font-weight: 700;
+    }
+
+    .audit-strip {
+      display: flex;
+      gap: 14px;
+      align-items: center;
+      padding: 0 10px;
+      border-bottom: 1px solid var(--line);
+      font-family: var(--mono);
+      color: var(--muted);
+    }
+
+    .lineage-rail {
+      display: flex;
+      gap: 5px;
+      overflow: hidden;
+      min-width: 0;
+    }
+
+    .lineage-token {
+      border-left: 2px solid var(--blue);
+      background: #f9fbff;
+      padding: 2px 5px;
+      font-family: var(--mono);
+      font-size: 10px;
+      white-space: nowrap;
+    }
+
+    .message {
+      padding: 18px 20px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .message strong { color: var(--ink); }
+
+    @media (max-width: 900px) {
+      body { overflow: auto; }
+      .app { height: auto; min-height: 100vh; grid-template-rows: auto auto 420px 420px; }
+      .ribbon, .context { flex-wrap: wrap; height: auto; min-height: 44px; padding: 6px 10px; }
+      .field input { min-width: 180px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="ribbon">
+      <div class="brand">FRTB Capital Navigator</div>
+      <div class="field">
+        <label for="apiBase">API</label>
+        <input id="apiBase" value="http://127.0.0.1:8000">
+      </div>
+      <div class="field">
+        <label for="runId">Run</label>
+        <input id="runId" value="frtb/capital-navigator/2026-06-03/us-npr">
+      </div>
+      <button id="loadRun">Load</button>
+      <div class="kpi"><span>Catalog</span><b id="catalogKpi">-</b><span class="delta">metadata refs</span></div>
+      <div class="kpi"><span>Detail</span><b id="detailKpi">-</b><span class="delta">rows</span></div>
+    </section>
+
+    <section class="context">
+      <div class="seg" id="familyTabs">
+        <button data-family="time-series" class="active">Time series</button>
+        <button data-family="shocks">Shocks</button>
+        <button data-family="scenario-vectors">Scenarios</button>
+        <button data-family="surfaces">Surfaces</button>
+      </div>
+      <span class="eyebrow">Grouping</span>
+      <span class="status">Metadata family > semantic partition</span>
+      <span class="spacer"></span>
+      <span id="loadStatus" class="status">idle</span>
+    </section>
+
+    <section class="blotter">
+      <div class="toolbar">
+        <span class="title">Metadata blotter</span>
+        <span id="countStrip" class="counts">AVAILABLE 0 | NO_DATA 0 | UNSUPPORTED 0</span>
+      </div>
+      <div class="grid-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:18%">status</th>
+              <th style="width:18%">role</th>
+              <th style="width:22%">semantic id</th>
+              <th style="width:18%">component</th>
+              <th class="num" style="width:10%">rows</th>
+              <th>artifact</th>
+            </tr>
+          </thead>
+          <tbody id="catalogRows"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="inspector">
+      <div class="tabs" id="inspectorTabs">
+        <button data-tab="detail" class="active">Detail</button>
+        <button data-tab="lineage">Lineage</button>
+        <button data-tab="raw">Raw payload</button>
+      </div>
+      <div class="audit-strip">
+        <span id="selectedLabel">No selection</span>
+        <span id="reconStrip">row_count - | filtered - | returned -</span>
+        <div class="lineage-rail" id="lineageRail"></div>
+      </div>
+      <div class="grid-wrap" id="inspectorBody">
+        <div class="message">Load a result-store API and select a metadata row.</div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const state = {
+      family: "time-series",
+      catalog: {},
+      refs: {},
+      selected: null,
+      detail: null,
+      lineage: [],
+      abort: null,
+      tab: "detail",
+    };
+
+    const familyConfig = {
+      "time-series": {
+        list: "time-series",
+        listKey: "time_series",
+        detail: row => `time-series/${encodeURIComponent(row.partition_values.time_series_id)}/points`,
+        semantic: row => row.partition_values.time_series_id || row.artifact_id,
+      },
+      "shocks": {
+        list: "shocks",
+        listKey: "shocks",
+        detail: row => `shocks/${encodeURIComponent(row.partition_values.shock_id)}`,
+        semantic: row => row.partition_values.shock_id || row.artifact_id,
+      },
+      "scenario-vectors": {
+        list: "scenario-vectors",
+        listKey: "scenario_vectors",
+        detail: row => `scenario-vectors/${encodeURIComponent(row.partition_values.scenario_vector_id)}/metadata`,
+        semantic: row => row.partition_values.scenario_vector_id || row.artifact_id,
+      },
+      "surfaces": {
+        list: "surfaces",
+        listKey: "surfaces",
+        detail: row => `surfaces/${encodeURIComponent(row.partition_values.surface_id)}/slice`,
+        semantic: row => row.partition_values.surface_id || row.artifact_id,
+      },
+    };
+
+    const $ = id => document.getElementById(id);
+
+    $("loadRun").addEventListener("click", loadAll);
+    $("familyTabs").addEventListener("click", event => {
+      const button = event.target.closest("button[data-family]");
+      if (!button) return;
+      state.family = button.dataset.family;
+      for (const item of $("familyTabs").querySelectorAll("button")) item.classList.toggle("active", item === button);
+      state.selected = null;
+      state.detail = null;
+      renderCatalog();
+      renderInspector();
+    });
+
+    $("inspectorTabs").addEventListener("click", event => {
+      const button = event.target.closest("button[data-tab]");
+      if (!button) return;
+      state.tab = button.dataset.tab;
+      for (const item of $("inspectorTabs").querySelectorAll("button")) item.classList.toggle("active", item === button);
+      renderInspector();
+    });
+
+    async function loadAll() {
+      setStatus("loading catalogs");
+      abortPending();
+      state.catalog = {};
+      state.refs = {};
+      state.selected = null;
+      state.detail = null;
+      state.lineage = [];
+      try {
+        for (const family of Object.keys(familyConfig)) {
+          const config = familyConfig[family];
+          const payload = await fetchJson(config.list);
+          state.catalog[family] = payload.catalog || [];
+          state.refs[family] = payload[config.listKey] || [];
+        }
+        const total = Object.values(state.catalog).reduce((acc, rows) => acc + rows.length, 0);
+        $("catalogKpi").textContent = String(total);
+        setStatus("catalogs loaded");
+        renderCatalog();
+        renderInspector();
+      } catch (error) {
+        setStatus("load failed");
+        $("catalogRows").innerHTML = `<tr><td colspan="6" class="message"><strong>Catalog request failed.</strong> ${escapeHtml(error.message)}</td></tr>`;
+      }
+    }
+
+    async function selectRow(row, tr) {
+      abortPending();
+      state.selected = row;
+      state.detail = null;
+      for (const item of $("catalogRows").querySelectorAll("tr")) item.classList.remove("selected");
+      tr.classList.add("selected");
+      renderInspector();
+      const controller = new AbortController();
+      state.abort = controller;
+      try {
+        const detailPath = familyConfig[state.family].detail(row);
+        const detail = await fetchJson(detailPath, controller.signal);
+        state.detail = detail;
+        $("detailKpi").textContent = String(detail.returned ?? 0);
+        renderInspector();
+      } catch (error) {
+        if (error.name !== "AbortError") {
+          state.detail = { mode: "error", rows: [], error: error.message, row_count: 0, filtered_row_count: 0, returned: 0 };
+          renderInspector();
+        }
+      }
+    }
+
+    function renderCatalog() {
+      const rows = state.catalog[state.family] || [];
+      const counts = rows.reduce((acc, row) => {
+        const status = row.artifact_status || "AVAILABLE";
+        acc[status] = (acc[status] || 0) + 1;
+        return acc;
+      }, { AVAILABLE: 0, NO_DATA: 0, UNSUPPORTED: 0 });
+      $("countStrip").textContent = `AVAILABLE ${counts.AVAILABLE || 0} | NO_DATA ${counts.NO_DATA || 0} | UNSUPPORTED ${counts.UNSUPPORTED || 0}`;
+      $("catalogRows").innerHTML = "";
+      if (!rows.length) {
+        $("catalogRows").innerHTML = `<tr><td colspan="6" class="message">No metadata catalog loaded for ${escapeHtml(state.family)}.</td></tr>`;
+        return;
+      }
+      rows.forEach((row, index) => {
+        const tr = document.createElement("tr");
+        tr.tabIndex = 0;
+        const status = row.artifact_status || "AVAILABLE";
+        const semantic = familyConfig[state.family].semantic(row);
+        tr.innerHTML = `
+          <td><span class="chip ${statusClass(status)}">${escapeHtml(status)}</span></td>
+          <td>${escapeHtml(row.navigator_role || "-")}</td>
+          <td title="${escapeHtml(semantic)}">${escapeHtml(semantic)}</td>
+          <td>${escapeHtml(row.component || "-")}</td>
+          <td class="num">${row.row_count ?? 0}</td>
+          <td title="${escapeHtml(row.artifact_id)}">${escapeHtml(row.artifact_id)}</td>
+        `;
+        tr.addEventListener("click", () => selectRow(row, tr));
+        tr.addEventListener("keydown", event => {
+          if (event.key === "Enter") selectRow(row, tr);
+          if (event.key === "ArrowDown") $("catalogRows").children[Math.min(index + 1, rows.length - 1)]?.focus();
+          if (event.key === "ArrowUp") $("catalogRows").children[Math.max(index - 1, 0)]?.focus();
+        });
+        $("catalogRows").appendChild(tr);
+      });
+    }
+
+    function renderInspector() {
+      const selected = state.selected;
+      if (!selected) {
+        $("selectedLabel").textContent = "No selection";
+        $("reconStrip").textContent = "row_count - | filtered - | returned -";
+        $("lineageRail").innerHTML = "";
+        $("inspectorBody").innerHTML = `<div class="message">Select a metadata row to inspect persisted rows or explicit unavailable state.</div>`;
+        return;
+      }
+
+      const semantic = familyConfig[state.family].semantic(selected);
+      $("selectedLabel").textContent = `${state.family}:${semantic}`;
+      const detail = state.detail;
+      $("reconStrip").textContent = detail
+        ? `row_count ${detail.row_count ?? "-"} | filtered ${detail.filtered_row_count ?? "-"} | returned ${detail.returned ?? "-"}`
+        : "row_count - | filtered - | returned -";
+      $("lineageRail").innerHTML = `<span class="lineage-token">${escapeHtml(selected.artifact_id)}</span><span class="lineage-token">${escapeHtml(selected.navigator_role || "metadata")}</span>`;
+
+      if (!detail) {
+        $("inspectorBody").innerHTML = `<div class="message">Loading detail rows for <strong>${escapeHtml(semantic)}</strong>.</div>`;
+        return;
+      }
+      if (state.tab === "raw") {
+        $("inspectorBody").innerHTML = `<pre class="message">${escapeHtml(JSON.stringify(detail, null, 2))}</pre>`;
+        return;
+      }
+      if (state.tab === "lineage") {
+        $("inspectorBody").innerHTML = lineageTable(selected);
+        return;
+      }
+      if (detail.mode === "artifact_unavailable") {
+        $("inspectorBody").innerHTML = unavailableView(detail);
+        return;
+      }
+      if (detail.mode === "error") {
+        $("inspectorBody").innerHTML = `<div class="message"><strong>Detail request failed.</strong> ${escapeHtml(detail.error)}</div>`;
+        return;
+      }
+      $("inspectorBody").innerHTML = rowsTable(detail.rows || []);
+    }
+
+    function rowsTable(rows) {
+      if (!rows.length) return `<div class="message">No rows returned for this detail request.</div>`;
+      const columns = Object.keys(rows[0]);
+      return `<table><thead><tr>${columns.map(column => `<th>${escapeHtml(column)}</th>`).join("")}</tr></thead><tbody>${rows.map(row => `<tr>${columns.map(column => `<td title="${escapeHtml(String(row[column] ?? ""))}">${escapeHtml(String(row[column] ?? ""))}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
+    }
+
+    function lineageTable(row) {
+      return `<table><thead><tr><th>source</th><th>value</th></tr></thead><tbody>
+        <tr><td>artifact_id</td><td>${escapeHtml(row.artifact_id)}</td></tr>
+        <tr><td>component</td><td>${escapeHtml(row.component || "")}</td></tr>
+        <tr><td>role</td><td>${escapeHtml(row.navigator_role || "")}</td></tr>
+        <tr><td>partition_values</td><td>${escapeHtml(JSON.stringify(row.partition_values || {}))}</td></tr>
+        <tr><td>status</td><td>${escapeHtml(row.artifact_status || "AVAILABLE")}</td></tr>
+      </tbody></table>`;
+    }
+
+    function unavailableView(detail) {
+      return `<div class="message">
+        <strong>${escapeHtml(detail.artifact_status || "UNAVAILABLE")}</strong><br>
+        ${escapeHtml(detail.status_reason || "This artifact is unavailable for the selected run.")}<br>
+        Reconciliation counters are zero: row_count ${detail.row_count ?? 0}, filtered ${detail.filtered_row_count ?? 0}, returned ${detail.returned ?? 0}.
+      </div>`;
+    }
+
+    async function fetchJson(path, signal) {
+      const base = $("apiBase").value.replace(/\/$/, "");
+      const run = encodeURIComponent($("runId").value);
+      const url = `${base}/runs/${run}/${path}`;
+      const response = await fetch(url, { signal });
+      if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
+      return response.json();
+    }
+
+    function abortPending() {
+      if (state.abort) state.abort.abort();
+      state.abort = null;
+    }
+
+    function setStatus(text) {
+      $("loadStatus").textContent = text;
+    }
+
+    function statusClass(status) {
+      if (status === "NO_DATA") return "no-data";
+      if (status === "UNSUPPORTED") return "unsupported";
+      return "available";
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+  </script>
+</body>
+</html>

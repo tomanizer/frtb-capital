@@ -15,6 +15,7 @@ capital.
 | Identity | `PACKAGE_METADATA`, `__version__` | Workspace discovery and maturity reporting. |
 | Suite capital | `calculate_suite_capital`, `SuiteCapitalResult`, `SuiteAttributionResult`, `SuiteAttributionReport`, `SuiteAttributionComponentReport`, `SuiteAttributionSummary`, `SuiteAttributionRecordSummary`, `SuiteAttributionGroupSummary`, `aggregate_suite_attribution`, `build_suite_attribution_report`, `summarise_suite_attribution`, `top_suite_attribution_contributors`, `suite_attribution_residual_records`, `suite_attribution_unsupported_records` | Top-of-house additive `IMA + SA + CVA` aggregation and attribution-ready branch reporting. |
 | Scope capital views | `compose_scope_capital_view`, `ScopeCapitalView`, `ScopeComponentCapital`, `BindingCapitalResult`, `BindingCapitalSide`, `ScopeViewStatus` | Composes result-store-resolved scope totals into SA, IMA, CVA, output-floor binding, and dashboard-ready no-data/unsupported states. |
+| Artifact evidence | `ArtifactEvidenceRef`, `ArtifactEvidenceKind`, `ArtifactEvidenceStatus`, `SuiteEvidenceComponent`, `SuiteArtifactEvidenceView`, `ComponentArtifactEvidence`, `build_suite_artifact_evidence_view` | Component-grouped read model for resolved time-series, shock, scenario-vector, and surface artifact IDs. |
 | SA composition | `compose_standardised_approach_capital`, `StandardisedApproachCapitalResult`, `StandardisedComponentSubtotal`, `StandardisedFallbackRoute`, `ComponentCapitalSummary`, `StandardisedComponent` | Composes SBM, DRC, and RRAO public component summaries into Standardised Approach capital. |
 | IMA handoff | `ImaCapitalSummary`, `recognise_ima_summary` | Direct or duck-typed summary handoff from IMA audit-log-shaped outputs. |
 | CVA handoff | `CvaCapitalSummary`, `recognise_cva_summary` | Direct or duck-typed summary handoff from public CVA capital results. |
@@ -75,6 +76,22 @@ package-owned records: `component`, `contribution_id`, `source_id`,
 `source_level`, `bucket_key`, `category`, `method`, `contribution`, `residual`,
 `reconciliation_status`, and `reason`. These helpers do not recalculate capital
 or attribution methods.
+
+## Artifact evidence
+
+`build_suite_artifact_evidence_view` groups already-resolved
+`ArtifactEvidenceRef` records under a completed `SuiteCapitalResult`. The view
+is intended for Navigator and result-store handoff layers that need to show
+scenario-vector, time-series, shock, and surface provenance beside suite
+capital. It preserves explicit `NO_DATA` and `UNSUPPORTED` states, and its
+payload includes component-level and suite-level `status_counts` so dashboards
+can render availability badges without querying artifact payloads.
+
+Orchestration does not fetch artifact payloads, query `frtb-result-store`,
+source market data, construct shock definitions, or infer surface axes. Component
+packages and adapters must provide validated numeric inputs plus stable artifact
+IDs/provenance; the evidence view only composes those identifiers at suite
+altitude.
 
 ## Standardised Approach composition
 

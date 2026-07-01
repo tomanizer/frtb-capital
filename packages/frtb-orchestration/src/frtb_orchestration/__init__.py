@@ -3,6 +3,15 @@
 from frtb_common import ComponentCapitalSummary, StandardisedComponent
 
 from frtb_orchestration._version import __version__
+from frtb_orchestration.artifact_evidence import (
+    ArtifactEvidenceKind,
+    ArtifactEvidenceRef,
+    ArtifactEvidenceStatus,
+    ComponentArtifactEvidence,
+    SuiteArtifactEvidenceView,
+    SuiteEvidenceComponent,
+    build_suite_artifact_evidence_view,
+)
 from frtb_orchestration.cva_summary import (
     CvaCapitalSummary,
     recognise_cva_summary,
@@ -70,6 +79,9 @@ from frtb_orchestration.suite_attribution_summary import (
 )
 
 __all__ = [
+    "ArtifactEvidenceKind",
+    "ArtifactEvidenceRef",
+    "ArtifactEvidenceStatus",
     "CVA_COUNTERPARTY_INPUT_TABLE",
     "CVA_HEDGE_INPUT_TABLE",
     "CVA_NETTING_SET_INPUT_TABLE",
@@ -84,6 +96,7 @@ __all__ = [
     "BindingCapitalResult",
     "BindingCapitalSide",
     "CapitalRunManifest",
+    "ComponentArtifactEvidence",
     "ComponentCapitalSummary",
     "CvaCapitalSummary",
     "ImaCapitalSummary",
@@ -105,10 +118,13 @@ __all__ = [
     "SuiteAttributionReport",
     "SuiteAttributionResult",
     "SuiteAttributionSummary",
+    "SuiteArtifactEvidenceView",
     "SuiteCapitalResult",
+    "SuiteEvidenceComponent",
     "__version__",
     "aggregate_suite_attribution",
     "build_suite_attribution_report",
+    "build_suite_artifact_evidence_view",
     "calculate_suite_capital",
     "compose_scope_capital_view",
     "compose_standardised_approach_capital",

@@ -26,17 +26,27 @@ __all__ = [
     "ARTIFACT_SCHEMA_REGISTRY",
     "ArtifactSchemaEntry",
     "ArtifactWriteRequest",
+    "COMMON_SCENARIO_VECTOR_METADATA_SCHEMA_ID",
+    "COMMON_SHOCK_DEFINITION_SCHEMA_ID",
+    "COMMON_SURFACE_GRID_SCHEMA_ID",
+    "COMMON_TIME_SERIES_SCHEMA_ID",
+    "IMA_PNL_VECTOR_SCHEMA_ID",
     "RequiredArtifactExpectation",
     "artifact_expectations_for_requests",
     "artifact_schema_fingerprint",
     "artifact_schema_for",
     "stage_artifact_write",
     "validate_artifact_ref_targets",
+    "validate_artifact_ref_partitions",
     "validate_required_artifacts",
 ]
 
 ARTIFACT_COMPRESSION = "zstd"
 IMA_PNL_VECTOR_SCHEMA_ID = "ima.pnl_vector.v1"
+COMMON_TIME_SERIES_SCHEMA_ID = "common.time_series.v1"
+COMMON_SHOCK_DEFINITION_SCHEMA_ID = "common.shock_definition.v1"
+COMMON_SCENARIO_VECTOR_METADATA_SCHEMA_ID = "common.scenario_vector_metadata.v1"
+COMMON_SURFACE_GRID_SCHEMA_ID = "common.surface_grid.v1"
 REQUIRED_ARTIFACTS_BY_COMPONENT: Mapping[FrtbComponent, tuple[ArtifactType, ...]] = {
     FrtbComponent.IMA: (ArtifactType.IMA_PNL_VECTOR,),
     FrtbComponent.SBM: (ArtifactType.SBM_SENSITIVITY_TABLE,),
@@ -189,6 +199,68 @@ _IMA_PNL_VECTOR_FIELDS = (
     ("source_row_id", pa.string(), False),
 )
 
+_COMMON_TIME_SERIES_FIELDS = (
+    ("run_id", pa.string(), False),
+    ("time_series_id", pa.string(), False),
+    ("observation_date", pa.date32(), False),
+    ("value_name", pa.string(), False),
+    ("value", pa.float64(), False),
+    ("currency", pa.string(), True),
+    ("risk_factor_id", pa.string(), True),
+    ("scenario_id", pa.string(), True),
+    ("mapping_version", pa.string(), True),
+    ("source_row_id", pa.string(), False),
+)
+
+_COMMON_SHOCK_DEFINITION_FIELDS = (
+    ("run_id", pa.string(), False),
+    ("shock_id", pa.string(), False),
+    ("shock_direction", pa.string(), False),
+    ("shock_type", pa.string(), False),
+    ("magnitude", pa.float64(), False),
+    ("unit", pa.string(), False),
+    ("risk_factor_id", pa.string(), True),
+    ("scenario_id", pa.string(), True),
+    ("mapping_version", pa.string(), True),
+    ("regulatory_rule_id", pa.string(), True),
+    ("source_row_id", pa.string(), False),
+)
+
+_COMMON_SCENARIO_VECTOR_METADATA_FIELDS = (
+    ("run_id", pa.string(), False),
+    ("scenario_set_id", pa.string(), False),
+    ("scenario_vector_id", pa.string(), False),
+    ("scenario_id", pa.string(), False),
+    ("observation_date", pa.date32(), False),
+    ("scenario_label", pa.string(), False),
+    ("mapping_version", pa.string(), True),
+    ("source_row_id", pa.string(), False),
+)
+
+_COMMON_SURFACE_GRID_FIELDS = (
+    ("run_id", pa.string(), False),
+    ("surface_id", pa.string(), False),
+    ("surface_point_id", pa.string(), False),
+    ("axis_1_name", pa.string(), False),
+    ("axis_1_value", pa.string(), False),
+    ("axis_2_name", pa.string(), False),
+    ("axis_2_value", pa.string(), False),
+    ("value_name", pa.string(), False),
+    ("value", pa.float64(), False),
+    ("unit", pa.string(), False),
+    ("risk_factor_id", pa.string(), True),
+    ("mapping_version", pa.string(), True),
+    ("source_row_id", pa.string(), False),
+)
+
+
+def _required_columns(fields: tuple[tuple[str, pa.DataType, bool], ...]) -> tuple[str, ...]:
+    return tuple(name for name, _, nullable in fields if not nullable)
+
+
+def _nullable_columns(fields: tuple[tuple[str, pa.DataType, bool], ...]) -> tuple[str, ...]:
+    return tuple(name for name, _, nullable in fields if nullable)
+
 ARTIFACT_SCHEMA_REGISTRY: Mapping[str, ArtifactSchemaEntry] = MappingProxyType(
     {
         IMA_PNL_VECTOR_SCHEMA_ID: ArtifactSchemaEntry(
@@ -196,14 +268,46 @@ ARTIFACT_SCHEMA_REGISTRY: Mapping[str, ArtifactSchemaEntry] = MappingProxyType(
             artifact_type=ArtifactType.IMA_PNL_VECTOR,
             schema_version=1,
             arrow_schema=pa.schema(_IMA_PNL_VECTOR_FIELDS),
-            required_columns=tuple(
-                name for name, _, nullable in _IMA_PNL_VECTOR_FIELDS if not nullable
-            ),
-            nullable_columns=tuple(
-                name for name, _, nullable in _IMA_PNL_VECTOR_FIELDS if nullable
-            ),
+            required_columns=_required_columns(_IMA_PNL_VECTOR_FIELDS),
+            nullable_columns=_nullable_columns(_IMA_PNL_VECTOR_FIELDS),
             partition_columns=("desk_id", "portfolio_id", "book_id"),
-        )
+        ),
+        COMMON_TIME_SERIES_SCHEMA_ID: ArtifactSchemaEntry(
+            schema_id=COMMON_TIME_SERIES_SCHEMA_ID,
+            artifact_type=ArtifactType.TIME_SERIES,
+            schema_version=1,
+            arrow_schema=pa.schema(_COMMON_TIME_SERIES_FIELDS),
+            required_columns=_required_columns(_COMMON_TIME_SERIES_FIELDS),
+            nullable_columns=_nullable_columns(_COMMON_TIME_SERIES_FIELDS),
+            partition_columns=("time_series_id",),
+        ),
+        COMMON_SHOCK_DEFINITION_SCHEMA_ID: ArtifactSchemaEntry(
+            schema_id=COMMON_SHOCK_DEFINITION_SCHEMA_ID,
+            artifact_type=ArtifactType.SHOCK_DEFINITION,
+            schema_version=1,
+            arrow_schema=pa.schema(_COMMON_SHOCK_DEFINITION_FIELDS),
+            required_columns=_required_columns(_COMMON_SHOCK_DEFINITION_FIELDS),
+            nullable_columns=_nullable_columns(_COMMON_SHOCK_DEFINITION_FIELDS),
+            partition_columns=("shock_id",),
+        ),
+        COMMON_SCENARIO_VECTOR_METADATA_SCHEMA_ID: ArtifactSchemaEntry(
+            schema_id=COMMON_SCENARIO_VECTOR_METADATA_SCHEMA_ID,
+            artifact_type=ArtifactType.SCENARIO_VECTOR_METADATA,
+            schema_version=1,
+            arrow_schema=pa.schema(_COMMON_SCENARIO_VECTOR_METADATA_FIELDS),
+            required_columns=_required_columns(_COMMON_SCENARIO_VECTOR_METADATA_FIELDS),
+            nullable_columns=_nullable_columns(_COMMON_SCENARIO_VECTOR_METADATA_FIELDS),
+            partition_columns=("scenario_set_id", "scenario_vector_id"),
+        ),
+        COMMON_SURFACE_GRID_SCHEMA_ID: ArtifactSchemaEntry(
+            schema_id=COMMON_SURFACE_GRID_SCHEMA_ID,
+            artifact_type=ArtifactType.SURFACE_GRID,
+            schema_version=1,
+            arrow_schema=pa.schema(_COMMON_SURFACE_GRID_FIELDS),
+            required_columns=_required_columns(_COMMON_SURFACE_GRID_FIELDS),
+            nullable_columns=_nullable_columns(_COMMON_SURFACE_GRID_FIELDS),
+            partition_columns=("surface_id",),
+        ),
     }
 )
 
@@ -311,6 +415,31 @@ def validate_artifact_ref_targets(artifacts: Sequence[ArtifactRef]) -> None:
                     f"artifact ref points to missing local file: {artifact.artifact_id}",
                     field="uri",
                 )
+
+
+def validate_artifact_ref_partitions(artifacts: Sequence[ArtifactRef]) -> None:
+    """Reject duplicate semantic artifact partitions within one committed run."""
+
+    seen: dict[tuple[str, tuple[tuple[str, str], ...]], str] = {}
+    for artifact in artifacts:
+        if not artifact.partition_keys:
+            continue
+        raw_partition_values = artifact.metadata.get("partition_values")
+        if not isinstance(raw_partition_values, Mapping):
+            continue
+        key = (
+            ArtifactType(artifact.artifact_type).value,
+            tuple(
+                sorted((name, str(raw_partition_values[name])) for name in artifact.partition_keys)
+            ),
+        )
+        prior = seen.get(key)
+        if prior is not None:
+            raise ResultStoreContractError(
+                f"duplicate artifact partition for {artifact.artifact_id}: {prior}",
+                field="artifacts",
+            )
+        seen[key] = artifact.artifact_id
 
 
 def stage_artifact_write(

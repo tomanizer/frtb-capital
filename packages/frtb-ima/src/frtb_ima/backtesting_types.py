@@ -8,14 +8,15 @@ scalar kernels, trace assembly, and policy wrappers live in adjacent
 
 from __future__ import annotations
 
-from collections.abc import Sequence
-from dataclasses import dataclass
+from collections.abc import Mapping, Sequence
+from dataclasses import dataclass, field
 from datetime import date
 
 import numpy as np
 import numpy.typing as npt
 from frtb_common import CalculationScope
 
+from frtb_ima._mapping_utils import freeze_mapping as _freeze_mapping
 from frtb_ima.calendar import ObservationWindowBasis
 from frtb_ima.org_scope import add_scope_payload, validate_scope_metadata
 
@@ -95,9 +96,19 @@ class TradingDeskBacktestResult:
     calendar_basis: str = ObservationWindowBasis.OBSERVATION_COUNT_PROXY.value
     official_holiday_count: int = 0
     missing_business_dates: tuple[date, ...] = ()
+    apl_time_series_id: str = ""
+    hpl_time_series_id: str = ""
+    var_time_series_ids: Mapping[float, str] = field(default_factory=dict)
     org_scope: CalculationScope | None = None
 
     def __post_init__(self) -> None:
+        object.__setattr__(self, "levels", tuple(self.levels))
+        object.__setattr__(self, "missing_business_dates", tuple(self.missing_business_dates))
+        object.__setattr__(
+            self,
+            "var_time_series_ids",
+            _freeze_mapping(dict(self.var_time_series_ids)),
+        )
         object.__setattr__(
             self,
             "org_scope",
@@ -144,6 +155,16 @@ class TradingDeskBacktestResult:
                 "missing_business_dates": [
                     item.isoformat() for item in self.missing_business_dates
                 ],
+                "time_series": {
+                    "apl": self.apl_time_series_id,
+                    "hpl": self.hpl_time_series_id,
+                "var": {
+                    str(confidence_level): time_series_id
+                    for confidence_level, time_series_id in sorted(
+                        self.var_time_series_ids.items()
+                    )
+                },
+                },
                 "levels": [level.as_dict() for level in self.levels],
             },
             self.org_scope,
@@ -298,6 +319,16 @@ class TradingDeskBacktestTraceResult:
             "missing_business_dates": [
                 item.isoformat() for item in self.result.missing_business_dates
             ],
+            "time_series": {
+                "apl": self.result.apl_time_series_id,
+                "hpl": self.result.hpl_time_series_id,
+                "var": {
+                    str(confidence_level): time_series_id
+                    for confidence_level, time_series_id in sorted(
+                        self.result.var_time_series_ids.items()
+                    )
+                },
+            },
             "levels": [level.as_dict() for level in self.levels],
         }
 

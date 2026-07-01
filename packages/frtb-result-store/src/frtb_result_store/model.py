@@ -8,6 +8,7 @@ shape, large-artifact references, and attribution-ready records.
 from __future__ import annotations
 
 from frtb_result_store.model_entities import (
+    ArtifactAvailabilityStatus,
     ArtifactRef,
     CalculationRun,
     CapitalAttributionRecord,
@@ -91,6 +92,7 @@ from frtb_result_store.org_hierarchy import (
 __all__ = [
     "VALID_ATTRIBUTION_TARGET_TYPES",
     "VALID_MEASURE_NAMES",
+    "ArtifactAvailabilityStatus",
     "ArtifactRef",
     "ArtifactType",
     "CalculationRun",

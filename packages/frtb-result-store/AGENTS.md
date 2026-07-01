@@ -25,6 +25,10 @@ The package has a first local DuckDB/Parquet backend:
 - Keep DuckDB, Parquet, and Arrow dependencies inside result-store IO and
   artifact handling modules.
 - Capital packages must not import `frtb-result-store`.
+- Own canonical persisted metadata and read APIs for time series, shocks,
+  scenario vectors, and surfaces. Store resolved artifact IDs, partition keys,
+  mapping versions, lineage, and explicit no-data/unsupported states; do not
+  infer component regulatory semantics or fabricate missing artifact payloads.
 - Preserve append-only run semantics; corrections require a new `run_id`.
 - Keep artifact references URI-based so local and object-storage drillthrough
   can share the same domain model.

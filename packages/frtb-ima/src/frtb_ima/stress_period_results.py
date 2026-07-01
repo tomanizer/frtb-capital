@@ -48,6 +48,8 @@ class StressPeriodSelectionResult:
     missing_business_dates: tuple[date, ...] = ()
     series_start_dates: Mapping[RiskClass, date] = field(default_factory=dict)
     risk_factor_sets: Mapping[RiskClass, str] = field(default_factory=dict)
+    scenario_set_ids: Mapping[RiskClass, str] = field(default_factory=dict)
+    loss_time_series_ids: Mapping[RiskClass, str] = field(default_factory=dict)
     metadata: Mapping[str, object] = field(default_factory=_empty_mapping)
 
     def __post_init__(self) -> None:
@@ -96,6 +98,24 @@ class StressPeriodSelectionResult:
                     raise TypeError("risk_factor_sets keys must be RiskClass values")
                 if risk_factor_set not in {"FULL", "REDUCED"}:
                     raise ValueError("risk_factor_sets values must be 'FULL' or 'REDUCED'")
+        scenario_set_ids = dict(self.scenario_set_ids)
+        if scenario_set_ids:
+            if set(scenario_set_ids) != set(selected):
+                raise ValueError("scenario_set_ids keys must match selected_by_risk_class")
+            for risk_class, scenario_set_id in scenario_set_ids.items():
+                if not isinstance(risk_class, RiskClass):
+                    raise TypeError("scenario_set_ids keys must be RiskClass values")
+                if not scenario_set_id:
+                    raise ValueError("scenario_set_ids values must be non-empty")
+        loss_time_series_ids = dict(self.loss_time_series_ids)
+        if loss_time_series_ids:
+            if set(loss_time_series_ids) != set(selected):
+                raise ValueError("loss_time_series_ids keys must match selected_by_risk_class")
+            for risk_class, time_series_id in loss_time_series_ids.items():
+                if not isinstance(risk_class, RiskClass):
+                    raise TypeError("loss_time_series_ids keys must be RiskClass values")
+                if not time_series_id:
+                    raise ValueError("loss_time_series_ids values must be non-empty")
         object.__setattr__(self, "selected_by_risk_class", _freeze_mapping(selected))
         object.__setattr__(self, "candidate_counts", _freeze_mapping(counts))
         object.__setattr__(self, "es_estimator", es_estimator)
@@ -103,6 +123,8 @@ class StressPeriodSelectionResult:
         object.__setattr__(self, "missing_business_dates", tuple(self.missing_business_dates))
         object.__setattr__(self, "series_start_dates", _freeze_mapping(start_dates))
         object.__setattr__(self, "risk_factor_sets", _freeze_mapping(risk_factor_sets))
+        object.__setattr__(self, "scenario_set_ids", _freeze_mapping(scenario_set_ids))
+        object.__setattr__(self, "loss_time_series_ids", _freeze_mapping(loss_time_series_ids))
         object.__setattr__(self, "metadata", _freeze_mapping(self.metadata))
 
     @property
@@ -141,6 +163,14 @@ class StressPeriodSelectionResult:
             risk_class.value: self.risk_factor_sets[risk_class]
             for risk_class in sorted(self.risk_factor_sets, key=lambda item: item.value)
         }
+        scenario_set_ids = {
+            risk_class.value: self.scenario_set_ids[risk_class]
+            for risk_class in sorted(self.scenario_set_ids, key=lambda item: item.value)
+        }
+        loss_time_series_ids = {
+            risk_class.value: self.loss_time_series_ids[risk_class]
+            for risk_class in sorted(self.loss_time_series_ids, key=lambda item: item.value)
+        }
         return {
             "as_of_date": self.as_of_date.isoformat(),
             "regime": self.regime,
@@ -164,6 +194,8 @@ class StressPeriodSelectionResult:
             "candidate_counts": counts,
             "series_start_dates": series_start_dates,
             "risk_factor_sets": risk_factor_sets,
+            "scenario_set_ids": scenario_set_ids,
+            "loss_time_series_ids": loss_time_series_ids,
             "metadata": jsonable(self.metadata),
         }
 

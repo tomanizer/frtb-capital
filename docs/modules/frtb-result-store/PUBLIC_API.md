@@ -7,6 +7,7 @@
 | `CapitalNode`, `CapitalEdge` | FRTB capital result graph. |
 | `CapitalMeasure` | Scalar capital and intermediate measures. |
 | `ArtifactRef` | URI-backed large drillthrough artifacts. |
+| `ARTIFACT_SCHEMA_REGISTRY`, `artifact_schema_for` | Strict schemas for staged Parquet artifacts. |
 | `CapitalAttributionRecord` | Attribution rows for Euler, residual, and unsupported methods. |
 | `RiskFactorMetadataSnapshot`, `RiskFactorMetadataRecord`, `RiskFactorSourceMapping` | Fixture-backed canonical risk-factor metadata read model. |
 | `LineageRef` | Result-to-source lineage references. |
@@ -44,6 +45,14 @@ persisted attribution rows that identify the selected risk factor; missing
 RFET, UPL, CRIF, stress-vector, or contribution evidence is not reconstructed.
 Future OLAP-backed implementations should preserve these aggregate/detail
 payload shapes and pagination limits while replacing only the query engine.
+
+Registered artifact schemas include the original `ima.pnl_vector.v1` plus
+common metadata/evidence schemas for `common.time_series.v1`,
+`common.shock_definition.v1`, `common.scenario_vector_metadata.v1`, and
+`common.surface_grid.v1`. These schemas support RFET timelines, PLA/backtesting
+vectors, stress/scenario metadata, SBM curvature shocks, and surface-grid
+inspection without requiring capital kernels or frontend code to own canonical
+artifact storage.
 
 Base-table row assembly is split across internal IO stages:
 `frtb_result_store.store_bundle_rows` assembles one `ResultBundle` into table
@@ -94,6 +103,51 @@ drillthrough is served through deterministic paged Parquet reads with optional
 column selection and simple equality filters, plus local Parquet download or
 S3 URI handoff. The service does not share the writer catalog or expose generic
 raw table dumps.
+`create_result_store_app(..., cors_allow_origins=(...))` can opt in to local
+browser access for the static Capital Navigator viewer; CORS is disabled by
+default.
+
+Metadata-backed artifact endpoints wrap the same deterministic paging contract
+with domain names for dashboards and future OLAP adapters:
+
+```text
+GET /runs/{run_id}/time-series
+GET /runs/{run_id}/time-series/{time_series_id}/points
+GET /runs/{run_id}/shocks
+GET /runs/{run_id}/shocks/{shock_id}
+GET /runs/{run_id}/scenario-vectors
+GET /runs/{run_id}/scenario-vectors/{scenario_vector_id}/metadata
+GET /runs/{run_id}/surfaces
+GET /runs/{run_id}/surfaces/{surface_id}/slice
+```
+
+These endpoints return persisted artifact rows and lineage fields only. They do
+not infer regulatory classifications, generate shocks, interpolate surfaces, or
+materialize unbounded raw frames into the client.
+The list endpoints return both full artifact refs and a compact `catalog` array
+with `artifact_id`, `component`, `artifact_status`, `status_reason`,
+`navigator_role`, `row_count`, and semantic `partition_values`. Dashboards
+should use the catalog for selectors and status badges, then call the paged
+detail endpoints for row data. List payloads also include `status_counts`
+covering `AVAILABLE`, `NO_DATA`, and `UNSUPPORTED` refs for the metadata family.
+The dashboard-facing selection, no-data, reconciliation, and cache/cancellation
+contract is documented in
+[`CAPITAL_NAVIGATOR_METADATA_CONTRACT.md`](CAPITAL_NAVIGATOR_METADATA_CONTRACT.md).
+
+The Capital Navigator fixture includes concrete examples for each metadata
+family: an RFET observation time series, SBM curvature up/down shock
+definitions, an IMA RTPL scenario vector, and a two-axis USD swaption volatility
+surface. It also includes explicit no-data/unsupported refs for absent UPL,
+RFET/stress-period extensions, and CRIF drillthrough, so UI agents can exercise
+both available and unavailable states through the same artifact contract.
+Relevant capital nodes link to these metadata artifacts through the normal
+`/runs/{run_id}/nodes/{node_id}/lineage` endpoint; clients do not need a
+separate provenance mechanism for timelines, shocks, scenario vectors, or
+surfaces.
+Unavailable metadata refs also carry semantic `partition_values` where a stable
+identifier exists. For example, a missing UPL vector can be requested through
+`/runs/{run_id}/time-series/{time_series_id}/points` and returns
+`mode=artifact_unavailable` rather than a 404 or fabricated empty Parquet page.
 
 Attribution projection helpers and endpoints are storage-only:
 `top_contributors`, `residual_attribution_records`, and

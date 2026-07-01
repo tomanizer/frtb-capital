@@ -198,6 +198,9 @@ class PlaPolicyAssessmentResult:
     diagnostics: PlaWindowDiagnostics
     spearman: SpearmanPlaResult | None = None
     zone_labels: tuple[str, str, str] = DEFAULT_ZONE_LABELS
+    hpl_time_series_id: str = ""
+    rtpl_time_series_id: str = ""
+    upl_time_series_id: str = ""
     org_scope: CalculationScope | None = None
 
     def __post_init__(self) -> None:
@@ -248,6 +251,11 @@ class PlaPolicyAssessmentResult:
                 "pla": self.pla.as_dict(),
                 "spearman": self.spearman.as_dict() if self.spearman is not None else None,
                 "diagnostics": self.diagnostics.as_dict(),
+            "time_series": {
+                "hpl": self.hpl_time_series_id,
+                "rtpl": self.rtpl_time_series_id,
+                "upl": self.upl_time_series_id,
+            },
             },
             self.org_scope,
         )

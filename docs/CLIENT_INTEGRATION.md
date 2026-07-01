@@ -60,6 +60,24 @@ external table / CRIF / file
 `pyarrow`, `pandas`, or `polars`; see
 [ADR 0011](decisions/0011-core-runtime-dependency-policy.md).
 
+## Artifact metadata handoff
+
+Clients that want Navigator drill-downs should deliver stable artifact metadata
+alongside calculation-ready inputs:
+
+| Artifact family | Owner | Client responsibility |
+| --- | --- | --- |
+| Time series | `frtb-result-store` artifact/read model | Provide stable IDs for RFET observations, PLA/backtesting vectors, stress loss series, exposure profiles, or UPL vectors when the dataset exists. |
+| Shock definitions | `frtb-result-store` artifact/read model | Provide stable shock IDs and direction/source metadata for curvature, NMRF, scenario, or sensitivity shock evidence. |
+| Scenario vectors | `frtb-result-store` artifact/read model | Provide stable scenario-set/vector IDs for IMA cubes, stress-period selections, and scenario P&L artifacts. |
+| Surfaces | `frtb-result-store` artifact/read model | Provide stable surface IDs, axis labels, coordinate values, and surface-point IDs for volatility or other two-dimensional risk-factor grids. |
+
+Component packages consume the validated numeric arrays/scalars required for
+capital plus optional artifact IDs for provenance. They do not query the result
+store, fetch market data, infer volatility surfaces, or generate missing
+artifact payloads. Missing fixture data must be represented explicitly as
+`NO_DATA` or `UNSUPPORTED` in result-store/orchestration read models.
+
 ## Component ingress summary
 
 | Component | Grain | Required input table spec symbols | Primary Tier 1 functions | Supported profiles at time of writing | Performance notes |

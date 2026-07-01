@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from frtb_result_store._model_bundle import ResultBundle
 from frtb_result_store._model_capital_records import (
+    ArtifactAvailabilityStatus,
     ArtifactRef,
     CapitalAttributionRecord,
     CapitalEdge,
@@ -40,6 +41,7 @@ from frtb_result_store._model_run_records import (
 )
 
 __all__ = [
+    "ArtifactAvailabilityStatus",
     "ArtifactRef",
     "CalculationRun",
     "CapitalAttributionRecord",

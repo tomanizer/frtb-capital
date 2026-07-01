@@ -56,6 +56,13 @@ def default_artifacts(run: CalculationRun) -> tuple[ArtifactRef, ...]:
             format="parquet",
             row_count=1,
             partition_keys=("desk_id", "portfolio_id", "book_id"),
+            metadata={
+                "partition_values": {
+                    "desk_id": "rates",
+                    "portfolio_id": "rates-options",
+                    "book_id": "rates-core",
+                }
+            },
         ),
         ArtifactRef(
             run_id=run.run_id,

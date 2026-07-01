@@ -237,10 +237,18 @@ def test_pla_joint_zone_ks_green_spearman_amber_gives_amber() -> None:
             n_rtpl=250,
         ),
         diagnostics=_diagnostics(),
+        hpl_time_series_id="ts-hpl",
+        rtpl_time_series_id="ts-rtpl",
+        upl_time_series_id="ts-upl",
     )
 
     assert result.zone == "AMBER"
     assert result.as_dict()["zone"] == "AMBER"
+    assert result.as_dict()["time_series"] == {
+        "hpl": "ts-hpl",
+        "rtpl": "ts-rtpl",
+        "upl": "ts-upl",
+    }
 
 
 def test_pla_joint_zone_ks_red_spearman_green_gives_red() -> None:

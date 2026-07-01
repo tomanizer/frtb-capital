@@ -262,3 +262,110 @@ CVA_ROWS = (
     _cva("counterparty-corp-c", "corp-c-equity", 45.0, 1.2, 0.1111111111, 5.0, "cva-004"),
     _cva("counterparty-corp-c", "corp-c-rates", 30.0, 2.0, 0.10, 3.0, "cva-005"),
 )
+
+RFET_OBSERVATION_TIMELINE_ROWS = (
+    {
+        "time_series_id": "ts-rfet-usd-5y",
+        "observation_date": date(2026, 6, 1),
+        "value_name": "real_price_observation",
+        "value": 1.0,
+        "currency": "USD",
+        "risk_factor_id": "rf-girr-usd-5y",
+        "scenario_id": None,
+        "mapping_version": "risk-factor-map-v1",
+        "source_row_id": "rfet-row-001",
+    },
+    {
+        "time_series_id": "ts-rfet-usd-5y",
+        "observation_date": date(2026, 6, 2),
+        "value_name": "real_price_observation",
+        "value": 1.0,
+        "currency": "USD",
+        "risk_factor_id": "rf-girr-usd-5y",
+        "scenario_id": None,
+        "mapping_version": "risk-factor-map-v1",
+        "source_row_id": "rfet-row-002",
+    },
+)
+
+SBM_CURVATURE_SHOCK_UP_ROWS = (
+    {
+        "shock_id": "shock-sbm-curvature-up",
+        "shock_direction": "UP",
+        "shock_type": "ABSOLUTE",
+        "magnitude": 125.0,
+        "unit": "bp",
+        "risk_factor_id": "rf-girr-usd-5y",
+        "scenario_id": None,
+        "mapping_version": "shock-map-v1",
+        "regulatory_rule_id": "MAR21.96",
+        "source_row_id": "shock-row-up-001",
+    },
+)
+
+SBM_CURVATURE_SHOCK_DOWN_ROWS = (
+    {
+        "shock_id": "shock-sbm-curvature-down",
+        "shock_direction": "DOWN",
+        "shock_type": "ABSOLUTE",
+        "magnitude": -125.0,
+        "unit": "bp",
+        "risk_factor_id": "rf-girr-usd-5y",
+        "scenario_id": None,
+        "mapping_version": "shock-map-v1",
+        "regulatory_rule_id": "MAR21.96",
+        "source_row_id": "shock-row-down-001",
+    },
+)
+
+IMA_SCENARIO_VECTOR_ROWS = (
+    {
+        "scenario_set_id": "scenario-set-250d",
+        "scenario_vector_id": "scenario-vector-rtpl",
+        "scenario_id": "scenario-2026-06-01",
+        "observation_date": date(2026, 6, 1),
+        "scenario_label": "RTPL day 1",
+        "mapping_version": "scenario-map-v1",
+        "source_row_id": "scenario-row-001",
+    },
+    {
+        "scenario_set_id": "scenario-set-250d",
+        "scenario_vector_id": "scenario-vector-rtpl",
+        "scenario_id": "scenario-2026-06-02",
+        "observation_date": date(2026, 6, 2),
+        "scenario_label": "RTPL day 2",
+        "mapping_version": "scenario-map-v1",
+        "source_row_id": "scenario-row-002",
+    },
+)
+
+USD_SWAPTION_VOL_SURFACE_ROWS = (
+    {
+        "surface_id": "surface-usd-swaption-vol",
+        "surface_point_id": "surface-usd-swaption-vol:3m:5y",
+        "axis_1_name": "option_tenor",
+        "axis_1_value": "3M",
+        "axis_2_name": "underlying_tenor",
+        "axis_2_value": "5Y",
+        "value_name": "implied_volatility",
+        "value": 0.21,
+        "unit": "decimal",
+        "risk_factor_id": "rf-girr-usd-swaption-3m-5y",
+        "mapping_version": "surface-map-v1",
+        "source_row_id": "surface-row-001",
+    },
+    {
+        "surface_id": "surface-usd-swaption-vol",
+        "surface_point_id": "surface-usd-swaption-vol:6m:10y",
+        "axis_1_name": "option_tenor",
+        "axis_1_value": "6M",
+        "axis_2_name": "underlying_tenor",
+        "axis_2_value": "10Y",
+        "value_name": "implied_volatility",
+        "value": 0.24,
+        "unit": "decimal",
+        "risk_factor_id": "rf-girr-usd-swaption-6m-10y",
+        "mapping_version": "surface-map-v1",
+        "source_row_id": "surface-row-002",
+    },
+)

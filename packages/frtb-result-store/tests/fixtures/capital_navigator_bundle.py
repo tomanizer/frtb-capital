@@ -7,6 +7,7 @@ from pathlib import Path
 
 from frtb_common import CapitalContribution
 from frtb_result_store import (
+    ArtifactAvailabilityStatus,
     ArtifactRef,
     CalculationRun,
     CapitalAttributionRecord,
@@ -27,6 +28,7 @@ from fixtures.capital_navigator_record_specs import (
     NAVIGATOR_INPUT_MANIFEST_SPECS,
     NAVIGATOR_LINEAGE_SPECS,
     NAVIGATOR_RESIDUAL_ATTRIBUTION_SPEC,
+    NAVIGATOR_UNAVAILABLE_ARTIFACT_SPECS,
     NAVIGATOR_UNSUPPORTED_ATTRIBUTION_SPECS,
 )
 from fixtures.capital_navigator_tree_specs import (
@@ -38,6 +40,37 @@ from fixtures.result_store_bundle import run_with_id
 
 _NAVIGATOR_RUN_ID = "frtb/capital-navigator/2026-06-03/us-npr"
 _NAVIGATOR_BASELINE_RUN_ID = "frtb/capital-navigator/2026-06-02/us-npr"
+
+_NAVIGATOR_ARTIFACT_METADATA: dict[str, dict[str, object]] = {
+    "navigator-rfet-observation-timeline": {
+        "schema_id": "common.time_series.v1",
+        "partition_values": {"time_series_id": "ts-rfet-usd-5y"},
+        "navigator_role": "rfet_observations",
+    },
+    "navigator-sbm-curvature-shock-up": {
+        "schema_id": "common.shock_definition.v1",
+        "partition_values": {"shock_id": "shock-sbm-curvature-up"},
+        "navigator_role": "sbm_curvature_shock",
+    },
+    "navigator-sbm-curvature-shock-down": {
+        "schema_id": "common.shock_definition.v1",
+        "partition_values": {"shock_id": "shock-sbm-curvature-down"},
+        "navigator_role": "sbm_curvature_shock",
+    },
+    "navigator-ima-scenario-vector": {
+        "schema_id": "common.scenario_vector_metadata.v1",
+        "partition_values": {
+            "scenario_set_id": "scenario-set-250d",
+            "scenario_vector_id": "scenario-vector-rtpl",
+        },
+        "navigator_role": "ima_scenario_vector",
+    },
+    "navigator-usd-swaption-vol-surface": {
+        "schema_id": "common.surface_grid.v1",
+        "partition_values": {"surface_id": "surface-usd-swaption-vol"},
+        "navigator_role": "sbm_vega_surface",
+    },
+}
 
 
 def capital_navigator_bundle(
@@ -123,7 +156,7 @@ def _capital_navigator_artifacts(
     run: CalculationRun,
     local_artifacts: dict[str, tuple[str, int]],
 ) -> tuple[ArtifactRef, ...]:
-    return tuple(
+    available = tuple(
         _capital_navigator_artifact(
             run=run,
             artifact_id=artifact_id,
@@ -141,6 +174,28 @@ def _capital_navigator_artifacts(
             partition_keys,
         ) in NAVIGATOR_ARTIFACT_SPECS
     )
+    unavailable = tuple(
+        _capital_navigator_unavailable_artifact(
+            run=run,
+            artifact_id=artifact_id,
+            component=component,
+            artifact_type=artifact_type,
+            status=status,
+            reason=reason,
+            role=role,
+            extra_metadata=extra_metadata,
+        )
+        for (
+            artifact_id,
+            component,
+            artifact_type,
+            status,
+            reason,
+            role,
+            extra_metadata,
+        ) in NAVIGATOR_UNAVAILABLE_ARTIFACT_SPECS
+    )
+    return (*available, *unavailable)
 
 
 def _capital_navigator_artifact(
@@ -168,6 +223,40 @@ def _capital_navigator_artifact(
         format="parquet",
         row_count=row_count,
         partition_keys=partition_keys,
+        metadata=_NAVIGATOR_ARTIFACT_METADATA.get(artifact_id, {}),
+    )
+
+
+def _capital_navigator_unavailable_artifact(
+    *,
+    run: CalculationRun,
+    artifact_id: str,
+    component: str,
+    artifact_type: str,
+    status: str,
+    reason: str,
+    role: str,
+    extra_metadata: dict[str, object],
+) -> ArtifactRef:
+    availability = ArtifactAvailabilityStatus(status)
+    scheme = "no-data" if availability is ArtifactAvailabilityStatus.NO_DATA else "unsupported"
+    partition_values = extra_metadata.get("partition_values")
+    partition_keys = tuple(partition_values) if isinstance(partition_values, dict) else ()
+    return ArtifactRef(
+        run_id=run.run_id,
+        artifact_id=artifact_id,
+        component=component,
+        artifact_type=artifact_type,
+        uri=f"{scheme}://{artifact_id}",
+        format="none",
+        row_count=0,
+        partition_keys=partition_keys,
+        metadata={
+            **extra_metadata,
+            "artifact_status": availability.value,
+            "status_reason": reason,
+            "navigator_role": role,
+        },
     )
 
 

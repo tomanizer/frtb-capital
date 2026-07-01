@@ -28,6 +28,10 @@ Current runtime contents are deliberately small and package-neutral:
   `frtb_common.crif` import path remains stable while the implementation is
   physically split across CRIF type contracts, normalization orchestration, and
   vectorized Arrow static-mapping modules;
+- stable artifact identity primitives for time series, scenarios, shocks, and
+  surfaces, including two-axis `SurfacePointCoordinates` for persisted surface
+  points. These are metadata/provenance objects only; they do not fetch market
+  data, interpolate volatility surfaces, generate shocks, or calculate capital;
 - `jsonable` serialization for common domain values;
 - regulatory citation test helpers for package policy objects.
 

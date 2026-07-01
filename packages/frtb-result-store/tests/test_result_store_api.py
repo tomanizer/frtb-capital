@@ -95,6 +95,29 @@ def test_result_store_api_serves_committed_runs_without_catalog_access(
     assert client.get(f"/runs/{current.run_id}/events").json()["events"][0]["event_type"] == (
         "CALCULATION_WARNING"
     )
+
+
+def test_result_store_api_cors_is_opt_in_for_static_navigator(tmp_path: Path) -> None:
+    run = _run("US_NPR_2_0", None, None)
+    store = DuckDbParquetResultStore(tmp_path / "result-store")
+    store.write_bundle(_bundle(run))
+    client = TestClient(
+        create_result_store_app(
+            store,
+            cors_allow_origins=("http://127.0.0.1:5177",),
+        )
+    )
+
+    response = client.options(
+        "/runs",
+        headers={
+            "Origin": "http://127.0.0.1:5177",
+            "Access-Control-Request-Method": "GET",
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.headers["access-control-allow-origin"] == "http://127.0.0.1:5177"
     assert (
         client.get(f"/runs/{current.run_id}/movements").json()["movements"][0]["baseline_run_id"]
         == baseline.run_id
