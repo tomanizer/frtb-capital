@@ -8,6 +8,9 @@ from __future__ import annotations
 
 from frtb_common import CalculationScope
 
+_SCOPE_PAYLOAD_CACHE_SIZE = 128
+_SCOPE_PAYLOAD_CACHE: dict[int, tuple[CalculationScope, dict[str, object] | None]] = {}
+
 
 def validate_scope_metadata(scope: object, *, field: str) -> CalculationScope | None:
     """Return validated optional calculation-scope metadata.
@@ -48,9 +51,20 @@ def scope_payload(scope: CalculationScope | None) -> dict[str, object] | None:
 
     if scope is None:
         return None
+    scope_id = id(scope)
+    cached = _SCOPE_PAYLOAD_CACHE.get(scope_id)
+    if cached is not None:
+        cached_scope, cached_payload = cached
+        if cached_scope is scope:
+            return cached_payload.copy() if cached_payload is not None else None
+
     payload = scope.as_dict()
     filtered = {key: value for key, value in payload.items() if value not in (None, {})}
-    return filtered if filtered else None
+    result = filtered if filtered else None
+    if len(_SCOPE_PAYLOAD_CACHE) >= _SCOPE_PAYLOAD_CACHE_SIZE:
+        _SCOPE_PAYLOAD_CACHE.pop(next(iter(_SCOPE_PAYLOAD_CACHE)))
+    _SCOPE_PAYLOAD_CACHE[scope_id] = (scope, result)
+    return result
 
 
 def scope_at(

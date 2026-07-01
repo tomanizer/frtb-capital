@@ -605,10 +605,7 @@ def calculate_rrao_capital_from_batch(
         total_rrao=included_rrao_total(result_lines),
         citations=collect_line_citations(result_lines),
         warnings=profile_warnings(rule_profile.profile),
-        calculation_scope=validate_scope_metadata(
-            context.calculation_scope,
-            field="context.calculation_scope",
-        ),
+        calculation_scope=context.calculation_scope,
     )
     validate_rrao_result_reconciliation(result)
     return RraoBatchCapitalCalculation(
