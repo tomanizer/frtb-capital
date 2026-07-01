@@ -35,6 +35,17 @@ Current contents:
   - these are immutable value primitives, not a canonical risk-factor master,
     RFET evidence store, regulatory mapping table, or frontend classification
     mechanism.
+- artifact identity primitives:
+  - `TimeSeriesId`, `ScenarioId`, `ScenarioSetId`, `ScenarioVectorId`,
+    `ShockId`, `SurfaceId`, and `SurfacePointId` for stable artifact
+    provenance shared by result-store schemas, component audit records,
+    orchestration views, and Navigator APIs;
+  - `ShockDirection`, `SurfaceAxisKind`, `SurfaceAxisName`,
+    `SurfaceCoordinate`, and `SurfacePointCoordinates` for deterministic shock
+    labels and labelled or numeric surface-grid coordinates;
+  - these are immutable metadata carriers, not data containers, market-data
+    lookup APIs, interpolation engines, shock generators, or capital
+    calculation inputs beyond preserving supplied IDs and coordinates.
 - Arrow-backed normalized tabular primitives:
   - `ColumnSpec`, aliases, package-neutral logical types, null/chunk/dictionary
     policies;
