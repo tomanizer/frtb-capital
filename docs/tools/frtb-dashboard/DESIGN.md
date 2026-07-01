@@ -31,8 +31,11 @@ recalculate capital.
 
 Built in v2:
 
-- Firm totals for SA and IMA, with Basel output-floor display
-  `max(IMA, 0.725 * SA)` computed in the backend from available run totals.
+- Firm totals for SA and IMA, with demo output-floor display
+  `max(IMA, 0.725 * SA)` computed in the backend from available run totals. The
+  multiplier is a non-regulatory demo value chosen to match the current
+  `frtb-orchestration` scope-view default; production views should consume the
+  resolved floor multiplier from result-store or orchestration payloads.
 - Framework segmented control for SA, IMA, and CVA, with CVA rendered as an
   explicit no-data state when absent.
 - Fixture-backed business hierarchy metadata for top-of-house, legal entity,

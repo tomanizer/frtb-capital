@@ -10,8 +10,12 @@ from tools.frtb_dashboard.backend.demo_runs import (
     grid_view,
     ima_desk_view,
     inspector_view,
+    jsonable_payload,
+    list_demo_runs,
     metadata_view,
+    node_detail,
     run_overview,
+    sa_overview,
 )
 
 
@@ -90,6 +94,22 @@ def test_ima_desk_has_attribution() -> None:
     assert isinstance(desk.attributions, list)
 
 
+def test_supporting_views_and_json_payloads() -> None:
+    run = build_demo_run()
+    runs = list_demo_runs()
+    node = node_detail(run, "sa")
+    sa = sa_overview(run)
+    payload = jsonable_payload({"node_id": node.node.node_id, "measure_count": len(node.measures)})
+
+    assert runs[0].run_id == run.summary.run_id
+    assert node.node.node_id == "sa"
+    assert node.measures
+    assert sa.total_capital > 0
+    assert sa.components
+    assert isinstance(payload, dict)
+    assert payload["node_id"] == "sa"
+
+
 def test_inspector_links_aggregate_to_source_rows() -> None:
     run = build_demo_run()
     inspector = inspector_view(run, "sa-drc")
@@ -118,6 +138,34 @@ def test_api_run_overview() -> None:
     assert payload["binding_total"] > 0
     assert payload["suite_total"] == payload["binding_total"]
     assert payload["ima_total"] == 0
+
+
+def test_api_supporting_endpoints() -> None:
+    client = TestClient(app)
+
+    health = client.get("/api/health")
+    assert health.status_code == 200
+    assert health.json()["status"] == "ok"
+
+    runs = client.get("/api/runs")
+    assert runs.status_code == 200
+    assert runs.json()[0]["run_id"] == "demo-suite-001"
+
+    metadata = client.get("/api/runs/demo-suite-001/metadata")
+    assert metadata.status_code == 200
+    assert metadata.json()["dimensions"]
+
+    node = client.get("/api/runs/demo-suite-001/nodes/sa")
+    assert node.status_code == 200
+    assert node.json()["node"]["node_id"] == "sa"
+
+    ima = client.get("/api/runs/demo-suite-001/ima/desks/rates-credit-demo")
+    assert ima.status_code == 200
+    assert ima.json()["desk_id"] == "rates-credit-demo"
+
+    sa = client.get("/api/runs/demo-suite-001/sa")
+    assert sa.status_code == 200
+    assert sa.json()["components"]
 
 
 def test_api_grid_and_inspector() -> None:

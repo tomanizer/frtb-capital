@@ -57,6 +57,11 @@ from tools.frtb_dashboard.backend.models import (
 )
 
 DEMO_RUN_ID = "demo-suite-001"
+# Non-regulatory demo display multiplier. It matches the current
+# frtb-orchestration scope-view default so the dashboard fixture and
+# orchestration examples tell the same synthetic story; production Navigator
+# views should consume the resolved floor multiplier from result-store or
+# orchestration payloads rather than hard-coding this value.
 OUTPUT_FLOOR_MULTIPLIER = 0.725
 DEFAULT_HIERARCHY_NODE_ID = "toh"
 

@@ -66,6 +66,9 @@ production frontend build.
 ### v2 capabilities
 
 - Backend-computed top-of-house binding capital: `max(IMA, 0.725 * SA)`.
+  The multiplier is a non-regulatory demo value aligned to the current
+  `frtb-orchestration` scope-view default; production views should use the
+  resolved floor multiplier from persisted run payloads.
 - Selectable hierarchy rail for top-of-house, legal entity, division, business
   line, desk, Volcker desk, and book scopes.
 - SA blotter with SBM scenario columns, DRC bucket rows, and RRAO evidence rows.
