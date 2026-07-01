@@ -69,3 +69,17 @@ definitions, scenario-vector metadata, and surface-grid inspection are
 documented in [ARTIFACT_METADATA.md](ARTIFACT_METADATA.md). They are run-scoped
 evidence contracts, not market-data, shock-generation, or interpolation
 services.
+
+## Enterprise Hierarchy Read Model
+
+`frtb-result-store` owns the enterprise hierarchy read model for synthetic
+capital views: hierarchy nodes and edges, effective-dated versions, source-row
+mappings, aggregate rows, detail drilldown, and API/query contracts. Component
+packages preserve stable `CalculationScope` identifiers on inputs, results, and
+audit records; they do not import `frtb_result_store`, resolve hierarchy
+versions, or traverse parent-child graphs. `frtb-orchestration` composes
+capital over already resolved scope totals, while Dashboard/API consumers render
+result-store or backend responses.
+
+See [Enterprise hierarchy ownership](../../HIERARCHY_OWNERSHIP.md) for the
+suite-wide boundary and validation split.

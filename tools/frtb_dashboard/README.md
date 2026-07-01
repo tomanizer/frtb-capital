@@ -82,6 +82,13 @@ production frontend build.
 - Abortable frontend requests and small in-memory caches for run, blotter, and
   inspector payloads keyed by run, framework, scenario, hierarchy node, and row.
 
+Hierarchy rail data, scoped aggregate totals, and source-row drillthrough must
+come from result-store or backend API contracts. The frontend may cache and
+render those responses, but it must not invent hierarchy membership, roll up
+capital client-side, or silently substitute zero for missing scoped rows. The
+suite-wide ownership model is documented in
+[`docs/HIERARCHY_OWNERSHIP.md`](../../docs/HIERARCHY_OWNERSHIP.md).
+
 ## Boundaries
 
 The current v2 dashboard is dependency-light and fixture-backed. The API

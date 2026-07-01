@@ -91,3 +91,30 @@ def test_artifact_metadata_lookup_remains_outside_capital_and_orchestration_pack
                 offenders.append(str(path.relative_to(REPO_ROOT)))
 
     assert offenders == []
+
+
+def test_enterprise_hierarchy_read_model_stays_outside_component_packages() -> None:
+    component_packages = (
+        "frtb-cva",
+        "frtb-drc",
+        "frtb-ima",
+        "frtb-rrao",
+        "frtb-sbm",
+    )
+    result_store_src = REPO_ROOT / "packages" / "frtb-result-store" / "src" / "frtb_result_store"
+    forbidden_module_names = {path.name for path in result_store_src.glob("org_hierarchy*.py")} | {
+        "hierarchy.py",
+        "store_hierarchy_rows.py",
+    }
+    offenders: list[str] = []
+
+    for package_name in component_packages:
+        src_root = REPO_ROOT / "packages" / package_name / "src"
+        assert src_root.is_dir(), f"Source directory not found: {src_root}"
+        for path in src_root.rglob("*.py"):
+            if path.name in forbidden_module_names:
+                offenders.append(str(path.relative_to(REPO_ROOT)))
+            elif "frtb_result_store" in imported_top_level_modules(path):
+                offenders.append(str(path.relative_to(REPO_ROOT)))
+
+    assert offenders == []

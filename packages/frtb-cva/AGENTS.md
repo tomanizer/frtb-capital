@@ -58,3 +58,7 @@ introducing `adapters/`, `validation/`, `kernel/`, or `assembly/`.
   metadata only. Do not import `frtb_result_store`, fetch exposure/surface
   artifacts, infer missing volatilities, or reprice instruments inside CVA
   kernels.
+- Organisation scope IDs are metadata only. Preserve supplied
+  `CalculationScope` values on audit/results, but keep enterprise hierarchy
+  traversal and rollups in `frtb-result-store`; see
+  [`../../docs/HIERARCHY_OWNERSHIP.md`](../../docs/HIERARCHY_OWNERSHIP.md).

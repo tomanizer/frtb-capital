@@ -37,3 +37,7 @@ The package implements orchestration contracts end to end:
   but must not import `frtb_result_store`, fetch artifact payloads, or infer
   artifact semantics. Result-store and Navigator layers own storage/query/UI
   behavior for artifact metadata.
+- May compose scope-aware capital and output-floor views over already resolved
+  component totals, but must not own enterprise hierarchy metadata, traverse
+  hierarchy graphs, or import `frtb_result_store`. See
+  [`../../docs/HIERARCHY_OWNERSHIP.md`](../../docs/HIERARCHY_OWNERSHIP.md).

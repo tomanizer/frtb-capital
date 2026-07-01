@@ -155,6 +155,28 @@ def test_org_validation_reports_missing_version_map_without_key_error() -> None:
         org_validation._validate_row_mapping(row, node_index, {})
 
 
+def test_org_hierarchy_rejects_orphan_source_row_mapping() -> None:
+    hierarchy = sample_org_hierarchy()
+    orphan = replace(
+        sample_org_capital_rows()[0],
+        org_keys=OrgSliceKeys(
+            "enterprise-demo",
+            "2026-01",
+            "GLOBAL_GROUP",
+            legal_entity_id="US_BANK_NA",
+            business_division_id="MARKETS",
+            business_line_id="FICC",
+            desk_id="DESK_NOT_IN_HIERARCHY",
+        ),
+    )
+
+    with pytest.raises(
+        ResultStoreContractError,
+        match="desk_id does not identify an org hierarchy node: DESK_NOT_IN_HIERARCHY",
+    ):
+        validate_org_hierarchy(hierarchy, (orphan,), as_of_date=date(2026, 6, 3))
+
+
 def test_org_legal_entity_rollups_match_toh() -> None:
     aggregates = aggregate_by_org_hierarchy(
         sample_org_capital_rows(),
