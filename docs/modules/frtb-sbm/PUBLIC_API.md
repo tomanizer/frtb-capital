@@ -96,11 +96,11 @@ curvature paths, `US_NPR_2_0` for GIRR delta only, and `EU_CRR3` for GIRR
 delta/vega/curvature, FX delta/vega/curvature, equity delta, and commodity
 delta, as described in
 [`packages/frtb-sbm/docs/REGULATORY_TRACEABILITY.md`](../../../packages/frtb-sbm/docs/REGULATORY_TRACEABILITY.md).
-All other U.S. NPR 2.0, EU CRR3, and PRA UK CRR comparison-profile cells fail
-closed until separately implemented and cited.
-PRA UK CRR is source-mapped to PS1/26 Appendix 1 / PRA2026/1, but that source
-map does not open runtime gates without exact-cell citations, reference data,
-and deterministic fixtures.
+`PRA_UK_CRR` is supported for GIRR delta only with PRA PS1/26 Appendix 1 /
+PRA2026/1 citation ids. All other U.S. NPR 2.0, EU CRR3, and PRA UK CRR
+comparison-profile cells fail closed until separately implemented and cited.
+The PRA source map does not open additional runtime gates without exact-cell
+citations, reference data, and deterministic fixtures.
 ADR 0048 records the maturity standard: runtime gates open only with
 profile-owned citation metadata and deterministic evidence for the exact cell,
 or an ADR-approved shared-fixture rationale.

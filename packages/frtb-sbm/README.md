@@ -7,10 +7,11 @@ Standardised Approach sensitivities-based method component for the
 
 The package exposes `calculate_sbm_capital` for the phase-1 cited
 `BASEL_MAR21` delta, vega, and curvature slices across all seven SBM risk
-classes, `US_NPR_2_0` GIRR delta, and eight cited `EU_CRR3` comparison cells
+classes, `US_NPR_2_0` GIRR delta, eight cited `EU_CRR3` comparison cells
 (GIRR delta/vega/curvature, FX delta/vega/curvature, equity delta, and
-commodity delta). Unsupported profiles, unsupported profile cells, and
-unsupported sub-features fail closed with explicit errors.
+commodity delta), and `PRA_UK_CRR` GIRR delta. Unsupported profiles,
+unsupported profile cells, and unsupported sub-features fail closed with
+explicit errors.
 
 | Area | Status |
 | --- | --- |
@@ -19,7 +20,7 @@ unsupported sub-features fail closed with explicit errors.
 | BASEL_MAR21 curvature capital paths | Implemented under audit for GIRR, FX, equity, commodity, CSR non-sec, CSR sec non-CTP, and CSR sec CTP |
 | US_NPR_2_0 comparison profile | GIRR delta implemented under audit; all other cells fail closed |
 | EU_CRR3 comparison profile | GIRR delta/vega/curvature, FX delta/vega/curvature, equity delta, and commodity delta implemented under audit; all other cells fail closed |
-| PRA_UK_CRR and unmapped sub-features | Unsupported capital (fail-closed) |
+| PRA_UK_CRR comparison profile | GIRR delta implemented under audit; all other cells fail closed |
 | Arrow batch | Supported BASEL_MAR21 delta, vega, and curvature capital paths implemented; portfolio dispatcher available |
 | CRIF/CSV adapters | Implemented row-dict canonical mapping for supported BASEL_MAR21 delta/vega/curvature paths; GIRR delta CRIF-to-Arrow batch |
 | Attribution and impact | Delta/vega analytical Euler attribution implemented for differentiable selected branches; curvature, active floors, alternative `S_b`, and incomplete pairwise evidence emit explicit unsupported residuals. Baseline-vs-candidate impact is finite difference, not marginal contribution. |
@@ -57,9 +58,10 @@ from frtb_sbm import (
 )
 ```
 
-High-volume supported BASEL_MAR21, US_NPR_2_0, and EU_CRR3 comparison-profile
-inputs can be converted to package-owned `SbmSensitivityBatch` objects without
-creating one accepted `SbmSensitivity` per row. Single-path handoff helpers remain available;
+High-volume supported BASEL_MAR21, US_NPR_2_0, EU_CRR3, and PRA_UK_CRR
+comparison-profile inputs can be converted to package-owned
+`SbmSensitivityBatch` objects without creating one accepted `SbmSensitivity`
+per row. Single-path handoff helpers remain available;
 portfolio callers can pass multiple normalized handoffs to the dispatcher.
 
 ```python

@@ -2,10 +2,9 @@
 
 ## Risk-Class Scope Matrix
 
-`BASEL_MAR21` is the canonical capital-producing profile. `US_NPR_2_0` and
-`EU_CRR3` are comparison profiles with only the cells listed in
-`REGULATORY_TRACEABILITY.md` capital-producing under audit. `PRA_UK_CRR` remains
-runtime fail-closed.
+`BASEL_MAR21` is the canonical capital-producing profile. `US_NPR_2_0`,
+`EU_CRR3`, and `PRA_UK_CRR` are comparison profiles with only the cells listed
+in `REGULATORY_TRACEABILITY.md` capital-producing under audit.
 
 | Risk class | Delta | Vega | Curvature | Notes |
 | --- | --- | --- | --- | --- |
@@ -25,8 +24,8 @@ before capital is emitted:
 - `US_NPR_2_0` runtime profile cells outside GIRR delta;
 - `EU_CRR3` runtime profile cells outside GIRR delta/vega/curvature, FX
   delta/vega/curvature, equity delta, and commodity delta;
-- `PRA_UK_CRR` runtime profile cells, despite source mapping to PS1/26
-  Appendix 1 / PRA2026/1;
+- `PRA_UK_CRR` runtime profile cells outside GIRR delta, despite source mapping
+  to PS1/26 Appendix 1 / PRA2026/1;
 - risk-class/measure combinations outside the supported matrix;
 - missing curvature up/down shock inputs;
 - missing FX curvature scalar evidence where MAR21.98 requires it;

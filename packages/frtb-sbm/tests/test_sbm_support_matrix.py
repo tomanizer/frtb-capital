@@ -125,11 +125,11 @@ def test_traceability_support_matrix_lists_every_basel_path() -> None:
 
     assert "| `US_NPR_2_0` | partial (1 / 21 cells) |" in traceability
     assert "| `EU_CRR3` | partial (8 / 21 cells) |" in traceability
-    assert "| `PRA_UK_CRR` | unsupported fail-closed" in traceability
+    assert "| `PRA_UK_CRR` | partial (1 / 21 cells) |" in traceability
     expected_profile_rows = (
         "| GIRR | implemented under audit | unsupported fail-closed | "
         "unsupported fail-closed | implemented under audit | "
-        "implemented under audit | implemented under audit | unsupported fail-closed | "
+        "implemented under audit | implemented under audit | implemented under audit | "
         "unsupported fail-closed | unsupported fail-closed |",
         "| FX | unsupported fail-closed | unsupported fail-closed | "
         "unsupported fail-closed | implemented under audit | "
@@ -158,7 +158,7 @@ def test_traceability_support_matrix_lists_every_basel_path() -> None:
     assert "SBM-NBP-020" in traceability
 
 
-def test_pra_source_map_is_final_rule_reference_not_runtime_support() -> None:
+def test_pra_source_map_and_girr_delta_runtime_support_are_documented() -> None:
     docs_root = Path(__file__).resolve().parents[1] / "docs"
     source_manifest_path = docs_root / "regulatory_sources.yml"
     traceability_path = docs_root / "REGULATORY_TRACEABILITY.md"
@@ -174,12 +174,12 @@ def test_pra_source_map_is_final_rule_reference_not_runtime_support() -> None:
     assert "Articles 325c-325h" in source_manifest
     assert "Articles 325l-325u" in source_manifest
     assert "Articles 325ae-325ay" in source_manifest
-    assert "runtime cells still need profile-owned citation ids" in source_manifest
+    assert "additional PRA cells still need the same evidence" in source_manifest
 
-    assert "source-mapped under SBM-NBP-020" in traceability
+    assert "girr_delta_pra_uk_crr_v1" in traceability
     assert "PRA PS1/26 Appendix 1" in traceability
     assert "PRA mirroring policy" in traceability
     assert "numerical identity is not implementation" in traceability
     assert "2027-01-01 effective date" in traceability
-    assert "unsupported fail-closed (0 / 21 cells)" in traceability
-    assert "all PRA UK CRR runtime cells fail closed" in traceability
+    assert "| `PRA_UK_CRR` | partial (1 / 21 cells) |" in traceability
+    assert "all other PRA UK CRR cells fail closed" in traceability

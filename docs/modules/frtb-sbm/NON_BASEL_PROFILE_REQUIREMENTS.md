@@ -53,9 +53,10 @@ match the matrix for every cell marked implemented. Tests in
 Each profile family used for implementation must have an entry in
 `packages/frtb-sbm/docs/regulatory_sources.yml` with `section_hint` granular
 enough for reviewers to locate bucket/weight tables. `PRA_UK_CRR` is now
-source-mapped to PRA PS1/26 Appendix 1 / PRA2026/1, but the mapped source is not
-authority for capital-producing runtime until exact-cell citation ids,
-profile-owned reference data, and deterministic fixtures are added.
+source-mapped to PRA PS1/26 Appendix 1 / PRA2026/1. GIRR delta is
+capital-producing under audit because exact-cell citation ids, profile-owned
+reference data, and deterministic fixtures are present; later PRA cells require
+the same evidence before runtime support opens.
 
 ### SBM-NBP-004: Basel sub-feature matrix
 
@@ -98,10 +99,11 @@ enumerated allowed list (`ensure_sbm_profile_known`).
 
 ### SBM-NBP-013: Blocked profile behaviour
 
-`PRA_UK_CRR` must remain unsupported fail-closed at runtime until the exact
-profile/risk-class/measure cell has profile-owned citations, reference data, and
-fixtures. Documentation must mark all 21 cells fail-closed at runtime; planning
-rows may move from blocked to planned once SBM-NBP-020 is satisfied.
+`PRA_UK_CRR` cells must remain unsupported fail-closed at runtime until the
+exact profile/risk-class/measure cell has profile-owned citations, reference
+data, and fixtures. Documentation must mark non-delivered PRA cells fail-closed
+at runtime; planning rows may move from blocked to planned once SBM-NBP-020 is
+satisfied.
 
 ---
 
@@ -109,7 +111,7 @@ rows may move from blocked to planned once SBM-NBP-020 is satisfied.
 
 ### SBM-NBP-020: PRA UK source mapping (prerequisite)
 
-Before any `PRA_UK_CRR` cell is implemented:
+Before any additional `PRA_UK_CRR` cell is implemented:
 
 - Keep the `regulatory_sources.yml` entry linked to PS1/26 Appendix 1 /
   PRA2026/1 and granular enough for reviewers to locate the relevant
@@ -119,7 +121,7 @@ Before any `PRA_UK_CRR` cell is implemented:
 - Record divergence from `EU_CRR3` where UK rules differ.
 - Close a dedicated mapping issue referenced from traceability.
 
-Until then, all PRA cells fail closed.
+Until then, non-delivered PRA cells fail closed.
 
 Initial PRA SBM source map:
 
@@ -361,9 +363,9 @@ must reflect the cited profile — not Basel shortcuts.
 | SBM-NBP-001 | Met (design + traceability link; `US_NPR_2_0` partial matrix) | Maintain in traceability |
 | SBM-NBP-002 | Met for Basel and `US_NPR_2_0` GIRR delta via `test_sbm_support_matrix.py` | Extend for each new cell |
 | SBM-NBP-010 | Enforced for the implemented NPR GIRR delta slice through profile-owned citations and fixture citation checks | Extend for each new cell |
-| SBM-NBP-013 | Met | Until PRA mapping issue |
+| SBM-NBP-013 | Met for non-delivered PRA cells | Preserve as coverage expands |
 | SBM-NBP-030–032 | Met for `US_NPR_2_0` GIRR delta with `girr_delta_us_npr_v1` and row/batch/Arrow tests | Extend to later NPR cells |
-| SBM-NBP-040–042 | Met for unsupported NPR cells, EU, and PRA fail-closed tests | Preserve as coverage expands |
+| SBM-NBP-040–042 | Met for unsupported NPR cells, unsupported EU cells, and unsupported PRA cells | Preserve as coverage expands |
 | SBM-NBP-060 | Required for implementation PRs | Run before push |
 
 ---
@@ -375,6 +377,7 @@ Use these titles when splitting implementation work:
 1. **SBM NPR GIRR vega/curvature** — extend NPR GIRR row (phase 2).
 2. **SBM NPR non-GIRR delta** — FX, equity, commodity, and CSR NPR mappings.
 3. **SBM EU CRR3 GIRR delta** — article mapping + first EU cell (blocked on legal mapping review).
-4. **SBM PRA UK CRR source mapping** — SBM-NBP-020 prerequisite satisfied by
-   PS1/26 Appendix 1 / PRA2026/1; runtime cells remain fail-closed until
-   exact-cell citations, reference data, and fixtures land.
+4. **SBM PRA UK CRR next runtime cell** — SBM-NBP-020 prerequisite satisfied by
+   PS1/26 Appendix 1 / PRA2026/1 and GIRR delta implemented; remaining runtime
+   cells stay fail-closed until exact-cell citations, reference data, and
+   fixtures land.
