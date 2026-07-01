@@ -121,6 +121,8 @@ def _rrao_exposure_summary_rows(bundle: ResultBundle) -> list[dict[str, object]]
     for node in sorted(bundle.nodes, key=lambda item: (item.sort_key, item.node_id)):
         if FrtbComponent(node.component) != FrtbComponent.RRAO:
             continue
+        if not node.calculation_branch:
+            continue
         rows.append(
             {
                 "run_id": bundle.run.run_id,

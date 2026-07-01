@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from pathlib import Path
 
 from frtb_common import CapitalContribution
 from frtb_result_store import (
@@ -19,268 +20,43 @@ from frtb_result_store import (
     ResultEvent,
 )
 
+from fixtures.capital_navigator_drillthrough import write_capital_navigator_artifacts
+from fixtures.capital_navigator_record_specs import (
+    NAVIGATOR_ARTIFACT_SPECS,
+    NAVIGATOR_ATTRIBUTION_SPECS,
+    NAVIGATOR_INPUT_MANIFEST_SPECS,
+    NAVIGATOR_LINEAGE_SPECS,
+    NAVIGATOR_RESIDUAL_ATTRIBUTION_SPEC,
+    NAVIGATOR_UNSUPPORTED_ATTRIBUTION_SPECS,
+)
+from fixtures.capital_navigator_tree_specs import (
+    NAVIGATOR_EDGE_SPECS,
+    NAVIGATOR_MEASURE_SPECS,
+    NAVIGATOR_NODE_SPECS,
+)
 from fixtures.result_store_bundle import run_with_id
 
 _NAVIGATOR_RUN_ID = "frtb/capital-navigator/2026-06-03/us-npr"
 _NAVIGATOR_BASELINE_RUN_ID = "frtb/capital-navigator/2026-06-02/us-npr"
-
-_IMA_DESK = {
-    "desk_id": "rates",
-    "portfolio_id": "rates-options",
-    "book_id": "rates-core",
-    "calculation_branch": "IMA_ES_PLUS_SES",
-}
-_DRC_ALPHA = {
-    "risk_class": "NON_SECURITISATION",
-    "bucket": "corporate",
-    "issuer_id": "issuer-alpha",
-}
-_DRC_BETA = {
-    "risk_class": "NON_SECURITISATION",
-    "bucket": "sovereign",
-    "issuer_id": "issuer-beta",
-}
-_CVA_BANK_A = {
-    "counterparty_id": "counterparty-bank-a",
-    "calculation_branch": "BA_CVA_REDUCED",
-}
-_CVA_FUND_B = {
-    "counterparty_id": "counterparty-fund-b",
-    "calculation_branch": "SA_CVA",
-}
-
-_NAVIGATOR_NODE_SPECS = (
-    ("total", "ROOT", "TOP_OF_HOUSE", "Total capital", 0, "US_NPR_325.201", {}),
-    (
-        "ima",
-        "COMPONENT",
-        "IMA",
-        "IMA",
-        10,
-        "US_NPR_325.207",
-        {"calculation_branch": "IMA_ES_PLUS_SES"},
-    ),
-    ("ima-rates-desk", "DESK", "IMA", "Rates desk", 11, "US_NPR_325.207", _IMA_DESK),
-    ("sa", "COMPONENT", "SA", "Standardised Approach", 20, "US_NPR_325.204", {}),
-    ("sbm", "COMPONENT", "SBM", "SBM", 21, "US_NPR_325.204", {}),
-    (
-        "sbm-girr-usd",
-        "BUCKET",
-        "SBM",
-        "GIRR USD",
-        22,
-        "MAR21.4",
-        {"risk_class": "GIRR", "bucket": "USD"},
-    ),
-    (
-        "sbm-csr-ig",
-        "BUCKET",
-        "SBM",
-        "CSR investment grade",
-        23,
-        "MAR21.4",
-        {"risk_class": "CSR_NON_SEC", "bucket": "IG"},
-    ),
-    ("drc", "COMPONENT", "DRC", "DRC", 30, "MAR22.1", {}),
-    ("drc-issuer-alpha", "ISSUER", "DRC", "Issuer Alpha", 31, "MAR22.1", _DRC_ALPHA),
-    ("drc-issuer-beta", "ISSUER", "DRC", "Issuer Beta", 32, "MAR22.1", _DRC_BETA),
-    ("rrao", "COMPONENT", "RRAO", "RRAO", 40, "MAR23.1", {}),
-    (
-        "rrao-exotic-underlier",
-        "MEASURE_BRANCH",
-        "RRAO",
-        "Exotic underlier",
-        41,
-        "MAR23.1",
-        {"calculation_branch": "EXOTIC_UNDERLIER"},
-    ),
-    (
-        "rrao-cliff-risk",
-        "MEASURE_BRANCH",
-        "RRAO",
-        "Cliff risk",
-        42,
-        "MAR23.1",
-        {"calculation_branch": "CLIFF_RISK"},
-    ),
-    ("cva", "COMPONENT", "CVA", "CVA", 50, "MAR50.1", {}),
-    ("cva-bank-a", "COUNTERPARTY", "CVA", "Bank A", 51, "MAR50.13", _CVA_BANK_A),
-    ("cva-fund-b", "COUNTERPARTY", "CVA", "Fund B", 52, "MAR50.13", _CVA_FUND_B),
-)
-
-_NAVIGATOR_EDGE_SPECS = (
-    ("total", "ima", "AGGREGATES"),
-    ("ima", "ima-rates-desk", "DRILLDOWN"),
-    ("total", "sa", "AGGREGATES"),
-    ("sa", "sbm", "AGGREGATES"),
-    ("sbm", "sbm-girr-usd", "DRILLDOWN"),
-    ("sbm", "sbm-csr-ig", "DRILLDOWN"),
-    ("sa", "drc", "AGGREGATES"),
-    ("drc", "drc-issuer-alpha", "DRILLDOWN"),
-    ("drc", "drc-issuer-beta", "DRILLDOWN"),
-    ("sa", "rrao", "AGGREGATES"),
-    ("rrao", "rrao-exotic-underlier", "DRILLDOWN"),
-    ("rrao", "rrao-cliff-risk", "DRILLDOWN"),
-    ("total", "cva", "AGGREGATES"),
-    ("cva", "cva-bank-a", "DRILLDOWN"),
-    ("cva", "cva-fund-b", "DRILLDOWN"),
-)
-
-_NAVIGATOR_MEASURE_SPECS = (
-    ("total", 150.0, "US_NPR_325.201"),
-    ("sa", 78.0, "US_NPR_325.204"),
-    ("ima-rates-desk", 42.0, "US_NPR_325.207"),
-    ("sbm-girr-usd", 35.0, "MAR21.4"),
-    ("sbm-csr-ig", 15.0, "MAR21.4"),
-    ("drc-issuer-alpha", 18.0, "MAR22.1"),
-    ("drc-issuer-beta", 4.0, "MAR22.1"),
-    ("rrao-exotic-underlier", 4.0, "MAR23.1"),
-    ("rrao-cliff-risk", 2.0, "MAR23.1"),
-    ("cva-bank-a", 20.0, "MAR50.13"),
-    ("cva-fund-b", 10.0, "MAR50.13"),
-)
-
-_NAVIGATOR_ARTIFACT_SPECS = (
-    (
-        "navigator-ima-pnl-vector",
-        "IMA",
-        "IMA_PNL_VECTOR",
-        6,
-        ("desk_id", "portfolio_id", "book_id"),
-    ),
-    ("navigator-sbm-sensitivities", "SBM", "SBM_SENSITIVITY_TABLE", 4, ()),
-    ("navigator-drc-jtd", "DRC", "DRC_JTD_TABLE", 3, ()),
-    ("navigator-rrao-exposures", "RRAO", "RRAO_EXPOSURE_TABLE", 2, ()),
-    ("navigator-cva-exposures", "CVA", "CVA_EXPOSURE_TABLE", 4, ()),
-    ("navigator-suite-attribution", "TOP_OF_HOUSE", "ATTRIBUTION_VECTOR", 11, ()),
-)
-
-_NAVIGATOR_INPUT_MANIFEST_SPECS = (
-    ("ima-pnl", "risk-engine-ima", 6),
-    ("sbm-sensitivities", "risk-engine-sbm", 4),
-    ("drc-positions", "risk-engine-drc", 3),
-    ("rrao-positions", "risk-engine-rrao", 2),
-    ("cva-exposures", "risk-engine-cva", 4),
-)
-
-_NAVIGATOR_LINEAGE_SPECS = (
-    ("total", "input_snapshot", "", "suite-input-hash"),
-    ("ima-rates-desk", "artifact", "navigator-ima-pnl-vector", None),
-    ("sbm-girr-usd", "artifact", "navigator-sbm-sensitivities", None),
-    ("drc-issuer-alpha", "artifact", "navigator-drc-jtd", None),
-    ("rrao-exotic-underlier", "artifact", "navigator-rrao-exposures", None),
-    ("cva-bank-a", "artifact", "navigator-cva-exposures", None),
-)
-
-_NAVIGATOR_ATTRIBUTION_SPECS = (
-    (
-        "ima-desk-rates",
-        "ima-rates-desk",
-        "desk-rates",
-        "DESK",
-        "IMA_DESK",
-        42.0,
-        "STANDALONE",
-        "navigator-ima-pnl-vector",
-    ),
-    (
-        "sbm-girr-usd-5y",
-        "sbm-girr-usd",
-        "sensitivity-girr-usd-5y",
-        "SENSITIVITY",
-        "SBM_DELTA",
-        35.0,
-        "ANALYTICAL_EULER",
-        "navigator-sbm-sensitivities",
-    ),
-    (
-        "sbm-csr-ig-spread",
-        "sbm-csr-ig",
-        "sensitivity-csr-ig-a",
-        "SENSITIVITY",
-        "SBM_DELTA",
-        15.0,
-        "ANALYTICAL_EULER",
-        "navigator-sbm-sensitivities",
-    ),
-    (
-        "drc-issuer-alpha-net-jtd",
-        "drc-issuer-alpha",
-        "issuer-alpha",
-        "ISSUER",
-        "DRC_NET_JTD",
-        18.0,
-        "STANDALONE",
-        "navigator-drc-jtd",
-    ),
-    (
-        "drc-issuer-beta-net-jtd",
-        "drc-issuer-beta",
-        "issuer-beta",
-        "ISSUER",
-        "DRC_NET_JTD",
-        4.0,
-        "STANDALONE",
-        "navigator-drc-jtd",
-    ),
-    (
-        "rrao-exotic-underlier-line",
-        "rrao-exotic-underlier",
-        "rrao-line-exotic-001",
-        "POSITION",
-        "RRAO_LINE",
-        4.0,
-        "STANDALONE",
-        "navigator-rrao-exposures",
-    ),
-    (
-        "rrao-cliff-risk-line",
-        "rrao-cliff-risk",
-        "rrao-line-cliff-001",
-        "POSITION",
-        "RRAO_LINE",
-        2.0,
-        "STANDALONE",
-        "navigator-rrao-exposures",
-    ),
-    (
-        "cva-bank-a-counterparty",
-        "cva-bank-a",
-        "counterparty-bank-a",
-        "COUNTERPARTY",
-        "CVA_COUNTERPARTY",
-        20.0,
-        "STANDALONE",
-        "navigator-cva-exposures",
-    ),
-    (
-        "cva-fund-b-counterparty",
-        "cva-fund-b",
-        "counterparty-fund-b",
-        "COUNTERPARTY",
-        "CVA_COUNTERPARTY",
-        10.0,
-        "STANDALONE",
-        "navigator-cva-exposures",
-    ),
-)
 
 
 def capital_navigator_bundle(
     run: CalculationRun | None = None,
     *,
     baseline_run_id: str = _NAVIGATOR_BASELINE_RUN_ID,
+    artifact_root: Path | None = None,
 ) -> ResultBundle:
     """Build a complete synthetic suite result for Capital Navigator tests."""
 
     if run is None:
         run = run_with_id(_NAVIGATOR_RUN_ID)
+    local_artifacts = write_capital_navigator_artifacts(run.run_id, artifact_root)
     return ResultBundle(
         run=run,
         nodes=_capital_navigator_nodes(run),
         edges=_capital_navigator_edges(run),
         measures=_capital_navigator_measures(run),
-        artifacts=_capital_navigator_artifacts(run),
+        artifacts=_capital_navigator_artifacts(run, local_artifacts),
         input_manifests=_capital_navigator_input_manifests(run),
         lineage=_capital_navigator_lineage(run),
         attributions=_capital_navigator_attributions(run),
@@ -290,7 +66,7 @@ def capital_navigator_bundle(
 
 
 def _capital_navigator_nodes(run: CalculationRun) -> tuple[CapitalNode, ...]:
-    return tuple(_capital_navigator_node(run.run_id, *spec) for spec in _NAVIGATOR_NODE_SPECS)
+    return tuple(_capital_navigator_node(run.run_id, *spec) for spec in NAVIGATOR_NODE_SPECS)
 
 
 def _capital_navigator_node(
@@ -324,7 +100,7 @@ def _capital_navigator_edges(run: CalculationRun) -> tuple[CapitalEdge, ...]:
             edge_type=edge_type,
             sort_key=sort_key,
         )
-        for sort_key, (parent, child, edge_type) in enumerate(_NAVIGATOR_EDGE_SPECS, start=1)
+        for sort_key, (parent, child, edge_type) in enumerate(NAVIGATOR_EDGE_SPECS, start=1)
     )
 
 
@@ -339,20 +115,26 @@ def _capital_navigator_measures(run: CalculationRun) -> tuple[CapitalMeasure, ..
             regulatory_rule_id=rule_id,
             citations=(rule_id,),
         )
-        for node_id, amount, rule_id in _NAVIGATOR_MEASURE_SPECS
+        for node_id, amount, rule_id in NAVIGATOR_MEASURE_SPECS
     )
 
 
-def _capital_navigator_artifacts(run: CalculationRun) -> tuple[ArtifactRef, ...]:
+def _capital_navigator_artifacts(
+    run: CalculationRun,
+    local_artifacts: dict[str, tuple[str, int]],
+) -> tuple[ArtifactRef, ...]:
     return tuple(
         ArtifactRef(
             run_id=run.run_id,
             artifact_id=artifact_id,
             component=component,
             artifact_type=artifact_type,
-            uri=f"s3://frtb-results/capital-navigator/{run.run_id}/{artifact_id}.parquet",
+            uri=local_artifacts.get(
+                artifact_id,
+                (f"s3://frtb-results/capital-navigator/{run.run_id}/{artifact_id}.parquet", 0),
+            )[0],
             format="parquet",
-            row_count=row_count,
+            row_count=local_artifacts.get(artifact_id, ("", row_count))[1],
             partition_keys=partition_keys,
         )
         for (
@@ -361,7 +143,7 @@ def _capital_navigator_artifacts(run: CalculationRun) -> tuple[ArtifactRef, ...]
             artifact_type,
             row_count,
             partition_keys,
-        ) in _NAVIGATOR_ARTIFACT_SPECS
+        ) in NAVIGATOR_ARTIFACT_SPECS
     )
 
 
@@ -381,7 +163,7 @@ def _capital_navigator_input_manifests(run: CalculationRun) -> tuple[InputSnapsh
             source_hash=f"source-hash-{handoff_key}",
             schema_fingerprint=f"schema-{handoff_key}-v1",
         )
-        for handoff_key, source_system, row_count in _NAVIGATOR_INPUT_MANIFEST_SPECS
+        for handoff_key, source_system, row_count in NAVIGATOR_INPUT_MANIFEST_SPECS
     )
 
 
@@ -394,14 +176,23 @@ def _capital_navigator_lineage(run: CalculationRun) -> tuple[LineageRef, ...]:
             source_id=run.input_snapshot_id if not source_id else source_id,
             source_hash=source_hash,
         )
-        for result_id, source_type, source_id, source_hash in _NAVIGATOR_LINEAGE_SPECS
+        for result_id, source_type, source_id, source_hash in NAVIGATOR_LINEAGE_SPECS
     )
 
 
 def _capital_navigator_attributions(
     run: CalculationRun,
 ) -> tuple[CapitalAttributionRecord, ...]:
-    records = tuple(
+    records = tuple(_capital_navigator_direct_attributions(run))
+    unsupported = tuple(_capital_navigator_unsupported_attributions(run))
+    residual = _capital_navigator_residual_attribution(run)
+    return (*records, *unsupported, residual)
+
+
+def _capital_navigator_direct_attributions(
+    run: CalculationRun,
+) -> tuple[CapitalAttributionRecord, ...]:
+    return tuple(
         _capital_navigator_attribution(
             run=run,
             contribution_id=contribution_id,
@@ -425,38 +216,64 @@ def _capital_navigator_attributions(
             base_amount,
             method,
             artifact_id,
-        ) in _NAVIGATOR_ATTRIBUTION_SPECS
+        ) in NAVIGATOR_ATTRIBUTION_SPECS
     )
-    return (
-        *records,
+
+
+def _capital_navigator_unsupported_attributions(
+    run: CalculationRun,
+) -> tuple[CapitalAttributionRecord, ...]:
+    return tuple(
         _capital_navigator_attribution(
             run=run,
-            contribution_id="cva-unsupported-ba-reduced-sqrt",
-            node_id="cva",
-            source_id="ba-cva-reduced-portfolio-sqrt",
-            source_level="UNSUPPORTED_BRANCH",
-            category="CVA_UNSUPPORTED_BRANCH",
-            base_amount=0.0,
+            contribution_id=contribution_id,
+            node_id=node_id,
+            source_id=source_id,
+            source_level=source_level,
+            category=category,
+            base_amount=base_amount,
             method="UNSUPPORTED",
             contribution=None,
             residual=0.0,
-            artifact_id="navigator-cva-exposures",
-            reason="Reduced BA-CVA portfolio square-root aggregation is not exact Euler.",
-        ),
-        _capital_navigator_attribution(
-            run=run,
-            contribution_id="suite-residual-zero",
-            node_id="total",
-            source_id=run.run_id,
-            source_level="RESIDUAL_BRANCH",
-            category="SUITE_RESIDUAL",
-            base_amount=150.0,
-            method="RESIDUAL",
-            contribution=None,
-            residual=0.0,
-            artifact_id="navigator-suite-attribution",
-            reason="Suite residual retained for audit; component explain rows reconcile.",
-        ),
+            artifact_id=artifact_id,
+            reason=reason,
+        )
+        for (
+            contribution_id,
+            node_id,
+            source_id,
+            source_level,
+            category,
+            base_amount,
+            artifact_id,
+            reason,
+        ) in NAVIGATOR_UNSUPPORTED_ATTRIBUTION_SPECS
+    )
+
+
+def _capital_navigator_residual_attribution(run: CalculationRun) -> CapitalAttributionRecord:
+    (
+        contribution_id,
+        node_id,
+        source_level,
+        category,
+        base_amount,
+        artifact_id,
+        reason,
+    ) = NAVIGATOR_RESIDUAL_ATTRIBUTION_SPEC
+    return _capital_navigator_attribution(
+        run=run,
+        contribution_id=contribution_id,
+        node_id=node_id,
+        source_id=run.run_id,
+        source_level=source_level,
+        category=category,
+        base_amount=base_amount,
+        method="RESIDUAL",
+        contribution=None,
+        residual=0.0,
+        artifact_id=artifact_id,
+        reason=reason,
     )
 
 
@@ -507,8 +324,8 @@ def _capital_navigator_movements(
             movement_id="total-capital-day-over-day",
             node_id="total",
             movement_type="DAY_OVER_DAY",
-            from_amount=144.0,
-            to_amount=150.0,
+            from_amount=204.0,
+            to_amount=210.0,
             delta_amount=6.0,
             base_currency="USD",
             driver_type="COMPONENT",
