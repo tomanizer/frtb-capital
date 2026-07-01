@@ -224,14 +224,14 @@ def test_batch_dispatcher_reports_batch_field_for_invalid_batch_inputs() -> None
 
 def test_batch_dispatcher_fails_closed_for_unsupported_profile_cell() -> None:
     handoff = normalize_sbm_path(
-        SbmRiskClass.GIRR,
-        SbmRiskMeasure.VEGA,
+        SbmRiskClass.FX,
+        SbmRiskMeasure.DELTA,
         arrow_table(
             (
                 sample_sensitivity(
                     1,
-                    risk_class=SbmRiskClass.GIRR,
-                    risk_measure=SbmRiskMeasure.VEGA,
+                    risk_class=SbmRiskClass.FX,
+                    risk_measure=SbmRiskMeasure.DELTA,
                 ),
             )
         ),

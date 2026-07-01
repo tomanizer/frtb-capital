@@ -26,6 +26,43 @@ from frtb_sbm.reference_profiles import (
     citations_for_profile,
 )
 
+PROFILE_CURVATURE_CITATION_IDS: dict[SbmRegulatoryProfile, tuple[str, ...]] = {
+    SbmRegulatoryProfile.BASEL_MAR21: (
+        "basel_mar21_curvature",
+        "basel_mar21_96",
+        "basel_mar21_97",
+        "basel_mar21_98",
+        "basel_mar21_99",
+        "basel_mar21_100",
+        "basel_mar21_101",
+    ),
+    SbmRegulatoryProfile.EU_CRR3: translate_basel_citation_ids_to_eu(
+        (
+            "basel_mar21_curvature",
+            "basel_mar21_96",
+            "basel_mar21_97",
+            "basel_mar21_98",
+            "basel_mar21_99",
+            "basel_mar21_100",
+            "basel_mar21_101",
+        )
+    ),
+    SbmRegulatoryProfile.PRA_UK_CRR: (
+        "pra_uk_crr_325e_components",
+        "pra_uk_crr_325g_curvature_aggregation",
+        "pra_uk_crr_325h_correlation_scenarios",
+        "pra_uk_crr_325l_girr_risk_factors",
+        "pra_uk_crr_325ax_curvature_risk_weights",
+        "pra_uk_crr_325ay_curvature_correlations",
+    ),
+}
+
+PROFILE_GIRR_CURVATURE_RISK_WEIGHT_CITATION_IDS: dict[SbmRegulatoryProfile, str] = {
+    SbmRegulatoryProfile.BASEL_MAR21: "basel_mar21_99",
+    SbmRegulatoryProfile.EU_CRR3: translate_basel_citation_ids_to_eu(("basel_mar21_99",))[0],
+    SbmRegulatoryProfile.PRA_UK_CRR: "pra_uk_crr_325ax_curvature_risk_weights",
+}
+
 
 def curvature_citation_ids(profile: SbmRegulatoryProfile | str) -> tuple[str, ...]:
     """Return ordered citation ids for curvature contract validation.
@@ -39,22 +76,13 @@ def curvature_citation_ids(profile: SbmRegulatoryProfile | str) -> tuple[str, ..
     tuple[str, ...]
     """
 
-    citations = citations_for_profile(profile)
-    basel_required = (
-        "basel_mar21_curvature",
-        "basel_mar21_96",
-        "basel_mar21_97",
-        "basel_mar21_98",
-        "basel_mar21_99",
-        "basel_mar21_100",
-        "basel_mar21_101",
-    )
     resolved = _resolve_supported_profile(profile)
-    required = (
-        translate_basel_citation_ids_to_eu(basel_required)
-        if resolved is SbmRegulatoryProfile.EU_CRR3
-        else basel_required
-    )
+    citations = citations_for_profile(resolved)
+    required = PROFILE_CURVATURE_CITATION_IDS.get(resolved)
+    if required is None:
+        raise UnsupportedRegulatoryFeatureError(
+            f"curvature citations are unavailable for profile={profile!r}"
+        )
     missing = [citation_id for citation_id in required if citation_id not in citations]
     if missing:
         raise UnsupportedRegulatoryFeatureError(
@@ -91,7 +119,11 @@ def curvature_risk_weight(
             PROFILE_GIRR_DELTA_RISK_WEIGHTS[resolved],
             key=lambda item: item.risk_weight,
         )
-        citation_id = _profile_citation_id(resolved, "basel_mar21_99")
+        citation_id = PROFILE_GIRR_CURVATURE_RISK_WEIGHT_CITATION_IDS.get(resolved)
+        if citation_id is None:
+            raise UnsupportedRegulatoryFeatureError(
+                f"GIRR curvature risk weights are unsupported for profile {resolved.value}"
+            )
         return rule.risk_weight, (citation_id, rule.citation_id)
     if resolved_class is SbmRiskClass.FX:
         weight, citations = fx_delta_risk_weight(
@@ -147,7 +179,16 @@ def curvature_risk_weight(
 def _profile_citation_id(profile: SbmRegulatoryProfile, basel_id: str) -> str:
     if profile is SbmRegulatoryProfile.EU_CRR3:
         return translate_basel_citation_ids_to_eu((basel_id,))[0]
+    if profile is not SbmRegulatoryProfile.BASEL_MAR21:
+        raise UnsupportedRegulatoryFeatureError(
+            f"curvature citation {basel_id} is unsupported for profile {profile.value}"
+        )
     return basel_id
 
 
-__all__ = ["curvature_citation_ids", "curvature_risk_weight"]
+__all__ = [
+    "PROFILE_CURVATURE_CITATION_IDS",
+    "PROFILE_GIRR_CURVATURE_RISK_WEIGHT_CITATION_IDS",
+    "curvature_citation_ids",
+    "curvature_risk_weight",
+]
