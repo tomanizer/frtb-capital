@@ -25,6 +25,9 @@ from frtb_result_store.mart_component_rows import (
 from frtb_result_store.mart_movement_rows import (
     _movement_summary_rows,
 )
+from frtb_result_store.mart_rfet_nmrf_ses_rows import (
+    _rfet_nmrf_ses_evidence_mart_rows,
+)
 from frtb_result_store.mart_row_codecs import (
     capital_summary_from_row as _capital_summary_from_row,
 )
@@ -93,6 +96,7 @@ def mart_rows_for_bundle(
         "drc_issuer_contributors": _drc_issuer_contributor_rows(bundle),
         "cva_counterparty_contributors": _cva_counterparty_contributor_rows(bundle),
         "rrao_exposure_summary": _rrao_exposure_summary_rows(bundle),
+        "rfet_nmrf_ses_evidence": _rfet_nmrf_ses_evidence_mart_rows(bundle),
     }
 
 

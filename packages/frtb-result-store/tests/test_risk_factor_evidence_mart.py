@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import date
+from types import SimpleNamespace
 
 from fixtures.risk_factor_evidence_bundle import (
     _EVIDENCE_RUN_ID,
@@ -12,7 +13,9 @@ from fixtures.risk_factor_evidence_bundle import (
     rfet_observation_evidence_rows,
     risk_factor_evidence_rows,
 )
+from frtb_common import AttributionMethod
 from frtb_result_store._io_rfet_nmrf_ses_queries import StoreRiskFactorEvidenceQueryMixin
+from frtb_result_store._model_attribution import CapitalAttributionRecord
 from frtb_result_store._model_risk_factor_evidence import (
     ModellabilityState,
     NMRFSESBridge,
@@ -21,6 +24,8 @@ from frtb_result_store._model_risk_factor_evidence import (
     RiskFactorHierarchyUsage,
     SesComponent,
 )
+from frtb_result_store.api_risk_factor_evidence import risk_factor_evidence_summary
+from frtb_result_store.mart_rfet_nmrf_ses_rows import _build_ses_bridge
 from frtb_result_store.mart_schemas import (
     MART_NAMES,
     MART_SCHEMA_VERSION,
@@ -32,6 +37,7 @@ from frtb_result_store.risk_factor_evidence_rows import (
     _nmrf_ses_bridge_row,
     _rfet_observation_evidence_from_row,
     _rfet_observation_evidence_row,
+    _risk_factor_evidence_mart_from_row,
     _risk_factor_evidence_mart_row,
     _risk_factor_hierarchy_usage_from_row,
     _risk_factor_hierarchy_usage_row,
@@ -222,6 +228,44 @@ class TestNMRFSESBridge:
         assert row["aggregation_bucket"] is None
         assert row["capital_node_id"] is None
 
+    def test_ses_bridge_sums_duplicate_risk_factor_attributions(self) -> None:
+        """SES bridge builder should aggregate repeated risk-factor contributions."""
+        bundle = SimpleNamespace(
+            attributions=(
+                CapitalAttributionRecord(
+                    run_id=_EVIDENCE_RUN_ID,
+                    node_id="ima-desk-credit",
+                    contribution_id="ses-1",
+                    source_id=_RF_NMRF_TYPE_A_IR,
+                    source_level="RISK_FACTOR",
+                    category="NMRF_SES_TYPE_A",
+                    base_amount=10.0,
+                    method=AttributionMethod.ANALYTICAL_EULER,
+                    bucket_key="csr-ig-hy",
+                    marginal_multiplier=1.0,
+                    contribution=10.0,
+                ),
+                CapitalAttributionRecord(
+                    run_id=_EVIDENCE_RUN_ID,
+                    node_id="ima-desk-credit",
+                    contribution_id="ses-2",
+                    source_id=_RF_NMRF_TYPE_A_IR,
+                    source_level="RISK_FACTOR",
+                    category="NMRF_SES_TYPE_A",
+                    base_amount=2.5,
+                    method=AttributionMethod.ANALYTICAL_EULER,
+                    bucket_key="csr-ig-hy",
+                    marginal_multiplier=1.0,
+                    contribution=2.5,
+                ),
+            )
+        )
+
+        bridges = _build_ses_bridge(bundle)
+
+        assert bridges[_RF_NMRF_TYPE_A_IR].ses_component == SesComponent.TYPE_A
+        assert bridges[_RF_NMRF_TYPE_A_IR].ses_amount == 12.5
+
 
 class TestRiskFactorHierarchyUsage:
     """Tests for hierarchy usage serialization."""
@@ -295,6 +339,49 @@ class TestRiskFactorEvidenceRow:
         assert row_dict["ses_amount"] == 12500.00
         assert row_dict["ses_movement"] == 500.00
         assert row_dict["liquidity_horizon_days"] == 10
+
+    def test_evidence_mart_from_row_preserves_optional_subrecords(self) -> None:
+        """Deserializer should not drop bridge or hierarchy rows with null optional fields."""
+        row = (
+            _EVIDENCE_RUN_ID,
+            _RF_NMRF_TYPE_A_IR,
+            "IG/HY Spread Factor",
+            "CSR_NON_SECURITISATION",
+            "SPREAD_CURVE",
+            "non_modellable",
+            180,
+            "2026-06-15",
+            15,
+            "stale",
+            3,
+            "navigator-rfet-csr-observations",
+            None,
+            12500.00,
+            None,
+            "stress-period-250d",
+            10,
+            "csr-ig-hy",
+            "ima-desk-credit",
+            None,
+            "credit",
+            None,
+            None,
+            "le-demo",
+            28,
+            "navigator-csr-sensitivities",
+            "{}",
+        )
+
+        restored = _risk_factor_evidence_mart_from_row(row)
+
+        assert restored.nmrf_ses_bridge is not None
+        assert restored.nmrf_ses_bridge.risk_factor_id == _RF_NMRF_TYPE_A_IR
+        assert restored.nmrf_ses_bridge.ses_component is None
+        assert restored.nmrf_ses_bridge.ses_amount == 12500.00
+        assert restored.hierarchy_usage is not None
+        assert restored.hierarchy_usage.risk_factor_id == _RF_NMRF_TYPE_A_IR
+        assert restored.hierarchy_usage.book_id is None
+        assert restored.hierarchy_usage.usage_count == 28
 
 
 class TestEvidenceFixtures:
@@ -374,6 +461,26 @@ class TestQueryMixin:
         assert hasattr(StoreRiskFactorEvidenceQueryMixin, "get_risk_factor_evidence")
         assert hasattr(StoreRiskFactorEvidenceQueryMixin, "risk_factor_hierarchy_usage")
         assert hasattr(StoreRiskFactorEvidenceQueryMixin, "nmrf_ses_capital_by_risk_factor")
+
+
+class TestRiskFactorEvidenceApi:
+    """Tests for Navigator risk-factor evidence API helpers."""
+
+    def test_summary_reads_all_rows_without_page_cap(self) -> None:
+        """Summary should not silently cap runs with more than 1000 factors."""
+
+        class Store:
+            def _risk_factor_evidence_by_filters(self, run_id: str):
+                assert run_id == _EVIDENCE_RUN_ID
+                return risk_factor_evidence_rows() * 200
+
+            def list_risk_factor_evidence(self, *args, **kwargs):
+                raise AssertionError("summary should not use the paged list API")
+
+        summary = risk_factor_evidence_summary(Store(), _EVIDENCE_RUN_ID)
+
+        assert summary["state"] == "available"
+        assert summary["total_count"] == 1200
 
 
 class TestRowRoundTrip:

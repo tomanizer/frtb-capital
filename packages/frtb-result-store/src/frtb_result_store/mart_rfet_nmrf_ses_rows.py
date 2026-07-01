@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from frtb_result_store._model_attribution import CapitalAttributionRecord
 from frtb_result_store._model_risk_factor_evidence import (
     ModellabilityState,
     NMRFSESBridge,
@@ -11,6 +12,7 @@ from frtb_result_store._model_risk_factor_evidence import (
     RiskFactorHierarchyUsage,
     SesComponent,
 )
+from frtb_result_store._model_risk_factor_metadata import RiskFactorMetadataRecord
 from frtb_result_store.model import ResultBundle
 from frtb_result_store.risk_factor_evidence_rows import (
     _risk_factor_evidence_mart_row,
@@ -76,15 +78,21 @@ def _rfet_nmrf_ses_evidence_mart_rows(bundle: ResultBundle) -> list[dict[str, ob
             modellability_state=modellability_state,
             nmrf_ses_bridge=ses_bridge_by_risk_factor.get(risk_factor_id),
             hierarchy_usage=hierarchy_usage_by_risk_factor.get(risk_factor_id),
-            rfet_artifact_id=metadata.rfet_evidence_id,
-            source_artifact_id=metadata.source_row_id,
+            rfet_artifact_id=(
+                None if metadata.rfet_evidence_id is None else str(metadata.rfet_evidence_id)
+            ),
+            source_artifact_id=None
+            if metadata.source_row_id is None
+            else str(metadata.source_row_id),
         )
         rows.append(_risk_factor_evidence_mart_row(evidence_row))
 
     return rows
 
 
-def _build_rfet_observation_evidence(metadata) -> RFETObservationEvidence:
+def _build_rfet_observation_evidence(
+    metadata: RiskFactorMetadataRecord,
+) -> RFETObservationEvidence:
     """Build RFET observation evidence from risk factor metadata.
 
     This extracts observation counts, gap information, and staleness state
@@ -97,11 +105,11 @@ def _build_rfet_observation_evidence(metadata) -> RFETObservationEvidence:
         gap_days=None,
         stale_state=_rfet_stale_state_from_metadata(metadata),
         rejected_observation_count=None,
-        artifact_id=metadata.rfet_evidence_id,
+        artifact_id=None if metadata.rfet_evidence_id is None else str(metadata.rfet_evidence_id),
     )
 
 
-def _rfet_stale_state_from_metadata(metadata) -> RfetStaleState:
+def _rfet_stale_state_from_metadata(metadata: RiskFactorMetadataRecord) -> RfetStaleState:
     """Determine RFET staleness state from risk factor metadata."""
     if metadata.rfet_evidence_state == "no_data":
         return RfetStaleState.NO_DATA
@@ -114,7 +122,7 @@ def _rfet_stale_state_from_metadata(metadata) -> RfetStaleState:
     return RfetStaleState.CURRENT
 
 
-def _determine_modellability_state(metadata) -> ModellabilityState:
+def _determine_modellability_state(metadata: RiskFactorMetadataRecord) -> ModellabilityState:
     """Determine extended modellability state from risk factor metadata."""
     # Map existing evidence states to extended modellability states
     mod_state = str(metadata.modellability_state)
@@ -136,30 +144,29 @@ def _build_hierarchy_usage(bundle: ResultBundle) -> dict[str, RiskFactorHierarch
     This extracts book, desk, and business lineage from attribution records
     where source_level is RISK_FACTOR.
     """
-    usage_by_risk_factor: dict[str, RiskFactorHierarchyUsage] = {}
+    usage_counts: dict[str, int] = {}
+    first_attribution_by_risk_factor: dict[str, CapitalAttributionRecord] = {}
 
     for attribution in bundle.attributions:
         if attribution.source_level != "RISK_FACTOR":
             continue
 
         risk_factor_id = str(attribution.source_id)
-        if risk_factor_id not in usage_by_risk_factor:
-            usage_by_risk_factor[risk_factor_id] = RiskFactorHierarchyUsage(
-                risk_factor_id=risk_factor_id,
-                book_id=attribution.book_id if hasattr(attribution, "book_id") else None,
-                desk_id=attribution.desk_id if hasattr(attribution, "desk_id") else None,
-                volcker_desk_id=None,
-                business_line_id=None,
-                legal_entity_id=None,
-                usage_count=0,
-            )
+        usage_counts[risk_factor_id] = usage_counts.get(risk_factor_id, 0) + 1
+        first_attribution_by_risk_factor.setdefault(risk_factor_id, attribution)
 
-        # Increment usage count
-        current = usage_by_risk_factor[risk_factor_id]
-        object.__setattr__(current, "usage_count", current.usage_count + 1)
-        usage_by_risk_factor[risk_factor_id] = current
-
-    return usage_by_risk_factor
+    return {
+        risk_factor_id: RiskFactorHierarchyUsage(
+            risk_factor_id=risk_factor_id,
+            book_id=getattr(attribution, "book_id", None),
+            desk_id=getattr(attribution, "desk_id", None),
+            volcker_desk_id=None,
+            business_line_id=None,
+            legal_entity_id=None,
+            usage_count=usage_counts[risk_factor_id],
+        )
+        for risk_factor_id, attribution in first_attribution_by_risk_factor.items()
+    }
 
 
 def _build_ses_bridge(bundle: ResultBundle) -> dict[str, NMRFSESBridge]:
@@ -178,13 +185,12 @@ def _build_ses_bridge(bundle: ResultBundle) -> dict[str, NMRFSESBridge]:
         risk_factor_id = str(attribution.source_id)
         ses_component = _infer_ses_component(attribution)
 
-        bridge_by_risk_factor[risk_factor_id] = NMRFSESBridge(
+        existing = bridge_by_risk_factor.get(risk_factor_id)
+        bridge_by_risk_factor[risk_factor_id] = _merge_ses_bridge(
+            existing,
             risk_factor_id=risk_factor_id,
             ses_component=ses_component,
             ses_amount=attribution.contribution,
-            ses_movement=None,  # Movement requires baseline comparison
-            stress_period_id=None,
-            liquidity_horizon_days=None,
             aggregation_bucket=attribution.bucket_key,
             capital_node_id=attribution.node_id,
         )
@@ -192,7 +198,48 @@ def _build_ses_bridge(bundle: ResultBundle) -> dict[str, NMRFSESBridge]:
     return bridge_by_risk_factor
 
 
-def _infer_ses_component(attribution) -> SesComponent | None:
+def _merge_ses_bridge(
+    existing: NMRFSESBridge | None,
+    *,
+    risk_factor_id: str,
+    ses_component: SesComponent | None,
+    ses_amount: float | None,
+    aggregation_bucket: str | None,
+    capital_node_id: str | None,
+) -> NMRFSESBridge:
+    """Merge one attribution contribution into an NMRF/SES bridge row."""
+    if existing is None:
+        return NMRFSESBridge(
+            risk_factor_id=risk_factor_id,
+            ses_component=ses_component,
+            ses_amount=ses_amount,
+            ses_movement=None,
+            stress_period_id=None,
+            liquidity_horizon_days=None,
+            aggregation_bucket=aggregation_bucket,
+            capital_node_id=capital_node_id,
+        )
+
+    return NMRFSESBridge(
+        risk_factor_id=risk_factor_id,
+        ses_component=existing.ses_component or ses_component,
+        ses_amount=_sum_optional(existing.ses_amount, ses_amount),
+        ses_movement=None,  # Movement requires baseline comparison.
+        stress_period_id=existing.stress_period_id,
+        liquidity_horizon_days=existing.liquidity_horizon_days,
+        aggregation_bucket=existing.aggregation_bucket or aggregation_bucket,
+        capital_node_id=existing.capital_node_id or capital_node_id,
+    )
+
+
+def _sum_optional(first: float | None, second: float | None) -> float | None:
+    """Sum optional contribution values while preserving all-null as absent."""
+    if first is None and second is None:
+        return None
+    return (first or 0.0) + (second or 0.0)
+
+
+def _infer_ses_component(attribution: CapitalAttributionRecord) -> SesComponent | None:
     """Infer SES component type from attribution metadata."""
     category = attribution.category or ""
     if "TYPE_A" in category:

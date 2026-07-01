@@ -6,6 +6,8 @@ following the pattern of api_metadata_helpers.py for consistency.
 
 from __future__ import annotations
 
+from typing import cast
+
 from frtb_result_store._model_risk_factor_evidence import (
     NMRFSESBridge,
     RFETObservationEvidence,
@@ -63,9 +65,11 @@ def risk_factor_evidence_payload(
         offset=offset,
     )
 
+    items = cast(tuple[RiskFactorEvidenceRow, ...], page["items"])
+
     return {
         "state": page["state"],
-        "items": [_evidence_row_to_jsonable(row) for row in page["items"]],
+        "items": [_evidence_row_to_jsonable(row) for row in items],
         "total_count": page["total_count"],
         "limit": page["limit"],
         "offset": page["offset"],
@@ -113,7 +117,7 @@ def risk_factor_evidence_detail_payload(
             "hierarchy_usage": None,
         }
 
-    evidence = detail["evidence"]
+    evidence = cast(RiskFactorEvidenceRow, detail["evidence"])
     return {
         "state": "available",
         "risk_factor_id": risk_factor_id,
@@ -155,7 +159,7 @@ def risk_factor_evidence_summary(
         JSON-ready payload containing counts by modellability state,
         SES capital totals, and evidence completeness summary.
     """
-    page = result_store.list_risk_factor_evidence(run_id, limit=1000)
+    rows = result_store._risk_factor_evidence_by_filters(run_id)
 
     modellability_counts: dict[str, int] = {}
     ses_total = 0.0
@@ -163,25 +167,28 @@ def risk_factor_evidence_summary(
     ses_type_b_count = 0
     stale_evidence_count = 0
 
-    for row in page["items"]:
+    for row in rows:
         state = str(row.modellability_state)
         modellability_counts[state] = modellability_counts.get(state, 0) + 1
 
         if row.nmrf_ses_bridge:
             if row.nmrf_ses_bridge.ses_amount:
                 ses_total += row.nmrf_ses_bridge.ses_amount
-            if row.nmrf_ses_bridge.ses_component == "TYPE_A":
+            if str(row.nmrf_ses_bridge.ses_component) == "TYPE_A":
                 ses_type_a_count += 1
-            elif row.nmrf_ses_bridge.ses_component == "TYPE_B":
+            elif str(row.nmrf_ses_bridge.ses_component) == "TYPE_B":
                 ses_type_b_count += 1
 
         if row.rfet_observation_evidence:
-            if row.rfet_observation_evidence.stale_state in ("stale", "missing_evidence"):
+            if str(row.rfet_observation_evidence.stale_state) in (
+                "stale",
+                "missing_evidence",
+            ):
                 stale_evidence_count += 1
 
     return {
-        "state": page["state"],
-        "total_count": page["total_count"],
+        "state": "available" if rows else "no_data",
+        "total_count": len(rows),
         "modellability_counts": modellability_counts,
         "ses_summary": {
             "ses_total": ses_total if ses_total > 0 else None,
@@ -190,7 +197,7 @@ def risk_factor_evidence_summary(
         },
         "evidence_completeness": {
             "stale_or_missing_count": stale_evidence_count if stale_evidence_count > 0 else None,
-            "complete_count": page["total_count"] - stale_evidence_count,
+            "complete_count": len(rows) - stale_evidence_count,
         },
     }
 

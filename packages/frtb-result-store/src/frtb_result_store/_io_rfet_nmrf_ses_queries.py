@@ -8,18 +8,10 @@ from frtb_result_store._io_risk_factor_query_utils import (
     _page,
     _validate_page_window,
 )
-from frtb_result_store._model_risk_factor_evidence import (
-    NMRFSESBridge,
-    RFETObservationEvidence,
-    RiskFactorEvidenceRow,
-    RiskFactorHierarchyUsage,
-)
+from frtb_result_store._model_risk_factor_evidence import RiskFactorEvidenceRow
 from frtb_result_store.model import ResultStoreContractError
 from frtb_result_store.risk_factor_evidence_rows import (
-    _nmrf_ses_bridge_from_row,
-    _rfet_observation_evidence_from_row,
     _risk_factor_evidence_mart_from_row,
-    _risk_factor_hierarchy_usage_from_row,
 )
 
 
@@ -262,85 +254,3 @@ class StoreRiskFactorEvidenceQueryMixin:
                 field="risk_factor_id",
             )
         return _risk_factor_evidence_mart_from_row(rows[0])
-
-    def _rfet_observation_evidence_records(
-        self: Any,
-        run_id: str,
-        *,
-        stale_state: str | None = None,
-    ) -> tuple[RFETObservationEvidence, ...]:
-        """Return RFET observation evidence summaries for a run."""
-        if not self.run_exists(run_id):
-            return ()
-        where = ["run_id = ?"]
-        params: list[object] = [run_id]
-
-        if stale_state is not None:
-            where.append("stale_state = ?")
-            params.append(stale_state)
-
-        rows = self._fetchall(
-            "rfet_nmrf_ses_evidence",
-            f"""
-            SELECT
-                observation_count, latest_observation_date, gap_days,
-                stale_state, rejected_observation_count, rfet_artifact_id
-            FROM {{table}}
-            WHERE {" AND ".join(where)}
-            ORDER BY risk_factor_id
-            """,
-            tuple(params),
-        )
-        return tuple(_rfet_observation_evidence_from_row(row) for row in rows)
-
-    def _nmrf_ses_bridge_records(
-        self: Any,
-        run_id: str,
-        *,
-        ses_component: str | None = None,
-    ) -> tuple[NMRFSESBridge, ...]:
-        """Return NMRF/SES capital bridges for a run."""
-        if not self.run_exists(run_id):
-            return ()
-        where = ["run_id = ?", "ses_component IS NOT NULL"]
-        params: list[object] = [run_id]
-
-        if ses_component is not None:
-            where.append("ses_component = ?")
-            params.append(ses_component)
-
-        rows = self._fetchall(
-            "rfet_nmrf_ses_evidence",
-            f"""
-            SELECT
-                risk_factor_id, ses_component, ses_amount, ses_movement,
-                stress_period_id, liquidity_horizon_days, aggregation_bucket,
-                capital_node_id
-            FROM {{table}}
-            WHERE {" AND ".join(where)}
-            ORDER BY risk_factor_id
-            """,
-            tuple(params),
-        )
-        return tuple(_nmrf_ses_bridge_from_row(row) for row in rows)
-
-    def _risk_factor_hierarchy_usage_records(
-        self: Any,
-        run_id: str,
-    ) -> tuple[RiskFactorHierarchyUsage, ...]:
-        """Return risk-factor hierarchy usage mappings for a run."""
-        if not self.run_exists(run_id):
-            return ()
-        rows = self._fetchall(
-            "rfet_nmrf_ses_evidence",
-            """
-            SELECT
-                risk_factor_id, book_id, desk_id, volcker_desk_id,
-                business_line_id, legal_entity_id, usage_count
-            FROM {table}
-            WHERE run_id = ? AND book_id IS NOT NULL
-            ORDER BY risk_factor_id, desk_id, book_id
-            """,
-            (run_id,),
-        )
-        return tuple(_risk_factor_hierarchy_usage_from_row(row) for row in rows)

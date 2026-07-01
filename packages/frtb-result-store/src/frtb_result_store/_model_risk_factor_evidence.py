@@ -245,7 +245,7 @@ class RiskFactorEvidenceRow:
         _freeze_metadata(self, self.metadata)
 
 
-def _coerce_risk_factor_id(value: RiskFactorId | str, field: str = "risk_factor_id") -> str:
+def _coerce_risk_factor_id(value: RiskFactorId | str, field_name: str = "risk_factor_id") -> str:
     """Coerce a risk factor ID to a string value."""
     if isinstance(value, str):
         return value
@@ -253,6 +253,6 @@ def _coerce_risk_factor_id(value: RiskFactorId | str, field: str = "risk_factor_
         return str(value)
     except Exception as exc:
         raise ResultStoreContractError(
-            f"{field} must be a valid risk factor ID",
-            field=field,
+            f"{field_name} must be a valid risk factor ID",
+            field=field_name,
         ) from exc

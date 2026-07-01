@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from datetime import date
+from typing import Any, cast
 
 from frtb_result_store._model_risk_factor_evidence import (
     ModellabilityState,
@@ -128,11 +129,11 @@ def _rfet_observation_evidence_from_row(row: Sequence[object]) -> RFETObservatio
     """Deserialize RFET observation evidence from a row sequence."""
     latest_date = None if row[1] is None else date.fromisoformat(str(row[1]))
     return RFETObservationEvidence(
-        observation_count=int(row[0]),
+        observation_count=_int_value(row[0]),
         latest_observation_date=latest_date,
-        gap_days=None if row[2] is None else int(row[2]),
+        gap_days=None if row[2] is None else _int_value(row[2]),
         stale_state=RfetStaleState(str(row[3])),
-        rejected_observation_count=None if row[4] is None else int(row[4]),
+        rejected_observation_count=None if row[4] is None else _int_value(row[4]),
         artifact_id=_optional_text(row[5]),
     )
 
@@ -146,7 +147,7 @@ def _risk_factor_hierarchy_usage_from_row(row: Sequence[object]) -> RiskFactorHi
         volcker_desk_id=_optional_text(row[3]),
         business_line_id=_optional_text(row[4]),
         legal_entity_id=_optional_text(row[5]),
-        usage_count=int(row[6]),
+        usage_count=_int_value(row[6]),
     )
 
 
@@ -155,10 +156,10 @@ def _nmrf_ses_bridge_from_row(row: Sequence[object]) -> NMRFSESBridge:
     return NMRFSESBridge(
         risk_factor_id=str(row[0]),
         ses_component=_optional_text(row[1]),
-        ses_amount=None if row[2] is None else float(row[2]),
-        ses_movement=None if row[3] is None else float(row[3]),
+        ses_amount=None if row[2] is None else _float_value(row[2]),
+        ses_movement=None if row[3] is None else _float_value(row[3]),
         stress_period_id=_optional_text(row[4]),
-        liquidity_horizon_days=None if row[5] is None else int(row[5]),
+        liquidity_horizon_days=None if row[5] is None else _int_value(row[5]),
         aggregation_bucket=_optional_text(row[6]),
         capital_node_id=_optional_text(row[7]),
     )
@@ -167,41 +168,45 @@ def _nmrf_ses_bridge_from_row(row: Sequence[object]) -> NMRFSESBridge:
 def _risk_factor_evidence_mart_from_row(row: Sequence[object]) -> RiskFactorEvidenceRow:
     """Deserialize a complete risk factor evidence mart row from a row sequence."""
     rfet_evidence = RFETObservationEvidence(
-        observation_count=int(row[6]),
+        observation_count=_int_value(row[6]),
         latest_observation_date=None if row[7] is None else date.fromisoformat(str(row[7])),
-        gap_days=None if row[8] is None else int(row[8]),
+        gap_days=None if row[8] is None else _int_value(row[8]),
         stale_state=RfetStaleState(str(row[9])),
-        rejected_observation_count=None if row[10] is None else int(row[10]),
+        rejected_observation_count=None if row[10] is None else _int_value(row[10]),
         artifact_id=None if row[11] is None else str(row[11]),
     )
 
     nmrf_bridge = None
     bridge_offset = 12
-    if row[bridge_offset] is not None:
+    if any(row[bridge_offset + offset] is not None for offset in range(7)):
         nmrf_bridge = NMRFSESBridge(
-            risk_factor_id=str(row[0]),
+            risk_factor_id=str(row[1]),
             ses_component=_optional_text(row[bridge_offset]),
-            ses_amount=None if row[bridge_offset + 1] is None else float(row[bridge_offset + 1]),
-            ses_movement=None if row[bridge_offset + 2] is None else float(row[bridge_offset + 2]),
+            ses_amount=None
+            if row[bridge_offset + 1] is None
+            else _float_value(row[bridge_offset + 1]),
+            ses_movement=None
+            if row[bridge_offset + 2] is None
+            else _float_value(row[bridge_offset + 2]),
             stress_period_id=_optional_text(row[bridge_offset + 3]),
             liquidity_horizon_days=None
             if row[bridge_offset + 4] is None
-            else int(row[bridge_offset + 4]),
+            else _int_value(row[bridge_offset + 4]),
             aggregation_bucket=_optional_text(row[bridge_offset + 5]),
             capital_node_id=_optional_text(row[bridge_offset + 6]),
         )
 
     usage_offset = bridge_offset + 7
     hierarchy_usage = None
-    if row[usage_offset] is not None:
+    if row[usage_offset + 5] is not None:
         hierarchy_usage = RiskFactorHierarchyUsage(
-            risk_factor_id=str(row[0]),
+            risk_factor_id=str(row[1]),
             book_id=_optional_text(row[usage_offset]),
             desk_id=_optional_text(row[usage_offset + 1]),
             volcker_desk_id=_optional_text(row[usage_offset + 2]),
             business_line_id=_optional_text(row[usage_offset + 3]),
             legal_entity_id=_optional_text(row[usage_offset + 4]),
-            usage_count=int(row[usage_offset + 5]),
+            usage_count=_int_value(row[usage_offset + 5]),
         )
 
     source_offset = usage_offset + 6
@@ -219,3 +224,13 @@ def _risk_factor_evidence_mart_from_row(row: Sequence[object]) -> RiskFactorEvid
         source_artifact_id=_optional_text(row[source_offset]),
         metadata=_json_mapping(row[source_offset + 1]),
     )
+
+
+def _int_value(value: object) -> int:
+    """Return an integer from a storage value."""
+    return int(cast(Any, value))
+
+
+def _float_value(value: object) -> float:
+    """Return a float from a storage value."""
+    return float(cast(Any, value))
