@@ -266,7 +266,9 @@ textarea:focus-visible {
 
 .header-controls {
   display: flex;
+  flex-wrap: wrap;
   align-items: flex-end;
+  justify-content: flex-end;
   gap: 10px;
 }
 
