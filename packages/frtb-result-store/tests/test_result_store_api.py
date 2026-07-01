@@ -183,7 +183,7 @@ def test_result_store_pivot_query_api(tmp_path: Path) -> None:
     assert col_response.status_code == 200
     col_payload = col_response.json()
     assert col_payload["total_count"] > 0
-    # For "ima" node: component="IMA", desk_id="rates", amount=17.0. The pivoted key will be "capital_rates"
+    # For the "ima" node, the pivoted component/desk key is "capital_rates".
     assert col_payload["pivot_rows"][0]["measures"]["capital_rates"] == 17.0
 
 

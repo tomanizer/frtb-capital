@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
+from enum import Enum
 from typing import Any, cast
 
 from frtb_result_store.marts import (
@@ -20,8 +22,6 @@ from frtb_result_store.model import (
 )
 from frtb_result_store.store_paths import _mart_columns
 from frtb_result_store.store_schemas import _dict_rows
-from collections.abc import Sequence
-
 
 DIMENSION_COLUMNS = [
     "component",
@@ -441,23 +441,26 @@ class StoreMartQueryMixin:
         measures: Sequence[str],
         filters: Sequence[str],
     ) -> tuple[list[str], list[str], list[str], list[str]]:
-        parsed_rows = []
+        parsed_rows: list[str] = []
         for r in rows:
             parsed_rows.extend(x.strip() for x in r.split(",") if x.strip())
-        parsed_cols = []
+        parsed_cols: list[str] = []
         for c in cols:
             parsed_cols.extend(x.strip() for x in c.split(",") if x.strip())
-        parsed_measures = []
+        parsed_measures: list[str] = []
         for m in measures:
             parsed_measures.extend(x.strip() for x in m.split(",") if x.strip())
-        parsed_filters = []
+        parsed_filters: list[str] = []
         for f in filters:
             parsed_filters.extend(x.strip() for x in f.split(",") if x.strip())
 
         if not parsed_measures:
-            raise ResultStoreContractError("At least one measure must be specified", field="measures")
+            raise ResultStoreContractError(
+                "At least one measure must be specified",
+                field="measures",
+            )
 
-        valid_dimensions = set(DIMENSION_COLUMNS + ["node_type"])
+        valid_dimensions = set([*DIMENSION_COLUMNS, "node_type"])
         for dim in parsed_rows:
             if dim not in valid_dimensions:
                 raise ResultStoreContractError(f"Invalid row dimension: {dim}", field="rows")
@@ -470,13 +473,15 @@ class StoreMartQueryMixin:
         self: Any,
         run_id: str,
     ) -> dict[tuple[frozenset[str], tuple[tuple[str, object], ...]], str]:
-        official_nodes_map = {}
+        official_nodes_map: dict[
+            tuple[frozenset[str], tuple[tuple[str, object], ...]],
+            str,
+        ] = {}
         for node in self.capital_tree(run_id):
-            populated = {}
+            populated: dict[str, object] = {}
             for dim in DIMENSION_COLUMNS:
                 val = getattr(node, dim, None)
                 if val is not None and val != "":
-                    from enum import Enum
                     if isinstance(val, Enum):
                         val = val.value
                     populated[dim] = val
@@ -493,8 +498,8 @@ class StoreMartQueryMixin:
         filters: list[str],
     ) -> tuple[tuple[object, ...], ...]:
         where_parts = ["n.run_id = ?"]
-        params = [run_id]
-        valid_dimensions = set(DIMENSION_COLUMNS + ["node_type"])
+        params: list[object] = [run_id]
+        valid_dimensions = set([*DIMENSION_COLUMNS, "node_type"])
 
         for f in filters:
             if ":" in f:
@@ -547,7 +552,7 @@ class StoreMartQueryMixin:
             GROUP BY {group_clause}, m.measure_name
             ORDER BY {group_clause}
         """
-        return self._fetch_custom(sql, params)
+        return cast(tuple[tuple[object, ...], ...], self._fetch_custom(sql, params))
 
     def _pivot_results(
         self: Any,
@@ -559,11 +564,11 @@ class StoreMartQueryMixin:
         num_group_cols = len(group_cols)
         num_row_cols = len(rows)
 
-        grouped_results = {}
+        grouped_results: dict[tuple[object, ...], dict[str, Any]] = {}
         for r_data in rows_data:
             row_vals = tuple(r_data[:num_row_cols])
             col_vals = tuple(r_data[num_row_cols:num_group_cols])
-            measure_name = r_data[num_group_cols]
+            measure_name = str(r_data[num_group_cols])
             amount = r_data[num_group_cols + 1]
 
             if row_vals not in grouped_results:
@@ -580,4 +585,3 @@ class StoreMartQueryMixin:
 
             grouped_results[row_vals]["measures"][measure_key] = amount
         return grouped_results
-

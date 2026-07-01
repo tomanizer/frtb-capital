@@ -541,7 +541,7 @@ def _register_node_detail_routes(
         except ResultStoreContractError as exc:
             raise http_exception_type(  # type: ignore[call-arg]
                 status_code=400,
-                detail=f"Invalid pivot query: {str(exc)}",
+                detail=f"Invalid pivot query: {exc!s}",
             )
 
 
