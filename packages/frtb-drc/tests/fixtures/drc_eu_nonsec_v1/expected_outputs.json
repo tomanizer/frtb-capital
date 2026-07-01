@@ -78,8 +78,8 @@
       "rejected_offsets": []
     }
   },
-  "profile_hash": "4c40225562a8b1baa7767ca30e0d1a0e1198e65284af062a6d775187c70e75ba",
-  "result_json_sha256": "3bb3336027f7dc421031c50adef3a230682f5bc437bd0af99b5ff532c8122a10",
+  "profile_hash": "a86f80027366e884de0fa4cf9c5a63cafe381822fee1dee0e66f88f14a74b295",
+  "result_json_sha256": "4a4a1c1f0ae3485edf9e854b4696ff48c50e9759aac22b6fc11f5c56e4b45b16",
   "scaled": {
     "eu-corp-alpha-long": 75.0,
     "eu-corp-alpha-short": 30.0,

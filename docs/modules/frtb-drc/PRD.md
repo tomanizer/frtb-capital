@@ -88,8 +88,9 @@ banking-book securitisation weights internally. EU CRR3 non-securitisation is
 implemented with Article 325w, Article 325x, Article 325y, and ECAI/CQS mapping
 evidence. EU CRR3 securitisation non-CTP is implemented with Article 325z,
 Article 325aa, typed risk-weight, fair-value-cap, and offset evidence. EU CRR3
-CTP and PRA UK CRR paths fail closed until their cited rule mappings and
-fixtures are complete.
+CTP is implemented with Article 325ab, Article 325ac, Article 325ad, typed
+risk-weight, decomposition, and offset evidence. PRA UK CRR paths fail closed
+until their cited rule mappings and fixtures are complete.
 
 ## Delivery Slices
 

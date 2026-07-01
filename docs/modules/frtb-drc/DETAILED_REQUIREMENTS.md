@@ -214,10 +214,11 @@ assignment uses the MAR22.40-MAR22.41 CTP bucket taxonomy and typed MAR22.42
 risk-weight evidence. EU CRR3 non-securitisation uses Article 325y bucket and
 risk-weight mappings with Article 325y(6) CQS assignment evidence. EU CRR3
 securitisation non-CTP uses Article 325aa bucket/risk-weight evidence and
-Article 325z/325aa securitisation mechanics. EU CRR3 CTP has source-map ids
-for Articles 325ab-325ad, and PRA UK CRR has source-map ids for Articles
-325v-325ad. Those remaining paths stay fail-closed until their cited bucket,
-risk-weight, decomposition, and deterministic fixture mappings are implemented.
+Article 325z/325aa securitisation mechanics. EU CRR3 CTP uses Article
+325ab-325ad scope, netting, decomposition, bucket, risk-weight, HBR, and
+category evidence. PRA UK CRR has source-map ids for Articles 325v-325ad. Those
+remaining PRA paths stay fail-closed until their cited bucket, risk-weight,
+decomposition, and deterministic fixture mappings are implemented.
 
 ### DRC-FUNC-009: Risk weights
 
@@ -483,9 +484,12 @@ conditions remain true:
 - EU CRR3 securitisation non-CTP row and batch paths use cited Article 325z,
   Article 325aa, typed risk-weight, fair-value-cap, offset, fixture, and
   attribution evidence.
-- EU CRR3 CTP and PRA UK CRR paths fail explicitly until the source-map ids
-  tracked in `PROFILE_SUPPORT_MATRIX.md` are backed by runtime mappings,
-  fixtures, and tests.
+- EU CRR3 CTP row and batch paths use cited Article 325ab, Article 325ac,
+  Article 325ad, typed risk-weight, decomposition, offset, fixture, and
+  attribution evidence.
+- PRA UK CRR paths fail explicitly until the source-map ids tracked in
+  `PROFILE_SUPPORT_MATRIX.md` are backed by runtime mappings, fixtures, and
+  tests.
 - Results are frozen, serialisable, carry rule-profile/input hashes, and emit
   attribution records that reconcile to total capital through analytical,
   residual, or unsupported methods.

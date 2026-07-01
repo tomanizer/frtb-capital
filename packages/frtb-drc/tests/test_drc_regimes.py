@@ -54,13 +54,14 @@ def test_basel_profile_supports_nonsec_securitisation_non_ctp_and_ctp() -> None:
     ensure_risk_class_supported(profile, DrcRiskClass.CORRELATION_TRADING_PORTFOLIO)
 
 
-def test_eu_crr3_profile_supports_nonsec_and_securitisation_non_ctp() -> None:
+def test_eu_crr3_profile_supports_all_drc_risk_classes() -> None:
     profile = get_rule_profile(EU_CRR3_PROFILE_ID)
 
     assert profile.supported_risk_classes == frozenset(
         {
             DrcRiskClass.NON_SECURITISATION,
             DrcRiskClass.SECURITISATION_NON_CTP,
+            DrcRiskClass.CORRELATION_TRADING_PORTFOLIO,
         }
     )
     assert profile.securitisation_non_ctp_fair_value_cap_allowed is True
@@ -78,8 +79,7 @@ def test_eu_crr3_profile_supports_nonsec_and_securitisation_non_ctp() -> None:
     assert "EU_CRR3_ARTICLE_325AD" in profile.citations
     ensure_risk_class_supported(profile, DrcRiskClass.NON_SECURITISATION)
     ensure_risk_class_supported(profile, DrcRiskClass.SECURITISATION_NON_CTP)
-    with pytest.raises(UnsupportedRegulatoryFeatureError, match=EU_CRR3_PROFILE_ID):
-        ensure_risk_class_supported(profile, DrcRiskClass.CORRELATION_TRADING_PORTFOLIO)
+    ensure_risk_class_supported(profile, DrcRiskClass.CORRELATION_TRADING_PORTFOLIO)
 
 
 def test_pra_profile_is_known_and_fail_closed() -> None:
@@ -141,7 +141,7 @@ def test_profile_support_matrix_marks_basel_securitisation_and_ctp_supported() -
     assert basel_ctp.next_step == "Maintain Basel-specific CTP typed evidence fixtures."
 
 
-def test_profile_support_matrix_marks_eu_crr3_nonsec_and_sec_supported() -> None:
+def test_profile_support_matrix_marks_eu_crr3_all_paths_supported() -> None:
     cells = {(cell.profile_id, cell.risk_class): cell for cell in drc_profile_support_matrix()}
 
     eu_nonsec = cells[(EU_CRR3_PROFILE_ID, DrcRiskClass.NON_SECURITISATION)]
@@ -156,13 +156,13 @@ def test_profile_support_matrix_marks_eu_crr3_nonsec_and_sec_supported() -> None
     assert eu_sec.next_step == (
         "Maintain EU CRR3 securitisation non-CTP fixture and typed evidence coverage."
     )
-    assert eu_ctp.status == "FAIL_CLOSED"
+    assert eu_ctp.status == "SUPPORTED"
     assert eu_ctp.citation_ids == (
         "EU_CRR3_ARTICLE_325AB",
         "EU_CRR3_ARTICLE_325AC",
         "EU_CRR3_ARTICLE_325AD",
     )
-    assert "Article 325ab-325ad" in eu_ctp.next_step
+    assert eu_ctp.next_step == "Maintain EU CRR3 CTP fixture and typed decomposition evidence coverage."
 
 
 def test_profile_support_matrix_marks_pra_paths_fail_closed_with_source_map_ids() -> None:

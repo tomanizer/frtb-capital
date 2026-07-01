@@ -30,10 +30,11 @@ through cited Article 325w gross JTD/LGD, Article 325x netting/maturity,
 Article 325y bucket/risk-weight/HBR/category mechanics, and ECAI-to-CQS
 mapping evidence. EU CRR3 securitisation non-CTP is supported through Article
 325z/325aa row, batch, Arrow, typed risk-weight, fair-value-cap, and offset
-evidence. EU CRR3 CTP and all UK PRA paths fail closed until their
-profile-specific mappings are implemented; their source-map anchors are tracked
-in [`PROFILE_SUPPORT_MATRIX.md`](PROFILE_SUPPORT_MATRIX.md) for issues
-#1003-#1006.
+evidence. EU CRR3 CTP is supported through Article 325ab-325ad row, batch,
+Arrow, typed risk-weight, decomposition, and offset evidence. All UK PRA paths
+fail closed until their profile-specific mappings are implemented; their
+source-map anchors are tracked in
+[`PROFILE_SUPPORT_MATRIX.md`](PROFILE_SUPPORT_MATRIX.md) for issues #1004-#1006.
 Securitisation non-CTP and CTP sub-scope without supplied risk weights or
 explicit replication evidence also fails closed.
 

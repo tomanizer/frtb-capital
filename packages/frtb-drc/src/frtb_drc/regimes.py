@@ -291,17 +291,13 @@ _EU_CRR3_PROFILE = DrcRuleProfile(
         {
             DrcRiskClass.NON_SECURITISATION,
             DrcRiskClass.SECURITISATION_NON_CTP,
+            DrcRiskClass.CORRELATION_TRADING_PORTFOLIO,
         }
     ),
     citations=EU_CRR3_CITATIONS,
     securitisation_non_ctp_fair_value_cap_allowed=True,
     securitisation_non_ctp_fair_value_cap_citation_ids=("EU_CRR3_ARTICLE_325AA",),
-    unsupported_features={
-        DrcRiskClass.CORRELATION_TRADING_PORTFOLIO: (
-            "EU_CRR3 CTP DRC because Articles 325ab to 325ad and related CTP mappings have not "
-            "been implemented"
-        ),
-    },
+    unsupported_features={},
 )
 
 _PRA_UK_CRR_PROFILE = DrcRuleProfile(
@@ -483,6 +479,21 @@ _SUPPORTED_CELL_DETAILS: Mapping[tuple[str, DrcRiskClass], tuple[str, tuple[str,
                 ),
                 "Maintain EU CRR3 securitisation non-CTP fixture and typed evidence coverage.",
             ),
+            (
+                EU_CRR3_PROFILE_ID,
+                DrcRiskClass.CORRELATION_TRADING_PORTFOLIO,
+            ): (
+                (
+                    "EU CRR3 CTP row and batch capital supported with typed Article "
+                    "325ad banking-book risk-weight and decomposition evidence."
+                ),
+                (
+                    "EU_CRR3_ARTICLE_325AB",
+                    "EU_CRR3_ARTICLE_325AC",
+                    "EU_CRR3_ARTICLE_325AD",
+                ),
+                "Maintain EU CRR3 CTP fixture and typed decomposition evidence coverage.",
+            ),
         }
     )
 )
@@ -490,20 +501,6 @@ _SUPPORTED_CELL_DETAILS: Mapping[tuple[str, DrcRiskClass], tuple[str, tuple[str,
 _PLANNED_CELL_DETAILS: Mapping[tuple[str, DrcRiskClass], tuple[tuple[str, ...], str]] = (
     MappingProxyType(
         {
-            (
-                EU_CRR3_PROFILE_ID,
-                DrcRiskClass.CORRELATION_TRADING_PORTFOLIO,
-            ): (
-                (
-                    "EU_CRR3_ARTICLE_325AB",
-                    "EU_CRR3_ARTICLE_325AC",
-                    "EU_CRR3_ARTICLE_325AD",
-                ),
-                (
-                    "Implement Article 325ab-325ad CTP mappings, typed risk-weight "
-                    "and decomposition evidence, and deterministic EU CTP fixtures."
-                ),
-            ),
             (
                 PRA_UK_CRR_PROFILE_ID,
                 DrcRiskClass.NON_SECURITISATION,

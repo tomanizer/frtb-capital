@@ -500,16 +500,35 @@ def test_drc_basel_ctp_batch_matches_row_result_for_typed_evidence() -> None:
     assert not any(citation.startswith("US_NPR") for citation in calculation.result.citations)
 
 
+def test_drc_eu_crr3_ctp_batch_matches_row_result_for_typed_evidence() -> None:
+    fixture = _load_fixture("drc_eu_ctp_v1")
+    row_result = calculate_drc_capital(fixture["positions"], context=fixture["context"])
+    handoff = normalize_drc_ctp_arrow_table(
+        _arrow_table(fixture["positions"]),
+        source_hash=source_content_hash("synthetic eu drc ctp source"),
+    )
+
+    batch = build_drc_ctp_batch_from_arrow(handoff)
+    calculation = calculate_drc_capital_from_batch(batch, context=fixture["context"])
+
+    validate_reconciliation(calculation.result)
+    assert calculation.result.profile_id == EU_CRR3_PROFILE_ID
+    assert calculation.result.total_drc == pytest.approx(row_result.total_drc)
+    assert calculation.result.risk_weight_evidence == row_result.risk_weight_evidence
+    assert _net_outputs(calculation.result.net_jtds) == _net_outputs(row_result.net_jtds)
+    assert _bucket_outputs(calculation.result.categories[0].bucket_results) == _bucket_outputs(
+        row_result.categories[0].bucket_results
+    )
+    assert "EU_CRR3_ARTICLE_325AB" in calculation.result.citations
+    assert "EU_CRR3_ARTICLE_325AC" in calculation.result.citations
+    assert "EU_CRR3_ARTICLE_325AD" in calculation.result.citations
+    assert not any(citation.startswith("US_NPR") for citation in calculation.result.citations)
+    assert not any(citation.startswith("BASEL_MAR22") for citation in calculation.result.citations)
+
+
 @pytest.mark.parametrize(
     ("fixture_name", "normalize", "build_batch", "profile_id", "expected"),
     [
-        (
-            "drc_ctp_v1",
-            normalize_drc_ctp_arrow_table,
-            build_drc_ctp_batch_from_arrow,
-            EU_CRR3_PROFILE_ID,
-            EU_CRR3_PROFILE_ID,
-        ),
         (
             "drc_nonsec_v1",
             normalize_drc_nonsec_arrow_table,

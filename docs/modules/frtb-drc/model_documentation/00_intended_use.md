@@ -49,12 +49,13 @@ Supported profile coverage is:
   bucket/risk-weight/HBR/category mechanics, and ECAI/CQS mapping evidence;
   securitisation non-CTP row and batch paths using Article 325z, Article
   325aa, typed banking-book securitisation risk-weight evidence,
-  fair-value-cap evidence, and explicit offset-group evidence.
+  fair-value-cap evidence, and explicit offset-group evidence; CTP row and
+  batch paths using Article 325ab, Article 325ac, Article 325ad, typed
+  banking-book securitisation risk-weight evidence, decomposition evidence, and
+  explicit offset-group evidence.
 
 Known fail-closed profile paths are:
 
-- `EU_CRR3` CTP, source-mapped to `EU_CRR3_ARTICLE_325AB`,
-  `EU_CRR3_ARTICLE_325AC`, and `EU_CRR3_ARTICLE_325AD` for issue #1003.
 - `PRA_UK_CRR` for all DRC risk classes, source-mapped to
   `PRA_DRC_ARTICLE_325V` through `PRA_DRC_ARTICLE_325AD` for issues #1004,
   #1005, and #1006.

@@ -93,6 +93,13 @@ _BASEL_CTP_BATCH_CITATIONS = (
     "BASEL_MAR22_44",
     "BASEL_MAR22_45",
 )
+_EU_CRR3_CTP_GROSS_CITATIONS = ("EU_CRR3_ARTICLE_325AB",)
+_EU_CRR3_CTP_NETTING_CITATIONS = ("EU_CRR3_ARTICLE_325AC",)
+_EU_CRR3_CTP_BATCH_CITATIONS = (
+    *_EU_CRR3_CTP_GROSS_CITATIONS,
+    *_EU_CRR3_CTP_NETTING_CITATIONS,
+    "EU_CRR3_ARTICLE_325AD",
+)
 
 
 def collect_batch_citations(
@@ -179,6 +186,11 @@ def batch_api_citations(profile_id: str, risk_class: DrcRiskClass) -> tuple[str,
         and risk_class is DrcRiskClass.CORRELATION_TRADING_PORTFOLIO
     ):
         return _BASEL_CTP_BATCH_CITATIONS
+    if (
+        profile_id == EU_CRR3_PROFILE_ID
+        and risk_class is DrcRiskClass.CORRELATION_TRADING_PORTFOLIO
+    ):
+        return _EU_CRR3_CTP_BATCH_CITATIONS
     if profile_id == BASEL_MAR22_PROFILE_ID:
         return ()
     if profile_id == EU_CRR3_PROFILE_ID:
@@ -349,6 +361,8 @@ def ctp_netting_citations(profile_id: str) -> tuple[str, ...]:
 
     if profile_id == BASEL_MAR22_PROFILE_ID:
         return _BASEL_CTP_NETTING_CITATIONS
+    if profile_id == EU_CRR3_PROFILE_ID:
+        return _EU_CRR3_CTP_NETTING_CITATIONS
     return _CTP_NETTING_CITATIONS
 
 
@@ -368,6 +382,8 @@ def ctp_batch_citations(profile_id: str) -> tuple[str, ...]:
 
     if profile_id == BASEL_MAR22_PROFILE_ID:
         return _BASEL_CTP_BATCH_CITATIONS
+    if profile_id == EU_CRR3_PROFILE_ID:
+        return _EU_CRR3_CTP_BATCH_CITATIONS
     return _CTP_BATCH_CITATIONS
 
 

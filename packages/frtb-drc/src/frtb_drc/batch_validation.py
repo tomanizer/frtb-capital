@@ -139,7 +139,7 @@ def validate_supported_batch_run(
             batch,
             context.ctp_offset_groups,
             field_name="context.ctp_offset_groups",
-            require_all=False,
+            require_all=context.profile_id == EU_CRR3_PROFILE_ID,
         )
 
 

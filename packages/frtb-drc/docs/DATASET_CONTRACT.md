@@ -24,6 +24,9 @@ The committed fixture packs are:
   index-offset treatment.
 - `drc_basel_ctp_v1/`: static Basel MAR22 CTP cases with typed MAR22.42
   risk-weight evidence and replicated tranche/index-offset treatment.
+- `drc_eu_ctp_v1/`: static EU CRR3 CTP cases with typed Article 325ad
+  banking-book risk-weight evidence, decomposition evidence, and explicit
+  offset-group evidence.
 - `handoff/`: minimal Parquet tables for the package Arrow handoff path.
 
 ## Boundary
@@ -105,6 +108,14 @@ class-specific Arrow handoffs, or deterministic rejected-row diagnostics.
   risk-weight evidence, and offset-group inputs.
 - `expected_outputs.json`: expected total and selected outputs.
 - `README.md`: fixture intent and MAR22.42 evidence boundary.
+
+`packages/frtb-drc/tests/fixtures/drc_eu_ctp_v1/` contains:
+
+- `positions.json`: static EU CRR3 CTP positions, context, typed Article 325ad
+  banking-book risk-weight evidence, decomposition evidence, and explicit
+  offset-group inputs.
+- `expected_outputs.json`: expected total and selected outputs.
+- `README.md`: fixture intent and Article 325ab-325ad evidence boundary.
 
 `packages/frtb-drc/tests/fixtures/handoff/` contains minimal Parquet examples
 for the three public Arrow table families:
