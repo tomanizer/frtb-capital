@@ -14,6 +14,7 @@ from frtb_rrao.assembly._payload_components import (
     lineage_payload_from_values,
 )
 from frtb_rrao.data_models import RraoPosition
+from frtb_rrao.org_scope import scope_payload
 
 _BatchIdentityValues = tuple[object, object, object, object, object, object, object, object]
 _BatchLineageValues = tuple[object, object, object, tuple[tuple[str, str], ...]]
@@ -66,6 +67,7 @@ def position_payload(position: RraoPosition) -> dict[str, object]:
         notional_source=position.notional_source,
         citations=position.citations,
         back_to_back_match=back_to_back_match_payload(position.back_to_back_match),
+        org_scope=scope_payload(position.org_scope),
     )
 
 
@@ -107,6 +109,7 @@ def batch_position_payload(
     citations: tuple[str, ...],
     back_to_back_match_group_id: object,
     back_to_back_matched_position_id: object,
+    org_scope: dict[str, object] | None = None,
 ) -> dict[str, object]:
     """
     Return the deterministic audit payload for a batch position row.
@@ -140,6 +143,7 @@ def batch_position_payload(
         ),
         audit=(notional_source, citations, back_to_back_match_group_id,
                back_to_back_matched_position_id),
+        org_scope=org_scope,
     )
     # fmt: on
 
@@ -152,6 +156,7 @@ def _batch_position_payload_from_groups(
     shape: _BatchShapeValues,
     fund: _BatchFundValues,
     audit: _BatchAuditValues,
+    org_scope: dict[str, object] | None,
 ) -> dict[str, object]:
     (
         position_id,
@@ -207,6 +212,7 @@ def _batch_position_payload_from_groups(
         notional_source=notional_source,
         citations=citations,
         back_to_back_match=_batch_match_payload(audit),
+        org_scope=org_scope,
     )
 
 
@@ -271,6 +277,7 @@ def position_payload_from_values(
     notional_source: object,
     citations: tuple[str, ...],
     back_to_back_match: dict[str, object] | None,
+    org_scope: dict[str, object] | None = None,
 ) -> dict[str, object]:
     """
     Return the shared position payload shape used by row and batch hashes.
@@ -312,6 +319,8 @@ def position_payload_from_values(
     }
     if back_to_back_match is not None:
         payload["back_to_back_match"] = back_to_back_match
+    if org_scope is not None:
+        payload["org_scope"] = org_scope
     return payload
 
 

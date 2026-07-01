@@ -10,6 +10,7 @@ from frtb_rrao.data_models import (
     RraoCapitalLine,
     RraoRegulatoryProfile,
 )
+from frtb_rrao.org_scope import validate_scope_metadata
 from frtb_rrao.validation import RraoInputError
 
 
@@ -36,6 +37,7 @@ def validate_context(context: RraoCalculationContext) -> None:
     if context.legal_entity:
         _require_text(context.legal_entity, "legal_entity")
     _require_text(context.citation_policy, "citation_policy")
+    validate_scope_metadata(context.calculation_scope, field="calculation_scope")
 
 
 def partition_lines(

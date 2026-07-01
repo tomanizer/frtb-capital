@@ -8,6 +8,7 @@ from typing import Any, cast
 
 import frtb_common.batch_arrays as _batch_arrays
 import numpy as np
+from frtb_common import CalculationScope
 
 from frtb_rrao._batch_columns import (
     BoolArray,
@@ -56,6 +57,7 @@ from frtb_rrao.data_models import (
     RraoRegulatoryProfile,
 )
 from frtb_rrao.kernel.classification import RraoDecisionArrays, decision_arrays_for_batch
+from frtb_rrao.org_scope import scope_at, validate_scope_metadata
 from frtb_rrao.reference_data import risk_weight_rules_for_profile
 from frtb_rrao.regimes import get_rrao_rule_profile
 from frtb_rrao.validation._batch_common import position_id_at_first
@@ -109,6 +111,7 @@ class RraoPositionBatch:
     source_hash: str | None = None
     handoff_hash: str | None = None
     diagnostics: tuple[Mapping[str, object], ...] = ()
+    org_scopes: tuple[CalculationScope | None, ...] | None = None
 
     @property
     def row_count(self) -> int:
@@ -222,6 +225,7 @@ def build_rrao_batch_from_columns(
     lineage_present: ColumnInput | None = None,
     source_column_maps: Sequence[Sequence[tuple[str, str]]] | None = None,
     citations: Sequence[Sequence[str]] | None = None,
+    org_scopes: Sequence[CalculationScope | None] | None = None,
     source_hash: str | None = None,
     handoff_hash: str | None = None,
     diagnostics: Sequence[Mapping[str, object]] = (),
@@ -364,6 +368,7 @@ def build_rrao_batch_from_columns(
         "lineage_present": lineage_present,
         "source_column_maps": source_column_maps,
         "citations": citations,
+        "org_scopes": org_scopes,
     }
     for name, values in optional_lengths.items():
         if values is not None and len(values) != row_count:
@@ -542,6 +547,7 @@ def build_rrao_batch_from_columns(
         ),
         source_column_maps=_freeze_source_column_maps(source_column_maps, row_count),
         citations=_freeze_citations(citations, row_count),
+        org_scopes=_scope_metadata_from_columns(org_scopes, row_count),
         input_hash="",
         source_hash=source_hash,
         handoff_hash=handoff_hash,
@@ -599,6 +605,7 @@ def calculate_rrao_capital_from_batch(
         total_rrao=included_rrao_total(result_lines),
         citations=collect_line_citations(result_lines),
         warnings=profile_warnings(rule_profile.profile),
+        calculation_scope=context.calculation_scope,
     )
     validate_rrao_result_reconciliation(result)
     return RraoBatchCapitalCalculation(
@@ -712,7 +719,25 @@ def _capital_line_from_decision(
             else RraoExclusionReason(cast(str, batch.exclusion_reasons[index]))
         ),
         exclusion_evidence_id=cast(str | None, batch.exclusion_evidence_ids[index]),
+        org_scope=scope_at(batch.org_scopes, index),
     )
+
+
+def _scope_metadata_from_columns(
+    org_scopes: Sequence[CalculationScope | None] | None,
+    row_count: int,
+) -> tuple[CalculationScope | None, ...] | None:
+    if org_scopes is None:
+        return None
+    if len(org_scopes) != row_count:
+        raise RraoInputError("org_scopes length does not match position_ids", field="org_scopes")
+    rows = tuple(
+        validate_scope_metadata(scope, field=f"org_scopes[{index}]")
+        for index, scope in enumerate(org_scopes)
+    )
+    if not any(scope is not None for scope in rows):
+        return None
+    return rows
 
 
 __all__ = [

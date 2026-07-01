@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from frtb_rrao.assembly.payloads import batch_position_payload, hash_position_payloads
+from frtb_rrao.org_scope import scope_at, scope_payload
 
 INPUT_HASH_ALGORITHM_ARROW_COLUMNAR_V2 = "arrow-columnar-v2"
 INPUT_HASH_ALGORITHM_JSON_ROW_V1 = "json-row-v1"
@@ -77,6 +78,7 @@ def _position_payload_for_hash(batch: Any, index: int) -> dict[str, object]:
         citations=batch.citations[index],
         back_to_back_match_group_id=batch.back_to_back_match_group_ids[index],
         back_to_back_matched_position_id=batch.back_to_back_matched_position_ids[index],
+        org_scope=scope_payload(scope_at(batch.org_scopes, index)),
     )
 
 
