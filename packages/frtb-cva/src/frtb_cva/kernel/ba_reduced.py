@@ -17,6 +17,7 @@ from frtb_cva.data_models import (
     CvaRegulatoryProfile,
     CvaSector,
 )
+from frtb_cva.org_scope import scope_at
 from frtb_cva.reference_data import (
     ba_cva_alpha,
     ba_cva_discount_scalar,
@@ -162,6 +163,7 @@ def _counterparty_capital_from_batch(
         credit_quality=credit_quality,
         region=cast(str, counterparties.regions[counterparty_index]),
         citations=_unique_citations(rw_citation, profile_citation_id("basel_mar50_15", profile)),
+        org_scope=scope_at(counterparties.org_scopes, counterparty_index),
     )
     return capital, counterparty_lines
 

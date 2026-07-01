@@ -107,6 +107,9 @@ def _subset_counterparties(batch: CvaCounterpartyBatch, indices: list[int]) -> C
         source_hash=batch.source_hash,
         handoff_hash=batch.handoff_hash,
         diagnostics=batch.diagnostics,
+        org_scopes=None
+        if batch.org_scopes is None
+        else tuple(batch.org_scopes[index] for index in indices),
     )
 
 
@@ -130,6 +133,9 @@ def _subset_netting_sets(batch: CvaNettingSetBatch, indices: list[int]) -> CvaNe
         source_hash=batch.source_hash,
         handoff_hash=batch.handoff_hash,
         diagnostics=batch.diagnostics,
+        org_scopes=None
+        if batch.org_scopes is None
+        else tuple(batch.org_scopes[index] for index in indices),
     )
 
 

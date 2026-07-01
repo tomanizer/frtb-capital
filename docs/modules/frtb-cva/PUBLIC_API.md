@@ -27,6 +27,15 @@ Arrow ingress physically lives under `frtb_cva.adapters.arrow`;
 Entity registry dispatch physically lives under `frtb_cva.registry`; the private `frtb_cva._arrow_entity_specs` path remains a compatibility shim.
 Batch validation helpers physically live under `frtb_cva.validation.batches`; the private `frtb_cva._batch_validation` path remains a compatibility shim.
 
+`CvaCalculationContext.calculation_scope`, `CvaCounterparty.org_scope`,
+`CvaNettingSet.org_scope`, `CvaCounterpartyBatch.org_scopes`,
+`CvaNettingSetBatch.org_scopes`, `BaCvaCounterpartyCapital.org_scope`,
+`BaCvaStandAloneLine.org_scope`, and `CvaCapitalResult.calculation_scope`
+preserve optional `frtb_common.CalculationScope` metadata supplied by upstream
+systems. CVA uses the metadata only for deterministic hashes and audit
+serialization. Enterprise hierarchy traversal, rollups, and aggregate/source-row
+lookup remain downstream `frtb-result-store` responsibilities.
+
 ## Client integration
 
 | Tier | Client input | CVA path | Notes |

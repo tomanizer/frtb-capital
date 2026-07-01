@@ -6,6 +6,7 @@ from frtb_common import UnsupportedRegulatoryFeatureError
 
 from frtb_cva._unsupported import MAR50_9_UNSUPPORTED_MESSAGE
 from frtb_cva.data_models import CvaCalculationContext, CvaMethod, CvaRegulatoryProfile
+from frtb_cva.org_scope import validate_scope_metadata
 from frtb_cva.validation.common import (
     CvaInputError,
     _finite_float,
@@ -54,6 +55,7 @@ def validate_calculation_context(context: object) -> CvaCalculationContext:
             context.sa_cva_sensitivity_scope_evidence_id,
             "sa_cva_sensitivity_scope_evidence_id",
         )
+    validate_scope_metadata(context.calculation_scope, field="calculation_scope")
     return context
 
 

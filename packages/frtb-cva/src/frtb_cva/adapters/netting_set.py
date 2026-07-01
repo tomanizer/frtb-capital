@@ -5,6 +5,8 @@ from __future__ import annotations
 from collections.abc import Mapping, Sequence
 from typing import Any
 
+from frtb_common import CalculationScope
+
 from frtb_cva._batch_columns import (
     ColumnInput,
     _bool_array,
@@ -17,6 +19,7 @@ from frtb_cva._batch_columns import (
     _required_text_array,
 )
 from frtb_cva._batch_contracts import CvaNettingSetBatch
+from frtb_cva.org_scope import scopes_from_columns
 from frtb_cva.validation import CvaInputError
 from frtb_cva.validation.batches import _validate_netting_set_batch
 
@@ -41,6 +44,7 @@ def build_cva_netting_set_batch_from_columns(
     source_hash: str | None = None,
     handoff_hash: str | None = None,
     diagnostics: Sequence[Mapping[str, object]] = (),
+    org_scopes: Sequence[CalculationScope | None] | None = None,
     copy_arrays: bool = True,
 ) -> CvaNettingSetBatch:
     """Build a validated netting-set batch from aligned column inputs.
@@ -78,6 +82,7 @@ def build_cva_netting_set_batch_from_columns(
         lineage_source_files=lineage_source_files,
         lineage_source_row_ids=lineage_source_row_ids,
         source_column_maps=source_column_maps,
+        org_scopes=org_scopes,
     )
     batch = CvaNettingSetBatch(
         **_netting_batch_fields(
@@ -100,6 +105,7 @@ def build_cva_netting_set_batch_from_columns(
             source_hash=source_hash,
             handoff_hash=handoff_hash,
             diagnostics=diagnostics,
+            org_scopes=org_scopes,
             copy_arrays=copy_arrays,
         )
     )
@@ -124,6 +130,7 @@ def _require_netting_lengths(
     lineage_source_files: ColumnInput | None,
     lineage_source_row_ids: ColumnInput | None,
     source_column_maps: Sequence[Sequence[tuple[str, str]]] | None,
+    org_scopes: Sequence[CalculationScope | None] | None,
 ) -> None:
     _require_lengths(
         row_count,
@@ -144,6 +151,7 @@ def _require_netting_lengths(
         lineage_source_files=lineage_source_files,
         lineage_source_row_ids=lineage_source_row_ids,
         source_column_maps=source_column_maps,
+        org_scopes=org_scopes,
     )
 
 
@@ -168,6 +176,7 @@ def _netting_batch_fields(
     source_hash: str | None,
     handoff_hash: str | None,
     diagnostics: Sequence[Mapping[str, object]],
+    org_scopes: Sequence[CalculationScope | None] | None,
     copy_arrays: bool,
 ) -> dict[str, Any]:
     netting_set_id_array = _required_text_array(netting_set_ids, "netting_set_id", copy=copy_arrays)
@@ -219,4 +228,5 @@ def _netting_batch_fields(
         "source_hash": source_hash,
         "handoff_hash": handoff_hash,
         "diagnostics": tuple(dict(item) for item in diagnostics),
+        "org_scopes": scopes_from_columns(org_scopes, row_count, field="org_scopes"),
     }

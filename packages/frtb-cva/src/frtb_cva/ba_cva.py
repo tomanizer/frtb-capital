@@ -103,6 +103,7 @@ def calculate_netting_set_standalone(
         citations=_unique_citations(rw_citation, alpha_citation, df_citation),
         uses_imm_ead=netting_set.uses_imm_ead,
         discount_factor_supplied=discount_factor_supplied,
+        org_scope=netting_set.org_scope,
     )
 
 
@@ -182,6 +183,7 @@ def _counterparty_standalone_with_lines(
             rw_citation,
             profile_citation_id("basel_mar50_15", profile),
         ),
+        org_scope=counterparty.org_scope,
     )
     return capital, lines
 
