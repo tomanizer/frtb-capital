@@ -84,6 +84,15 @@ builders preserve `source_hash`, `handoff_hash`, and adapter diagnostics so
 audit output and replay can distinguish source content, normalized table
 content, and package-owned calculation inputs.
 
+Exposure, volatility, and shock metadata are provenance only. CVA accepts
+precomputed EADs, sensitivities, volatility inputs, and hedge metadata plus
+stable IDs such as `exposure_time_series_id`, `volatility_surface_id`,
+`volatility_surface_point_id`, and `shock_id`. The package preserves those IDs
+in input hashes and audit records, but it does not fetch result-store artifacts,
+interpolate volatility surfaces, infer missing volatilities, or price exposure
+profiles. Missing artifact IDs are represented deterministically as absent
+input fields and empty/null audit payload values.
+
 ## Arrow Table Handoff
 
 High-volume tabular inputs should enter through these public normalizers and
@@ -135,6 +144,7 @@ Netting-set tables carry:
 - source row id,
 - optional BA-CVA carve-out flag,
 - optional explicit-discount-factor flag,
+- optional exposure time-series id,
 - lineage source system and file,
 - optional lineage source row id.
 
@@ -172,6 +182,9 @@ SA-CVA sensitivity tables carry:
 - source row id,
 - optional tenor,
 - optional volatility input,
+- optional volatility surface id,
+- optional volatility surface point id,
+- optional shock id,
 - optional hedge id,
 - optional qualified-index metadata,
 - lineage source system and file,

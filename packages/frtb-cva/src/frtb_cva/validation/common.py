@@ -148,6 +148,12 @@ def _require_text(value: object, field: str, record_id: str = "") -> str:
     return value
 
 
+def _validate_optional_text(value: object, field: str, record_id: str = "") -> None:
+    if value == "":
+        return
+    _require_text(value, field, record_id)
+
+
 def _require_mixed_sensitivity_scope_evidence(value: object) -> str:
     if not isinstance(value, str) or not value.strip():
         raise CvaInputError(
@@ -191,6 +197,7 @@ __all__ = [
     "_require_text",
     "_validate_effective_maturity",
     "_validate_lineage",
+    "_validate_optional_text",
     "normalise_cva_amount",
     "normalise_ead_amount",
     "normalise_sensitivity_amount",

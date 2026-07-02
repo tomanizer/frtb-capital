@@ -15,6 +15,7 @@ from frtb_cva.validation.common import (
     _finite_float,
     _require_text,
     _validate_lineage,
+    _validate_optional_text,
     normalise_sensitivity_amount,
 )
 
@@ -129,6 +130,17 @@ def _validate_sa_cva_sensitivity(sensitivity: SaCvaSensitivity, seen_ids: set[st
             )
     if sensitivity.index_remap_bucket_id is not None:
         _require_text(sensitivity.index_remap_bucket_id, "index_remap_bucket_id", record_id)
+    _validate_optional_text(
+        sensitivity.volatility_surface_id,
+        "volatility_surface_id",
+        record_id,
+    )
+    _validate_optional_text(
+        sensitivity.volatility_surface_point_id,
+        "volatility_surface_point_id",
+        record_id,
+    )
+    _validate_optional_text(sensitivity.shock_id, "shock_id", record_id)
     if sensitivity.index_dominant_sector is not None and not isinstance(
         sensitivity.index_dominant_sector,
         CvaSector,

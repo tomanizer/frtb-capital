@@ -438,6 +438,7 @@ def _netting_set_line_payload(line: BaCvaStandAloneLine) -> dict[str, object]:
         "standalone_capital": line.standalone_capital,
         "currency": line.currency,
         "source_row_id": line.source_row_id,
+        "exposure_time_series_id": line.exposure_time_series_id or None,
         "citations": list(line.citations),
         "uses_imm_ead": line.uses_imm_ead,
         "discount_factor_supplied": line.discount_factor_supplied,
@@ -472,6 +473,9 @@ def _bucket_capital_payload(bucket: SaCvaBucketCapital) -> dict[str, object]:
         "k_b": bucket.k_b,
         "s_b": bucket.s_b,
         "sensitivity_ids": list(bucket.sensitivity_ids),
+        "volatility_surface_ids": list(bucket.volatility_surface_ids),
+        "volatility_surface_point_ids": list(bucket.volatility_surface_point_ids),
+        "shock_ids": list(bucket.shock_ids),
         "citations": list(bucket.citations),
         "branch_metadata": [list(pair) for pair in bucket.branch_metadata],
     }

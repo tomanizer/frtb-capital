@@ -49,6 +49,27 @@ SA_CVA_SENSITIVITY_ARROW_COLUMN_SPECS: tuple[ColumnSpec, ...] = (
         null_policy=NullPolicy.ALLOW,
     ),
     ColumnSpec(
+        "volatility_surface_id",
+        aliases=("volatilitySurfaceId", "surface_id", "surfaceId"),
+        logical_type=TabularLogicalType.STRING,
+        required=False,
+        null_policy=NullPolicy.ALLOW,
+    ),
+    ColumnSpec(
+        "volatility_surface_point_id",
+        aliases=("volatilitySurfacePointId", "surface_point_id", "surfacePointId"),
+        logical_type=TabularLogicalType.STRING,
+        required=False,
+        null_policy=NullPolicy.ALLOW,
+    ),
+    ColumnSpec(
+        "shock_id",
+        aliases=("shockId",),
+        logical_type=TabularLogicalType.STRING,
+        required=False,
+        null_policy=NullPolicy.ALLOW,
+    ),
+    ColumnSpec(
         "hedge_id",
         aliases=("hedgeId",),
         logical_type=TabularLogicalType.STRING,

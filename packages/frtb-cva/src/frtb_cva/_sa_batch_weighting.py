@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+import math
 from collections import defaultdict
 from dataclasses import dataclass
 from typing import cast
+
+import numpy as np
 
 from frtb_cva._batch_columns import _optional_float_value
 from frtb_cva._batch_contracts import CvaHedgeBatch, SaCvaSensitivityBatch
@@ -27,6 +30,7 @@ class _GroupedSensitivities:
     hedge: dict[SaCvaRiskFactorKey, float]
     ids: dict[SaCvaRiskFactorKey, list[str]]
     volatility: dict[SaCvaRiskFactorKey, float | None]
+    provenance: dict[SaCvaRiskFactorKey, dict[str, list[str]]]
     keys: list[SaCvaRiskFactorKey]
 
 
@@ -66,6 +70,9 @@ def _group_sensitivities(
     grouped_hedge: dict[SaCvaRiskFactorKey, float] = defaultdict(float)
     grouped_ids: dict[SaCvaRiskFactorKey, list[str]] = defaultdict(list)
     grouped_volatility: dict[SaCvaRiskFactorKey, float | None] = {}
+    grouped_provenance: dict[SaCvaRiskFactorKey, dict[str, list[str]]] = defaultdict(
+        _empty_provenance_values
+    )
     for index in indices:
         key = _risk_factor_key_from_batch(batch, index, profile=profile)
         _record_volatility(batch, index, key, grouped_volatility)
@@ -73,17 +80,20 @@ def _group_sensitivities(
         if tag is SensitivityTag.CVA:
             grouped_cva[key] += float(batch.amounts[index])
             grouped_ids[key].append(cast(str, batch.sensitivity_ids[index]))
+            _record_batch_provenance(grouped_provenance, key, batch, index)
         elif tag is SensitivityTag.HDG:
             hedge_id = cast(str | None, batch.hedge_ids[index])
             if hedge_id not in eligible_hedge_ids:
                 continue
             grouped_hedge[key] += float(batch.amounts[index])
             grouped_ids[key].append(cast(str, batch.sensitivity_ids[index]))
+            _record_batch_provenance(grouped_provenance, key, batch, index)
     return _GroupedSensitivities(
         cva=grouped_cva,
         hedge=grouped_hedge,
         ids=grouped_ids,
         volatility=grouped_volatility,
+        provenance=grouped_provenance,
         keys=sorted(
             set(grouped_cva) | set(grouped_hedge),
             key=lambda item: (item.bucket_id, item.risk_factor_key, item.tenor or ""),
@@ -104,6 +114,41 @@ def _record_volatility(
             field="volatility_input",
         )
     grouped_volatility.setdefault(key, volatility)
+
+
+def _empty_provenance_values() -> dict[str, list[str]]:
+    return {
+        "volatility_surface_ids": [],
+        "volatility_surface_point_ids": [],
+        "shock_ids": [],
+    }
+
+
+def _record_batch_provenance(
+    grouped_provenance: dict[SaCvaRiskFactorKey, dict[str, list[str]]],
+    key: SaCvaRiskFactorKey,
+    batch: SaCvaSensitivityBatch,
+    index: int,
+) -> None:
+    values = grouped_provenance[key]
+    if volatility_surface_id := _optional_text_at(batch.volatility_surface_ids, index):
+        values["volatility_surface_ids"].append(volatility_surface_id)
+    if volatility_surface_point_id := _optional_text_at(batch.volatility_surface_point_ids, index):
+        values["volatility_surface_point_ids"].append(volatility_surface_point_id)
+    if shock_id := _optional_text_at(batch.shock_ids, index):
+        values["shock_ids"].append(shock_id)
+
+
+def _optional_text_at(values: object, index: int) -> str:
+    if values is None:
+        return ""
+    value = cast(object, values[index])  # type: ignore[index]
+    if value is None:
+        return ""
+    if isinstance(value, (float, np.floating)) and math.isnan(float(value)):
+        return ""
+    text = str(value)
+    return text if text.strip() else ""
 
 
 def _risk_factor_key_from_batch(
@@ -137,6 +182,7 @@ def _weight_grouped_sensitivities(
         grouped.hedge,
         grouped.ids,
         grouped.volatility,
+        grouped_provenance=grouped.provenance,
         risk_class=risk_class,
         risk_measure=risk_measure,
         reporting_currency=reporting_currency,

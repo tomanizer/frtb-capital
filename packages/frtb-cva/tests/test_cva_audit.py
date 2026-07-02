@@ -103,7 +103,36 @@ def test_audit_payload_round_trip_is_stable(
     decoded = json.loads(encoded)
     assert decoded["input_hash"] == result.input_hash
     assert decoded["profile_hash"] == result.profile_hash
+    assert decoded["ba_cva_netting_set_lines"][0]["exposure_time_series_id"] is None
     validate_cva_result_reconciliation(result)
+
+
+def test_audit_payload_preserves_ba_exposure_time_series_id(reduced_context) -> None:
+    counterparty_batch = _audit_counterparty_batch()
+    netting_set_batch = build_cva_netting_set_batch_from_columns(
+        netting_set_ids=["ns-1"],
+        counterparty_ids=["cp-1"],
+        eads=[100_000.0],
+        effective_maturities=[2.5],
+        discount_factors=[0.98],
+        currencies=["USD"],
+        sign_conventions=["non_negative"],
+        uses_imm_eads=[False],
+        source_row_ids=["ns-row-1"],
+        exposure_time_series_ids=["ts-cva-exposure-ns-1"],
+    )
+
+    result = calculate_cva_capital_from_batches(
+        reduced_context,
+        counterparty_batch,
+        netting_set_batch,
+    ).result
+    payload = serialize_cva_result(result)
+
+    assert result.ba_cva_netting_set_lines[0].exposure_time_series_id == ("ts-cva-exposure-ns-1")
+    assert payload["ba_cva_netting_set_lines"][0]["exposure_time_series_id"] == (
+        "ts-cva-exposure-ns-1"
+    )
 
 
 def test_audit_reconciliation_rejects_tampered_ba_reduced_results(
@@ -306,4 +335,48 @@ def test_sa_cva_audit_payload_includes_risk_class_breakdown() -> None:
     assert len(risk_class_rows[0]["bucket_capitals"]) == 1
     assert risk_class_rows[0]["bucket_capitals"][0]["k_b"] > 0.0
     assert risk_class_rows[0]["bucket_capitals"][0]["sensitivity_ids"] == ["sens-girr-5y"]
+    assert risk_class_rows[0]["bucket_capitals"][0]["volatility_surface_ids"] == []
+    assert risk_class_rows[0]["bucket_capitals"][0]["volatility_surface_point_ids"] == []
+    assert risk_class_rows[0]["bucket_capitals"][0]["shock_ids"] == []
+    validate_cva_result_reconciliation(result)
+
+
+def test_sa_cva_vega_audit_payload_preserves_surface_provenance() -> None:
+    context = CvaCalculationContext(
+        run_id="run-sa-vega-audit",
+        calculation_date=date(2026, 5, 31),
+        base_currency="USD",
+        profile=CvaRegulatoryProfile.BASEL_MAR50_2020,
+        method=CvaMethod.SA_CVA,
+        sa_cva_approved=True,
+    )
+    sensitivity = SaCvaSensitivity(
+        sensitivity_id="sens-girr-vega-rate",
+        risk_class=SaCvaRiskClass.GIRR,
+        risk_measure=SaCvaRiskMeasure.VEGA,
+        sensitivity_tag=SensitivityTag.CVA,
+        bucket_id="USD",
+        risk_factor_key="IR_VOL",
+        amount=1_000_000.0,
+        amount_currency="USD",
+        sign_convention="positive_loss",
+        source_row_id="row-sens-girr-vega-rate",
+        volatility_input=0.25,
+        volatility_surface_id="surface-usd-swaption",
+        volatility_surface_point_id="surface-usd-swaption:rate:atm",
+        shock_id="shock-cva-vega-up",
+    )
+
+    result = calculate_cva_capital(context, (), (), sensitivities=(sensitivity,))
+    payload = serialize_cva_result(result)
+    bucket = result.sa_cva_risk_class_capitals[0].bucket_capitals[0]
+    bucket_payload = payload["sa_cva_risk_class_capitals"][0]["bucket_capitals"][0]
+
+    assert bucket.volatility_surface_ids == ("surface-usd-swaption",)
+    assert bucket.volatility_surface_point_ids == ("surface-usd-swaption:rate:atm",)
+    assert bucket.shock_ids == ("shock-cva-vega-up",)
+    assert bucket_payload["volatility_surface_ids"] == ["surface-usd-swaption"]
+    assert bucket_payload["volatility_surface_point_ids"] == ["surface-usd-swaption:rate:atm"]
+    assert bucket_payload["shock_ids"] == ["shock-cva-vega-up"]
+    assert result.total_cva_capital > 0.0
     validate_cva_result_reconciliation(result)
