@@ -12,6 +12,12 @@ from frtb_orchestration.artifact_evidence import (
     SuiteEvidenceComponent,
     build_suite_artifact_evidence_view,
 )
+from frtb_orchestration.artifact_evidence_inputs import (
+    ImaScenarioEvidence,
+    SbmShockEvidence,
+    SurfaceEvidence,
+    TimelineEvidence,
+)
 from frtb_orchestration.cva_summary import (
     CvaCapitalSummary,
     recognise_cva_summary,
@@ -38,6 +44,13 @@ from frtb_orchestration.manifest import (
     SaManifestRunResult,
     run_standardised_approach_from_manifest,
     validate_capital_run_manifest,
+)
+from frtb_orchestration.resolved_artifact_evidence import (
+    build_ima_scenario_evidence_refs,
+    build_resolved_artifact_evidence_view,
+    build_sbm_shock_evidence_refs,
+    build_surface_evidence_refs,
+    build_timeline_evidence_refs,
 )
 from frtb_orchestration.risk_factor_views import (
     RiskFactorAggregateView,
@@ -107,6 +120,7 @@ __all__ = [
     "ComponentCapitalSummary",
     "CvaCapitalSummary",
     "ImaCapitalSummary",
+    "ImaScenarioEvidence",
     "ManifestInputTableRoute",
     "ManifestInputTableValidation",
     "ManifestValidationResult",
@@ -116,6 +130,7 @@ __all__ = [
     "RiskFactorEvidenceViewRow",
     "RiskFactorViewStatus",
     "SaManifestRunResult",
+    "SbmShockEvidence",
     "ScopeCapitalView",
     "ScopeComponentCapital",
     "ScopeViewStatus",
@@ -132,11 +147,18 @@ __all__ = [
     "SuiteAttributionSummary",
     "SuiteCapitalResult",
     "SuiteEvidenceComponent",
+    "SurfaceEvidence",
+    "TimelineEvidence",
     "__version__",
     "aggregate_suite_attribution",
+    "build_ima_scenario_evidence_refs",
+    "build_resolved_artifact_evidence_view",
     "build_risk_factor_aggregate_view",
+    "build_sbm_shock_evidence_refs",
     "build_suite_artifact_evidence_view",
     "build_suite_attribution_report",
+    "build_surface_evidence_refs",
+    "build_timeline_evidence_refs",
     "calculate_suite_capital",
     "compose_scope_capital_view",
     "compose_standardised_approach_capital",
