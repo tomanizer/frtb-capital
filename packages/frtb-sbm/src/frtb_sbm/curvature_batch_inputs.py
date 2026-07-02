@@ -149,6 +149,10 @@ def _curvature_input_branch_records_from_batch(
                 up_shock_amount=up_shock,
                 down_shock_amount=down_shock,
                 citation_ids=citations,
+                up_shock_id=_optional_text_at(batch.up_shock_ids, int(row_index)),
+                down_shock_id=_optional_text_at(batch.down_shock_ids, int(row_index)),
+                surface_id=_optional_text_at(batch.surface_ids, int(row_index)),
+                surface_point_id=_optional_text_at(batch.surface_point_ids, int(row_index)),
             )
         )
     return tuple(records)

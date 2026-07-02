@@ -129,6 +129,34 @@ GIRR_DELTA_ARROW_COLUMN_SPECS: tuple[ColumnSpec, ...] = (
         required=False,
         null_policy=NullPolicy.ALLOW,
     ),
+    ColumnSpec(
+        "up_shock_id",
+        aliases=("upShockId",),
+        logical_type=TabularLogicalType.STRING,
+        required=False,
+        null_policy=NullPolicy.ALLOW,
+    ),
+    ColumnSpec(
+        "down_shock_id",
+        aliases=("downShockId",),
+        logical_type=TabularLogicalType.STRING,
+        required=False,
+        null_policy=NullPolicy.ALLOW,
+    ),
+    ColumnSpec(
+        "surface_id",
+        aliases=("surfaceId",),
+        logical_type=TabularLogicalType.STRING,
+        required=False,
+        null_policy=NullPolicy.ALLOW,
+    ),
+    ColumnSpec(
+        "surface_point_id",
+        aliases=("surfacePointId",),
+        logical_type=TabularLogicalType.STRING,
+        required=False,
+        null_policy=NullPolicy.ALLOW,
+    ),
 )
 
 GIRR_VEGA_ARROW_COLUMN_SPECS: tuple[ColumnSpec, ...] = tuple(

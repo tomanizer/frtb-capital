@@ -98,6 +98,10 @@ def parse_curvature_input(
             sensitivity_id=sensitivity.sensitivity_id,
         ),
         citation_ids=curvature_citation_ids(profile_id, sensitivity.risk_class),
+        up_shock_id=sensitivity.up_shock_id,
+        down_shock_id=sensitivity.down_shock_id,
+        surface_id=sensitivity.surface_id,
+        surface_point_id=sensitivity.surface_point_id,
     )
 
 
@@ -235,6 +239,10 @@ def _curvature_input_branch_records(
                 up_shock_amount=up_shock,
                 down_shock_amount=down_shock,
                 citation_ids=citations,
+                up_shock_id=sensitivity.up_shock_id,
+                down_shock_id=sensitivity.down_shock_id,
+                surface_id=sensitivity.surface_id,
+                surface_point_id=sensitivity.surface_point_id,
             )
         )
     return tuple(records)

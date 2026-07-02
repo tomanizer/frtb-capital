@@ -36,6 +36,10 @@ class _CurvatureFactor:
     citation_ids: tuple[str, ...]
     org_scope: CalculationScope | None = None
     contributing_org_scopes: tuple[CalculationScope, ...] = ()
+    up_shock_ids: tuple[str, ...] = ()
+    down_shock_ids: tuple[str, ...] = ()
+    surface_ids: tuple[str, ...] = ()
+    surface_point_ids: tuple[str, ...] = ()
 
 
 def _curvature_factor_key(sensitivity: SbmSensitivity) -> tuple[str, ...]:

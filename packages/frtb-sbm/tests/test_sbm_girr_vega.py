@@ -183,6 +183,39 @@ def test_weight_girr_vega_applies_cited_risk_weight() -> None:
     assert "basel_mar21_92" in item.citation_ids
 
 
+def test_girr_vega_result_preserves_surface_axis_metadata_without_changing_capital() -> None:
+    base = sample_vega_sensitivity()
+    with_surface = replace(
+        base,
+        maturity="5y",
+        surface_id="surface-usd-swaption-vol",
+        surface_point_id="surface-usd-swaption-vol:5y:5y",
+    )
+
+    base_result = calculate_sbm_capital((base,), context=sample_context())
+    result = calculate_sbm_capital((with_surface,), context=sample_context())
+    payload = serialize_sbm_result(result)
+    risk_classes = payload["risk_classes"]
+    assert isinstance(risk_classes, list)
+    first_risk_class = risk_classes[0]
+    assert isinstance(first_risk_class, dict)
+    buckets = first_risk_class["buckets"]
+    assert isinstance(buckets, list)
+    first_bucket = buckets[0]
+    assert isinstance(first_bucket, dict)
+    weighted_sensitivities = first_bucket["weighted_sensitivities"]
+    assert isinstance(weighted_sensitivities, list)
+    weighted_payload = weighted_sensitivities[0]
+    assert isinstance(weighted_payload, dict)
+
+    assert result.total_capital == pytest.approx(base_result.total_capital)
+    assert weighted_payload["underlying_tenor"] == "5y"
+    assert weighted_payload["option_tenor"] == "5y"
+    assert weighted_payload["maturity"] == "5y"
+    assert weighted_payload["surface_id"] == "surface-usd-swaption-vol"
+    assert weighted_payload["surface_point_id"] == "surface-usd-swaption-vol:5y:5y"
+
+
 def test_calculate_sbm_capital_supports_girr_vega_only_inputs() -> None:
     context = sample_context()
     result = calculate_sbm_capital((sample_vega_sensitivity(),), context=context)

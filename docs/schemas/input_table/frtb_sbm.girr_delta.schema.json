@@ -2,6 +2,92 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": true,
   "properties": {
+    "sensitivity_id": {
+      "type": "string",
+      "x-frtb-aliases": [
+        "sensitivityId"
+      ],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "string",
+      "x-frtb-null-policy": "forbid",
+      "x-frtb-required": true
+    },
+    "source_row_id": {
+      "type": "string",
+      "x-frtb-aliases": [
+        "sourceRowId"
+      ],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "string",
+      "x-frtb-null-policy": "forbid",
+      "x-frtb-required": true
+    },
+    "desk_id": {
+      "type": "string",
+      "x-frtb-aliases": [
+        "deskId"
+      ],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "string",
+      "x-frtb-null-policy": "forbid",
+      "x-frtb-required": true
+    },
+    "legal_entity": {
+      "type": "string",
+      "x-frtb-aliases": [
+        "legalEntity"
+      ],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "string",
+      "x-frtb-null-policy": "forbid",
+      "x-frtb-required": true
+    },
+    "risk_class": {
+      "type": "string",
+      "x-frtb-aliases": [
+        "riskClass"
+      ],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "string",
+      "x-frtb-null-policy": "forbid",
+      "x-frtb-required": true
+    },
+    "risk_measure": {
+      "type": "string",
+      "x-frtb-aliases": [
+        "riskMeasure"
+      ],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "string",
+      "x-frtb-null-policy": "forbid",
+      "x-frtb-required": true
+    },
+    "bucket": {
+      "type": "string",
+      "x-frtb-aliases": [],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "string",
+      "x-frtb-null-policy": "forbid",
+      "x-frtb-required": true
+    },
+    "risk_factor": {
+      "type": "string",
+      "x-frtb-aliases": [
+        "riskFactor"
+      ],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "string",
+      "x-frtb-null-policy": "forbid",
+      "x-frtb-required": true
+    },
     "amount": {
       "type": "number",
       "x-frtb-aliases": [],
@@ -22,54 +108,20 @@
       "x-frtb-null-policy": "forbid",
       "x-frtb-required": true
     },
-    "bucket": {
+    "sign_convention": {
+      "type": "string",
+      "x-frtb-aliases": [
+        "signConvention"
+      ],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "string",
+      "x-frtb-null-policy": "forbid",
+      "x-frtb-required": true
+    },
+    "tenor": {
       "type": "string",
       "x-frtb-aliases": [],
-      "x-frtb-chunk-policy": "allow",
-      "x-frtb-dictionary-policy": "allow",
-      "x-frtb-logical-type": "string",
-      "x-frtb-null-policy": "forbid",
-      "x-frtb-required": true
-    },
-    "desk_id": {
-      "type": "string",
-      "x-frtb-aliases": [
-        "deskId"
-      ],
-      "x-frtb-chunk-policy": "allow",
-      "x-frtb-dictionary-policy": "allow",
-      "x-frtb-logical-type": "string",
-      "x-frtb-null-policy": "forbid",
-      "x-frtb-required": true
-    },
-    "down_shock_amount": {
-      "type": "number",
-      "x-frtb-aliases": [
-        "downShockAmount"
-      ],
-      "x-frtb-chunk-policy": "allow",
-      "x-frtb-dictionary-policy": "allow",
-      "x-frtb-logical-type": "float",
-      "x-frtb-null-policy": "allow",
-      "x-frtb-required": false
-    },
-    "legal_entity": {
-      "type": "string",
-      "x-frtb-aliases": [
-        "legalEntity"
-      ],
-      "x-frtb-chunk-policy": "allow",
-      "x-frtb-dictionary-policy": "allow",
-      "x-frtb-logical-type": "string",
-      "x-frtb-null-policy": "forbid",
-      "x-frtb-required": true
-    },
-    "lineage_source_file": {
-      "type": "string",
-      "x-frtb-aliases": [
-        "sourceFile",
-        "source_file"
-      ],
       "x-frtb-chunk-policy": "allow",
       "x-frtb-dictionary-policy": "allow",
       "x-frtb-logical-type": "string",
@@ -88,36 +140,17 @@
       "x-frtb-null-policy": "forbid",
       "x-frtb-required": true
     },
-    "liquidity_horizon_days": {
-      "type": "integer",
-      "x-frtb-aliases": [
-        "liquidityHorizonDays"
-      ],
-      "x-frtb-chunk-policy": "allow",
-      "x-frtb-dictionary-policy": "allow",
-      "x-frtb-logical-type": "integer",
-      "x-frtb-null-policy": "allow",
-      "x-frtb-required": false
-    },
-    "maturity": {
-      "type": "string",
-      "x-frtb-aliases": [],
-      "x-frtb-chunk-policy": "allow",
-      "x-frtb-dictionary-policy": "allow",
-      "x-frtb-logical-type": "string",
-      "x-frtb-null-policy": "allow",
-      "x-frtb-required": false
-    },
-    "option_tenor": {
+    "lineage_source_file": {
       "type": "string",
       "x-frtb-aliases": [
-        "optionTenor"
+        "sourceFile",
+        "source_file"
       ],
       "x-frtb-chunk-policy": "allow",
       "x-frtb-dictionary-policy": "allow",
       "x-frtb-logical-type": "string",
-      "x-frtb-null-policy": "allow",
-      "x-frtb-required": false
+      "x-frtb-null-policy": "forbid",
+      "x-frtb-required": true
     },
     "position_id": {
       "type": "string",
@@ -139,80 +172,36 @@
       "x-frtb-null-policy": "allow",
       "x-frtb-required": false
     },
-    "risk_class": {
+    "option_tenor": {
       "type": "string",
       "x-frtb-aliases": [
-        "riskClass"
+        "optionTenor"
       ],
       "x-frtb-chunk-policy": "allow",
       "x-frtb-dictionary-policy": "allow",
       "x-frtb-logical-type": "string",
-      "x-frtb-null-policy": "forbid",
-      "x-frtb-required": true
+      "x-frtb-null-policy": "allow",
+      "x-frtb-required": false
     },
-    "risk_factor": {
-      "type": "string",
+    "liquidity_horizon_days": {
+      "type": "integer",
       "x-frtb-aliases": [
-        "riskFactor"
+        "liquidityHorizonDays"
       ],
       "x-frtb-chunk-policy": "allow",
       "x-frtb-dictionary-policy": "allow",
-      "x-frtb-logical-type": "string",
-      "x-frtb-null-policy": "forbid",
-      "x-frtb-required": true
+      "x-frtb-logical-type": "integer",
+      "x-frtb-null-policy": "allow",
+      "x-frtb-required": false
     },
-    "risk_measure": {
-      "type": "string",
-      "x-frtb-aliases": [
-        "riskMeasure"
-      ],
-      "x-frtb-chunk-policy": "allow",
-      "x-frtb-dictionary-policy": "allow",
-      "x-frtb-logical-type": "string",
-      "x-frtb-null-policy": "forbid",
-      "x-frtb-required": true
-    },
-    "sensitivity_id": {
-      "type": "string",
-      "x-frtb-aliases": [
-        "sensitivityId"
-      ],
-      "x-frtb-chunk-policy": "allow",
-      "x-frtb-dictionary-policy": "allow",
-      "x-frtb-logical-type": "string",
-      "x-frtb-null-policy": "forbid",
-      "x-frtb-required": true
-    },
-    "sign_convention": {
-      "type": "string",
-      "x-frtb-aliases": [
-        "signConvention"
-      ],
-      "x-frtb-chunk-policy": "allow",
-      "x-frtb-dictionary-policy": "allow",
-      "x-frtb-logical-type": "string",
-      "x-frtb-null-policy": "forbid",
-      "x-frtb-required": true
-    },
-    "source_row_id": {
-      "type": "string",
-      "x-frtb-aliases": [
-        "sourceRowId"
-      ],
-      "x-frtb-chunk-policy": "allow",
-      "x-frtb-dictionary-policy": "allow",
-      "x-frtb-logical-type": "string",
-      "x-frtb-null-policy": "forbid",
-      "x-frtb-required": true
-    },
-    "tenor": {
+    "maturity": {
       "type": "string",
       "x-frtb-aliases": [],
       "x-frtb-chunk-policy": "allow",
       "x-frtb-dictionary-policy": "allow",
       "x-frtb-logical-type": "string",
-      "x-frtb-null-policy": "forbid",
-      "x-frtb-required": true
+      "x-frtb-null-policy": "allow",
+      "x-frtb-required": false
     },
     "up_shock_amount": {
       "type": "number",
@@ -222,6 +211,61 @@
       "x-frtb-chunk-policy": "allow",
       "x-frtb-dictionary-policy": "allow",
       "x-frtb-logical-type": "float",
+      "x-frtb-null-policy": "allow",
+      "x-frtb-required": false
+    },
+    "down_shock_amount": {
+      "type": "number",
+      "x-frtb-aliases": [
+        "downShockAmount"
+      ],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "float",
+      "x-frtb-null-policy": "allow",
+      "x-frtb-required": false
+    },
+    "up_shock_id": {
+      "type": "string",
+      "x-frtb-aliases": [
+        "upShockId"
+      ],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "string",
+      "x-frtb-null-policy": "allow",
+      "x-frtb-required": false
+    },
+    "down_shock_id": {
+      "type": "string",
+      "x-frtb-aliases": [
+        "downShockId"
+      ],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "string",
+      "x-frtb-null-policy": "allow",
+      "x-frtb-required": false
+    },
+    "surface_id": {
+      "type": "string",
+      "x-frtb-aliases": [
+        "surfaceId"
+      ],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "string",
+      "x-frtb-null-policy": "allow",
+      "x-frtb-required": false
+    },
+    "surface_point_id": {
+      "type": "string",
+      "x-frtb-aliases": [
+        "surfacePointId"
+      ],
+      "x-frtb-chunk-policy": "allow",
+      "x-frtb-dictionary-policy": "allow",
+      "x-frtb-logical-type": "string",
       "x-frtb-null-policy": "allow",
       "x-frtb-required": false
     }
@@ -265,6 +309,10 @@
     "liquidity_horizon_days",
     "maturity",
     "up_shock_amount",
-    "down_shock_amount"
+    "down_shock_amount",
+    "up_shock_id",
+    "down_shock_id",
+    "surface_id",
+    "surface_point_id"
   ]
 }
