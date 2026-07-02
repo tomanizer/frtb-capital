@@ -50,6 +50,13 @@ The v2 dashboard is a high-density, read-only viewer for synthetic FRTB capital
 run results across IMA, SA, and CVA. It uses a fixed four-zone layout: command
 ribbon, context bar, aggregate blotter, and audit inspector.
 
+The dashboard backend supports two read sources behind the same response models:
+
+- `source=demo` keeps the original in-memory package fixture behavior.
+- `source=result-store` materializes the committed Capital Navigator
+  `frtb-result-store` fixture into a local read store, then serves catalogue,
+  metadata, aggregate grid, and inspector payloads from result-store query APIs.
+
 See [`docs/tools/frtb-dashboard/README.md`](../../docs/tools/frtb-dashboard/README.md)
 for the Capital Navigator specification guide and companion contracts.
 
@@ -66,6 +73,15 @@ cd tools/frtb_dashboard/frontend && npm install && npm run dev
 Open http://localhost:5174 in development or http://127.0.0.1:8766 after a
 production frontend build.
 
+API examples:
+
+```bash
+curl 'http://127.0.0.1:8766/api/runs?source=result-store'
+curl 'http://127.0.0.1:8766/api/runs/capital-navigator-2026-06-03-us-npr/metadata?source=result-store'
+curl 'http://127.0.0.1:8766/api/runs/capital-navigator-2026-06-03-us-npr/grid?source=result-store&framework=SA&scenario=Binding'
+curl 'http://127.0.0.1:8766/api/runs/capital-navigator-2026-06-03-us-npr/inspector?source=result-store&row_id=sbm'
+```
+
 ### v2 capabilities
 
 - Backend-computed top-of-house binding capital: `max(IMA, 0.725 * SA)`.
@@ -80,7 +96,12 @@ production frontend build.
 - Inspector linked to the selected aggregate row, showing attribution, source
   provenance, scenario/backtesting extras, and data-honesty diagnostics.
 - Abortable frontend requests and small in-memory caches for run, blotter, and
-  inspector payloads keyed by run, framework, scenario, hierarchy node, and row.
+  inspector payloads keyed by source, run, framework, scenario, hierarchy node,
+  and row.
+- Result-store source selection in the command ribbon. The result-store fixture
+  exposes SA and IMA rows where persisted marts provide them and explicit
+  no-data diagnostics for unavailable RFET, ES liquidity-horizon, UPL, CVA,
+  gross JTD/LGD, and unsupported artifact payloads.
 
 Hierarchy rail data, scoped aggregate totals, and source-row drillthrough must
 come from result-store or backend API contracts. The frontend may cache and

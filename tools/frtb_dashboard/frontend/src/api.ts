@@ -6,19 +6,25 @@ async function request<T>(path: string, signal?: AbortSignal): Promise<T> {
   return (await response.json()) as T;
 }
 
-export const listRuns = (signal?: AbortSignal) => request<RunSummary[]>("/api/runs", signal);
-export const getRun = (runId: string, hierarchyNodeId: string, signal?: AbortSignal) => {
-  const params = new URLSearchParams({ hierarchyNodeId });
-  return request<RunOverview>(`/api/runs/${runId}?${params.toString()}`, signal);
+export const listRuns = (source: string, signal?: AbortSignal) => {
+  const params = new URLSearchParams({ source });
+  return request<RunSummary[]>(`/api/runs?${params.toString()}`, signal);
 };
-export const getMetadata = (runId: string, signal?: AbortSignal) => request<MetadataView>(`/api/runs/${runId}/metadata`, signal);
-export const getGrid = (runId: string, framework: string, scenario: string, hierarchyNodeId: string, signal?: AbortSignal) => {
-  const params = new URLSearchParams({ framework, scenario, hierarchyNodeId });
-  return request<GridView>(`/api/runs/${runId}/grid?${params.toString()}`, signal);
+export const getRun = (source: string, runId: string, hierarchyNodeId: string, signal?: AbortSignal) => {
+  const params = new URLSearchParams({ source, hierarchyNodeId });
+  return request<RunOverview>(`/api/runs/${encodeURIComponent(runId)}?${params.toString()}`, signal);
 };
-export const getInspector = (runId: string, rowId: string, scenario: string, hierarchyNodeId: string, signal?: AbortSignal) => {
-  const params = new URLSearchParams({ row_id: rowId, scenario, hierarchyNodeId });
-  return request<InspectorView>(`/api/runs/${runId}/inspector?${params.toString()}`, signal);
+export const getMetadata = (source: string, runId: string, signal?: AbortSignal) => {
+  const params = new URLSearchParams({ source });
+  return request<MetadataView>(`/api/runs/${encodeURIComponent(runId)}/metadata?${params.toString()}`, signal);
+};
+export const getGrid = (source: string, runId: string, framework: string, scenario: string, hierarchyNodeId: string, signal?: AbortSignal) => {
+  const params = new URLSearchParams({ source, framework, scenario, hierarchyNodeId });
+  return request<GridView>(`/api/runs/${encodeURIComponent(runId)}/grid?${params.toString()}`, signal);
+};
+export const getInspector = (source: string, runId: string, rowId: string, scenario: string, hierarchyNodeId: string, signal?: AbortSignal) => {
+  const params = new URLSearchParams({ source, row_id: rowId, scenario, hierarchyNodeId });
+  return request<InspectorView>(`/api/runs/${encodeURIComponent(runId)}/inspector?${params.toString()}`, signal);
 };
 export const getNode = (runId: string, nodeId: string, signal?: AbortSignal) =>
   request<NodeDetail>(`/api/runs/${runId}/nodes/${nodeId}`, signal);

@@ -202,3 +202,86 @@ def test_api_cva_no_data_state() -> None:
     assert response.status_code == 200
     payload = response.json()
     assert payload["rows"][0]["status"] == "no_data"
+
+
+def test_api_fails_closed_for_unknown_dashboard_source() -> None:
+    client = TestClient(app)
+    response = client.get("/api/runs?source=warehouse")
+    assert response.status_code == 422
+    assert "source must be one of" in response.text
+
+
+def test_result_store_run_catalogue_and_metadata() -> None:
+    client = TestClient(app)
+    runs = client.get("/api/runs?source=result-store")
+    assert runs.status_code == 200, runs.text
+    payload = runs.json()
+    assert payload
+    run = payload[0]
+    assert run["source"] == "result-store"
+    assert run["prototype"] is False
+    assert {"SA", "SBM", "DRC", "RRAO", "IMA"}.issubset(set(run["components"]))
+
+    metadata = client.get(f"/api/runs/{run['run_id']}/metadata?source=result-store")
+    assert metadata.status_code == 200, metadata.text
+    metadata_payload = metadata.json()
+    assert metadata_payload["source"] == "result-store"
+    assert metadata_payload["data_state"] == "result-store fixture"
+    assert metadata_payload["reporting_dates"] == ["2026-06-03"]
+    assert metadata_payload["baseline_dates"] == []
+    assert any(node["dimension"] == "Desk" for node in metadata_payload["dimensions"])
+
+
+def test_result_store_sa_grid_has_available_components() -> None:
+    client = TestClient(app)
+    run_id = client.get("/api/runs?source=result-store").json()[0]["run_id"]
+    grid = client.get(f"/api/runs/{run_id}/grid?source=result-store&framework=SA&scenario=Binding")
+    assert grid.status_code == 200, grid.text
+    payload = grid.json()
+    assert payload["source"] == "result-store"
+    assert payload["data_state"] == "result-store fixture"
+    components = {row["component"] for row in payload["rows"]}
+    assert {"SA", "SBM", "DRC", "RRAO"}.issubset(components)
+    assert any(row["component"] == "SBM" and row["selected_scenario"] for row in payload["rows"])
+    assert any(row["component"] == "DRC" and row["row_type"] == "ISSUER" for row in payload["rows"])
+    assert any(
+        row["component"] == "RRAO" and row["row_type"] == "MEASURE_BRANCH"
+        for row in payload["rows"]
+    )
+
+
+def test_result_store_inspector_covers_sbm_drc_and_rrao_rows() -> None:
+    client = TestClient(app)
+    run_id = client.get("/api/runs?source=result-store").json()[0]["run_id"]
+    grid_rows = client.get(f"/api/runs/{run_id}/grid?source=result-store&framework=SA").json()[
+        "rows"
+    ]
+    for component in ("SBM", "DRC", "RRAO"):
+        row_id = next(row["row_id"] for row in grid_rows if row["component"] == component)
+        inspector = client.get(f"/api/runs/{run_id}/inspector?source=result-store&row_id={row_id}")
+        assert inspector.status_code == 200, inspector.text
+        payload = inspector.json()
+        assert payload["component"] == component
+        assert payload["tabs"][0]["key"] == "attribution"
+        assert payload["diagnostics"]
+        if component != "SA":
+            assert payload["audit_rows"]
+
+
+def test_result_store_ima_grid_and_inspector_preserve_no_data_diagnostics() -> None:
+    client = TestClient(app)
+    run_id = client.get("/api/runs?source=result-store").json()[0]["run_id"]
+    grid = client.get(f"/api/runs/{run_id}/grid?source=result-store&framework=IMA")
+    assert grid.status_code == 200, grid.text
+    payload = grid.json()
+    assert payload["rows"]
+    assert any(row["component"] == "IMA" and row["capital"] is not None for row in payload["rows"])
+
+    row_id = next(row["row_id"] for row in payload["rows"] if row["row_id"] == "ima-rates-desk")
+    inspector = client.get(f"/api/runs/{run_id}/inspector?source=result-store&row_id={row_id}")
+    assert inspector.status_code == 200, inspector.text
+    inspector_payload = inspector.json()
+    assert inspector_payload["component"] == "IMA"
+    assert inspector_payload["audit_rows"]
+    messages = [item["message"] for item in inspector_payload["diagnostics"]]
+    assert any("upl" in message.lower() or "rfet" in message.lower() for message in messages)

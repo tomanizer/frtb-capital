@@ -50,6 +50,9 @@ recalculate capital.
 
 Built in v2:
 
+- Source selector for `demo` and `result-store`, with both sources served
+  through the same `RunSummary`, `MetadataView`, `GridView`, and
+  `InspectorView` response models.
 - Firm totals for SA and IMA, with demo output-floor display
   `max(IMA, 0.725 * SA)` computed in the backend from available run totals. The
   multiplier is a non-regulatory demo value chosen to match the current
@@ -62,6 +65,16 @@ Built in v2:
 - Fixture-backed aggregate blotter endpoint: `GET /api/runs/{run_id}/grid`.
 - Fixture-backed line/audit inspector endpoint:
   `GET /api/runs/{run_id}/inspector?row_id=...`.
+- Result-store fixture run catalogue and navigation metadata from persisted
+  run, summary, capital-tree, component-breakdown, and mart query APIs.
+- Result-store SA grid rows for SA total, SBM, DRC, RRAO, and available
+  persisted drilldown rows. Missing SBM scenario measures, gross JTD/LGD, and
+  unavailable source details remain null or diagnostics rather than synthetic
+  replacements.
+- Result-store IMA rows for persisted desk/evidence branches, with inspector
+  diagnostics for RFET observation ledgers, ES liquidity-horizon matrices, NMRF
+  split detail, PLAT UPL time series, and stress vectors when the fixture marks
+  those artifacts no-data or unsupported.
 - SBM scenario columns for base/high/low/binding where package result objects
   expose scenario totals.
 - DRC bucket rows and RRAO evidence rows from package result objects.
@@ -76,14 +89,24 @@ Not built in v2:
 - Real S3/HDFS scans, authenticated entitlements, or production AG Grid SSRM.
 - Baseline comparison against a second reporting run.
 - Per-trade CRIF, RFET, PLAT UPL, or CVA datasets not present in the fixture.
+- Production result-store object-lake scans, DuckDB/ClickHouse/Impala
+  middleware, AG Grid Enterprise, and entitlement filters.
 
 ## Backend contract
 
-The v2 backend keeps the same conceptual contract as the target OLAP system:
+The v2 backend keeps the same conceptual contract as the target OLAP system.
+The `source` query parameter selects the backend adapter and fails closed for
+unknown values:
 
-- Aggregate layer: `GET /api/runs/{run_id}/grid?framework=SA&scenario=Binding`.
-- Detail layer: `GET /api/runs/{run_id}/inspector?row_id=sa-drc-corporate`.
-- Metadata layer: `GET /api/runs/{run_id}/metadata`.
+- Run catalogue: `GET /api/runs?source=demo|result-store`.
+- Aggregate layer:
+  `GET /api/runs/{run_id}/grid?source=demo|result-store&framework=SA&scenario=Binding`.
+- Detail layer:
+  `GET /api/runs/{run_id}/inspector?source=demo|result-store&row_id=sa-drc-corporate`.
+- Metadata layer: `GET /api/runs/{run_id}/metadata?source=demo|result-store`.
+
+Payloads include `source` or `data_state` fields so screenshots and downstream
+checks can distinguish demo fixtures from result-store fixtures.
 
 Aggregate and detail requests accept `hierarchyNodeId` so the same row contract
 can be evaluated at top-of-house, legal-entity, division, desk, Volcker-desk, or
