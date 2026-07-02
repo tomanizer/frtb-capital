@@ -1,6 +1,6 @@
 # Capital Navigator AI explanation contract
 
-Status: draft governed explanation contract for issue #1112.
+Status: governed explanation snapshot contract; result-store snapshot builder implemented for issue #1104.
 
 Audience: Capital Navigator frontend/backend implementers, result-store
 contributors, security reviewers, model-risk reviewers, and market-risk
@@ -38,8 +38,9 @@ permit generated text to calculate or restate capital.
 - The browser must not assemble authoritative prompt payloads. It sends a small
   request; the server-side snapshot builder decides which bounded evidence may
   be used.
-- Production explanation generation depends on #1104. Before #1104 lands, the
-  UI may render disabled actions or fixture-labelled snapshots only.
+- Production text generation depends on a governed model-service adapter. The
+  result-store #1104 builder supplies only bounded, evidence-linked input
+  snapshots and does not call an external model provider.
 - Every material factual claim in a generated response must cite at least one
   internal evidence reference supplied in the snapshot.
 - Generated text must distinguish fact, inference, limitation, and next action.
@@ -120,9 +121,11 @@ Validation rules:
 
 ## Snapshot Builder Dependency
 
-The production snapshot builder belongs in `frtb-result-store` under #1104. It
-turns the validated request into a frozen, bounded, entitlement-filtered input
-snapshot.
+The production snapshot builder belongs in `frtb-result-store`. It turns the
+validated request into a frozen, bounded, entitlement-filtered input snapshot.
+The read-only API endpoint is `GET /runs/{run_id}/ai-explanation-snapshot`;
+the endpoint computes a deterministic snapshot and hash but does not persist a
+new result row or call a model provider.
 
 ```yaml
 AiExplanationInputSnapshot:
