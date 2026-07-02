@@ -14,7 +14,7 @@ from frtb_result_store._model_desk_eligibility import (
     PLAState,
 )
 from frtb_result_store.desk_eligibility_rows import _desk_eligibility_mart_row
-from frtb_result_store.model import ResultBundle
+from frtb_result_store.model import ResultBundle, ResultStoreContractError
 
 __all__ = ["_desk_eligibility_mart_rows"]
 
@@ -36,7 +36,8 @@ def _desk_eligibility_mart_rows(bundle: ResultBundle) -> list[dict[str, object]]
 
 
 def _desk_row(bundle: ResultBundle, node: CapitalNode) -> DeskEligibilityRow:
-    evidence = _mapping(node.metadata.get("desk_eligibility"))
+    metadata = node.metadata or {}
+    evidence = _mapping(metadata.get("desk_eligibility"))
     desk_id = str(node.desk_id)
     desk_attributions = _desk_attributions(bundle, desk_id)
     ses_attributions = _ses_attributions(bundle, desk_id)
@@ -147,7 +148,7 @@ def _sum_contributions(attributions: tuple[CapitalAttributionRecord, ...]) -> fl
     amounts = [
         attribution.contribution
         if attribution.contribution is not None
-        else attribution.base_amount + attribution.residual
+        else (attribution.base_amount or 0.0) + (attribution.residual or 0.0)
         for attribution in attributions
     ]
     if not amounts:
@@ -197,9 +198,17 @@ def _optional_float(value: object) -> float | None:
 def _optional_date(value: object) -> date | None:
     if value is None:
         return None
+    if isinstance(value, datetime):
+        return value.date()
     if isinstance(value, date) and not isinstance(value, datetime):
         return value
-    return date.fromisoformat(str(value))
+    try:
+        return date.fromisoformat(str(value))
+    except ValueError as exc:
+        raise ResultStoreContractError(
+            f"invalid desk eligibility date value: {value}",
+            field="latest_exception_date",
+        ) from exc
 
 
 def _optional_datetime(value: object) -> datetime | None:

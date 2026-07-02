@@ -5,10 +5,15 @@ from __future__ import annotations
 from datetime import UTC, date, datetime
 from pathlib import Path
 
+import pytest
 from fastapi.testclient import TestClient
 from fixtures.capital_navigator_bundle import capital_navigator_bundle
 from fixtures.result_store_bundle import run_with_id
-from frtb_result_store import DuckDbParquetResultStore, create_result_store_app
+from frtb_result_store import (
+    DuckDbParquetResultStore,
+    ResultStoreContractError,
+    create_result_store_app,
+)
 from frtb_result_store._model_desk_eligibility import (
     BacktestingState,
     DeskEligibilityRow,
@@ -18,6 +23,11 @@ from frtb_result_store._model_desk_eligibility import (
 from frtb_result_store.desk_eligibility_rows import (
     _desk_eligibility_mart_from_row,
     _desk_eligibility_mart_row,
+)
+from frtb_result_store.mart_desk_eligibility_rows import (
+    _desk_eligibility_mart_rows,
+    _optional_date,
+    _sum_contributions,
 )
 from frtb_result_store.mart_schemas import (
     MART_NAMES,
@@ -139,6 +149,39 @@ def test_capital_navigator_fixture_populates_desk_eligibility_mart(
     assert by_desk["equity"].pla_state is PLAState.NO_DATA
     assert by_desk["equity"].backtesting_state is BacktestingState.NOT_RUN
     assert by_desk["equity"].capital_consequence_amount is None
+
+
+def test_desk_eligibility_mart_tolerates_missing_node_metadata(tmp_path: Path) -> None:
+    run = run_with_id("frtb/capital-navigator/2026-06-03/us-npr")
+    bundle = capital_navigator_bundle(run=run, artifact_root=tmp_path / "navigator-artifacts")
+    rates_node = next(node for node in bundle.nodes if node.node_id == "ima-rates-desk")
+    object.__setattr__(rates_node, "metadata", None)
+
+    rows = _desk_eligibility_mart_rows(bundle)
+
+    rates = next(row for row in rows if row["desk_id"] == "rates")
+    assert rates["eligibility_state"] == DeskEligibilityState.NO_DATA.value
+    assert rates["pla_state"] == PLAState.NO_DATA.value
+
+
+def test_desk_eligibility_date_coercion_handles_datetime_and_invalid_text() -> None:
+    assert _optional_date(datetime(2026, 5, 21, 16, 30, tzinfo=UTC)) == date(2026, 5, 21)
+
+    with pytest.raises(ResultStoreContractError, match="invalid desk eligibility date value"):
+        _optional_date("2026-05-21T16:30:00+00:00")
+
+
+def test_desk_eligibility_contribution_fallback_treats_missing_parts_as_zero(
+    tmp_path: Path,
+) -> None:
+    run = run_with_id("frtb/capital-navigator/2026-06-03/us-npr")
+    bundle = capital_navigator_bundle(run=run, artifact_root=tmp_path / "navigator-artifacts")
+    attribution = bundle.attributions[0]
+    object.__setattr__(attribution, "contribution", None)
+    object.__setattr__(attribution, "base_amount", None)
+    object.__setattr__(attribution, "residual", None)
+
+    assert _sum_contributions((attribution,)) == 0.0
 
 
 def test_desk_eligibility_filters_and_no_data_detail(tmp_path: Path) -> None:
