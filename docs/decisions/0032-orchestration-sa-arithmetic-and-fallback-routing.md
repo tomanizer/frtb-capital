@@ -31,6 +31,8 @@ Before addition, orchestration validates:
 - all components share one calculation date;
 - all components share one base currency;
 - every component total is non-negative.
+- when fallback routes are supplied, all components carry identical
+  `CalculationScope` evidence covering the routed desk IDs.
 
 The result is a frozen `StandardisedApproachCapitalResult` with the composed
 total, component subtotals, jurisdiction family, unique component citations,
@@ -42,6 +44,12 @@ status mapping using strings or string enums. Desks marked `SA_FALLBACK` are
 recorded as routed to `STANDARDISED_APPROACH` with reason code
 `ima_desk_not_model_eligible`. Desks marked `IMA_ELIGIBLE` are not routed.
 Unknown eligibility statuses fail closed.
+
+Fallback route recording also fails closed when the SA component handoffs do
+not prove scope coverage. A single routed fallback desk may be covered by a
+`DESK` scope for that desk. Aggregate scopes must carry
+`metadata["fallback_desk_ids"]` with the routed desk IDs so the composed SA
+audit record can be tied back to the non-IMA desk population.
 
 Top-of-house `calculate_suite_capital` is implemented in
 [ADR 0039](0039-orchestration-suite-capital-aggregation.md). This ADR does not

@@ -104,9 +104,14 @@ Each summary is produced by the owning component package's public
 - `line_count` and `subtotal_count`
 - `excluded_line_count`
 - `citations` and `warnings`
+- optional `calculation_scope`
 
 The composed SA result preserves deterministic subtotals and optional
-desk-level SA fallback routes from structural IMA eligibility evidence.
+desk-level SA fallback routes from structural IMA eligibility evidence. When
+fallback routes are present, each SBM, DRC, and RRAO summary must carry
+identical `calculation_scope` evidence covering the routed desk IDs. A single
+fallback desk may use a `DESK` scope; aggregate fallback scopes must list the
+routed desks in `metadata["fallback_desk_ids"]`.
 
 ### CVA
 

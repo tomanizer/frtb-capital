@@ -5,6 +5,8 @@ from pathlib import Path
 
 import pytest
 from frtb_common import (
+    CalculationScope,
+    CalculationScopeLevel,
     ComponentCapitalSummary,
     ComponentSummaryError,
     ImplementationStatus,
@@ -174,10 +176,33 @@ def test_sa_aggregation_accepts_supported_jurisdiction_families(
 
 
 def test_sa_aggregation_records_non_ima_desk_fallback_routes() -> None:
+    fallback_scope = CalculationScope(
+        level=CalculationScopeLevel.HIERARCHY_NODE,
+        hierarchy_node_id="sa-fallback-node",
+        metadata={"fallback_desk_ids": "desk-alpha,desk-zeta"},
+    )
     result = compose_standardised_approach_capital(
-        sbm_summary=sbm_handoff(profile_id="US_NPR_2_0"),
-        drc_summary=drc_to_component_summary(sample_drc_result()),
-        rrao_summary=rrao_to_component_summary(sample_rrao_result()),
+        sbm_summary=component_handoff(
+            StandardisedComponent.SBM,
+            profile_id="US_NPR_2_0",
+            total=42.0,
+            package_name="frtb-sbm",
+            calculation_scope=fallback_scope,
+        ),
+        drc_summary=component_handoff(
+            StandardisedComponent.DRC,
+            profile_id="US_NPR_2_0",
+            total=7875.0,
+            package_name="frtb-drc",
+            calculation_scope=fallback_scope,
+        ),
+        rrao_summary=component_handoff(
+            StandardisedComponent.RRAO,
+            profile_id="US_NPR_2_0",
+            total=20000.0,
+            package_name="frtb-rrao",
+            calculation_scope=fallback_scope,
+        ),
         ima_desk_eligibility={
             "desk-zeta": DeskEligibilityStatus.SA_FALLBACK,
             "desk-alpha": "SA_FALLBACK",
@@ -203,6 +228,41 @@ def test_sa_aggregation_records_non_ima_desk_fallback_routes() -> None:
             "reason_code": "ima_desk_not_model_eligible",
         },
     ]
+    assert (
+        result.as_dict()["component_subtotals"][0]["calculation_scope"] == fallback_scope.as_dict()
+    )
+
+
+def test_sa_aggregation_rejects_fallback_without_scope_evidence() -> None:
+    with pytest.raises(OrchestrationInputError, match="calculation_scope evidence"):
+        compose_standardised_approach_capital(
+            sbm_summary=sbm_handoff(profile_id="US_NPR_2_0"),
+            drc_summary=drc_to_component_summary(sample_drc_result()),
+            rrao_summary=rrao_to_component_summary(sample_rrao_result()),
+            ima_desk_eligibility={"desk-alpha": "SA_FALLBACK"},
+        )
+
+
+def test_sa_aggregation_rejects_fallback_scope_that_omits_routed_desk() -> None:
+    desk_scope = CalculationScope(level=CalculationScopeLevel.DESK, desk_id="desk-beta")
+
+    with pytest.raises(OrchestrationInputError, match="does not cover"):
+        compose_standardised_approach_capital(
+            sbm_summary=sbm_handoff(profile_id="US_NPR_2_0", calculation_scope=desk_scope),
+            drc_summary=component_handoff(
+                StandardisedComponent.DRC,
+                profile_id="US_NPR_2_0",
+                total=20.0,
+                calculation_scope=desk_scope,
+            ),
+            rrao_summary=component_handoff(
+                StandardisedComponent.RRAO,
+                profile_id="US_NPR_2_0",
+                total=30.0,
+                calculation_scope=desk_scope,
+            ),
+            ima_desk_eligibility={"desk-alpha": "SA_FALLBACK"},
+        )
 
 
 def test_sa_aggregation_rejects_invalid_run_id() -> None:
@@ -421,6 +481,7 @@ def sbm_handoff(
     profile_id: str = "US_NPR_2_0",
     total_capital: float = 42.0,
     base_currency: str = "USD",
+    calculation_scope: CalculationScope | None = None,
 ) -> ComponentCapitalSummary:
     """Build a synthetic SBM handoff directly on the shared public contract.
 
@@ -436,6 +497,7 @@ def sbm_handoff(
         run_id="orchestration-sbm-run",
         base_currency=base_currency,
         citations=("MAR21.4",),
+        calculation_scope=calculation_scope,
     )
 
 
@@ -448,6 +510,7 @@ def component_handoff(
     run_id: str | None = None,
     base_currency: str = "USD",
     citations: tuple[str, ...] = ("component-citation",),
+    calculation_scope: CalculationScope | None = None,
 ) -> ComponentCapitalSummary:
     return ComponentCapitalSummary(
         component=component,
@@ -464,6 +527,7 @@ def component_handoff(
         subtotal_count=1,
         citations=citations,
         warnings=(),
+        calculation_scope=calculation_scope,
     )
 
 

@@ -10,9 +10,9 @@ any sibling capital-package import.
 from __future__ import annotations
 
 import math
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 
-from frtb_common import ComponentCapitalSummary
+from frtb_common import CalculationScope, CalculationScopeLevel, ComponentCapitalSummary
 
 from frtb_orchestration._standardised_models import (
     StandardisedApproachCapitalResult,
@@ -31,6 +31,8 @@ from frtb_orchestration._standardised_validation import (
 from frtb_orchestration._standardised_validation import standardised_jurisdiction_family
 from frtb_orchestration._standardised_validation import unique_texts as _unique_texts
 from frtb_orchestration._validation import OrchestrationInputError
+
+_FALLBACK_DESK_IDS_METADATA_KEY = "fallback_desk_ids"
 
 
 def compose_standardised_approach_capital(
@@ -89,6 +91,7 @@ def compose_standardised_approach_capital(
         StandardisedComponentSubtotal.from_summary(summary) for summary in required_summaries
     )
     fallback_routes = _normalise_fallback_routes(ima_desk_eligibility)
+    _validate_fallback_scope_evidence(required_summaries, fallback_routes)
     citations = _unique_texts(
         citation for summary in required_summaries for citation in summary.citations
     )
@@ -106,6 +109,58 @@ def compose_standardised_approach_capital(
         citations=citations,
         warnings=warnings,
     )
+
+
+def _validate_fallback_scope_evidence(
+    summaries: Sequence[ComponentCapitalSummary],
+    fallback_routes: Sequence[StandardisedFallbackRoute],
+) -> None:
+    if not fallback_routes:
+        return
+
+    missing = tuple(
+        summary.component.value for summary in summaries if summary.calculation_scope is None
+    )
+    if missing:
+        raise OrchestrationInputError(
+            "SA fallback routes require calculation_scope evidence on every component summary; "
+            f"missing for {', '.join(missing)}",
+            field="calculation_scope",
+        )
+
+    scopes = tuple(summary.calculation_scope for summary in summaries)
+    assert all(scope is not None for scope in scopes)
+    first_scope = scopes[0]
+    assert first_scope is not None
+    first_payload = first_scope.as_dict()
+    if any(scope.as_dict() != first_payload for scope in scopes[1:] if scope is not None):
+        raise OrchestrationInputError(
+            "SA fallback component summaries must carry identical calculation_scope evidence",
+            field="calculation_scope",
+        )
+
+    fallback_desk_ids = tuple(route.desk_id for route in fallback_routes)
+    if not _scope_covers_fallback_desk_ids(first_scope, fallback_desk_ids):
+        raise OrchestrationInputError(
+            "SA fallback calculation_scope does not cover the routed fallback desks; "
+            f"expected {', '.join(fallback_desk_ids)}",
+            field="calculation_scope",
+        )
+
+
+def _scope_covers_fallback_desk_ids(
+    scope: CalculationScope,
+    fallback_desk_ids: Sequence[str],
+) -> bool:
+    expected = tuple(sorted(fallback_desk_ids))
+    if scope.level is CalculationScopeLevel.DESK:
+        return expected == (scope.desk_id,)
+    metadata = scope.metadata or {}
+    covered = metadata.get(_FALLBACK_DESK_IDS_METADATA_KEY)
+    if covered is None:
+        return False
+    actual = tuple(sorted(desk_id.strip() for desk_id in covered.split(",") if desk_id.strip()))
+    return actual == expected
 
 
 __all__ = [
