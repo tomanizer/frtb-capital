@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import pytest
-from tests.rrao_fixture_helpers import sample_rrao_lineage as sample_lineage
 
 import frtb_rrao.classification as classification_module
 from frtb_rrao import (
@@ -13,6 +12,7 @@ from frtb_rrao import (
     classify_rrao_position,
     classify_rrao_positions,
 )
+from tests.rrao_fixture_helpers import sample_rrao_lineage as sample_lineage
 
 
 def sample_position(**overrides: object) -> RraoPosition:

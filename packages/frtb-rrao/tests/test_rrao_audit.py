@@ -137,7 +137,31 @@ def test_result_serialization_is_json_stable() -> None:
 
     assert payload == result.as_dict()
     assert json.dumps(payload, sort_keys=True)
+    assert set(payload) == {
+        "run_id",
+        "calculation_date",
+        "base_currency",
+        "profile_id",
+        "profile_hash",
+        "input_hash",
+        "input_hash_algorithm",
+        "total_rrao",
+        "citations",
+        "warnings",
+        "lines",
+        "excluded_lines",
+        "subtotals",
+    }
+    assert payload["run_id"] == "rrao-run-001"
+    assert payload["calculation_date"] == "2026-03-31"
+    assert payload["base_currency"] == "USD"
     assert payload["profile_id"] == "US_NPR_2_0"
+    assert payload["input_hash_algorithm"] == "json-row-v1"
+    assert payload["total_rrao"] == 10_000.0
+    assert payload["citations"] == ["us_npr_211_a_1", "us_npr_211_c_1_i"]
+    assert payload["warnings"] == [
+        "US_NPR_2_0 is proposed-rule material; do not present outputs as final regulatory capital."
+    ]
     assert payload["lines"] == [
         {
             "position_id": "pos-001",
@@ -157,6 +181,37 @@ def test_result_serialization_is_json_stable() -> None:
             "exclusion_evidence_id": None,
         }
     ]
+    assert payload["excluded_lines"] == []
+    assert payload["subtotals"] == [
+        {
+            "subtotal_key": "EXOTIC",
+            "subtotal_type": "classification",
+            "gross_effective_notional": 1_000_000.0,
+            "add_on": 10_000.0,
+            "position_ids": ["pos-001"],
+        },
+        {
+            "subtotal_key": "EXOTIC_UNDERLYING",
+            "subtotal_type": "evidence_type",
+            "gross_effective_notional": 1_000_000.0,
+            "add_on": 10_000.0,
+            "position_ids": ["pos-001"],
+        },
+        {
+            "subtotal_key": "desk-a",
+            "subtotal_type": "desk_id",
+            "gross_effective_notional": 1_000_000.0,
+            "add_on": 10_000.0,
+            "position_ids": ["pos-001"],
+        },
+        {
+            "subtotal_key": "LE-001",
+            "subtotal_type": "legal_entity",
+            "gross_effective_notional": 1_000_000.0,
+            "add_on": 10_000.0,
+            "position_ids": ["pos-001"],
+        },
+    ]
 
 
 def test_reconciliation_rejects_wrong_total() -> None:
@@ -166,8 +221,9 @@ def test_reconciliation_rejects_wrong_total() -> None:
     )
     corrupted = replace(result, total_rrao=0.0)
 
-    with pytest.raises(RraoInputError, match="total RRAO does not reconcile"):
+    with pytest.raises(RraoInputError, match="total RRAO does not reconcile") as exc_info:
         validate_rrao_result_reconciliation(corrupted)
+    assert exc_info.value.field == "total_rrao"
 
 
 def test_reconciliation_rejects_invalid_result_hashes() -> None:
@@ -176,10 +232,16 @@ def test_reconciliation_rejects_invalid_result_hashes() -> None:
         context=sample_context(),
     )
 
-    with pytest.raises(RraoInputError, match="hash must be a sha256 hex digest"):
+    with pytest.raises(RraoInputError, match="hash must be a sha256 hex digest") as exc_info:
         validate_rrao_result_reconciliation(replace(result, profile_hash="short"))
-    with pytest.raises(RraoInputError, match="hash must be a sha256 hex digest"):
+    assert exc_info.value.field == "profile_hash"
+    with pytest.raises(RraoInputError, match="hash must be a sha256 hex digest") as exc_info:
         validate_rrao_result_reconciliation(replace(result, input_hash="z" * 64))
+    assert exc_info.value.field == "input_hash"
+    base17_only_hash = "g" * 64
+    with pytest.raises(RraoInputError, match="hash must be a sha256 hex digest") as exc_info:
+        validate_rrao_result_reconciliation(replace(result, input_hash=base17_only_hash))
+    assert exc_info.value.field == "input_hash"
 
 
 def test_reconciliation_rejects_invalid_line_partitions() -> None:
@@ -193,10 +255,14 @@ def test_reconciliation_rejects_invalid_line_partitions() -> None:
         (
             replace(result, lines=(replace(line, is_excluded=True),), excluded_lines=()),
             "included line partition contains an excluded line",
+            "lines",
+            "pos-001",
         ),
         (
             replace(result, lines=(), excluded_lines=(replace(line, is_excluded=False),)),
             "excluded line partition contains an included line",
+            "excluded_lines",
+            "pos-001",
         ),
         (
             replace(
@@ -205,15 +271,36 @@ def test_reconciliation_rejects_invalid_line_partitions() -> None:
                 excluded_lines=(replace(line, is_excluded=True, add_on=1.0),),
             ),
             "excluded line add-on must be zero",
+            "excluded_lines",
+            "pos-001",
         ),
         (
             replace(result, lines=(line, line), excluded_lines=()),
             "duplicate result position id",
+            "lines",
+            "pos-001",
         ),
     )
-    for invalid_result, message in invalid_cases:
-        with pytest.raises(RraoInputError, match=message):
+    for invalid_result, message, field, position_id in invalid_cases:
+        with pytest.raises(RraoInputError, match=message) as exc_info:
             validate_rrao_result_reconciliation(invalid_result)
+        assert exc_info.value.field == field
+        assert exc_info.value.position_id == position_id
+
+
+def test_reconciliation_rejects_duplicate_excluded_position_ids_with_metadata() -> None:
+    result = calculate_rrao_capital(
+        (sample_excluded_position("pos-001", "row-001"),),
+        context=sample_context(),
+    )
+    line = result.excluded_lines[0]
+    corrupted = replace(result, excluded_lines=(line, line))
+
+    with pytest.raises(RraoInputError, match="duplicate result position id") as exc_info:
+        validate_rrao_result_reconciliation(corrupted)
+
+    assert exc_info.value.field == "excluded_lines"
+    assert exc_info.value.position_id == "pos-001"
 
 
 def test_reconciliation_rejects_wrong_subtotals() -> None:
@@ -234,8 +321,9 @@ def test_reconciliation_rejects_wrong_subtotals() -> None:
         ),
     )
 
-    with pytest.raises(RraoInputError, match="subtotals do not reconcile"):
+    with pytest.raises(RraoInputError, match="subtotals do not reconcile") as exc_info:
         validate_rrao_result_reconciliation(corrupted)
+    assert exc_info.value.field == "subtotals"
 
 
 def test_reconciliation_rejects_wrong_subtotal_amounts() -> None:
@@ -254,8 +342,9 @@ def test_reconciliation_rejects_wrong_subtotal_amounts() -> None:
         ),
     )
 
-    with pytest.raises(RraoInputError, match="subtotals do not reconcile"):
+    with pytest.raises(RraoInputError, match="subtotals do not reconcile") as exc_info:
         validate_rrao_result_reconciliation(corrupted)
+    assert exc_info.value.field == "subtotals"
 
 
 def test_reconciliation_rejects_missing_subtotals() -> None:
@@ -264,8 +353,9 @@ def test_reconciliation_rejects_missing_subtotals() -> None:
         context=sample_context(),
     )
 
-    with pytest.raises(RraoInputError, match="subtotals do not reconcile"):
+    with pytest.raises(RraoInputError, match="subtotals do not reconcile") as exc_info:
         validate_rrao_result_reconciliation(replace(result, subtotals=()))
+    assert exc_info.value.field == "subtotals"
 
 
 def test_audit_normalisation_helpers_are_json_ready() -> None:
@@ -283,3 +373,9 @@ def test_audit_normalisation_helpers_are_json_ready() -> None:
         "items": ["EXOTIC"],
     }
     assert audit_module._lineage_payload(None) is None
+    assert audit_module._lineage_payload(sample_lineage("row-001")) == {
+        "source_system": "synthetic-risk",
+        "source_file": "rrao.csv",
+        "source_row_id": "row-001",
+        "source_column_map": [["RiskType", "evidence_type"]],
+    }

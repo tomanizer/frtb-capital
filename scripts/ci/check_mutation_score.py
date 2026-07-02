@@ -12,13 +12,19 @@ from typing import Any
 REGISTRY_PATH = Path("docs/quality/package_maturity.toml")
 
 DEFAULT_STATS_PATHS = {
+    "frtb-cva": Path("dist/mutation/frtb-cva/mutmut-cicd-stats.json"),
+    "frtb-drc": Path("dist/mutation/frtb-drc/mutmut-cicd-stats.json"),
     "frtb-ima": Path("dist/mutation/frtb-ima/mutmut-cicd-stats.json"),
     "frtb-rrao": Path("dist/mutation/frtb-rrao/mutmut-cicd-stats.json"),
+    "frtb-sbm": Path("dist/mutation/frtb-sbm/mutmut-cicd-stats.json"),
 }
 
 MUTATION_PREREQ_HINTS = {
+    "frtb-cva": "make mutation-cva",
+    "frtb-drc": "make mutation-drc",
     "frtb-ima": "make mutation",
     "frtb-rrao": "make mutation-rrao",
+    "frtb-sbm": "make mutation-sbm",
 }
 
 

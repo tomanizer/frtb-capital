@@ -42,6 +42,15 @@ jobs:
       - name: Run RRAO mutation baseline
         run: make mutation-rrao
 
+      - name: Run DRC mutation baseline
+        run: make mutation-drc
+
+      - name: Run CVA mutation baseline
+        run: make mutation-cva
+
+      - name: Run SBM mutation baseline
+        run: make mutation-sbm
+
       - name: Enforce mutation score floors
         run: make mutation-score-check
 

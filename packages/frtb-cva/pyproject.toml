@@ -16,6 +16,60 @@ dependencies = [
 [tool.setuptools.packages.find]
 where = ["src"]
 
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-v --tb=short"
+pythonpath = ["../..", "."]
+norecursedirs = [".*", "build", "dist", "mutants"]
+markers = [
+    "regulatory_ref(id): links a test to a regulatory requirement or source-crosswalk id",
+    "challenger_ref(id): links a test to an external challenger implementation",
+]
+
+[tool.mutmut]
+paths_to_mutate = [
+    "src/frtb_cva/ba_cva.py",
+    "src/frtb_cva/capital.py",
+    "src/frtb_cva/kernel/ba_full.py",
+    "src/frtb_cva/kernel/ba_reduced.py",
+    "src/frtb_cva/kernel/sa.py",
+    "src/frtb_cva/risk_classes/ccs.py",
+    "src/frtb_cva/risk_classes/commodity.py",
+    "src/frtb_cva/risk_classes/equity.py",
+    "src/frtb_cva/risk_classes/fx.py",
+    "src/frtb_cva/risk_classes/girr.py",
+    "src/frtb_cva/risk_classes/rcs.py",
+    "src/frtb_cva/sa_cva.py",
+    "src/frtb_cva/weighted_sensitivity.py",
+]
+pytest_add_cli_args_test_selection = [
+    "tests/test_cva_ba_cva_full.py",
+    "tests/test_cva_ba_cva_reduced.py",
+    "tests/test_cva_ba_cva_standalone.py",
+    "tests/test_cva_properties.py",
+    "tests/test_cva_sa_cva.py",
+    "tests/test_cva_weighted_sensitivity.py",
+]
+pytest_add_cli_args = [
+    "-c",
+    "pyproject.toml",
+    "-p",
+    "no:cov",
+]
+do_not_mutate = [
+    "src/frtb_cva/adapters",
+    "src/frtb_cva/arrow_batch.py",
+    "src/frtb_cva/audit.py",
+    "src/frtb_cva/batch.py",
+    "src/frtb_cva/crif.py",
+    "src/frtb_cva/reference_data.py",
+]
+also_copy = [
+    "src/frtb_cva",
+    "tests",
+]
+mutate_only_covered_lines = true
+
 [tool.towncrier]
 package = "frtb_cva"
 package_dir = "src"

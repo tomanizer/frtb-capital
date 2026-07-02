@@ -3,8 +3,8 @@
 This file records surviving mutants that were reviewed and treated as equivalent
 or intentionally deferred for the current prototype.
 
-The 2026-05-28 mutation baseline has **no allowlisted survivors**. All 467
-surviving mutants are counted in the denominator for the `75.12%` killed-only
+The 2026-07-02 mutation baseline has **no allowlisted survivors**. All 254
+surviving mutants are counted in the denominator for the `84.25%` killed-only
 score documented in `docs/quality/frtb-ima/mutation_baseline.md`.
 
 ## Current Survivor Categories
@@ -15,12 +15,12 @@ future hardening targets.
 - Public-wrapper validation duplicates, where a wrapper mutation is rejected by
   the lower-level calculation helper before an incorrect result can escape.
 - Logging and diagnostic-field mutations inside calculation modules, especially
-  IMCC and PLA diagnostics, where tests currently focus on capital outputs and
-  selected audit fields.
-- Threshold-boundary and ordering mutations in PLA and reduced-set workflows
-  that need additional edge-case fixtures before they can be killed cleanly.
+  IMCC diagnostics and lower-priority PLA diagnostic payload details.
+- Residual threshold-boundary and ordering mutations in PLA and reduced-set
+  workflows after the 2026-07-02 edge-case fixture expansion.
 - Capital assembly mutants around eligibility/add-on branches that require
-  narrower desk-level scenario fixtures.
+  narrower desk-level scenario fixtures beyond the current public audit
+  contract.
 
 ## Allowlisting Rule
 

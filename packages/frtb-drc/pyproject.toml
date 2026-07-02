@@ -21,6 +21,58 @@ dev = [
     "matplotlib>=3.10.9",
 ]
 
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-v --tb=short"
+pythonpath = ["../..", "."]
+norecursedirs = [".*", "build", "dist", "mutants"]
+markers = [
+    "regulatory_ref(id): links a test to a regulatory requirement or source-crosswalk id",
+    "challenger_ref(id): links a test to an external challenger implementation",
+]
+
+[tool.mutmut]
+paths_to_mutate = [
+    "src/frtb_drc/capital.py",
+    "src/frtb_drc/gross_jtd.py",
+    "src/frtb_drc/netting.py",
+    "src/frtb_drc/kernel/ctp.py",
+    "src/frtb_drc/kernel/net_jtd.py",
+    "src/frtb_drc/kernel/nonsec.py",
+    "src/frtb_drc/kernel/securitisation.py",
+    "src/frtb_drc/kernel/securitisation_gross.py",
+]
+pytest_add_cli_args_test_selection = [
+    "tests/test_drc_capital.py",
+    "tests/test_drc_ctp.py",
+    "tests/test_drc_gross_jtd.py",
+    "tests/test_drc_netting.py",
+    "tests/test_drc_nonsec_fixture.py",
+    "tests/test_drc_nonsec_v2_fixture.py",
+    "tests/test_drc_securitisation.py",
+]
+pytest_add_cli_args = [
+    "-c",
+    "pyproject.toml",
+    "-p",
+    "no:cov",
+]
+do_not_mutate = [
+    "src/frtb_drc/adapters",
+    "src/frtb_drc/arrow_batch.py",
+    "src/frtb_drc/audit.py",
+    "src/frtb_drc/batch.py",
+    "src/frtb_drc/crif.py",
+    "src/frtb_drc/demo_data.py",
+    "src/frtb_drc/demo_fixture.py",
+    "src/frtb_drc/reference_data.py",
+]
+also_copy = [
+    "src/frtb_drc",
+    "tests",
+]
+mutate_only_covered_lines = true
+
 [tool.towncrier]
 package = "frtb_drc"
 package_dir = "src"

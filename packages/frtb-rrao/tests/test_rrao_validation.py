@@ -4,12 +4,6 @@ import math
 from dataclasses import replace
 
 import pytest
-from tests.rrao_fixture_helpers import (
-    sample_rrao_lineage as sample_lineage,
-)
-from tests.rrao_fixture_helpers import (
-    sample_rrao_position as sample_position,
-)
 
 from frtb_rrao import (
     RraoClassification,
@@ -20,6 +14,12 @@ from frtb_rrao import (
     validate_rrao_positions,
 )
 from frtb_rrao.validation import normalise_gross_effective_notional
+from tests.rrao_fixture_helpers import (
+    sample_rrao_lineage as sample_lineage,
+)
+from tests.rrao_fixture_helpers import (
+    sample_rrao_position as sample_position,
+)
 
 
 def assert_rejects(

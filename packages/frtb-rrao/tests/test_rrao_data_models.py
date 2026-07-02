@@ -4,7 +4,6 @@ from dataclasses import FrozenInstanceError
 from datetime import date
 
 import pytest
-from tests.rrao_fixture_helpers import sample_rrao_lineage as sample_lineage
 
 from frtb_rrao import (
     RraoBackToBackMatch,
@@ -23,6 +22,7 @@ from frtb_rrao import (
     RraoRegulatoryProfile,
     RraoSubtotal,
 )
+from tests.rrao_fixture_helpers import sample_rrao_lineage as sample_lineage
 
 
 def sample_position() -> RraoPosition:

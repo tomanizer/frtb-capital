@@ -55,16 +55,17 @@ paths_to_mutate = [
     "src/frtb_rrao/validation.py",
 ]
 pytest_add_cli_args_test_selection = [
-    "tests/test_audit.py",
-    "tests/test_capital.py",
-    "tests/test_classification.py",
-    "tests/test_exclusions.py",
-    "tests/test_external_comparator.py",
-    "tests/test_fixture_workflow.py",
-    "tests/test_investment_fund.py",
-    "tests/test_properties.py",
-    "tests/test_reconciliation_tolerance.py",
-    "tests/test_validation.py",
+    "tests/test_rrao_audit.py",
+    "tests/test_rrao_capital.py",
+    "tests/test_rrao_classification.py",
+    "tests/test_rrao_exclusions.py",
+    "tests/test_rrao_external_comparator.py",
+    "tests/test_rrao_fixture_workflow.py",
+    "tests/test_rrao_investment_fund.py",
+    "tests/test_rrao_org_scope.py",
+    "tests/test_rrao_properties.py",
+    "tests/test_rrao_reconciliation_tolerance.py",
+    "tests/test_rrao_validation.py",
 ]
 pytest_add_cli_args = [
     "-c",

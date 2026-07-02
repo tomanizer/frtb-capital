@@ -5,8 +5,6 @@ from datetime import date
 from pathlib import Path
 from typing import Any
 
-from tests.rrao_fixture_helpers import optional_rrao_back_to_back_match
-
 from frtb_rrao import (
     RraoCalculationContext,
     RraoClassification,
@@ -16,6 +14,7 @@ from frtb_rrao import (
     RraoRegulatoryProfile,
     RraoSourceLineage,
 )
+from tests.rrao_fixture_helpers import optional_rrao_back_to_back_match
 
 FIXTURE_DIR = Path(__file__).parent
 

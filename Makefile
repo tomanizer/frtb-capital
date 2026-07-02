@@ -16,7 +16,7 @@ NOTEBOOK_ENV := MPLBACKEND=Agg IPYTHONDIR=$(CURDIR)/.pytest_cache/ipython
 .PHONY: test test-no-cov test-changed test-partial-runtime-coverage docs-check regulatory-corpus regulatory-wording docs-staleness
 .PHONY: import-lint kernel-import-boundary adr0033-vocabulary simplification-drift import-smoke maturity-check docstring-inventory docstring-baseline docstring-check drift-check changed-code-check test-value-check dead-code-check drift-report changed-code-report test-value-report dead-code-report drift-reports drift-baseline quality-control build
 .PHONY: demo examples-check notebooks-check package-status-dashboard navigator-frontend-build
-.PHONY: release-artifacts mutation mutation-rrao mutation-score-check benchmark ima-arrow-batch-benchmark sbm-benchmark drc-benchmark rrao-benchmark cva-benchmark benchmark-suite benchmark-budget-check
+.PHONY: release-artifacts mutation mutation-cva mutation-drc mutation-rrao mutation-sbm mutation-score-check benchmark ima-arrow-batch-benchmark sbm-benchmark drc-benchmark rrao-benchmark cva-benchmark benchmark-suite benchmark-budget-check
 .PHONY: audit-deps sbom checksums repo-controls-snapshot replay-fixture
 .PHONY: validation-pack agent-setup agent-sync-main agent-new agent-ensure agent-guard
 .PHONY: agent-worktrees agent-doctor ima sa sbm drc rrao cva orchestration clean
@@ -206,11 +206,35 @@ mutation:
 
 mutation-rrao:
 	mkdir -p $(MUTATION_DIST)/frtb-rrao
-	HYPOTHESIS_PROFILE=dev uv run --directory packages/frtb-rrao mutmut run
+	HYPOTHESIS_PROFILE=dev uv run --directory packages/frtb-rrao python -c "import numpy; import sys; from mutmut.__main__ import cli; sys.argv = ['mutmut', 'run']; cli()"
 	uv run --directory packages/frtb-rrao mutmut export-cicd-stats
 	cp packages/frtb-rrao/mutants/mutmut-cicd-stats.json $(MUTATION_DIST)/frtb-rrao/mutmut-cicd-stats.json
 	uv run --directory packages/frtb-rrao mutmut results > $(MUTATION_DIST)/frtb-rrao/results.txt
 	cat $(MUTATION_DIST)/frtb-rrao/results.txt
+
+mutation-drc:
+	mkdir -p $(MUTATION_DIST)/frtb-drc
+	HYPOTHESIS_PROFILE=dev uv run --directory packages/frtb-drc python -c "import numpy; import sys; from mutmut.__main__ import cli; sys.argv = ['mutmut', 'run']; cli()"
+	uv run --directory packages/frtb-drc mutmut export-cicd-stats
+	cp packages/frtb-drc/mutants/mutmut-cicd-stats.json $(MUTATION_DIST)/frtb-drc/mutmut-cicd-stats.json
+	uv run --directory packages/frtb-drc mutmut results > $(MUTATION_DIST)/frtb-drc/results.txt
+	cat $(MUTATION_DIST)/frtb-drc/results.txt
+
+mutation-cva:
+	mkdir -p $(MUTATION_DIST)/frtb-cva
+	HYPOTHESIS_PROFILE=dev uv run --directory packages/frtb-cva python -c "import numpy; import sys; from mutmut.__main__ import cli; sys.argv = ['mutmut', 'run']; cli()"
+	uv run --directory packages/frtb-cva mutmut export-cicd-stats
+	cp packages/frtb-cva/mutants/mutmut-cicd-stats.json $(MUTATION_DIST)/frtb-cva/mutmut-cicd-stats.json
+	uv run --directory packages/frtb-cva mutmut results > $(MUTATION_DIST)/frtb-cva/results.txt
+	cat $(MUTATION_DIST)/frtb-cva/results.txt
+
+mutation-sbm:
+	mkdir -p $(MUTATION_DIST)/frtb-sbm
+	HYPOTHESIS_PROFILE=dev uv run --directory packages/frtb-sbm python -c "import numpy; import sys; from mutmut.__main__ import cli; sys.argv = ['mutmut', 'run']; cli()"
+	uv run --directory packages/frtb-sbm mutmut export-cicd-stats
+	cp packages/frtb-sbm/mutants/mutmut-cicd-stats.json $(MUTATION_DIST)/frtb-sbm/mutmut-cicd-stats.json
+	uv run --directory packages/frtb-sbm mutmut results > $(MUTATION_DIST)/frtb-sbm/results.txt
+	cat $(MUTATION_DIST)/frtb-sbm/results.txt
 
 mutation-score-check:
 	uv run python scripts/ci/check_mutation_score.py --json-output $(MUTATION_DIST)/mutation-score.json
