@@ -6,6 +6,8 @@ from datetime import date
 
 import pytest
 from frtb_common import (
+    CalculationScope,
+    CalculationScopeLevel,
     ComponentCapitalSummary,
     ComponentSummaryError,
     StandardisedComponent,
@@ -42,6 +44,13 @@ def test_valid_handoff_round_trips_fields() -> None:
     assert handoff.citations == ("MAR21.4",)
 
 
+def test_handoff_preserves_calculation_scope_evidence() -> None:
+    scope = CalculationScope(level=CalculationScopeLevel.DESK, desk_id="desk-001")
+    handoff = _handoff(calculation_scope=scope)
+
+    assert handoff.calculation_scope is scope
+
+
 def test_component_must_be_enum() -> None:
     with pytest.raises(ComponentSummaryError, match="component must be a StandardisedComponent"):
         _handoff(component="SBM")
@@ -72,3 +81,8 @@ def test_counts_reject_negative(field: str) -> None:
 def test_citations_must_be_text_tuple() -> None:
     with pytest.raises(ComponentSummaryError, match="citations must be a tuple of text values"):
         _handoff(citations=("ok", 5))
+
+
+def test_calculation_scope_must_be_scope_when_supplied() -> None:
+    with pytest.raises(ComponentSummaryError, match="calculation_scope must be a CalculationScope"):
+        _handoff(calculation_scope="desk-001")

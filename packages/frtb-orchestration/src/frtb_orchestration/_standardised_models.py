@@ -6,7 +6,7 @@ import math
 from dataclasses import dataclass
 from datetime import date
 
-from frtb_common import ComponentCapitalSummary, StandardisedComponent
+from frtb_common import CalculationScope, ComponentCapitalSummary, StandardisedComponent
 
 from frtb_orchestration._validation import OrchestrationInputError
 from frtb_orchestration._validation import require_non_empty_text as _require_non_empty_text
@@ -52,6 +52,7 @@ class StandardisedComponentSubtotal:
     line_count: int
     excluded_line_count: int
     subtotal_count: int
+    calculation_scope: CalculationScope | None = None
 
     def __post_init__(self) -> None:
         if not isinstance(self.component, StandardisedComponent):
@@ -72,6 +73,13 @@ class StandardisedComponentSubtotal:
         _require_non_negative_int(self.line_count, "line_count")
         _require_non_negative_int(self.excluded_line_count, "excluded_line_count")
         _require_non_negative_int(self.subtotal_count, "subtotal_count")
+        if self.calculation_scope is not None and not isinstance(
+            self.calculation_scope, CalculationScope
+        ):
+            raise OrchestrationInputError(
+                "calculation_scope must be a CalculationScope when supplied",
+                field="calculation_scope",
+            )
 
     @classmethod
     def from_summary(cls, summary: ComponentCapitalSummary) -> StandardisedComponentSubtotal:
@@ -99,6 +107,7 @@ class StandardisedComponentSubtotal:
             line_count=summary.line_count,
             excluded_line_count=summary.excluded_line_count,
             subtotal_count=summary.subtotal_count,
+            calculation_scope=summary.calculation_scope,
         )
 
     def as_dict(self) -> dict[str, object]:
@@ -110,7 +119,7 @@ class StandardisedComponentSubtotal:
             Result of the operation.
         """
 
-        return {
+        payload: dict[str, object] = {
             "component": self.component.value,
             "package_name": self.package_name,
             "run_id": self.run_id,
@@ -122,6 +131,9 @@ class StandardisedComponentSubtotal:
             "excluded_line_count": self.excluded_line_count,
             "subtotal_count": self.subtotal_count,
         }
+        if self.calculation_scope is not None:
+            payload["calculation_scope"] = self.calculation_scope.as_dict()
+        return payload
 
 
 @dataclass(frozen=True)

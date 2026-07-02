@@ -2,10 +2,10 @@
   "calculation_date": "2026-05-30",
   "files": {
     "expected_outputs.json": {
-      "sha256": "2dca57b62651fbf26aad0f62e7bc11cbec5f6f2463f6e12fbdcce9a069bd5295"
+      "sha256": "df23e4703404cc60826f9e23c85cfb3ad8c9cdb1e35e1a137cd88d707fcb3fcf"
     },
     "invalid_cases.json": {
-      "sha256": "46b76a0a29abaf3977c74929748c187cad5dbfce9addca834ff97e4ee94360f0"
+      "sha256": "d17870f4201f309d4020b4127c24198d7dc4c853eb733894ebb881708d6b0556"
     },
     "sensitivities.json": {
       "sha256": "85360b6bb51783711e8d7cc815d525148f759ef3c86735c6a7c6c42586b1a693"

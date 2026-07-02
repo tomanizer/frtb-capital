@@ -18,6 +18,8 @@ from dataclasses import dataclass
 from datetime import date
 from enum import StrEnum
 
+from frtb_common.scope import CalculationScope
+
 __all__ = [
     "ComponentCapitalSummary",
     "ComponentSummaryError",
@@ -53,6 +55,8 @@ class ComponentCapitalSummary:
     - ``excluded_line_count`` — input lines rejected or excluded from capital.
     - ``subtotal_count`` — aggregated subtotals (risk classes / categories /
       residual-risk subtotals) carried in the owning package's result.
+    - ``calculation_scope`` — optional organisational scope evidence for
+      route-aware aggregation, such as SA fallback from a non-IMA desk.
     """
 
     component: StandardisedComponent
@@ -69,6 +73,7 @@ class ComponentCapitalSummary:
     subtotal_count: int
     citations: tuple[str, ...]
     warnings: tuple[str, ...] = ()
+    calculation_scope: CalculationScope | None = None
 
     def __post_init__(self) -> None:
         if not isinstance(self.component, StandardisedComponent):
@@ -91,6 +96,13 @@ class ComponentCapitalSummary:
         _require_non_negative_int(self.subtotal_count, "subtotal_count")
         _require_text_tuple(self.citations, "citations")
         _require_text_tuple(self.warnings, "warnings")
+        if self.calculation_scope is not None and not isinstance(
+            self.calculation_scope, CalculationScope
+        ):
+            raise ComponentSummaryError(
+                "calculation_scope must be a CalculationScope when supplied",
+                field="calculation_scope",
+            )
 
 
 def _require_non_empty_text(value: object, field: str) -> None:

@@ -50,7 +50,10 @@ warnings, and any IMA fallback desk routes.
 The same component stack is also the fallback route when a desk is not
 IMA-eligible. The component packages own their own calculations and audit
 records; orchestration owns routing, aggregation, and cross-component
-reconciliation.
+reconciliation. When fallback routes are supplied, every component summary must
+carry matching `CalculationScope` evidence. A single desk fallback may use a
+`DESK` scope. Multi-desk or aggregate fallback evidence must use a broader
+scope with `metadata["fallback_desk_ids"]` listing the routed desk IDs.
 
 ## Implementation Boundaries
 
@@ -82,6 +85,8 @@ Current delivery should keep the component boundaries visible:
    through package-owned `to_component_summary` adapters.
 4. Let `frtb-orchestration` consume only those neutral handoffs when composing
    SA capital and routing IMA fallback.
+5. Treat IMA fallback desk routing as fail-closed unless the SBM, DRC, and RRAO
+   summaries preserve identical scope evidence covering the fallback desks.
 
 Rule-profile semantics, sign conventions, audit-record schemas, calendars, and
 regulatory parameters remain in the owning package until a separate

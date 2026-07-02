@@ -3,5 +3,6 @@
   "description": "Synthetic CSR non-securitisation delta replay bundle for MAR21.51-MAR21.57.",
   "profile_id": "BASEL_MAR21",
   "risk_class": "CSR_NONSEC",
-  "risk_measure": "DELTA"
+  "risk_measure": "DELTA",
+  "total_capital": 212390.49766879872
 }

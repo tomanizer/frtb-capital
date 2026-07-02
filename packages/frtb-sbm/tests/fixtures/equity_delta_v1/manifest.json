@@ -5,10 +5,10 @@
       "sha256": "119fb059c3fea230936870bc0268db9ecb3cb68eee39c3a3c875a1af681a83ea"
     },
     "expected_outputs.json": {
-      "sha256": "51d165fd2647b5e2ff7bc95aeaf1d09e1eef868839052f849a5e87642821c80e"
+      "sha256": "dd12509574602562fdb55bfa201c424b47991b28e05d24258853884f5dbc47c5"
     },
     "invalid_cases.json": {
-      "sha256": "d275b4071168c3e5e5e6f0f952bd83aaa6fc8b1f10bf5d33e40dee83237bacdf"
+      "sha256": "1e57a7f9cd0d09f7ac35aa070f74b183d92529aa94d8b02bf9e2ab26089b4f64"
     }
   },
   "profile": "BASEL_MAR21",

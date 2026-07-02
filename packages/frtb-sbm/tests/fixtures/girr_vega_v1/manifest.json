@@ -2,7 +2,7 @@
   "calculation_date": "2026-05-30",
   "files": {
     "expected_outputs.json": {
-      "sha256": "a919a8f64a580f595c3148393b3acd7c326f2a42f9fb06bd44bffb2468540260"
+      "sha256": "5668c7b05dd4054a3319c3421bc23c8ec810ded73f5fe775e88c4e5cf5ee0ea9"
     },
     "invalid_cases.json": {
       "sha256": "97ab07d2c1e27c8ddc93dda4db50b55d5931886ed54ed181baba330754985ffd"
@@ -14,5 +14,5 @@
   "profile": "BASEL_MAR21",
   "schema_version": "girr_vega_fixture_v1",
   "sensitivity_count": 2,
-  "total_capital": 542433.1534659342
+  "total_capital": 547722.5575051662
 }

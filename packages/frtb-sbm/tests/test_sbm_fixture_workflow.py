@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import importlib.util
 import json
 from pathlib import Path
@@ -15,6 +16,7 @@ from frtb_sbm import (
 )
 
 FIXTURE_DIR = Path(__file__).parent / "fixtures" / "girr_delta_v1"
+FIXTURE_ROOT = Path(__file__).parent / "fixtures"
 _RISK_CLASS_KEYS = ("risk_class", "risk_measure", "selected_capital", "selected_scenario")
 _BUCKET_KEYS = ("bucket_id", "kb", "sb")
 _WEIGHTED_KEYS = ("sensitivity_id", "risk_weight", "scaled_amount")
@@ -40,6 +42,30 @@ def load_non_girr_vega_fixture_module() -> ModuleType:
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
+
+
+@pytest.mark.parametrize(
+    "manifest_path",
+    sorted(FIXTURE_ROOT.glob("*/manifest.json")),
+    ids=lambda path: path.parent.name,
+)
+def test_sbm_fixture_manifests_match_files_and_expected_totals(manifest_path: Path) -> None:
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    fixture_dir = manifest_path.parent
+
+    files = manifest.get("files")
+    if files is not None:
+        assert isinstance(files, dict)
+        for filename, metadata in files.items():
+            assert isinstance(filename, str) and filename
+            assert isinstance(metadata, dict)
+            assert metadata.get("sha256") == _sha256(fixture_dir / filename)
+
+    expected_path = fixture_dir / "expected_outputs.json"
+    if expected_path.exists():
+        expected = json.loads(expected_path.read_text(encoding="utf-8"))
+        if "total_capital" in expected:
+            assert manifest.get("total_capital") == pytest.approx(expected["total_capital"])
 
 
 def test_girr_delta_v1_fixture_matches_expected_outputs() -> None:
@@ -259,3 +285,7 @@ def test_girr_delta_v1_invalid_fixture_cases_fail(
 def _select(payload: object, keys: tuple[str, ...]) -> dict[str, object]:
     assert isinstance(payload, dict)
     return {key: payload[key] for key in keys}
+
+
+def _sha256(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
