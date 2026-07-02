@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import cast
 
 from frtb_result_store._io_catalog import StoreCatalogMixin
+from frtb_result_store._io_desk_eligibility_queries import StoreDeskEligibilityQueryMixin
 from frtb_result_store._io_manifest import StoreManifestMixin
 from frtb_result_store._io_query import StoreQueryMixin
 from frtb_result_store._io_rfet_nmrf_ses_queries import StoreRiskFactorEvidenceQueryMixin
@@ -36,6 +37,7 @@ class DuckDbParquetResultStore(
     StoreManifestMixin,
     StoreCatalogMixin,
     StoreRiskFactorEvidenceQueryMixin,
+    StoreDeskEligibilityQueryMixin,
 ):
     """Append-only Parquet store queried through DuckDB.
 

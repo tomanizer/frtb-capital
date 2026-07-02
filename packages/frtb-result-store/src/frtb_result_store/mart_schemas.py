@@ -7,7 +7,7 @@ from frtb_common.hashing import stable_json_hash
 
 __all__ = ["MART_NAMES", "MART_SCHEMAS", "mart_schema_fingerprint"]
 
-MART_SCHEMA_VERSION = 5
+MART_SCHEMA_VERSION = 6
 MART_NAMES = (
     "capital_summary",
     "capital_tree",
@@ -23,6 +23,7 @@ MART_NAMES = (
     "cva_counterparty_contributors",
     "rrao_exposure_summary",
     "rfet_nmrf_ses_evidence",
+    "desk_eligibility",
 )
 MART_SCHEMAS: dict[str, pa.Schema] = {
     "capital_summary": pa.schema(
@@ -245,6 +246,42 @@ MART_SCHEMAS: dict[str, pa.Schema] = {
             ("legal_entity_id", pa.string()),
             ("usage_count", pa.int64()),
             ("source_artifact_id", pa.string()),
+            ("metadata_json", pa.string()),
+        ]
+    ),
+    "desk_eligibility": pa.schema(
+        [
+            ("run_id", pa.string()),
+            ("desk_id", pa.string()),
+            ("desk_node_id", pa.string()),
+            ("label", pa.string()),
+            ("legal_entity_id", pa.string()),
+            ("division_id", pa.string()),
+            ("business_line_id", pa.string()),
+            ("volcker_desk_id", pa.string()),
+            ("book_ids_json", pa.string()),
+            ("eligibility_state", pa.string()),
+            ("pla_state", pa.string()),
+            ("pla_threshold_profile_id", pa.string()),
+            ("pla_metric_summary_json", pa.string()),
+            ("backtesting_state", pa.string()),
+            ("backtesting_zone", pa.string()),
+            ("backtesting_exception_count", pa.int64()),
+            ("backtesting_window", pa.string()),
+            ("latest_exception_date", pa.string()),
+            ("rfet_modellable_count", pa.int64()),
+            ("nmrf_count", pa.int64()),
+            ("ses_amount", pa.float64()),
+            ("capital_consequence_amount", pa.float64()),
+            ("capital_consequence_currency", pa.string()),
+            ("capital_node_id", pa.string()),
+            ("pnl_artifact_id", pa.string()),
+            ("rfet_artifact_id", pa.string()),
+            ("source_artifact_id", pa.string()),
+            ("model_run_id", pa.string()),
+            ("profile_hash", pa.string()),
+            ("source_hashes_json", pa.string()),
+            ("calculation_timestamp", pa.string()),
             ("metadata_json", pa.string()),
         ]
     ),

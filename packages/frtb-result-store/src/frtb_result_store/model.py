@@ -7,6 +7,12 @@ shape, large-artifact references, and attribution-ready records.
 
 from __future__ import annotations
 
+from frtb_result_store._model_desk_eligibility import (
+    BacktestingState,
+    DeskEligibilityRow,
+    DeskEligibilityState,
+    PLAState,
+)
 from frtb_result_store._model_risk_factor_evidence import (
     ModellabilityState,
     NMRFSESBridge,
@@ -104,6 +110,7 @@ __all__ = [
     "ArtifactAvailabilityStatus",
     "ArtifactRef",
     "ArtifactType",
+    "BacktestingState",
     "CalculationRun",
     "CapitalAttributionRecord",
     "CapitalEdge",
@@ -114,6 +121,8 @@ __all__ = [
     "CapitalSummaryRow",
     "CapitalTreeMartRow",
     "ComponentBreakdownRow",
+    "DeskEligibilityRow",
+    "DeskEligibilityState",
     "EdgeType",
     "FrtbComponent",
     "HierarchyDefinition",
@@ -137,6 +146,7 @@ __all__ = [
     "OrgQueryStatus",
     "OrgSliceKeys",
     "OrgSourceRowPage",
+    "PLAState",
     "RFETObservationEvidence",
     "ResultBundle",
     "ResultEvent",
