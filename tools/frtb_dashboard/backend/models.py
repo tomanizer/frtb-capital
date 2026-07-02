@@ -13,6 +13,7 @@ class RunSummary(BaseModel):
     calculation_date: str
     profile_id: str
     base_currency: str
+    source: str = "demo"
     jurisdiction_family: str | None = None
     components: list[str]
     input_hash: str | None = None
@@ -109,6 +110,8 @@ class DimensionNodeView(BaseModel):
 
 class MetadataView(BaseModel):
     run_id: str
+    source: str = "demo"
+    data_state: str = "fixture"
     dimensions: list[DimensionNodeView]
     reporting_dates: list[str]
     baseline_dates: list[str] = Field(default_factory=list)
@@ -156,6 +159,7 @@ class GridRowView(BaseModel):
 
 class GridView(BaseModel):
     run_id: str
+    source: str = "demo"
     framework: str
     grouping: str
     scenario: str

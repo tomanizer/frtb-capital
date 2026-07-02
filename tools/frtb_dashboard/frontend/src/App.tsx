@@ -1,12 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, KeyboardEvent, ReactNode } from "react";
-import { formatMoney, getGrid, getInspector, getMetadata, getRun } from "./api";
-import type { AttributionRow, AuditRow, Diagnostic, DimensionNode, GridColumn, GridRow, GridView, InspectorView, MetadataView, RunOverview } from "./types";
+import { formatMoney, getGrid, getInspector, getMetadata, getRun, listRuns } from "./api";
+import type { AttributionRow, AuditRow, Diagnostic, DimensionNode, GridColumn, GridRow, GridView, InspectorView, MetadataView, RunOverview, RunSummary } from "./types";
 
 type Framework = "SA" | "IMA" | "CVA";
 type Scenario = "Binding" | "Base" | "High" | "Low";
+type Source = "demo" | "result-store";
 
 const RUN_ID = "demo-suite-001";
+const SOURCES: Source[] = ["demo", "result-store"];
 const FRAMEWORKS: Framework[] = ["SA", "IMA", "CVA"];
 const SCENARIOS: Scenario[] = ["Binding", "Base", "High", "Low"];
 const INITIAL_EXPANDED = ["sa", "sa-sbm", "sa-drc", "sa-rrao", "ima", "ima-desk-rates-desk"];
@@ -90,6 +92,9 @@ function App() {
   const [metadata, setMetadata] = useState<MetadataView | null>(null);
   const [grid, setGrid] = useState<GridView | null>(null);
   const [inspector, setInspector] = useState<InspectorView | null>(null);
+  const [source, setSource] = useState<Source>("demo");
+  const [runs, setRuns] = useState<RunSummary[]>([]);
+  const [runId, setRunId] = useState<string>(RUN_ID);
   const [framework, setFramework] = useState<Framework>("SA");
   const [scenario, setScenario] = useState<Scenario>("Binding");
   const [selectedNodeId, setSelectedNodeId] = useState<string>(DEFAULT_NODE_ID);
@@ -101,10 +106,38 @@ function App() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!runId) return;
     let active = true;
     const controller = new AbortController();
-    const runKey = `run:${RUN_ID}:${selectedNodeId}`;
-    const metadataKey = `metadata:${RUN_ID}`;
+    setLoadingZone("runs");
+    listRuns(source, controller.signal)
+      .then((payload) => {
+        if (!active) return;
+        setRuns(payload);
+        setRunId((current) => payload.some((run) => run.run_id === current) ? current : payload[0]?.run_id ?? RUN_ID);
+        setError(null);
+        setLoadingZone(null);
+      })
+      .catch((fetchError: unknown) => {
+        if (!active) return;
+        if (!isAbort(fetchError)) {
+          setRuns([]);
+          setError(String(fetchError));
+          setLoadingZone(null);
+        }
+      });
+    return () => {
+      active = false;
+      controller.abort();
+    };
+  }, [source]);
+
+  useEffect(() => {
+    if (!runId) return;
+    let active = true;
+    const controller = new AbortController();
+    const runKey = `run:${source}:${runId}:${selectedNodeId}`;
+    const metadataKey = `metadata:${source}:${runId}`;
     const cachedRun = cacheGet<RunOverview>(cache.current, runKey);
     const cachedMetadata = cacheGet<MetadataView>(cache.current, metadataKey);
     if (cachedRun && cachedMetadata) {
@@ -119,8 +152,8 @@ function App() {
     }
     setLoadingZone("run");
     Promise.all([
-      getRun(RUN_ID, selectedNodeId, controller.signal),
-      getMetadata(RUN_ID, controller.signal),
+      getRun(source, runId, selectedNodeId, controller.signal),
+      getMetadata(source, runId, controller.signal),
     ])
       .then(([runPayload, metadataPayload]) => {
         if (!active) return;
@@ -142,12 +175,12 @@ function App() {
       active = false;
       controller.abort();
     };
-  }, [cache, selectedNodeId]);
+  }, [cache, runId, selectedNodeId, source]);
 
   useEffect(() => {
     let active = true;
     const controller = new AbortController();
-    const key = `grid:${RUN_ID}:${selectedNodeId}:${framework}:${scenario}`;
+    const key = `grid:${source}:${runId}:${selectedNodeId}:${framework}:${scenario}`;
     const cachedGrid = cacheGet<GridView>(cache.current, key);
     if (cachedGrid) {
       setGrid(cachedGrid);
@@ -160,7 +193,7 @@ function App() {
       };
     }
     setLoadingZone("grid");
-    getGrid(RUN_ID, framework, scenario, selectedNodeId, controller.signal)
+    getGrid(source, runId, framework, scenario, selectedNodeId, controller.signal)
       .then((payload) => {
         if (!active) return;
         cache.current.set(key, payload);
@@ -181,13 +214,13 @@ function App() {
       active = false;
       controller.abort();
     };
-  }, [cache, framework, scenario, selectedNodeId]);
+  }, [cache, framework, runId, scenario, selectedNodeId, source]);
 
   useEffect(() => {
-    if (!selectedRowId) return;
+    if (!runId || !selectedRowId) return;
     let active = true;
     const controller = new AbortController();
-    const key = `inspector:${RUN_ID}:${selectedNodeId}:${scenario}:${selectedRowId}`;
+    const key = `inspector:${source}:${runId}:${selectedNodeId}:${scenario}:${selectedRowId}`;
     const cachedInspector = cacheGet<InspectorView>(cache.current, key);
     if (cachedInspector) {
       setInspector(cachedInspector);
@@ -201,7 +234,7 @@ function App() {
     }
     setInspector(null);
     setLoadingZone("inspector");
-    getInspector(RUN_ID, selectedRowId, scenario, selectedNodeId, controller.signal)
+    getInspector(source, runId, selectedRowId, scenario, selectedNodeId, controller.signal)
       .then((payload) => {
         if (!active) return;
         cache.current.set(key, payload);
@@ -221,7 +254,7 @@ function App() {
       active = false;
       controller.abort();
     };
-  }, [cache, scenario, selectedNodeId, selectedRowId]);
+  }, [cache, runId, scenario, selectedNodeId, selectedRowId, source]);
 
   const childMap = useMemo(() => childrenByParent(grid?.rows ?? []), [grid]);
   const rows = useMemo(() => visibleRows(grid?.rows ?? [], expanded, query), [expanded, grid, query]);
@@ -231,6 +264,17 @@ function App() {
   function selectFramework(next: Framework) {
     setFramework(next);
     if (next !== "SA") setScenario("Binding");
+  }
+
+  function selectSource(next: Source) {
+    setSource(next);
+    setRunId("");
+    setSelectedNodeId(DEFAULT_NODE_ID);
+    setSelectedRowId(next === "demo" ? "sa" : "");
+    setOverview(null);
+    setMetadata(null);
+    setGrid(null);
+    setInspector(null);
   }
 
   function toggleExpanded(rowId: string) {
@@ -279,7 +323,17 @@ function App() {
 
   return (
     <main className="navigator-shell">
-      <CommandRibbon overview={overview} loadingZone={loadingZone} />
+      <CommandRibbon
+        overview={overview}
+        loadingZone={loadingZone}
+        source={source}
+        sources={SOURCES}
+        runs={runs}
+        runId={runId}
+        baselineCount={metadata?.baseline_dates.length ?? 0}
+        onSource={selectSource}
+        onRun={setRunId}
+      />
       <ContextBar
         framework={framework}
         scenario={scenario}
@@ -369,21 +423,47 @@ function App() {
   );
 }
 
-function CommandRibbon({ overview, loadingZone }: { overview: RunOverview | null; loadingZone: string | null }) {
+function CommandRibbon({
+  overview,
+  loadingZone,
+  source,
+  sources,
+  runs,
+  runId,
+  baselineCount,
+  onSource,
+  onRun,
+}: {
+  overview: RunOverview | null;
+  loadingZone: string | null;
+  source: Source;
+  sources: Source[];
+  runs: RunSummary[];
+  runId: string;
+  baselineCount: number;
+  onSource: (source: Source) => void;
+  onRun: (runId: string) => void;
+}) {
   const currency = overview?.currency ?? "USD";
   return (
     <header className="command-ribbon">
       <div className="ribbon-left">
         <label>
+          <span>Source</span>
+          <select value={source} aria-label="Source selector" onChange={(event) => onSource(event.target.value as Source)}>
+            {sources.map((item) => <option key={item} value={item}>{item === "result-store" ? "result-store fixture" : "demo fixture"}</option>)}
+          </select>
+        </label>
+        <label>
           <span>Run</span>
-          <select value={overview?.run.run_id ?? RUN_ID} aria-label="Run selector" disabled>
-            <option>{overview?.run.label ?? RUN_ID}</option>
+          <select value={runId} aria-label="Run selector" onChange={(event) => onRun(event.target.value)} disabled={runs.length <= 1}>
+            {runs.length ? runs.map((run) => <option key={run.run_id} value={run.run_id}>{run.label}</option>) : <option>{overview?.run.label ?? RUN_ID}</option>}
           </select>
         </label>
         <label>
           <span>Baseline</span>
           <select value="none" aria-label="Baseline selector" disabled>
-            <option>No baseline run</option>
+            <option>{baselineCount > 0 ? `${baselineCount} candidates` : "No baseline run"}</option>
           </select>
         </label>
       </div>
