@@ -15,7 +15,7 @@ capital.
 | Identity | `PACKAGE_METADATA`, `__version__` | Workspace discovery and maturity reporting. |
 | Suite capital | `calculate_suite_capital`, `SuiteCapitalResult`, `SuiteAttributionResult`, `SuiteAttributionReport`, `SuiteAttributionComponentReport`, `SuiteAttributionSummary`, `SuiteAttributionRecordSummary`, `SuiteAttributionGroupSummary`, `aggregate_suite_attribution`, `build_suite_attribution_report`, `summarise_suite_attribution`, `top_suite_attribution_contributors`, `suite_attribution_residual_records`, `suite_attribution_unsupported_records` | Top-of-house additive `IMA + SA + CVA` aggregation and attribution-ready branch reporting. |
 | Scope capital views | `compose_scope_capital_view`, `ScopeCapitalView`, `ScopeComponentCapital`, `BindingCapitalResult`, `BindingCapitalSide`, `ScopeViewStatus` | Composes result-store-resolved scope totals into SA, IMA, CVA, output-floor binding, and dashboard-ready no-data/unsupported states. |
-| Artifact evidence | `ArtifactEvidenceRef`, `ArtifactEvidenceKind`, `ArtifactEvidenceStatus`, `SuiteEvidenceComponent`, `SuiteArtifactEvidenceView`, `ComponentArtifactEvidence`, `build_suite_artifact_evidence_view` | Component-grouped read model for resolved time-series, shock, scenario-vector, and surface artifact IDs. |
+| Artifact evidence | `ArtifactEvidenceRef`, `ArtifactEvidenceKind`, `ArtifactEvidenceStatus`, `SuiteEvidenceComponent`, `SuiteArtifactEvidenceView`, `ComponentArtifactEvidence`, `SbmShockEvidence`, `ImaScenarioEvidence`, `TimelineEvidence`, `SurfaceEvidence`, `build_suite_artifact_evidence_view`, `build_resolved_artifact_evidence_view`, `build_sbm_shock_evidence_refs`, `build_ima_scenario_evidence_refs`, `build_timeline_evidence_refs`, `build_surface_evidence_refs` | Component-grouped read model and resolved-metadata builders for time-series, shock, scenario-vector, and surface artifact IDs. |
 | SA composition | `compose_standardised_approach_capital`, `StandardisedApproachCapitalResult`, `StandardisedComponentSubtotal`, `StandardisedFallbackRoute`, `ComponentCapitalSummary`, `StandardisedComponent` | Composes SBM, DRC, and RRAO public component summaries into Standardised Approach capital. |
 | IMA handoff | `ImaCapitalSummary`, `recognise_ima_summary` | Direct or duck-typed summary handoff from IMA audit-log-shaped outputs. |
 | CVA handoff | `CvaCapitalSummary`, `recognise_cva_summary` | Direct or duck-typed summary handoff from public CVA capital results. |
@@ -86,6 +86,14 @@ scenario-vector, time-series, shock, and surface provenance beside suite
 capital. It preserves explicit `NO_DATA` and `UNSUPPORTED` states, and its
 payload includes component-level and suite-level `status_counts` so dashboards
 can render availability badges without querying artifact payloads.
+
+`build_resolved_artifact_evidence_view` is a convenience layer over the same
+view contract. It converts `SbmShockEvidence`, `ImaScenarioEvidence`,
+`TimelineEvidence`, and `SurfaceEvidence` records into deterministic
+`ArtifactEvidenceRef` rows. Use it when the component or result-store layer has
+already resolved shock IDs, scenario cube/vector IDs, RFET or PLA timeline IDs,
+or surface/surface-point IDs and orchestration only needs to compose the
+suite-level evidence view.
 
 Orchestration does not fetch artifact payloads, query `frtb-result-store`,
 source market data, construct shock definitions, or infer surface axes. Component

@@ -28,6 +28,9 @@ packages. It owns the cross-component boundary and implements:
 - Attribution-ready branch metadata and fallback counts are preserved through
   component summaries so unsupported or residual branches remain explainable
   after suite aggregation.
+- Scenario, shock, timeline, and surface evidence views over already resolved
+  artifact IDs, with explicit no-data/unsupported states and no result-store
+  lookup inside orchestration.
 
 ## Suite Flow
 
@@ -172,6 +175,21 @@ lineage refs, and attribution records. Orchestration does not write storage
 artifacts directly; callers hand completed suite results to
 `frtb-result-store` adapters after component calculations finish.
 
+### Artifact evidence views
+
+`build_resolved_artifact_evidence_view` accepts resolved metadata records such
+as `SbmShockEvidence`, `ImaScenarioEvidence`, `TimelineEvidence`, and
+`SurfaceEvidence` and returns a `SuiteArtifactEvidenceView`. The view groups
+artifact IDs by suite component, preserves lineage partition values such as
+risk-factor ID, source row ID, mapping version, scenario set ID, shock
+direction, and surface axes, and emits explicit `NO_DATA` or `UNSUPPORTED`
+records where fixture data is unavailable.
+
+Orchestration composes these view rows only. It does not fetch result-store
+artifacts, read artifact files, generate shocks, interpolate surfaces, or infer
+regulatory metadata; those responsibilities remain with component packages,
+`frtb-result-store`, and API/UI layers.
+
 See the result-store demo
 [`packages/frtb-result-store/examples/run_demo.py`](../../../packages/frtb-result-store/examples/run_demo.py)
 for a runnable synthetic `ResultBundle` write/read pattern after suite capital
@@ -185,6 +203,8 @@ has been calculated.
 - End-to-end fixture covers: IMA-eligible path, SA fallback route, SBM + DRC +
   RRAO subtotals, CVA component, deterministic total reconciliation, and stable
   expected-output hash across two independent runs.
+- Artifact evidence tests cover resolved SBM shock IDs, IMA scenario
+  cube/vector IDs, RFET timeline IDs, surface IDs, and explicit no-data states.
 - `SuiteCapitalResult.__post_init__` enforces `total_capital == ima + sa + cva`
   to within `rel_tol=1e-12`.
 - `make notebooks-check` smoke-tests the orchestration suite aggregation

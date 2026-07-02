@@ -13,11 +13,17 @@ from frtb_orchestration import (
     ArtifactEvidenceStatus,
     CvaCapitalSummary,
     ImaCapitalSummary,
+    ImaScenarioEvidence,
     OrchestrationInputError,
+    SbmShockEvidence,
     StandardisedApproachCapitalResult,
     StandardisedComponentSubtotal,
+    SuiteArtifactEvidenceView,
     SuiteCapitalResult,
     SuiteEvidenceComponent,
+    SurfaceEvidence,
+    TimelineEvidence,
+    build_resolved_artifact_evidence_view,
     build_suite_artifact_evidence_view,
 )
 
@@ -183,6 +189,124 @@ def test_suite_artifact_evidence_preserves_explicit_no_data_state() -> None:
     )
 
 
+def test_resolved_artifact_evidence_builder_composes_resolved_artifact_refs() -> None:
+    view = _resolved_artifact_view()
+
+    payload = view.as_dict()
+    components = {component["component"]: component for component in payload["components"]}
+    ima_refs = components["IMA"]["refs"]
+    sbm_refs = components["SBM"]["refs"]
+
+    assert payload["status_counts"] == {"AVAILABLE": 8, "NO_DATA": 1, "UNSUPPORTED": 0}
+    assert {ref["artifact_id"] for ref in ima_refs if ref["status"] == "AVAILABLE"} == {
+        "scenario-cube-ima-run-1",
+        "scenario-vector-0001",
+        "scenario-vector-0002",
+        "ts-rfet-usd-swap-5y",
+    }
+    assert any(
+        ref["status"] == "NO_DATA" and ref["reason"] == "fixture does not include UPL observations"
+        for ref in ima_refs
+    )
+    shock_refs = [ref for ref in sbm_refs if ref["kind"] == "SHOCK"]
+    assert [ref["partition_values"]["shock_direction"] for ref in shock_refs] == [
+        "DOWN",
+        "UP",
+    ]
+    assert shock_refs[0]["partition_values"]["source_row_id"] == "sbm-row-1"
+    surface_ref = next(ref for ref in sbm_refs if ref["artifact_id"] == "surface-sbm-girr-vega")
+    assert surface_ref["partition_values"]["axis_1"] == "option_tenor"
+    assert surface_ref["partition_values"]["surface_point_count"] == "1"
+
+
+def _resolved_artifact_view() -> SuiteArtifactEvidenceView:
+    return build_resolved_artifact_evidence_view(
+        _suite_result(),
+        sbm_shocks=_resolved_sbm_shocks(),
+        ima_scenarios=_resolved_ima_scenarios(),
+        timelines=_resolved_timelines(),
+        surfaces=_resolved_surfaces(),
+    )
+
+
+def _resolved_sbm_shocks() -> tuple[SbmShockEvidence, ...]:
+    return (
+        SbmShockEvidence(
+            shock_id="shock-sbm-girr-up",
+            direction="UP",
+            risk_class="GIRR",
+            risk_measure="CURVATURE",
+            bucket_id="USD",
+            risk_factor_id="rf:girr:usd:5y",
+            source_row_id="sbm-row-1",
+            mapping_version="map-v1",
+        ),
+        SbmShockEvidence(
+            shock_id="shock-sbm-girr-down",
+            direction="DOWN",
+            risk_class="GIRR",
+            risk_measure="CURVATURE",
+            bucket_id="USD",
+            risk_factor_id="rf:girr:usd:5y",
+            source_row_id="sbm-row-1",
+            mapping_version="map-v1",
+        ),
+    )
+
+
+def _resolved_ima_scenarios() -> tuple[ImaScenarioEvidence, ...]:
+    return (
+        ImaScenarioEvidence(
+            scenario_cube_id="scenario-cube-ima-run-1",
+            scenario_set_id="scenario-set-stress-2026",
+            scenario_vector_ids=("scenario-vector-0001", "scenario-vector-0002"),
+            source_row_id="scenario-row-1",
+            mapping_version="map-v1",
+        ),
+    )
+
+
+def _resolved_timelines() -> tuple[TimelineEvidence, ...]:
+    return (
+        TimelineEvidence(
+            component=SuiteEvidenceComponent.IMA,
+            role="rfet_observations",
+            time_series_id="ts-rfet-usd-swap-5y",
+            risk_factor_id="rf:girr:usd:5y",
+            source_component="frtb-ima",
+            source_field="RFETEvidence.observation_time_series_id",
+            source_row_id="rfet-row-1",
+            mapping_version="map-v1",
+        ),
+        TimelineEvidence(
+            component=SuiteEvidenceComponent.IMA,
+            role="upl",
+            status=ArtifactEvidenceStatus.NO_DATA,
+            reason="fixture does not include UPL observations",
+            source_component="frtb-ima",
+            source_field="PlaPolicyAssessmentResult.upl_time_series_id",
+        ),
+    )
+
+
+def _resolved_surfaces() -> tuple[SurfaceEvidence, ...]:
+    return (
+        SurfaceEvidence(
+            component=SuiteEvidenceComponent.SBM,
+            role="sbm_girr_vega_surface",
+            surface_id="surface-sbm-girr-vega",
+            source_component="frtb-sbm",
+            source_field="SbmSensitivity.surface_id",
+            surface_point_ids=("surface-point-5y-1y",),
+            risk_factor_id="rf:girr:usd:5y",
+            source_row_id="sbm-vega-row-1",
+            mapping_version="map-v1",
+            axis_1="option_tenor",
+            axis_2="underlying_tenor",
+        ),
+    )
+
+
 def test_suite_artifact_evidence_rejects_duplicate_component_kind_role() -> None:
     ref = ArtifactEvidenceRef(
         component=SuiteEvidenceComponent.IMA,
@@ -250,4 +374,15 @@ def test_suite_artifact_evidence_requires_no_data_reason() -> None:
             kind=ArtifactEvidenceKind.TIME_SERIES,
             role="upl",
             status=ArtifactEvidenceStatus.NO_DATA,
+        )
+
+
+def test_resolved_artifact_evidence_inputs_fail_closed_for_invalid_metadata() -> None:
+    with pytest.raises(OrchestrationInputError, match="time_series_id"):
+        TimelineEvidence(component=SuiteEvidenceComponent.IMA, role="rfet_observations")
+
+    with pytest.raises(OrchestrationInputError, match="scenario_vector_ids"):
+        ImaScenarioEvidence(
+            scenario_cube_id="scenario-cube-ima-run-1",
+            scenario_vector_ids=("scenario-vector-0001", "scenario-vector-0001"),
         )

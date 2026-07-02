@@ -34,6 +34,10 @@ Outputs are prototype engineering evidence, not final regulatory capital.
   already resolved by the result store: SA remains `SBM + DRC + RRAO`, CVA and
   IMA carry explicit `OK`/`NO_DATA`/`UNSUPPORTED` states, and output-floor
   binding is reported as `IMA`, `SA_FLOOR`, or `NO_DATA`.
+- `build_resolved_artifact_evidence_view` — scenario, shock, timeline, and
+  surface evidence composition over already resolved artifact IDs from
+  component/result-store metadata. It preserves no-data/unsupported states and
+  does not fetch artifact payloads or infer shock/surface semantics.
 - `recognise_ima_summary` / `recognise_cva_summary` — duck-typed summary
   projection from public component result shapes.
 - `CapitalRunManifest`, `validate_capital_run_manifest`, and
@@ -84,6 +88,12 @@ Runtime modules must not import capital sibling packages or private batch
 internals. Package-local tests may use concrete component fixtures to verify
 that public adapters and result shapes remain compatible with orchestration
 contracts.
+
+Time-series, scenario, shock, and surface artifacts stay owned by component
+packages and `frtb-result-store`. Orchestration composes resolved IDs,
+lineage fields, and explicit no-data/unsupported states for suite-level views;
+it does not query `frtb-result-store`, load artifact files, interpolate
+surfaces, generate shocks, or classify missing metadata.
 
 Enterprise hierarchy storage and node traversal stay in `frtb-result-store`.
 `frtb-orchestration` consumes resolved component totals for a selected scope

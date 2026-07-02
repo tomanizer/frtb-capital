@@ -43,6 +43,8 @@ The canonical orchestration outputs are:
 - `SuiteAttributionReport` and `SuiteAttributionComponentReport`
 - `SuiteAttributionSummary`, `SuiteAttributionRecordSummary`, and
   `SuiteAttributionGroupSummary`
+- `SuiteArtifactEvidenceView`, `ComponentArtifactEvidence`, and
+  `ArtifactEvidenceRef`
 
 SA is a composition label for `SBM + DRC + RRAO`. It is not a standalone package
 and does not own a separate raw sensitivity, default-risk, or residual-risk
@@ -71,6 +73,13 @@ dataset.
 this summary when the required aliases are present. IMA scenario cubes, stress
 histories, NMRF artifacts, PLA vectors, and backtesting vectors remain
 `frtb-ima` inputs. Orchestration consumes the summary only.
+
+Orchestration may also compose IMA scenario and timeline evidence views from
+already resolved artifact IDs. `ImaScenarioEvidence` accepts scenario cube,
+scenario set, and scenario vector identifiers; `TimelineEvidence` can represent
+RFET, PLA/backtesting, UPL, or stress-period time-series IDs, including
+explicit `NO_DATA` and `UNSUPPORTED` states. These records are read models for
+Navigator/result-store handoff, not inputs to IMA capital.
 
 ### Standardised Approach
 
@@ -229,6 +238,29 @@ Raw sensitivity, exposure, default-risk, and residual-risk sign conventions are
 component-owned. Orchestration must not flip raw input signs or reinterpret
 component-specific amount fields.
 
+## Artifact Evidence Views
+
+`build_resolved_artifact_evidence_view(...)` is the suite-level helper for
+scenario, shock, timeline, and surface-aware read models. It accepts:
+
+- `SbmShockEvidence` for resolved SBM curvature up/down shock IDs;
+- `ImaScenarioEvidence` for IMA scenario cube/set/vector IDs;
+- `TimelineEvidence` for IMA, SBM, CVA, or suite time-series IDs and explicit
+  no-data/unsupported states;
+- `SurfaceEvidence` for resolved surface and surface-point IDs;
+- optional pre-built `ArtifactEvidenceRef` values.
+
+The resulting `SuiteArtifactEvidenceView` groups records by component in suite
+order and emits deterministic `status_counts`. Partition values carry lineage
+such as risk-factor ID, source row ID, mapping version, axis labels, scenario
+set ID, or shock direction when supplied.
+
+The helper composes metadata only. It must not fetch result-store artifacts,
+query market-data services, read raw artifact files, construct shocks,
+interpolate surfaces, price exposures, or infer regulatory classifications.
+Result-store APIs own artifact payload/detail reads; Navigator consumes those
+APIs and renders the explicit states supplied here.
+
 ## Golden Outputs
 
 Orchestration does not commit a golden-output fixture directory. Regression
@@ -250,7 +282,7 @@ benchmarks.
 When changing orchestration datasets, summaries, manifests, or routing semantics:
 
 1. Update the public API documentation if any stable symbol, logical table key,
-   route behavior, or summary field changes.
+   route behavior, summary field, or artifact-evidence builder changes.
 2. Update this contract when the accepted summary shape, manifest shape, or
    validation boundary changes.
 3. Update component package dataset contracts if the change affects a
