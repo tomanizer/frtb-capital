@@ -214,6 +214,23 @@ For run-group comparison:
 4. Keep drilldown scoped to a selected `run_id`; do not blend evidence across
    runs unless result-store returns a comparison row.
 
+## AI Explanation Snapshots
+
+Navigator AI explanation actions use `GET /runs/{run_id}/ai-explanation-snapshot`
+to request a result-store-built input snapshot. The request supplies selected
+Navigator state, target, visible row IDs, optional bounded source-page
+parameters, style, depth, user question, and entitlement context. The result
+store validates stale or incompatible selections before assembling evidence.
+
+The response includes `input_snapshot_hash`, `navigator_state_hash`, stable
+evidence refs, redacted bounded payload sections, artifact page refs,
+limitations, and availability state. It is a prompt-input contract only: the
+result store does not call model providers, persist generated prose, expose raw
+SQL/DuckDB tables, or let the browser assemble authoritative prompt payloads.
+Source-row samples are capped at 25 rows and display-unsafe fields such as URIs,
+tokens, secrets, credentials, permissions, and signed URLs are redacted before
+hashing.
+
 ## Result-Store Gaps Tracked Under #1105
 
 The open result-store epic #1105 owns remaining Navigator-serving gaps. The

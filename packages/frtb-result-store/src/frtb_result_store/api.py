@@ -11,6 +11,7 @@ from typing import Any, NoReturn, Protocol, cast
 
 from frtb_common import jsonable
 
+from frtb_result_store.api_ai_explanations import register_ai_explanation_routes
 from frtb_result_store.api_artifacts import (
     artifact_download_path,
     artifact_page_payload,
@@ -59,6 +60,7 @@ _OPENAPI_TAGS = (
     "Attribution",
     "Lineage",
     "Events",
+    "AI Explanations",
 )
 
 _Endpoint = Callable[..., Any]
@@ -138,6 +140,12 @@ def create_result_store_app(
         Query,
         require_run=_require_run,
         to_jsonable=_to_jsonable,
+    )
+    register_ai_explanation_routes(
+        routes,
+        result_store,
+        HTTPException,
+        require_run=_require_run,
     )
     _register_run_group_routes(routes, result_store, HTTPException)
     _register_run_detail_route(routes, result_store, HTTPException)

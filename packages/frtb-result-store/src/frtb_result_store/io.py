@@ -5,6 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import cast
 
+from frtb_result_store._io_ai_explanation_queries import StoreAIExplanationSnapshotMixin
 from frtb_result_store._io_catalog import StoreCatalogMixin
 from frtb_result_store._io_desk_eligibility_queries import StoreDeskEligibilityQueryMixin
 from frtb_result_store._io_manifest import StoreManifestMixin
@@ -38,6 +39,7 @@ class DuckDbParquetResultStore(
     StoreCatalogMixin,
     StoreRiskFactorEvidenceQueryMixin,
     StoreDeskEligibilityQueryMixin,
+    StoreAIExplanationSnapshotMixin,
 ):
     """Append-only Parquet store queried through DuckDB.
 
