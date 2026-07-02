@@ -14,7 +14,11 @@ from frtb_common import UnsupportedRegulatoryFeatureError
 
 from frtb_sbm.batch import SbmSensitivityBatch, sorted_girr_vega_batch_indices
 from frtb_sbm.data_models import SbmRiskClass, SbmRiskMeasure, SbmSensitivity, WeightedSensitivity
-from frtb_sbm.kernel.weighting import _liquidity_horizon_at, _required_optional_axis_value
+from frtb_sbm.kernel.weighting import (
+    _liquidity_horizon_at,
+    _optional_axis_value,
+    _required_optional_axis_value,
+)
 from frtb_sbm.org_scope import scope_at
 from frtb_sbm.reference_data import (
     girr_bucket_definition,
@@ -149,6 +153,11 @@ def weight_girr_vega_sensitivities(
                 qualifier=sensitivity.option_tenor,
                 liquidity_horizon_days=horizon,
                 org_scope=sensitivity.org_scope,
+                underlying_tenor=sensitivity.tenor,
+                option_tenor=sensitivity.option_tenor,
+                maturity=sensitivity.maturity,
+                surface_id=sensitivity.surface_id,
+                surface_point_id=sensitivity.surface_point_id,
             )
         )
     return tuple(weighted)
@@ -199,6 +208,7 @@ def weight_girr_vega_sensitivity_batch(
             liquidity_horizon_days=horizon,
         )
         amount = float(batch.amounts[index])
+        option_tenor = _required_optional_axis_value(batch.option_tenors, index, "option_tenor")
         weighted.append(
             WeightedSensitivity(
                 sensitivity_id=cast(str, batch.sensitivity_ids[index]),
@@ -209,9 +219,14 @@ def weight_girr_vega_sensitivity_batch(
                 risk_weight=risk_weight,
                 scaled_amount=amount * risk_weight,
                 citation_ids=citation_ids,
-                qualifier=_required_optional_axis_value(batch.option_tenors, index, "option_tenor"),
+                qualifier=option_tenor,
                 liquidity_horizon_days=horizon,
                 org_scope=scope_at(batch.org_scopes, index),
+                underlying_tenor=_optional_axis_value(batch.tenors, index),
+                option_tenor=option_tenor,
+                maturity=_optional_axis_value(batch.maturities, index),
+                surface_id=_optional_axis_value(batch.surface_ids, index),
+                surface_point_id=_optional_axis_value(batch.surface_point_ids, index),
             )
         )
     return tuple(weighted)

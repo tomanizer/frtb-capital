@@ -213,7 +213,12 @@ class SbmSensitivity:
 
 @dataclass(frozen=True)
 class WeightedSensitivity:
-    """Weighted sensitivity record after cited risk-weight lookup."""
+    """Weighted sensitivity record after cited risk-weight lookup.
+
+    Optional axis and artifact identifiers are metadata carried from upstream
+    result-store or adapter inputs. They do not drive market-data lookup,
+    interpolation, shock construction, or capital math inside SBM.
+    """
 
     sensitivity_id: str
     risk_class: SbmRiskClass
@@ -237,6 +242,13 @@ class WeightedSensitivity:
     bucket_label: str | None = None
     source_system: str | None = None
     source_row_id: str | None = None
+    underlying_tenor: str | None = None
+    option_tenor: str | None = None
+    maturity: str | None = None
+    surface_id: str | None = None
+    surface_point_id: str | None = None
+    up_shock_ids: tuple[str, ...] = ()
+    down_shock_ids: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -329,7 +341,11 @@ class SbmRunContextSummary:
 
 @dataclass(frozen=True)
 class CurvatureInput:
-    """Curvature-specific up/down shock inputs for one sensitivity."""
+    """Curvature-specific up/down shock inputs for one sensitivity.
+
+    Shock and surface identifiers are optional provenance supplied upstream;
+    SBM preserves them but does not resolve artifacts or generate shocks.
+    """
 
     sensitivity_id: str
     risk_class: SbmRiskClass
@@ -339,6 +355,10 @@ class CurvatureInput:
     up_shock_amount: float
     down_shock_amount: float
     citation_ids: tuple[str, ...]
+    up_shock_id: str | None = None
+    down_shock_id: str | None = None
+    surface_id: str | None = None
+    surface_point_id: str | None = None
 
 
 @dataclass(frozen=True)
@@ -350,6 +370,10 @@ class CurvatureBranchRecord:
     up_shock_amount: float
     down_shock_amount: float
     citation_ids: tuple[str, ...]
+    up_shock_id: str | None = None
+    down_shock_id: str | None = None
+    surface_id: str | None = None
+    surface_point_id: str | None = None
 
 
 @dataclass(frozen=True)

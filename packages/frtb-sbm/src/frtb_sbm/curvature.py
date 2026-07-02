@@ -9,7 +9,7 @@ Regulatory traceability:
 
 from __future__ import annotations
 
-from collections.abc import Mapping, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 
 import numpy as np
 import numpy.typing as npt
@@ -177,6 +177,10 @@ def select_girr_curvature_branches_from_batch(
                 up_shock_amount=up_shock,
                 down_shock_amount=down_shock,
                 citation_ids=citations,
+                up_shock_id=_optional_text_at(batch.up_shock_ids, int(row_index)),
+                down_shock_id=_optional_text_at(batch.down_shock_ids, int(row_index)),
+                surface_id=_optional_text_at(batch.surface_ids, int(row_index)),
+                surface_point_id=_optional_text_at(batch.surface_point_ids, int(row_index)),
             )
         )
     return tuple(records)
@@ -521,6 +525,10 @@ def _build_curvature_factors(
                 citation_ids=citations,
                 org_scope=single_scope_metadata(item.org_scope for item in ordered),
                 contributing_org_scopes=unique_scope_metadata(item.org_scope for item in ordered),
+                up_shock_ids=_unique_optional_text(item.up_shock_id for item in ordered),
+                down_shock_ids=_unique_optional_text(item.down_shock_id for item in ordered),
+                surface_ids=_unique_optional_text(item.surface_id for item in ordered),
+                surface_point_ids=_unique_optional_text(item.surface_point_id for item in ordered),
             )
         )
     return tuple(factors)
@@ -590,9 +598,25 @@ def _build_curvature_factors_from_batch(
                 contributing_org_scopes=unique_scope_metadata(
                     scope_at(batch.org_scopes, index) for index in row_indices
                 ),
+                up_shock_ids=_unique_optional_text(
+                    _optional_text_at(batch.up_shock_ids, index) for index in row_indices
+                ),
+                down_shock_ids=_unique_optional_text(
+                    _optional_text_at(batch.down_shock_ids, index) for index in row_indices
+                ),
+                surface_ids=_unique_optional_text(
+                    _optional_text_at(batch.surface_ids, index) for index in row_indices
+                ),
+                surface_point_ids=_unique_optional_text(
+                    _optional_text_at(batch.surface_point_ids, index) for index in row_indices
+                ),
             )
         )
     return tuple(factors)
+
+
+def _unique_optional_text(values: Iterable[str | None]) -> tuple[str, ...]:
+    return tuple(dict.fromkeys(value for value in values if value is not None))
 
 
 def _curvature_factor_key_from_batch(

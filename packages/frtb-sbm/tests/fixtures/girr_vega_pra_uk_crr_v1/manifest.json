@@ -5,7 +5,7 @@
       "sha256": "16db1efcd180f0c42c7ce370613d4d5318a7456d9738cce679797adca8622682"
     },
     "expected_outputs.json": {
-      "sha256": "2ce1f62f916933fad1b8f22077433dfeddbe32238a02ed0c87bc9620de745904"
+      "sha256": "328980c0a745fd0fb2ab11d03cb8124dab9a713f1d89bc993c13e2b83c18b2d8"
     },
     "invalid_cases.json": {
       "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
