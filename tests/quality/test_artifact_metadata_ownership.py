@@ -30,7 +30,7 @@ def _imported_roots(path: Path) -> set[str]:
     for node in ast.walk(tree):
         if isinstance(node, ast.Import):
             roots.update(alias.name.split(".", maxsplit=1)[0] for alias in node.names)
-        elif isinstance(node, ast.ImportFrom) and node.module:
+        elif isinstance(node, ast.ImportFrom) and node.module and node.level == 0:
             roots.add(node.module.split(".", maxsplit=1)[0])
     return roots
 
@@ -80,6 +80,7 @@ def test_result_store_contract_forbids_browser_artifact_inference() -> None:
 def test_components_and_orchestration_do_not_import_result_store_runtime() -> None:
     offenders: list[str] = []
     for root in RUNTIME_BOUNDARY_ROOTS:
+        assert root.is_dir(), f"Runtime root directory does not exist: {root}"
         for path in sorted(root.rglob("*.py")):
             if "frtb_result_store" in _imported_roots(path):
                 offenders.append(str(path.relative_to(ROOT)))
