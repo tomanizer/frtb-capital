@@ -239,13 +239,22 @@ def _branch_metadata_payload(branch: SbmBranchMetadata) -> dict[str, object]:
 
 
 def _curvature_branch_payload(branch: CurvatureBranchRecord) -> dict[str, object]:
-    return {
+    payload: dict[str, object] = {
         "sensitivity_id": branch.sensitivity_id,
         "selected_branch": branch.selected_branch,
         "up_shock_amount": branch.up_shock_amount,
         "down_shock_amount": branch.down_shock_amount,
         "citation_ids": list(branch.citation_ids),
     }
+    if branch.up_shock_id is not None:
+        payload["up_shock_id"] = branch.up_shock_id
+    if branch.down_shock_id is not None:
+        payload["down_shock_id"] = branch.down_shock_id
+    if branch.surface_id is not None:
+        payload["surface_id"] = branch.surface_id
+    if branch.surface_point_id is not None:
+        payload["surface_point_id"] = branch.surface_point_id
+    return payload
 
 
 def _curvature_bucket_branch_payload(
@@ -342,6 +351,20 @@ def _weighted_sensitivity_payload(item: WeightedSensitivity) -> dict[str, object
         payload["source_system"] = item.source_system
     if item.source_row_id is not None:
         payload["source_row_id"] = item.source_row_id
+    if item.underlying_tenor is not None:
+        payload["underlying_tenor"] = item.underlying_tenor
+    if item.option_tenor is not None:
+        payload["option_tenor"] = item.option_tenor
+    if item.maturity is not None:
+        payload["maturity"] = item.maturity
+    if item.surface_id is not None:
+        payload["surface_id"] = item.surface_id
+    if item.surface_point_id is not None:
+        payload["surface_point_id"] = item.surface_point_id
+    if item.up_shock_ids:
+        payload["up_shock_ids"] = list(item.up_shock_ids)
+    if item.down_shock_ids:
+        payload["down_shock_ids"] = list(item.down_shock_ids)
     return payload
 
 

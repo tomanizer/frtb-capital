@@ -52,7 +52,8 @@
                 "1y"
               ],
               "source_system": "synthetic-sbm-fixture",
-              "source_row_id": "row-001"
+              "source_row_id": "row-001",
+              "option_tenor": "1y"
             }
           ],
           "floor_applied": false,

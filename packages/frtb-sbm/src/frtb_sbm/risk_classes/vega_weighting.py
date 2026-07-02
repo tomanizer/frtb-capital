@@ -21,7 +21,11 @@ from frtb_sbm.data_models import (
     SbmSensitivity,
     WeightedSensitivity,
 )
-from frtb_sbm.kernel.weighting import _liquidity_horizon_at, _optional_axis_value
+from frtb_sbm.kernel.weighting import (
+    _liquidity_horizon_at,
+    _optional_axis_value,
+    _required_optional_axis_value,
+)
 from frtb_sbm.org_scope import scope_at
 from frtb_sbm.reference_data import vega_liquidity_horizon_days, vega_risk_weight
 from frtb_sbm.reference_profiles import _resolve_supported_profile
@@ -103,21 +107,13 @@ def weight_non_girr_vega_sensitivities(
             risk_factor_citations,
             weight_citations,
         )
-        scaled_amount = sensitivity.amount * risk_weight
         weighted.append(
-            WeightedSensitivity(
-                sensitivity_id=sensitivity.sensitivity_id,
-                risk_class=sensitivity.risk_class,
-                risk_measure=SbmRiskMeasure.VEGA,
-                bucket=sensitivity.bucket,
-                raw_amount=sensitivity.amount,
-                risk_weight=risk_weight,
-                scaled_amount=scaled_amount,
-                citation_ids=citation_ids,
-                qualifier=sensitivity.qualifier,
-                liquidity_horizon_days=horizon,
+            _weighted_non_girr_vega_sensitivity(
+                sensitivity,
                 factor_key=factor_key,
-                org_scope=sensitivity.org_scope,
+                horizon=horizon,
+                risk_weight=risk_weight,
+                citation_ids=citation_ids,
             )
         )
     return tuple(weighted)
@@ -165,6 +161,7 @@ def weight_non_girr_vega_sensitivity_batch(
             index,
             profile_id=profile_id,
         )
+        option_tenor = _required_optional_axis_value(batch.option_tenors, index, "option_tenor")
         bucket_id = cast(str, batch.buckets[index])
         horizon = _liquidity_horizon_at(
             batch,
@@ -200,6 +197,10 @@ def weight_non_girr_vega_sensitivity_batch(
                 liquidity_horizon_days=horizon,
                 factor_key=factor_key,
                 org_scope=scope_at(batch.org_scopes, index),
+                option_tenor=option_tenor,
+                maturity=_optional_axis_value(batch.maturities, index),
+                surface_id=_optional_axis_value(batch.surface_ids, index),
+                surface_point_id=_optional_axis_value(batch.surface_point_ids, index),
             )
         )
     return tuple(weighted)
@@ -221,6 +222,34 @@ def _weighted_sensitivity_citation_ids(
             "pra_uk_crr_325ax_fx_vega_risk_weights",
         )
     return ("basel_mar21_90", "basel_mar21_91")
+
+
+def _weighted_non_girr_vega_sensitivity(
+    sensitivity: SbmSensitivity,
+    *,
+    factor_key: tuple[str, ...],
+    horizon: int,
+    risk_weight: float,
+    citation_ids: tuple[str, ...],
+) -> WeightedSensitivity:
+    return WeightedSensitivity(
+        sensitivity_id=sensitivity.sensitivity_id,
+        risk_class=sensitivity.risk_class,
+        risk_measure=SbmRiskMeasure.VEGA,
+        bucket=sensitivity.bucket,
+        raw_amount=sensitivity.amount,
+        risk_weight=risk_weight,
+        scaled_amount=sensitivity.amount * risk_weight,
+        citation_ids=citation_ids,
+        qualifier=sensitivity.qualifier,
+        liquidity_horizon_days=horizon,
+        factor_key=factor_key,
+        org_scope=sensitivity.org_scope,
+        option_tenor=sensitivity.option_tenor,
+        maturity=sensitivity.maturity,
+        surface_id=sensitivity.surface_id,
+        surface_point_id=sensitivity.surface_point_id,
+    )
 
 
 __all__ = [

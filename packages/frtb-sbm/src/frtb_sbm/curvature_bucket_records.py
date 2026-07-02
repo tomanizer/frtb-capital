@@ -93,6 +93,10 @@ def _curvature_factor_to_weighted_sensitivity(
         contributing_source_row_ids=factor.source_row_ids,
         org_scope=factor.org_scope,
         contributing_org_scopes=factor.contributing_org_scopes,
+        up_shock_ids=factor.up_shock_ids,
+        down_shock_ids=factor.down_shock_ids,
+        surface_id=_single_optional_value(factor.surface_ids),
+        surface_point_id=_single_optional_value(factor.surface_point_ids),
     )
 
 
@@ -144,6 +148,12 @@ def _curvature_weighted_qualifier(
         parts.append(factor.qualifier)
     parts.extend([selected_branch, scenario.value])
     return ":".join(parts)
+
+
+def _single_optional_value(values: tuple[str, ...]) -> str | None:
+    if len(values) == 1:
+        return values[0]
+    return None
 
 
 __all__ = [

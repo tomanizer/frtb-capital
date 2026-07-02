@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+from dataclasses import replace
 from pathlib import Path
 from types import ModuleType
 
@@ -257,6 +258,43 @@ def test_us_npr_fx_curvature_batch_and_arrow_match_row_result() -> None:
     assert arrow_payload["risk_classes"] == row_payload["risk_classes"]
 
 
+def test_us_npr_fx_curvature_branch_records_preserve_supplied_shock_ids() -> None:
+    loader = load_fixture_module("fx_curvature_us_npr_v1")
+    context = loader.load_fixture_context()
+    base_sensitivities = loader.load_fixture_sensitivities()
+    sensitivities = tuple(
+        replace(
+            sensitivity,
+            up_shock_id=f"shock-up-{index}",
+            down_shock_id=f"shock-down-{index}",
+            surface_id="surface-fx-option-curvature",
+            surface_point_id=f"surface-fx-option-curvature:{index}",
+        )
+        for index, sensitivity in enumerate(base_sensitivities, start=1)
+    )
+
+    base_result = calculate_sbm_capital(base_sensitivities, context=context)
+    row_payload = serialize_sbm_result(calculate_sbm_capital(sensitivities, context=context))
+    batch = build_sbm_batch(sensitivities, SbmRiskClass.FX, SbmRiskMeasure.CURVATURE)
+    batch_payload = serialize_sbm_result(calculate_sbm_capital_from_batch(batch, context=context))
+    row_branches = _curvature_branch_payloads(row_payload)
+    batch_branches = _curvature_branch_payloads(batch_payload)
+    branches_by_id = {
+        branch["sensitivity_id"]: branch
+        for branch in row_branches
+        if isinstance(branch["sensitivity_id"], str)
+    }
+
+    assert row_payload["total_capital"] == pytest.approx(base_result.total_capital)
+    assert batch_branches == row_branches
+    for index, sensitivity in enumerate(sensitivities, start=1):
+        branch = branches_by_id[sensitivity.sensitivity_id]
+        assert branch["up_shock_id"] == f"shock-up-{index}"
+        assert branch["down_shock_id"] == f"shock-down-{index}"
+        assert branch["surface_id"] == "surface-fx-option-curvature"
+        assert branch["surface_point_id"] == f"surface-fx-option-curvature:{index}"
+
+
 @pytest.mark.parametrize(
     ("fixture_name", "case_id", "expected_error_match", "sensitivities"),
     [
@@ -324,6 +362,18 @@ def _curvature_arrow_table(sensitivities: tuple[SbmSensitivity, ...]) -> pa.Tabl
             "lineage_source_file": [item.lineage.source_file for item in sensitivities],
         }
     )
+
+
+def _curvature_branch_payloads(payload: dict[str, object]) -> list[dict[str, object]]:
+    risk_classes = payload["risk_classes"]
+    assert isinstance(risk_classes, list)
+    first_risk_class = risk_classes[0]
+    assert isinstance(first_risk_class, dict)
+    branches = first_risk_class["curvature_branches"]
+    assert isinstance(branches, list)
+    for branch in branches:
+        assert isinstance(branch, dict)
+    return branches
 
 
 def _select(payload: object, keys: tuple[str, ...]) -> dict[str, object]:

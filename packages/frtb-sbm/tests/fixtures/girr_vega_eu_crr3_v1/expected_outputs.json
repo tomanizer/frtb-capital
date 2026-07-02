@@ -43,7 +43,9 @@
               ],
               "qualifier": "1y",
               "source_system": "synthetic-sbm-fixture",
-              "source_row_id": "row-001"
+              "source_row_id": "row-001",
+              "underlying_tenor": "1y",
+              "option_tenor": "1y"
             },
             {
               "sensitivity_id": "girr-vega-eu-crr3-v1-002",
@@ -58,7 +60,9 @@
               ],
               "qualifier": "5y",
               "source_system": "synthetic-sbm-fixture",
-              "source_row_id": "row-002"
+              "source_row_id": "row-002",
+              "underlying_tenor": "5y",
+              "option_tenor": "5y"
             }
           ],
           "floor_applied": false,
@@ -88,7 +92,9 @@
               ],
               "qualifier": "5y",
               "source_system": "synthetic-sbm-fixture",
-              "source_row_id": "row-003"
+              "source_row_id": "row-003",
+              "underlying_tenor": "5y",
+              "option_tenor": "5y"
             }
           ],
           "floor_applied": false,
