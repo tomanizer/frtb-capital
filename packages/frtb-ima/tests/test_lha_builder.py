@@ -54,6 +54,9 @@ def _cube() -> ScenarioCube:
         scenario_metadata=metadata,
         position_ids=("P1", "P2"),
         risk_factor_names=("USD_RATE", "EUR_RATE", "IG_CREDIT"),
+        artifact_id="artifact:scenario-cube",
+        scenario_set_id="scenario-set:current",
+        scenario_vector_ids=("scenario-vector:0", "scenario-vector:1"),
     )
 
 
@@ -89,6 +92,12 @@ def test_nested_lh_vectors_from_cube_all_classes() -> None:
         "IG_CREDIT",
     )
     assert result[LiquidityHorizon.LH20].risk_factor_names == ("EUR_RATE", "IG_CREDIT")
+    assert result[LiquidityHorizon.LH10].source_scenario_cube_id == "artifact:scenario-cube"
+    assert result[LiquidityHorizon.LH10].scenario_set_id == "scenario-set:current"
+    assert result[LiquidityHorizon.LH10].scenario_vector_ids == (
+        "scenario-vector:0",
+        "scenario-vector:1",
+    )
     assert validate_nested_lh_vectors(result).nesting_evidence_checked is True
 
 

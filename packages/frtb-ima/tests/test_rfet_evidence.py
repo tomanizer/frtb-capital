@@ -122,7 +122,25 @@ def test_rfet_assembly_stage_keeps_compatibility_imports() -> None:
 
 def test_assess_rfet_evidence_passes_with_required_unique_dates() -> None:
     policy = get_policy(RegulatoryRegime.FED_NPR_2_0)
-    result = assess_rfet_evidence(_risk_factor(), _evidence(_observations(24)), policy)
+    observations = tuple(
+        RealPriceObservation(
+            "USD_SWAP_5Y",
+            AS_OF - timedelta(days=index * 10),
+            source="VENDOR_A",
+            source_row_id=f"rfet-source-row-{index:03d}",
+        )
+        for index in range(24)
+    )
+    evidence = _evidence(observations)
+    evidence = RFETEvidence(
+        risk_factor_name=evidence.risk_factor_name,
+        as_of_date=evidence.as_of_date,
+        observations=evidence.observations,
+        qualitative_pass=evidence.qualitative_pass,
+        bucket_id=evidence.bucket_id,
+        observation_time_series_id="ts:rfet:USD_SWAP_5Y",
+    )
+    result = assess_rfet_evidence(_risk_factor(), evidence, policy)
 
     assert result.eligible_observation_count == 24
     assert result.required_observations == 24
@@ -130,6 +148,8 @@ def test_assess_rfet_evidence_passes_with_required_unique_dates() -> None:
     assert result.modellability_status == ModellabilityStatus.MODELLABLE
     assert result.source_count == 1
     assert result.exclusions == ()
+    assert result.as_dict()["observation_time_series_ids"] == ["ts:rfet:USD_SWAP_5Y"]
+    assert result.as_dict()["source_row_ids"][0] == "rfet-source-row-023"
 
 
 def test_assess_rfet_evidence_deduplicates_dates_and_records_exclusions() -> None:

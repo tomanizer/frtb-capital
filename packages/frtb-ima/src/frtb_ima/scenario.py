@@ -218,6 +218,9 @@ class ScenarioVector:
     liquidity_horizon: LiquidityHorizon | None = None
     risk_factor_names: tuple[str, ...] = ()
     name: str = ""
+    source_scenario_cube_id: str = ""
+    scenario_set_id: str = ""
+    scenario_vector_ids: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
         arr = np.asarray(self.values, dtype=float)
@@ -236,9 +239,18 @@ class ScenarioVector:
             raise ValueError("risk_factor_names cannot contain empty values")
         if len(set(risk_factor_names)) != len(risk_factor_names):
             raise ValueError("risk_factor_names cannot contain duplicate values")
+        scenario_vector_ids = tuple(self.scenario_vector_ids)
+        if scenario_vector_ids:
+            if len(scenario_vector_ids) != arr.size:
+                raise ValueError("scenario_vector_ids length must match ScenarioVector values")
+            if any(not scenario_vector_id for scenario_vector_id in scenario_vector_ids):
+                raise ValueError("scenario_vector_ids cannot contain empty values")
+            if len(scenario_vector_ids) != len(set(scenario_vector_ids)):
+                raise ValueError("scenario_vector_ids contains duplicates")
         object.__setattr__(self, "values", arr.astype(np.float64, copy=False))
         object.__setattr__(self, "metadata", tuple(self.metadata))
         object.__setattr__(self, "risk_factor_names", risk_factor_names)
+        object.__setattr__(self, "scenario_vector_ids", scenario_vector_ids)
 
     @property
     def scenario_ids(self) -> tuple[str, ...]:

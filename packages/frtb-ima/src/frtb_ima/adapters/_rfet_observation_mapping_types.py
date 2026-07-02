@@ -28,6 +28,7 @@ RFET_OBSERVATION_TARGET_FIELDS = frozenset(
         "data_pool_id",
         "vendor_audit_evidence_id",
         "source_row_id",
+        "observation_time_series_id",
     }
 )
 REQUIRED_RFET_OBSERVATION_FIELDS = frozenset({"risk_factor_name", "observation_date"})

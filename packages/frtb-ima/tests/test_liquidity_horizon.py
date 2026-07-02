@@ -77,11 +77,17 @@ def test_lha_breakdown_from_vectors() -> None:
                 values=np.array([100.0, 100.0, 100.0]),
                 metadata=metadata,
                 risk_factor_names=("RF1", "RF2"),
+                source_scenario_cube_id="artifact:scenario-cube",
+                scenario_set_id="scenario-set:current",
+                scenario_vector_ids=("scenario-vector:0", "scenario-vector:1", "scenario-vector:2"),
             ),
             LiquidityHorizon.LH20: ScenarioVector(
                 values=np.array([80.0, 80.0, 80.0]),
                 metadata=metadata,
                 risk_factor_names=("RF2",),
+                source_scenario_cube_id="artifact:scenario-cube",
+                scenario_set_id="scenario-set:current",
+                scenario_vector_ids=("scenario-vector:0", "scenario-vector:1", "scenario-vector:2"),
             ),
         },
         alpha=ALPHA,
@@ -95,6 +101,13 @@ def test_lha_breakdown_from_vectors() -> None:
     assert lh20.expected_shortfall == pytest.approx(80.0)
     assert result.metadata_aligned is True
     assert result.scenario_count == 3
+    assert lh10.as_dict()["source_scenario_cube_id"] == "artifact:scenario-cube"
+    assert lh10.as_dict()["scenario_set_id"] == "scenario-set:current"
+    assert lh10.as_dict()["scenario_vector_ids"] == [
+        "scenario-vector:0",
+        "scenario-vector:1",
+        "scenario-vector:2",
+    ]
 
 
 def test_lha_breakdown_summary_lines() -> None:

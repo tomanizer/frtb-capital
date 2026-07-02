@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from datetime import date
 
@@ -362,6 +362,13 @@ def _build_rfet_batch_assessment(
             data_pools,
         ),
         new_issuance_policy_basis=_new_issuance_policy_basis(new_issuance),
+        observation_time_series_ids=_unique_optional_text(
+            str(observations.observation_time_series_ids[index])
+            for index in quantitative.ordered_indices
+        ),
+        source_row_ids=_unique_optional_text(
+            str(observations.source_row_ids[index]) for index in quantitative.ordered_indices
+        ),
         exclusions=quantitative.exclusions,
     )
 
@@ -370,3 +377,7 @@ def _batch_shift_reason(window: _RFETBatchObservationWindow, shift_reason: str) 
     if window.lookback_basis == ObservationWindowBasis.SHIFTED_TWELVE_MONTH_BUSINESS_CALENDAR.value:
         return shift_reason
     return ""
+
+
+def _unique_optional_text(values: Iterable[str]) -> tuple[str, ...]:
+    return tuple(dict.fromkeys(value for value in values if value))

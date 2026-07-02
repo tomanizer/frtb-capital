@@ -62,6 +62,9 @@ class LHAESComponent:
     expected_shortfall: float
     weighted_square: float
     present: bool
+    source_scenario_cube_id: str = ""
+    scenario_set_id: str = ""
+    scenario_vector_ids: tuple[str, ...] = ()
 
     def as_dict(self) -> dict[str, object]:
         """Return a serialisable dictionary for reporting and audit trails.
@@ -76,6 +79,9 @@ class LHAESComponent:
             "expected_shortfall": self.expected_shortfall,
             "weighted_square": self.weighted_square,
             "present": self.present,
+            "source_scenario_cube_id": self.source_scenario_cube_id,
+            "scenario_set_id": self.scenario_set_id,
+            "scenario_vector_ids": list(self.scenario_vector_ids),
         }
 
 
@@ -210,6 +216,9 @@ def lha_es_breakdown_from_vectors(
             alpha=alpha,
             estimator=estimator,
         )
+        source_scenario_cube_id, scenario_set_id, scenario_vector_ids = _vector_lineage(
+            lh_vectors[lh]
+        )
         weighted_square = weight * es**2
         sum_sq += weighted_square
         components.append(
@@ -219,6 +228,9 @@ def lha_es_breakdown_from_vectors(
                 expected_shortfall=es,
                 weighted_square=weighted_square,
                 present=True,
+                source_scenario_cube_id=source_scenario_cube_id,
+                scenario_set_id=scenario_set_id,
+                scenario_vector_ids=scenario_vector_ids,
             )
         )
 
@@ -231,6 +243,14 @@ def lha_es_breakdown_from_vectors(
         scenario_count=validation.scenario_count,
         metadata_aligned=validation.metadata_aligned,
     )
+
+
+def _vector_lineage(
+    vector: ScenarioVector | Sequence[float],
+) -> tuple[str, str, tuple[str, ...]]:
+    if not isinstance(vector, ScenarioVector):
+        return "", "", ()
+    return vector.source_scenario_cube_id, vector.scenario_set_id, vector.scenario_vector_ids
 
 
 def lha_es_breakdown_from_scalars(

@@ -152,9 +152,11 @@ def load_capital_run_fixture(root: Path) -> CapitalRunFixture:
         root / "rfet_observations.csv",
         risk_factors,
         as_of_date=date.fromisoformat(str(params["as_of_date"])),
+        artifact_metadata=_manifest_file_metadata(manifest, "rfet_observations.csv"),
     )
     scenario_metadata = _load_scenario_metadata(root / "scenario_metadata.csv")
     scenario_cube_arrays = _load_npz(root / "scenario_cube.npz")
+    scenario_cube_metadata = _manifest_file_metadata(manifest, "scenario_cube.npz")
     scenario_cube = ScenarioCube(
         values=scenario_cube_arrays["cube"],
         scenario_metadata=scenario_metadata,
@@ -163,6 +165,12 @@ def load_capital_run_fixture(root: Path) -> CapitalRunFixture:
             _to_str(item) for item in scenario_cube_arrays["risk_factor_names"].tolist()
         ),
         name="capital_run_v1_current",
+        artifact_id=str(scenario_cube_metadata.get("artifact_id", "")),
+        scenario_set_id=str(scenario_cube_metadata.get("scenario_set_id", "")),
+        scenario_vector_ids=_scenario_vector_ids_from_metadata(
+            scenario_cube_metadata,
+            scenario_metadata,
+        ),
     )
     stress_histories = _load_stress_histories(
         root / "stress_history_metadata.csv",
@@ -606,6 +614,9 @@ def _filtered_cube(cube: ScenarioCube, risk_factor_names: Sequence[str]) -> Scen
         position_ids=cube.position_ids,
         risk_factor_names=selected,
         name=f"{cube.name}_fixture_imcc",
+        artifact_id=cube.artifact_id,
+        scenario_set_id=cube.scenario_set_id,
+        scenario_vector_ids=cube.scenario_vector_ids,
     )
 
 
@@ -647,6 +658,32 @@ def _verify_manifest_checksums(root: Path, manifest: dict[str, Any]) -> None:
             )
 
 
+def _manifest_file_metadata(manifest: Mapping[str, Any], filename: str) -> Mapping[str, Any]:
+    files = manifest.get("files")
+    if not isinstance(files, Mapping):
+        return {}
+    metadata = files.get(filename)
+    if not isinstance(metadata, Mapping):
+        return {}
+    artifact_metadata = metadata.get("artifact_metadata")
+    if isinstance(artifact_metadata, Mapping):
+        return artifact_metadata
+    return {}
+
+
+def _scenario_vector_ids_from_metadata(
+    artifact_metadata: Mapping[str, Any],
+    scenario_metadata: Sequence[ScenarioMetadata],
+) -> tuple[str, ...]:
+    supplied = artifact_metadata.get("scenario_vector_ids")
+    if isinstance(supplied, Sequence) and not isinstance(supplied, str):
+        return tuple(str(item) for item in supplied)
+    prefix = artifact_metadata.get("scenario_vector_id_prefix")
+    if isinstance(prefix, str) and prefix:
+        return tuple(f"{prefix}:{scenario.scenario_id}" for scenario in scenario_metadata)
+    return ()
+
+
 def _sha256(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as handle:
@@ -683,11 +720,15 @@ def _load_rfet_evidence(
     risk_factors: tuple[RiskFactorDefinition, ...],
     *,
     as_of_date: date,
+    artifact_metadata: Mapping[str, Any] | None = None,
 ) -> dict[str, RFETEvidence]:
     rows_by_name: dict[str, list[dict[str, str]]] = {}
-    for row in _read_csv(path):
+    for row_index, row in enumerate(_read_csv(path)):
+        if not row.get("source_row_id"):
+            row["source_row_id"] = f"{path.name}:{row_index:05d}"
         rows_by_name.setdefault(row["risk_factor_name"], []).append(row)
 
+    metadata = {} if artifact_metadata is None else artifact_metadata
     evidence: dict[str, RFETEvidence] = {}
     for risk_factor in risk_factors:
         rows = rows_by_name.get(risk_factor.name)
@@ -704,6 +745,7 @@ def _load_rfet_evidence(
                 risk_factor_name=risk_factor.name,
                 observation_date=date.fromisoformat(row["observation_date"]),
                 source=row["source"],
+                source_row_id=row["source_row_id"],
             )
             for row in rows
         )
@@ -713,8 +755,21 @@ def _load_rfet_evidence(
             observations=observations,
             qualitative_pass=qualitative_values.pop(),
             bucket_id=bucket_ids.pop(),
+            observation_time_series_id=_rfet_time_series_id(metadata, risk_factor.name),
         )
     return evidence
+
+
+def _rfet_time_series_id(artifact_metadata: Mapping[str, Any], risk_factor_name: str) -> str:
+    supplied = artifact_metadata.get("time_series_ids")
+    if isinstance(supplied, Mapping):
+        value = supplied.get(risk_factor_name)
+        if isinstance(value, str):
+            return value
+    prefix = artifact_metadata.get("time_series_id_prefix")
+    if isinstance(prefix, str) and prefix:
+        return f"{prefix}:{risk_factor_name}"
+    return ""
 
 
 def _load_scenario_metadata(path: Path) -> tuple[ScenarioMetadata, ...]:

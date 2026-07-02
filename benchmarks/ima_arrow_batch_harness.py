@@ -123,6 +123,7 @@ def run_benchmark(config: IMAArrowBatchBenchmarkConfig) -> dict[str, object]:
                 ),
                 qualitative_pass=True,
                 bucket_id="USD_RATES",
+                observation_time_series_id=_rfet_time_series_id(risk_factor.name),
             ),
             policy,
         )
@@ -254,6 +255,7 @@ def build_rfet_observation_table(config: IMAArrowBatchBenchmarkConfig) -> pa.Tab
             "observationDate": [row["observation_date"] for row in rows],
             "source": pa.array([row["source"] for row in rows]).dictionary_encode(),
             "vendorId": pa.array([row["vendor_id"] for row in rows]).dictionary_encode(),
+            "observationTimeSeriesId": [row["observation_time_series_id"] for row in rows],
             "sourceRowId": [row["source_row_id"] for row in rows],
         }
     )
@@ -268,6 +270,7 @@ def build_row_observations(
             observation_date=row["observation_date"],
             source=str(row["source"]),
             vendor_id=str(row["vendor_id"]),
+            source_row_id=str(row["source_row_id"]),
         )
         for factor_index in range(config.risk_factor_count)
         for observation_index in range(config.observations_per_factor)
@@ -287,8 +290,13 @@ def _rfet_row(
         - timedelta(days=config.observations_per_factor - observation_index),
         "source": "VENDOR_A",
         "vendor_id": f"vendor-{factor_index % 5}",
+        "observation_time_series_id": _rfet_time_series_id(risk_factor_name),
         "source_row_id": f"rfet-row-{factor_index:04d}-{observation_index:04d}",
     }
+
+
+def _rfet_time_series_id(risk_factor_name: str) -> str:
+    return f"ts:ima:benchmark:rfet:{risk_factor_name}"
 
 
 def _risk_factor() -> RiskFactorDefinition:

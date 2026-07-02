@@ -53,6 +53,7 @@ class RFETObservationExclusion:
                 "feed": self.observation.feed,
                 "data_pool_id": self.observation.data_pool_id,
                 "vendor_audit_evidence_id": self.observation.vendor_audit_evidence_id,
+                "source_row_id": self.observation.source_row_id,
             },
             "reason": self.reason.value,
         }

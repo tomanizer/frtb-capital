@@ -47,6 +47,8 @@ class RFETEvidenceAssessment:
     data_pool_count: int = 0
     vendor_audit_evidence_count: int = 0
     new_issuance_policy_basis: str = ""
+    observation_time_series_ids: tuple[str, ...] = ()
+    source_row_ids: tuple[str, ...] = ()
     exclusions: tuple[RFETObservationExclusion, ...] = ()
 
     def as_dict(self) -> dict[str, object]:
@@ -89,6 +91,8 @@ class RFETEvidenceAssessment:
             "data_pool_count": self.data_pool_count,
             "vendor_audit_evidence_count": self.vendor_audit_evidence_count,
             "new_issuance_policy_basis": self.new_issuance_policy_basis,
+            "observation_time_series_ids": list(self.observation_time_series_ids),
+            "source_row_ids": list(self.source_row_ids),
             "exclusions": [exclusion.as_dict() for exclusion in self.exclusions],
         }
 

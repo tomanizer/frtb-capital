@@ -193,6 +193,13 @@ IMA_RFET_OBSERVATION_ARROW_COLUMN_SPECS: tuple[ColumnSpec, ...] = (
         required=False,
         null_policy=NullPolicy.ALLOW,
     ),
+    ColumnSpec(
+        "observation_time_series_id",
+        aliases=("observationTimeSeriesId", "timeSeriesId"),
+        logical_type=TabularLogicalType.STRING,
+        required=False,
+        null_policy=NullPolicy.ALLOW,
+    ),
 )
 _IMA_SCENARIO_METADATA_BATCH_COLUMN_ARGS: Mapping[str, str] = {
     "scenario_id": "scenario_ids",
@@ -215,6 +222,7 @@ _IMA_RFET_OBSERVATION_BATCH_COLUMN_ARGS: Mapping[str, str] = {
     "data_pool_id": "data_pool_ids",
     "vendor_audit_evidence_id": "vendor_audit_evidence_ids",
     "source_row_id": "source_row_ids",
+    "observation_time_series_id": "observation_time_series_ids",
 }
 
 _IMA_SCENARIO_METADATA_DEFAULTS: Mapping[str, object] = {
@@ -236,6 +244,7 @@ _IMA_RFET_OBSERVATION_DEFAULTS: Mapping[str, object] = {
     "data_pool_id": "",
     "vendor_audit_evidence_id": "",
     "source_row_id": "",
+    "observation_time_series_id": "",
 }
 
 _IMA_LOCAL_LOGICAL_TYPES = frozenset(
