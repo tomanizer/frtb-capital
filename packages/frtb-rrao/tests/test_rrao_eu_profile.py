@@ -5,7 +5,6 @@ from datetime import date
 from pathlib import Path
 
 import pytest
-from tests.rrao_fixture_helpers import rrao_position_from_payload
 
 from frtb_rrao import (
     RraoBackToBackMatch,
@@ -20,6 +19,7 @@ from frtb_rrao import (
     calculate_rrao_capital,
     classify_rrao_position,
 )
+from tests.rrao_fixture_helpers import rrao_position_from_payload
 
 FIXTURE_DIR = Path(__file__).parent / "fixtures" / "rrao_eu"
 

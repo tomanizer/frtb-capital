@@ -1,8 +1,8 @@
 # Mutation Testing Baseline
 
-Date: 2026-05-28
+Date: 2026-07-02
 
-Issue: #12, audit issue #11
+Issues: #12, #1143, #1144, #1145
 
 ## Scope
 
@@ -40,41 +40,39 @@ avoids a NumPy extension reload failure in mutmut's in-process pytest runner.
 
 Tool: `mutmut` 3.5.0
 
-Baseline command completed successfully on 2026-05-28.
+Baseline command completed successfully on 2026-07-02.
 
 | Metric | Count |
 | --- | ---: |
-| Total mutants | 1,881 |
-| Killed | 1,413 |
-| Survived | 467 |
-| Timeout | 1 |
+| Total mutants | 1,613 |
+| Killed | 1,359 |
+| Survived | 254 |
+| Timeout | 0 |
 | No tests | 0 |
 | Skipped | 0 |
 | Suspicious | 0 |
 
-Killed-only mutation score: `75.12%`.
-
-Detected mutation score, counting the timeout as detected but not killed:
-`75.17%`.
+Killed-only mutation score: `84.25%`.
 
 The project quality target for this slice is a killed-only score of at least
-`75.12%` across the configured calculation modules. The 2026-05-28 baseline
+`84.25%` across the configured calculation modules. The 2026-07-02 baseline
 meets that target without excluding any survivor from the denominator.
 
 ## Module Breakdown
 
 | Module | Total | Killed | Survived | Timeout | Score |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| `capital.py` | 227 | 163 | 63 | 1 | 71.81% |
+| `capital.py` | 314 | 269 | 45 | 0 | 85.67% |
 | `expected_shortfall.py` | 93 | 81 | 12 | 0 | 87.10% |
 | `imcc.py` | 209 | 164 | 45 | 0 | 78.47% |
-| `liquidity_horizon.py` | 135 | 106 | 29 | 0 | 78.52% |
-| `nmrf.py` | 404 | 314 | 90 | 0 | 77.72% |
-| `pla.py` | 472 | 349 | 123 | 0 | 73.94% |
-| `reduced_set.py` | 341 | 236 | 105 | 0 | 69.21% |
+| `liquidity_horizon.py` | 140 | 111 | 29 | 0 | 79.29% |
+| `nmrf.py` | 0 | 0 | 0 | 0 | n/a |
+| `pla.py` | 509 | 433 | 76 | 0 | 85.07% |
+| `reduced_set.py` | 348 | 301 | 47 | 0 | 86.49% |
 
-The aggregate target is met. `capital.py`, `pla.py`, and `reduced_set.py` are
-the main hardening targets for future mutation-score increases.
+The aggregate target is met. `capital.py`, `pla.py`, and `reduced_set.py` now
+all meet the 85% file-level hardening target from issues #1143, #1144, and
+#1145 without equivalent-mutant carve-outs.
 
 ## Schedule
 

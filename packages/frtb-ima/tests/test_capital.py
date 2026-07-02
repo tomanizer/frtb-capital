@@ -1,5 +1,6 @@
 """Tests for capital assembly validation."""
 
+import logging
 from datetime import date
 
 import pytest
@@ -78,14 +79,23 @@ def _dated_backtest_result(
 
 
 def test_models_based_capital_rejects_negative_components() -> None:
-    with pytest.raises(ValueError, match="imcc_t_minus_1"):
-        models_based_capital(
-            imcc_t_minus_1=-1.0,
-            ses_t_minus_1=0.0,
-            imcc_60d_avg=0.0,
-            ses_60d_avg=0.0,
-            multiplier=1.5,
-        )
+    cases = (
+        ("imcc_t_minus_1", -1.0, 0.0, 0.0, 0.0, 1.5, 0.0),
+        ("ses_t_minus_1", 0.0, -1.0, 0.0, 0.0, 1.5, 0.0),
+        ("imcc_60d_avg", 0.0, 0.0, -1.0, 0.0, 1.5, 0.0),
+        ("ses_60d_avg", 0.0, 0.0, 0.0, -1.0, 1.5, 0.0),
+        ("pla_addon", 0.0, 0.0, 0.0, 0.0, 1.5, -1.0),
+    )
+    for field, imcc_t, ses_t, imcc_avg, ses_avg, multiplier, addon in cases:
+        with pytest.raises(ValueError, match=f"{field} must be non-negative"):
+            models_based_capital(
+                imcc_t_minus_1=imcc_t,
+                ses_t_minus_1=ses_t,
+                imcc_60d_avg=imcc_avg,
+                ses_60d_avg=ses_avg,
+                multiplier=multiplier,
+                pla_addon=addon,
+            )
 
 
 def test_models_based_capital_rejects_non_finite_components() -> None:
@@ -173,6 +183,36 @@ def test_models_based_capital_serializes_audit_breakdown() -> None:
     assert result.as_dict()["models_based_capital"] == pytest.approx(145.0)
     assert result.as_dict()["binding_term"] == "AVERAGE"
     assert result.as_dict()["exception_count"] is None
+    assert result.as_dict() == {
+        "imcc_t_minus_1": 100.0,
+        "ses_t_minus_1": 20.0,
+        "imcc_60d_avg": 90.0,
+        "ses_60d_avg": 10.0,
+        "multiplier": 1.5,
+        "pla_addon": 0.0,
+        "models_based_capital": pytest.approx(145.0),
+        "binding_term": "AVERAGE",
+        "exception_count": None,
+    }
+
+
+def test_models_based_capital_preserves_component_inputs() -> None:
+    result = models_based_capital(
+        imcc_t_minus_1=11.0,
+        ses_t_minus_1=7.0,
+        imcc_60d_avg=5.0,
+        ses_60d_avg=3.0,
+        multiplier=1.6,
+        pla_addon=2.0,
+    )
+
+    assert result.imcc_t_minus_1 == pytest.approx(11.0)
+    assert result.ses_t_minus_1 == pytest.approx(7.0)
+    assert result.imcc_60d_avg == pytest.approx(5.0)
+    assert result.ses_60d_avg == pytest.approx(3.0)
+    assert result.multiplier == pytest.approx(1.6)
+    assert result.pla_addon == pytest.approx(2.0)
+    assert result.models_based_capital == pytest.approx(20.0)
 
 
 def test_models_based_capital_reports_spot_binding_term() -> None:
@@ -187,6 +227,22 @@ def test_models_based_capital_reports_spot_binding_term() -> None:
 
     assert result.binding_term == "SPOT"
     assert result.models_based_capital == pytest.approx(225.0)
+
+
+def test_models_based_capital_tie_binds_to_spot_term() -> None:
+    result = models_based_capital(
+        imcc_t_minus_1=130.0,
+        ses_t_minus_1=20.0,
+        imcc_60d_avg=90.0,
+        ses_60d_avg=15.0,
+        multiplier=1.5,
+        pla_addon=7.0,
+        exception_count=4,
+    )
+
+    assert result.binding_term == "SPOT"
+    assert result.models_based_capital == pytest.approx(157.0)
+    assert result.exception_count == 4
 
 
 def test_models_based_capital_rejects_multiplier_below_floor() -> None:
@@ -250,6 +306,20 @@ def test_desk_eligibility_from_results_rejects_unknown_pla_zone() -> None:
         desk_eligibility_from_results(
             _trading_desk_backtest_result(model_eligible=True),
             "YELLOW",
+        )
+
+
+def test_desk_eligibility_from_results_rejects_invalid_inputs() -> None:
+    with pytest.raises(ValueError, match="backtest_result"):
+        desk_eligibility_from_results(
+            object(),  # type: ignore[arg-type]
+            "GREEN",
+        )
+
+    with pytest.raises(ValueError, match="pla_zone"):
+        desk_eligibility_from_results(
+            _trading_desk_backtest_result(model_eligible=True),
+            "",
         )
 
 
@@ -359,6 +429,34 @@ def test_models_based_capital_for_policy_uses_policy_exception_count_multiplier(
     assert result.as_dict()["exception_count"] == 6
 
 
+def test_models_based_capital_for_policy_logs_audit_fields(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    policy = get_policy()
+    caplog.set_level(logging.INFO, logger="frtb_ima.capital")
+
+    result = models_based_capital_for_policy(
+        DeskEligibilityStatus.IMA_ELIGIBLE,
+        imcc_t_minus_1=100.0,
+        ses_t_minus_1=20.0,
+        imcc_60d_avg=90.0,
+        ses_60d_avg=10.0,
+        pla_addon=5.0,
+        policy=policy,
+        exception_count=6,
+    )
+
+    record = caplog.records[-1]
+    assert record.getMessage() == "models_based_capital_complete"
+    assert record.regime == policy.regime.value
+    assert record.desk_eligibility == DeskEligibilityStatus.IMA_ELIGIBLE.value
+    assert record.models_based_capital == pytest.approx(result.models_based_capital)
+    assert record.binding_term == "AVERAGE"
+    assert record.multiplier == pytest.approx(result.multiplier)
+    assert record.exception_count == 6
+    assert record.pla_addon == pytest.approx(5.0)
+
+
 def test_models_based_capital_for_policy_rejects_red_zone_exception_count() -> None:
     policy = get_policy()
 
@@ -449,6 +547,33 @@ def test_validate_pla_backtesting_window_alignment_warns_for_count_proxy_dates()
     assert len(warnings) == 1
 
 
+def test_validate_pla_backtesting_window_alignment_validates_result_types() -> None:
+    with pytest.raises(ValueError, match="pla_diagnostics"):
+        validate_pla_backtesting_window_alignment(
+            object(),  # type: ignore[arg-type]
+            _dated_backtest_result(),
+        )
+
+    with pytest.raises(ValueError, match="backtest_result"):
+        validate_pla_backtesting_window_alignment(
+            _pla_diagnostics(),
+            object(),  # type: ignore[arg-type]
+        )
+
+
+def test_validate_pla_backtesting_window_alignment_warns_for_backtest_count_proxy() -> None:
+    with pytest.warns(DeprecationWarning, match="calendar-backed date ranges") as warnings:
+        result = validate_pla_backtesting_window_alignment(
+            _pla_diagnostics(),
+            _dated_backtest_result(
+                calendar_basis=ObservationWindowBasis.OBSERVATION_COUNT_PROXY.value
+            ),
+        )
+
+    assert result is None
+    assert len(warnings) == 1
+
+
 def test_pla_addon_zero_green_amber_requires_zero_amber() -> None:
     result = pla_addon(
         standardized_green_amber=0.0,
@@ -458,6 +583,14 @@ def test_pla_addon_zero_green_amber_requires_zero_amber() -> None:
 
     assert result.k_factor == pytest.approx(0.0)
     assert result.pla_addon == pytest.approx(0.0)
+    assert result.as_dict() == {
+        "k_factor": 0.0,
+        "standardized_green_amber": 0.0,
+        "standardized_amber": 0.0,
+        "ima_green_amber": 10.0,
+        "capital_benefit": 0.0,
+        "pla_addon": 0.0,
+    }
 
     with pytest.raises(ValueError, match="standardized_amber"):
         pla_addon(
@@ -468,6 +601,12 @@ def test_pla_addon_zero_green_amber_requires_zero_amber() -> None:
 
 
 def test_supervisory_multiplier_validates_schedule_and_red_zone_multiplier() -> None:
+    assert supervisory_multiplier(
+        10,
+        schedule=((0, 1.5), (5, 1.7)),
+        red_zone_multiplier=2.0,
+    ) == pytest.approx(2.0)
+
     with pytest.raises(ValueError, match="red_zone_multiplier"):
         supervisory_multiplier(10, schedule=(), red_zone_multiplier=1.0)
 

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import pytest
-from tests.rrao_fixture_helpers import sample_rrao_position as sample_position
 
 from frtb_rrao import (
     RraoClassification,
@@ -10,6 +9,7 @@ from frtb_rrao import (
     RraoRegulatoryProfile,
     classify_rrao_position,
 )
+from tests.rrao_fixture_helpers import sample_rrao_position as sample_position
 
 
 def test_partial_investment_fund_path_fails_without_descriptor() -> None:

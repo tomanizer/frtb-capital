@@ -18,6 +18,48 @@ dependencies = [
 [tool.setuptools.packages.find]
 where = ["src"]
 
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-v --tb=short"
+pythonpath = ["../..", "."]
+norecursedirs = [".*", "build", "dist", "mutants"]
+markers = [
+    "regulatory_ref(id): links a test to a regulatory requirement or source-crosswalk id",
+    "challenger_ref(id): links a test to an external challenger implementation",
+]
+
+[tool.mutmut]
+paths_to_mutate = [
+    "src/frtb_sbm/capital.py",
+    "src/frtb_sbm/curvature.py",
+    "src/frtb_sbm/weighted_sensitivity.py",
+]
+pytest_add_cli_args_test_selection = [
+    "tests/test_curvature.py",
+    "tests/test_sbm_girr_vega.py",
+    "tests/test_sbm_multi_class_portfolio.py",
+    "tests/test_sbm_weighted_sensitivity.py",
+]
+pytest_add_cli_args = [
+    "-c",
+    "pyproject.toml",
+    "-p",
+    "no:cov",
+]
+do_not_mutate = [
+    "src/frtb_sbm/adapters",
+    "src/frtb_sbm/arrow_batch.py",
+    "src/frtb_sbm/audit.py",
+    "src/frtb_sbm/batch.py",
+    "src/frtb_sbm/crif.py",
+    "src/frtb_sbm/reference_data.py",
+]
+also_copy = [
+    "src/frtb_sbm",
+    "tests",
+]
+mutate_only_covered_lines = true
+
 [tool.towncrier]
 package = "frtb_sbm"
 package_dir = "src"

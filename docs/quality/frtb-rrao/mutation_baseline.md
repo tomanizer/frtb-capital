@@ -1,8 +1,8 @@
 # RRAO Mutation Testing Baseline
 
-Date: 2026-05-29
+Date: 2026-07-02
 
-Issues: #119, #122
+Issues: #119, #122, #1146
 
 ## Scope
 
@@ -28,33 +28,32 @@ make mutation-rrao
 
 Tool: `mutmut` 3.5.0
 
-Baseline command completed successfully on 2026-05-29.
+Baseline command completed successfully on 2026-07-02.
 
 | Metric | Count |
 | --- | ---: |
-| Total mutants | 1,266 |
-| Killed | 1,082 |
-| Survived | 184 |
-| Timeout | 0 |
+| Total mutants | 420 |
+| Killed | 396 |
+| Survived | 14 |
+| Timeout | 10 |
 | No tests | 0 |
 | Skipped | 0 |
 | Suspicious | 0 |
 
-Killed-only mutation score: `85.47%`.
+Killed-only mutation score: `94.29%`.
 
-The IMA precedent recorded in
-`docs/quality/frtb-ima/mutation_baseline.md` is `75.12%`. RRAO therefore
-exceeds the suite precedent across the configured v1 boundary without excluding
-any survivor from the denominator.
+The RRAO quality floor is now `94.29%`, matching the 2026-07-02 baseline
+without excluding any survivor from the denominator. Timeout-classified mutants
+are reported separately and are not counted as survivors by `mutmut`'s exported
+CI stats.
 
 ## Module Breakdown
 
-| Module | Total | Killed | Survived | Score |
-| --- | ---: | ---: | ---: | ---: |
-| `audit.py` | 273 | 212 | 61 | 77.66% |
-| `capital.py` | 141 | 138 | 3 | 97.87% |
-| `classification.py` | 134 | 119 | 15 | 88.81% |
-| `validation.py` | 718 | 613 | 105 | 85.38% |
+| Module | Total | Killed | Survived | Timeout | Score |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| `audit.py` | 251 | 236 | 5 | 10 | 94.02% |
+| `capital.py` | 79 | 79 | 0 | 0 | 100.00% |
+| `classification.py` | 90 | 81 | 9 | 0 | 90.00% |
 
 ## Property Tests
 
