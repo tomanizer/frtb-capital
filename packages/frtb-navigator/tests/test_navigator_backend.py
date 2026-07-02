@@ -284,3 +284,73 @@ def test_result_store_ima_grid_and_inspector_preserve_no_data_diagnostics() -> N
     assert inspector_payload["audit_rows"]
     messages = [item["message"] for item in inspector_payload["diagnostics"]]
     assert any("upl" in message.lower() or "rfet" in message.lower() for message in messages)
+
+
+def test_result_store_artifact_summary_covers_metadata_views_and_no_data() -> None:
+    client = TestClient(app)
+    run_id = client.get("/api/runs?source=result-store").json()[0]["run_id"]
+    grid = client.get(f"/api/runs/{run_id}/grid?source=result-store&framework=SA").json()
+    sbm_row_id = next(row["row_id"] for row in grid["rows"] if row["component"] == "SBM")
+
+    response = client.get(
+        f"/api/runs/{run_id}/artifacts"
+        f"?source=result-store&framework=SA&scenario=Binding&row_id={sbm_row_id}"
+    )
+
+    assert response.status_code == 200, response.text
+    payload = response.json()
+    assert payload["source"] == "result-store"
+    assert payload["status_counts"]["AVAILABLE"] >= 4
+    assert any(item["role"] == "rfet_observations" for item in payload["timelines"])
+    assert any(item["role"] == "sbm_curvature_shock" for item in payload["shocks"])
+    assert any(item["role"] == "ima_scenario_vector" for item in payload["scenarios"])
+    assert any(item["role"] == "sbm_vega_surface" for item in payload["surfaces"])
+    assert any(item["role"] == "plat_upl" for item in payload["no_data"])
+    assert any(item["linked_to_selection"] for item in payload["shocks"])
+
+
+def test_result_store_artifact_detail_serves_bounded_metadata_pages() -> None:
+    client = TestClient(app)
+    run_id = client.get("/api/runs?source=result-store").json()[0]["run_id"]
+    artifact_ids = {
+        "timeline": "navigator-rfet-observation-timeline",
+        "shock": "navigator-sbm-curvature-shock-up",
+        "scenario": "navigator-ima-scenario-vector",
+        "surface": "navigator-usd-swaption-vol-surface",
+    }
+
+    for kind, artifact_id in artifact_ids.items():
+        response = client.get(
+            f"/api/runs/{run_id}/artifacts/{artifact_id}?source=result-store&limit=10"
+        )
+        assert response.status_code == 200, response.text
+        payload = response.json()
+        assert payload["artifact"]["artifact_id"] == artifact_id
+        assert payload["mode"] == "local_parquet"
+        assert payload["rows"], kind
+
+    shock_payload = client.get(
+        f"/api/runs/{run_id}/artifacts/navigator-sbm-curvature-shock-up?source=result-store"
+    ).json()
+    assert shock_payload["rows"][0]["shock_direction"] == "UP"
+
+    surface_payload = client.get(
+        f"/api/runs/{run_id}/artifacts/navigator-usd-swaption-vol-surface?source=result-store"
+    ).json()
+    assert surface_payload["rows"][0]["axis_1_name"] == "option_tenor"
+
+
+def test_artifact_detail_preserves_explicit_no_data_state() -> None:
+    client = TestClient(app)
+    run_id = client.get("/api/runs?source=result-store").json()[0]["run_id"]
+
+    response = client.get(
+        f"/api/runs/{run_id}/artifacts/navigator-upl-time-series-no-data?source=result-store"
+    )
+
+    assert response.status_code == 200, response.text
+    payload = response.json()
+    assert payload["mode"] == "artifact_unavailable"
+    assert payload["artifact"]["status"] == "NO_DATA"
+    assert "UPL" in payload["artifact"]["status_reason"]
+    assert payload["rows"] == []

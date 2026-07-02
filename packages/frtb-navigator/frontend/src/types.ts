@@ -202,3 +202,52 @@ export type InspectorView = {
   diagnostics: Diagnostic[];
   extras: Record<string, unknown>;
 };
+
+export type ArtifactCatalogRow = {
+  artifact_id: string;
+  artifact_type: string;
+  component: string;
+  label: string;
+  role: string;
+  status: string;
+  status_reason: string;
+  row_count: number;
+  schema_id?: string | null;
+  partition_values: Record<string, string>;
+  lineage: Record<string, string>;
+  linked_to_selection: boolean;
+};
+
+export type ArtifactSummaryView = {
+  run_id: string;
+  source: string;
+  data_state: string;
+  framework: string;
+  scenario: string;
+  hierarchy_node_id: string;
+  selected_row_id?: string | null;
+  status_counts: Record<string, number>;
+  timelines: ArtifactCatalogRow[];
+  shocks: ArtifactCatalogRow[];
+  scenarios: ArtifactCatalogRow[];
+  surfaces: ArtifactCatalogRow[];
+  no_data: ArtifactCatalogRow[];
+  linked_artifact_ids: string[];
+};
+
+export type ArtifactDetailView = {
+  run_id: string;
+  source: string;
+  data_state: string;
+  artifact: ArtifactCatalogRow;
+  mode: string;
+  limit: number;
+  offset: number;
+  row_count?: number | null;
+  filtered_row_count?: number | null;
+  returned: number;
+  next_offset?: number | null;
+  columns: string[];
+  filters: Record<string, string>;
+  rows: Record<string, unknown>[];
+};

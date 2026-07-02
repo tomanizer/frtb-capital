@@ -13,6 +13,8 @@ from frtb_navigator.backend.adapters import DashboardDataAdapter, normalize_sour
 from frtb_navigator.backend.demo_adapter import DemoRunAdapter
 from frtb_navigator.backend.demo_runs import ima_desk_view, node_detail, sa_overview
 from frtb_navigator.backend.models import (
+    ArtifactDetailView,
+    ArtifactSummaryView,
     GridView,
     ImaDeskView,
     InspectorView,
@@ -216,6 +218,90 @@ def get_inspector(
             row_id,
             scenario=scenario,
             hierarchy_node_id=hierarchy_node_id,
+        )
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@app.get("/api/runs/{run_id}/artifacts", response_model=ArtifactSummaryView)
+def get_artifacts(
+    run_id: str,
+    source: str = "demo",
+    framework: str = Query("SA", pattern="^(SA|IMA|CVA|sa|ima|cva)$"),
+    scenario: str = "Binding",
+    hierarchy_node_id: str = Query("toh", alias="hierarchyNodeId"),
+    row_id: str | None = None,
+) -> ArtifactSummaryView:
+    """Return artifact evidence grouped for the Navigator evidence pane.
+
+    Parameters
+    ----------
+    run_id
+        Navigator run identifier.
+    source
+        Source selector, such as ``demo`` or ``result-store``.
+    framework
+        Requested framework view.
+    scenario
+        Scenario selector for scenario-sensitive rows.
+    hierarchy_node_id
+        Requested hierarchy scope.
+    row_id
+        Optional selected aggregate row.
+
+    Returns
+    -------
+    ArtifactSummaryView
+        Grouped artifact catalogue, no-data states, and selected-row links.
+    """
+
+    try:
+        return _adapter(source).artifact_summary(
+            run_id,
+            framework=framework,
+            scenario=scenario,
+            hierarchy_node_id=hierarchy_node_id,
+            row_id=row_id,
+        )
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@app.get("/api/runs/{run_id}/artifacts/{artifact_id}", response_model=ArtifactDetailView)
+def get_artifact_detail(
+    run_id: str,
+    artifact_id: str,
+    source: str = "demo",
+    limit: int = Query(50, ge=1, le=200),
+    offset: int = Query(0, ge=0),
+) -> ArtifactDetailView:
+    """Return a bounded artifact page through the Navigator backend.
+
+    Parameters
+    ----------
+    run_id
+        Navigator run identifier.
+    artifact_id
+        Artifact selected by the UI.
+    source
+        Source selector, such as ``demo`` or ``result-store``.
+    limit
+        Maximum rows to return.
+    offset
+        Zero-based row offset.
+
+    Returns
+    -------
+    ArtifactDetailView
+        Artifact metadata and bounded page rows.
+    """
+
+    try:
+        return _adapter(source).artifact_detail(
+            run_id,
+            artifact_id,
+            limit=limit,
+            offset=offset,
         )
     except KeyError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc

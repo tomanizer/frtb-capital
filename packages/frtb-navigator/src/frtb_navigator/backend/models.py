@@ -246,3 +246,58 @@ class InspectorView(BaseModel):
     audit_rows: list[AuditRowView]
     diagnostics: list[DiagnosticView] = Field(default_factory=list)
     extras: dict[str, Any] = Field(default_factory=dict)
+
+
+class ArtifactCatalogRowView(BaseModel):
+    """Navigator-safe summary row for one stored evidence artifact."""
+
+    artifact_id: str
+    artifact_type: str
+    component: str
+    label: str
+    role: str = ""
+    status: str = "AVAILABLE"
+    status_reason: str = ""
+    row_count: int = 0
+    schema_id: str | None = None
+    partition_values: dict[str, str] = Field(default_factory=dict)
+    lineage: dict[str, str] = Field(default_factory=dict)
+    linked_to_selection: bool = False
+
+
+class ArtifactSummaryView(BaseModel):
+    """Artifact evidence catalogue grouped for Navigator inspector panes."""
+
+    run_id: str
+    source: str = "demo"
+    data_state: str = "fixture"
+    framework: str
+    scenario: str
+    hierarchy_node_id: str
+    selected_row_id: str | None = None
+    status_counts: dict[str, int] = Field(default_factory=dict)
+    timelines: list[ArtifactCatalogRowView] = Field(default_factory=list)
+    shocks: list[ArtifactCatalogRowView] = Field(default_factory=list)
+    scenarios: list[ArtifactCatalogRowView] = Field(default_factory=list)
+    surfaces: list[ArtifactCatalogRowView] = Field(default_factory=list)
+    no_data: list[ArtifactCatalogRowView] = Field(default_factory=list)
+    linked_artifact_ids: list[str] = Field(default_factory=list)
+
+
+class ArtifactDetailView(BaseModel):
+    """Bounded artifact page served through the Navigator backend."""
+
+    run_id: str
+    source: str = "demo"
+    data_state: str = "fixture"
+    artifact: ArtifactCatalogRowView
+    mode: str
+    limit: int
+    offset: int
+    row_count: int | None = None
+    filtered_row_count: int | None = None
+    returned: int = 0
+    next_offset: int | None = None
+    columns: list[str] = Field(default_factory=list)
+    filters: dict[str, str] = Field(default_factory=dict)
+    rows: list[dict[str, Any]] = Field(default_factory=list)

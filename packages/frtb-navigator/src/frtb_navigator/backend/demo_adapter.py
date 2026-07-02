@@ -6,6 +6,9 @@ from functools import lru_cache
 
 from frtb_navigator.backend import demo_runs
 from frtb_navigator.backend.models import (
+    ArtifactCatalogRowView,
+    ArtifactDetailView,
+    ArtifactSummaryView,
     GridView,
     InspectorView,
     MetadataView,
@@ -158,4 +161,110 @@ class DemoRunAdapter:
             row_id,
             scenario=scenario,
             hierarchy_node_id=hierarchy_node_id,
+        )
+
+    def artifact_summary(
+        self,
+        run_id: str,
+        *,
+        framework: str = "SA",
+        scenario: str = "Binding",
+        hierarchy_node_id: str = demo_runs.DEFAULT_HIERARCHY_NODE_ID,
+        row_id: str | None = None,
+    ) -> ArtifactSummaryView:
+        """Return explicit artifact no-data state for the in-memory demo source.
+
+        Parameters
+        ----------
+        run_id
+            Demo run identifier.
+        framework
+            Requested framework view.
+        scenario
+            Scenario selector.
+        hierarchy_node_id
+            Requested hierarchy scope.
+        row_id
+            Optional selected row.
+
+        Returns
+        -------
+        ArtifactSummaryView
+            Empty artifact catalogue with an explicit no-data row.
+        """
+
+        self._resolve_run(run_id)
+        artifact = ArtifactCatalogRowView(
+            artifact_id="demo-artifact-evidence-no-data",
+            artifact_type="OTHER",
+            component=framework.upper(),
+            label="Demo source artifact evidence",
+            role="demo_artifact_evidence",
+            status="NO_DATA",
+            status_reason="Artifact evidence is available only from the result-store fixture.",
+            linked_to_selection=True,
+        )
+        return ArtifactSummaryView(
+            run_id=run_id,
+            source=self.source,
+            data_state="demo fixture",
+            framework=framework.upper(),
+            scenario=scenario,
+            hierarchy_node_id=hierarchy_node_id,
+            selected_row_id=row_id,
+            status_counts={"AVAILABLE": 0, "NO_DATA": 1, "UNSUPPORTED": 0},
+            no_data=[artifact],
+            linked_artifact_ids=[artifact.artifact_id],
+        )
+
+    def artifact_detail(
+        self,
+        run_id: str,
+        artifact_id: str,
+        *,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> ArtifactDetailView:
+        """Return the demo artifact no-data detail payload.
+
+        Parameters
+        ----------
+        run_id
+            Demo run identifier.
+        artifact_id
+            Demo artifact identifier.
+        limit
+            Requested row limit.
+        offset
+            Requested row offset.
+
+        Returns
+        -------
+        ArtifactDetailView
+            Explicit no-data artifact detail.
+        """
+
+        self._resolve_run(run_id)
+        if artifact_id != "demo-artifact-evidence-no-data":
+            raise KeyError(f"Unknown demo artifact {artifact_id}")
+        artifact = ArtifactCatalogRowView(
+            artifact_id=artifact_id,
+            artifact_type="OTHER",
+            component="DEMO",
+            label="Demo source artifact evidence",
+            role="demo_artifact_evidence",
+            status="NO_DATA",
+            status_reason="Artifact evidence is available only from the result-store fixture.",
+        )
+        return ArtifactDetailView(
+            run_id=run_id,
+            source=self.source,
+            data_state="demo fixture",
+            artifact=artifact,
+            mode="artifact_unavailable",
+            limit=limit,
+            offset=offset,
+            row_count=0,
+            filtered_row_count=0,
+            returned=0,
         )
