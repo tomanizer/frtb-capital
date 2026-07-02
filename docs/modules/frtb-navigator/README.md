@@ -1,6 +1,6 @@
-# Capital Navigator specification guide
+# FRTB Navigator specification guide
 
-The Capital Navigator docs are split into one product north star and focused
+The FRTB Navigator docs are split into one product north star and focused
 implementation contracts. Read them in this order when planning or reviewing
 dashboard work.
 
@@ -22,6 +22,8 @@ dashboard work.
   Navigator exists, which workflows matter, and how the experience should feel.
 - Companion specs are binding for implementation details. Do not duplicate their
   full schemas or tables in the UX contract.
+- Package ownership and boundary rules are recorded in
+  [ADR 0053](../../decisions/0053-frtb-navigator-application-package.md).
 - Runtime dashboard features and result-store API changes are outside this spec
   split. Implementation work should follow
   [`IMPLEMENTATION_SLICES.md`](IMPLEMENTATION_SLICES.md).
@@ -37,3 +39,4 @@ dashboard work.
 - Implementation slices: #1111
 - Governed AI explanation contract: #1112
 - Index and UX cleanup: #1113
+- Package health audit: #1159

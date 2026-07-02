@@ -1,8 +1,8 @@
-# FRTB Capital Navigator State and Routing Contract
+# FRTB Navigator State and Routing Contract
 
 Status: draft implementation contract for issue #1107.
 
-Audience: Capital Navigator frontend/backend implementers, result-store adapter
+Audience: FRTB Navigator frontend/backend implementers, result-store adapter
 authors, and reviewers.
 
 Related:
@@ -20,7 +20,7 @@ Related:
 
 ## 1. Purpose
 
-The Capital Navigator should behave like one stable analytical workbench. Users
+The FRTB Navigator should behave like one stable analytical workbench. Users
 change run, scope, mode, framework, scenario, pivot, or selected object; the
 capital strip, grid, inspector, artifact pages, and AI explanation drawer update
 from that state without showing stale evidence.

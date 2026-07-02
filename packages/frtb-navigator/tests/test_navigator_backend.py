@@ -1,11 +1,10 @@
-"""Tests for the FRTB Capital Navigator dashboard."""
+"""Tests for the FRTB Navigator dashboard."""
 
 from __future__ import annotations
 
 from fastapi.testclient import TestClient
-
-from tools.frtb_dashboard.backend.app import app
-from tools.frtb_dashboard.backend.demo_runs import (
+from frtb_navigator.backend.app import app
+from frtb_navigator.backend.demo_runs import (
     build_demo_run,
     grid_view,
     ima_desk_view,

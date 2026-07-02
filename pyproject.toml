@@ -10,6 +10,7 @@ dependencies = [
     "frtb-cva",
     "frtb-drc",
     "frtb-ima",
+    "frtb-navigator",
     "frtb-orchestration",
     "frtb-result-store",
     "frtb-rrao",
@@ -24,6 +25,7 @@ frtb-common = { workspace = true }
 frtb-cva = { workspace = true }
 frtb-drc = { workspace = true }
 frtb-ima = { workspace = true }
+frtb-navigator = { workspace = true }
 frtb-orchestration = { workspace = true }
 frtb-result-store = { workspace = true }
 frtb-rrao = { workspace = true }
@@ -56,6 +58,7 @@ root_packages = [
     "frtb_cva",
     "frtb_drc",
     "frtb_ima",
+    "frtb_navigator",
     "frtb_orchestration",
     "frtb_result_store",
     "frtb_rrao",
@@ -98,6 +101,21 @@ source_modules = [
 ]
 forbidden_modules = ["frtb_result_store"]
 
+[[tool.importlinter.contracts]]
+name = "Capital, orchestration, and storage packages do not import Navigator"
+type = "forbidden"
+source_modules = [
+    "frtb_common",
+    "frtb_cva",
+    "frtb_drc",
+    "frtb_ima",
+    "frtb_orchestration",
+    "frtb_result_store",
+    "frtb_rrao",
+    "frtb_sbm",
+]
+forbidden_modules = ["frtb_navigator"]
+
 [tool.ruff]
 line-length = 100
 target-version = "py311"
@@ -114,6 +132,20 @@ select = ["E", "F", "I", "UP", "N", "RUF", "T20"]
 [tool.mypy]
 python_version = "3.11"
 strict = true
+
+[[tool.mypy.overrides]]
+module = [
+    "fixtures.*",
+    "uvicorn",
+]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = [
+    "frtb_navigator.backend.demo_runs",
+    "frtb_navigator.backend.result_store_adapter",
+]
+ignore_errors = true
 
 [tool.pytest.ini_options]
 testpaths = ["packages", "tests"]

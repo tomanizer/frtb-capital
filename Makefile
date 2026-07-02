@@ -15,7 +15,7 @@ NOTEBOOK_ENV := MPLBACKEND=Agg IPYTHONDIR=$(CURDIR)/.pytest_cache/ipython
 .PHONY: lint format format-check typecheck
 .PHONY: test test-no-cov test-changed test-partial-runtime-coverage docs-check regulatory-corpus regulatory-wording docs-staleness
 .PHONY: import-lint kernel-import-boundary adr0033-vocabulary simplification-drift import-smoke maturity-check docstring-inventory docstring-baseline docstring-check drift-check changed-code-check test-value-check dead-code-check drift-report changed-code-report test-value-report dead-code-report drift-reports drift-baseline quality-control build
-.PHONY: demo examples-check notebooks-check package-status-dashboard
+.PHONY: demo examples-check notebooks-check package-status-dashboard navigator-frontend-build
 .PHONY: release-artifacts mutation mutation-rrao mutation-score-check benchmark ima-arrow-batch-benchmark sbm-benchmark drc-benchmark rrao-benchmark cva-benchmark benchmark-suite benchmark-budget-check
 .PHONY: audit-deps sbom checksums repo-controls-snapshot replay-fixture
 .PHONY: validation-pack agent-setup agent-sync-main agent-new agent-ensure agent-guard
@@ -98,6 +98,9 @@ package-status-dashboard:
 
 package-status-dashboard-regenerate:
 	python3 scripts/ci/generate_package_status_dashboard.py
+
+navigator-frontend-build:
+	cd packages/frtb-navigator/frontend && npm install && npm run build
 
 import-lint:
 	uv run lint-imports

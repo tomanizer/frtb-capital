@@ -104,7 +104,7 @@ column selection and simple equality filters, plus local Parquet download or
 S3 URI handoff. The service does not share the writer catalog or expose generic
 raw table dumps.
 `create_result_store_app(..., cors_allow_origins=(...))` can opt in to local
-browser access for the static Capital Navigator viewer; CORS is disabled by
+browser access for the static FRTB Navigator viewer; CORS is disabled by
 default.
 
 Metadata-backed artifact endpoints wrap the same deterministic paging contract
@@ -132,12 +132,12 @@ detail endpoints for row data. List payloads also include `status_counts`
 covering `AVAILABLE`, `NO_DATA`, and `UNSUPPORTED` refs for the metadata family.
 The dashboard-facing selection, no-data, reconciliation, and cache/cancellation
 contract is documented in
-[`CAPITAL_NAVIGATOR_METADATA_CONTRACT.md`](CAPITAL_NAVIGATOR_METADATA_CONTRACT.md).
+[`FRTB_NAVIGATOR_METADATA_CONTRACT.md`](FRTB_NAVIGATOR_METADATA_CONTRACT.md).
 The developer-facing overview of schema fields, availability states, fixture
 examples, and implementation limits is documented in
 [`ARTIFACT_METADATA.md`](ARTIFACT_METADATA.md).
 
-The Capital Navigator fixture includes concrete examples for each metadata
+The FRTB Navigator fixture includes concrete examples for each metadata
 family: an RFET observation time series, SBM curvature up/down shock
 definitions, an IMA RTPL scenario vector, and a two-axis USD swaption volatility
 surface. It also includes explicit no-data/unsupported refs for absent UPL,

@@ -1,8 +1,8 @@
-# Capital Navigator AI explanation contract
+# FRTB Navigator AI explanation contract
 
 Status: governed explanation snapshot contract; result-store snapshot builder implemented for issue #1104.
 
-Audience: Capital Navigator frontend/backend implementers, result-store
+Audience: FRTB Navigator frontend/backend implementers, result-store
 contributors, security reviewers, model-risk reviewers, and market-risk
 stakeholders who need AI-assisted commentary to remain evidence-linked and
 auditable.

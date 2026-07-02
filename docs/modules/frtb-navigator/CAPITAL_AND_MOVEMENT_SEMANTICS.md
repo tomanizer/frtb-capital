@@ -1,8 +1,8 @@
-# Capital Navigator capital and movement semantics
+# FRTB Navigator capital and movement semantics
 
 Status: draft analytical contract for issue #1109.
 
-Audience: Capital Navigator frontend/backend implementers, result-store adapter
+Audience: FRTB Navigator frontend/backend implementers, result-store adapter
 authors, reviewers, and market-risk stakeholders who need stable display
 semantics for capital, movement, hierarchy, contribution, and attribution.
 

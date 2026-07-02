@@ -19,10 +19,11 @@ SUPPORTED_PROFILES = {
     "scaffolded",
     "orchestration_partial",
     "orchestration_implemented",
+    "application_partial",
     "result_store_partial",
     "shared",
 }
-SUPPORTED_COMPONENT_TYPES = {"capital", "orchestration", "result_store", "shared"}
+SUPPORTED_COMPONENT_TYPES = {"application", "capital", "orchestration", "result_store", "shared"}
 ATTRIBUTION_COMPONENT_TYPES = {"capital", "orchestration"}
 SUPPORTED_ATTRIBUTION_STATUSES = {
     "documentation_only",
@@ -52,6 +53,7 @@ EXPECTED_IMPLEMENTATION_STATUS = {
     "scaffolded": ImplementationStatus.SCAFFOLDED,
     "orchestration_partial": ImplementationStatus.PARTIAL,
     "orchestration_implemented": ImplementationStatus.IMPLEMENTED,
+    "application_partial": ImplementationStatus.PARTIAL,
     "result_store_partial": ImplementationStatus.PARTIAL,
 }
 EXPECTED_VALIDATION_STATUS = {
@@ -60,6 +62,7 @@ EXPECTED_VALIDATION_STATUS = {
     "scaffolded": ValidationStatus.NOT_STARTED,
     "orchestration_partial": ValidationStatus.PENDING,
     "orchestration_implemented": ValidationStatus.PENDING,
+    "application_partial": ValidationStatus.PENDING,
     "result_store_partial": ValidationStatus.PENDING,
 }
 REQUIRED_TEST_IDS = {
@@ -68,6 +71,7 @@ REQUIRED_TEST_IDS = {
     "scaffolded": {"scaffold-boundary"},
     "orchestration_partial": {"orchestration-boundary"},
     "orchestration_implemented": {"orchestration-boundary", "suite-capital-end-to-end"},
+    "application_partial": {"backend-api"},
     "result_store_partial": {"public-api", "duckdb-parquet"},
     "shared": {"regulatory-helpers"},
 }
@@ -366,6 +370,7 @@ def _entry_requirement_failures(entry: PackageEntry, *, root: Path) -> list[str]
         "scaffolded": _scaffolded_failures,
         "orchestration_partial": _orchestration_partial_failures,
         "orchestration_implemented": _orchestration_implemented_failures,
+        "application_partial": _application_partial_failures,
         "result_store_partial": _result_store_partial_failures,
         "shared": _shared_failures,
     }
@@ -387,7 +392,7 @@ def _basic_registry_failures(entry: PackageEntry, *, root: Path) -> list[str]:
         failures.append("package-path")
     if not (root / entry.module_docs).exists():
         failures.append("module-docs")
-    if entry.component_type in {"capital", "orchestration", "result_store"}:
+    if entry.component_type in {"application", "capital", "orchestration", "result_store"}:
         if entry.metadata_object is None:
             failures.append("metadata-object")
     if entry.component_type in {"capital", "orchestration"}:
@@ -397,6 +402,8 @@ def _basic_registry_failures(entry: PackageEntry, *, root: Path) -> list[str]:
         failures.append("result-store-no-calculation-entrypoint")
     if entry.component_type == "shared" and entry.metadata_object is not None:
         failures.append("shared-no-metadata-object")
+    if entry.component_type == "application" and entry.calculation_entrypoint is not None:
+        failures.append("application-no-calculation-entrypoint")
 
     failures.extend(_required_test_failures(entry, root=root))
     if not _can_import_module(entry.import_name):
@@ -592,6 +599,21 @@ def _result_store_partial_failures(entry: PackageEntry, *, root: Path) -> list[s
         failures.append("architecture-data-design")
     if not (root / entry.module_docs / "PUBLIC_API.md").exists():
         failures.append("public-api-docs")
+    failures.extend(_source_root_failures(entry, root=root))
+    return failures
+
+
+def _application_partial_failures(entry: PackageEntry, *, root: Path) -> list[str]:
+    failures = _common_package_file_failures(entry, root=root)
+    tests_dir = root / entry.path / "tests"
+    if not tests_dir.is_dir():
+        failures.append("tests-directory")
+    if not list(tests_dir.glob("test_*navigator*.py")):
+        failures.append("navigator-tests")
+    if not (root / entry.path / "frontend" / "package.json").exists():
+        failures.append("frontend-package")
+    if not (root / entry.module_docs / "README.md").exists():
+        failures.append("module-docs-readme")
     failures.extend(_source_root_failures(entry, root=root))
     return failures
 

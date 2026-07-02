@@ -1,4 +1,4 @@
-# FRTB Capital Navigator UX Audit and Interaction Contract
+# FRTB Navigator UX Audit and Interaction Contract
 
 Status: draft product contract for incremental UX hardening.
 
@@ -162,7 +162,7 @@ change the scope, capital stack, movement analysis, explanation, evidence, or
 export state, it should be removed, hidden behind an advanced menu, or shown as
 disabled with a precise no-data reason.
 
-### 4.1 Current Capital Navigator v2 Mapping
+### 4.1 Current FRTB Navigator v2 Mapping
 
 The current dashboard already has the beginnings of the right analytical model.
 The UX should make these objects explicit instead of letting them leak through

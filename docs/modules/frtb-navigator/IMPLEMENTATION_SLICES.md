@@ -1,8 +1,8 @@
-# Capital Navigator implementation slices
+# FRTB Navigator implementation slices
 
 Status: draft implementation plan for issue #1111.
 
-Audience: Capital Navigator frontend/backend implementers, result-store
+Audience: FRTB Navigator frontend/backend implementers, result-store
 contributors, reviewers, and agents planning focused PRs.
 
 Related:
@@ -22,7 +22,7 @@ Related:
 - AI explanation contract:
   [`AI_EXPLANATION_CONTRACT.md`](AI_EXPLANATION_CONTRACT.md)
 
-This document turns the Capital Navigator contracts into reviewable delivery
+This document turns the FRTB Navigator contracts into reviewable delivery
 slices. It is not a project-management chart and it does not implement runtime
 features. Each slice should normally be one focused PR. Do not bundle all modes
 into one implementation PR.
@@ -69,7 +69,7 @@ analytical modes.
 
 Prerequisites:
 
-- Current `tools/frtb_dashboard` fixture app runs.
+- Current `packages/frtb-navigator` fixture app runs.
 - `MODE_WIREFRAMES.md` shell anatomy is accepted.
 
 Result-store dependency:
@@ -79,10 +79,10 @@ Result-store dependency:
 
 Files likely touched:
 
-- `tools/frtb_dashboard/frontend/src/App.tsx`
-- `tools/frtb_dashboard/frontend/src/index.css`
-- `tools/frtb_dashboard/frontend/src/types.ts`
-- `tools/frtb_dashboard/frontend/src/api.ts` only if hierarchy metadata shape
+- `packages/frtb-navigator/frontend/src/App.tsx`
+- `packages/frtb-navigator/frontend/src/index.css`
+- `packages/frtb-navigator/frontend/src/types.ts`
+- `packages/frtb-navigator/frontend/src/api.ts` only if hierarchy metadata shape
   needs a display-only field.
 
 Fixture needs:
@@ -102,8 +102,8 @@ Validation commands:
 
 - `make agent-guard`
 - `make docs-check` if docs are touched
-- affected frontend test command from `tools/frtb_dashboard/frontend/package.json`
-- `uv run python tools/frtb_dashboard/run.py --port <port>` plus browser smoke
+- affected frontend test command from `packages/frtb-navigator/frontend/package.json`
+- `uv run python packages/frtb-navigator/src/frtb_navigator/cli.py --port <port>` plus browser smoke
   for shell layout
 
 Non-goals:
@@ -129,9 +129,9 @@ Result-store dependency:
 
 Files likely touched:
 
-- `tools/frtb_dashboard/frontend/src/App.tsx`
-- `tools/frtb_dashboard/frontend/src/api.ts`
-- `tools/frtb_dashboard/frontend/src/types.ts`
+- `packages/frtb-navigator/frontend/src/App.tsx`
+- `packages/frtb-navigator/frontend/src/api.ts`
+- `packages/frtb-navigator/frontend/src/types.ts`
 - frontend route/state helper files if split from `App.tsx`
 - backend request parsing only where current query parameters are incomplete.
 
@@ -180,11 +180,11 @@ Result-store dependency:
 
 Files likely touched:
 
-- `tools/frtb_dashboard/frontend/src/App.tsx`
-- `tools/frtb_dashboard/frontend/src/types.ts`
-- `tools/frtb_dashboard/backend/models.py`
-- `tools/frtb_dashboard/backend/demo_runs.py`
-- `tools/frtb_dashboard/backend/app.py`
+- `packages/frtb-navigator/frontend/src/App.tsx`
+- `packages/frtb-navigator/frontend/src/types.ts`
+- `packages/frtb-navigator/src/frtb_navigator/backend/models.py`
+- `packages/frtb-navigator/src/frtb_navigator/backend/demo_runs.py`
+- `packages/frtb-navigator/src/frtb_navigator/backend/app.py`
 
 Fixture needs:
 
@@ -232,9 +232,9 @@ Result-store dependency:
 
 Files likely touched:
 
-- `tools/frtb_dashboard/backend/app.py`
-- `tools/frtb_dashboard/backend/models.py`
-- new dashboard adapter module under `tools/frtb_dashboard/backend/`
+- `packages/frtb-navigator/src/frtb_navigator/backend/app.py`
+- `packages/frtb-navigator/src/frtb_navigator/backend/models.py`
+- new dashboard adapter module under `packages/frtb-navigator/src/frtb_navigator/backend/`
 - result-store public docs only if a public contract gap is discovered
 - focused tests under dashboard and/or `packages/frtb-result-store/tests`.
 
@@ -282,11 +282,11 @@ Result-store dependency:
 
 Files likely touched:
 
-- `tools/frtb_dashboard/backend/demo_runs.py`
-- `tools/frtb_dashboard/backend/models.py`
-- `tools/frtb_dashboard/backend/app.py`
-- `tools/frtb_dashboard/frontend/src/App.tsx`
-- `tools/frtb_dashboard/frontend/src/types.ts`
+- `packages/frtb-navigator/src/frtb_navigator/backend/demo_runs.py`
+- `packages/frtb-navigator/src/frtb_navigator/backend/models.py`
+- `packages/frtb-navigator/src/frtb_navigator/backend/app.py`
+- `packages/frtb-navigator/frontend/src/App.tsx`
+- `packages/frtb-navigator/frontend/src/types.ts`
 
 Fixture needs:
 
@@ -334,10 +334,10 @@ Result-store dependency:
 
 Files likely touched:
 
-- `tools/frtb_dashboard/frontend/src/App.tsx`
-- `tools/frtb_dashboard/frontend/src/types.ts`
-- `tools/frtb_dashboard/backend/app.py`
-- `tools/frtb_dashboard/backend/models.py`
+- `packages/frtb-navigator/frontend/src/App.tsx`
+- `packages/frtb-navigator/frontend/src/types.ts`
+- `packages/frtb-navigator/src/frtb_navigator/backend/app.py`
+- `packages/frtb-navigator/src/frtb_navigator/backend/models.py`
 
 Fixture needs:
 
@@ -386,11 +386,11 @@ Result-store dependency:
 
 Files likely touched:
 
-- `tools/frtb_dashboard/frontend/src/App.tsx`
-- `tools/frtb_dashboard/frontend/src/types.ts`
-- `tools/frtb_dashboard/backend/demo_runs.py`
-- `tools/frtb_dashboard/backend/models.py`
-- component-specific fixture adapters under `tools/frtb_dashboard/backend/`.
+- `packages/frtb-navigator/frontend/src/App.tsx`
+- `packages/frtb-navigator/frontend/src/types.ts`
+- `packages/frtb-navigator/src/frtb_navigator/backend/demo_runs.py`
+- `packages/frtb-navigator/src/frtb_navigator/backend/models.py`
+- component-specific fixture adapters under `packages/frtb-navigator/src/frtb_navigator/backend/`.
 
 Fixture needs:
 
@@ -440,10 +440,10 @@ Result-store dependency:
 
 Files likely touched:
 
-- `tools/frtb_dashboard/frontend/src/App.tsx`
-- `tools/frtb_dashboard/frontend/src/types.ts`
-- `tools/frtb_dashboard/backend/models.py`
-- `tools/frtb_dashboard/backend/app.py`
+- `packages/frtb-navigator/frontend/src/App.tsx`
+- `packages/frtb-navigator/frontend/src/types.ts`
+- `packages/frtb-navigator/src/frtb_navigator/backend/models.py`
+- `packages/frtb-navigator/src/frtb_navigator/backend/app.py`
 - fixture adapters that expose risk-factor evidence.
 
 Fixture needs:
@@ -494,10 +494,10 @@ Result-store dependency:
 
 Files likely touched:
 
-- `tools/frtb_dashboard/frontend/src/App.tsx`
-- `tools/frtb_dashboard/frontend/src/types.ts`
-- `tools/frtb_dashboard/backend/models.py`
-- `tools/frtb_dashboard/backend/app.py`
+- `packages/frtb-navigator/frontend/src/App.tsx`
+- `packages/frtb-navigator/frontend/src/types.ts`
+- `packages/frtb-navigator/src/frtb_navigator/backend/models.py`
+- `packages/frtb-navigator/src/frtb_navigator/backend/app.py`
 - IMA fixture adapter code if desk evidence is reshaped.
 
 Fixture needs:
@@ -547,10 +547,10 @@ Result-store dependency:
 
 Files likely touched:
 
-- `tools/frtb_dashboard/frontend/src/App.tsx`
-- `tools/frtb_dashboard/frontend/src/types.ts`
-- `tools/frtb_dashboard/backend/models.py`
-- `tools/frtb_dashboard/backend/app.py`
+- `packages/frtb-navigator/frontend/src/App.tsx`
+- `packages/frtb-navigator/frontend/src/types.ts`
+- `packages/frtb-navigator/src/frtb_navigator/backend/models.py`
+- `packages/frtb-navigator/src/frtb_navigator/backend/app.py`
 - dashboard adapter methods for metadata/time-series calls.
 
 Fixture needs:
@@ -601,10 +601,10 @@ Result-store dependency:
 
 Files likely touched:
 
-- `tools/frtb_dashboard/frontend/src/App.tsx`
-- `tools/frtb_dashboard/frontend/src/types.ts`
-- `tools/frtb_dashboard/backend/models.py`
-- `tools/frtb_dashboard/backend/app.py`
+- `packages/frtb-navigator/frontend/src/App.tsx`
+- `packages/frtb-navigator/frontend/src/types.ts`
+- `packages/frtb-navigator/src/frtb_navigator/backend/models.py`
+- `packages/frtb-navigator/src/frtb_navigator/backend/app.py`
 - dashboard adapter for pivot query parameters.
 
 Fixture needs:
@@ -653,9 +653,9 @@ Result-store dependency:
 
 Files likely touched:
 
-- `tools/frtb_dashboard/frontend/src/App.tsx`
-- `tools/frtb_dashboard/frontend/src/types.ts`
-- `tools/frtb_dashboard/backend/models.py`
+- `packages/frtb-navigator/frontend/src/App.tsx`
+- `packages/frtb-navigator/frontend/src/types.ts`
+- `packages/frtb-navigator/src/frtb_navigator/backend/models.py`
 - optional backend placeholder route for disabled-state/schema validation.
 
 Fixture needs:
@@ -703,7 +703,7 @@ Frontend-only fixture UI PRs:
 
 - `make agent-guard`
 - affected frontend lint/test/build commands from
-  `tools/frtb_dashboard/frontend/package.json`
+  `packages/frtb-navigator/frontend/package.json`
 - dashboard backend smoke if API request shapes change
 - browser smoke for the changed workflow
 

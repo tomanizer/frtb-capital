@@ -1,6 +1,6 @@
-# FRTB Capital Navigator Viewer — v2 design
+# FRTB Navigator Viewer — v2 design
 
-This document records the second-attempt design for `tools/frtb_dashboard`. It
+This document records the second-attempt design for `packages/frtb-navigator`. It
 supersedes the first-pass P0 dashboard architecture.
 
 Target Navigator contracts:

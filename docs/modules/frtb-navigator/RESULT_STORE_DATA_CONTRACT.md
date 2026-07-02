@@ -1,6 +1,6 @@
-# Capital Navigator result-store data contract
+# FRTB Navigator result-store data contract
 
-This contract defines how the Capital Navigator consumes `frtb-result-store`
+This contract defines how the FRTB Navigator consumes `frtb-result-store`
 data for dashboard view models, audit drilldowns, artifacts, and no-data states.
 It is a browser and adapter contract over committed result-store evidence. It
 does not replace the package-level result-store documentation.
@@ -8,7 +8,7 @@ does not replace the package-level result-store documentation.
 Authoritative result-store references:
 
 - [`PUBLIC_API.md`](../../modules/frtb-result-store/PUBLIC_API.md)
-- [`CAPITAL_NAVIGATOR_METADATA_CONTRACT.md`](../../modules/frtb-result-store/CAPITAL_NAVIGATOR_METADATA_CONTRACT.md)
+- [`FRTB_NAVIGATOR_METADATA_CONTRACT.md`](../../modules/frtb-result-store/FRTB_NAVIGATOR_METADATA_CONTRACT.md)
 - [`ARTIFACT_METADATA.md`](../../modules/frtb-result-store/ARTIFACT_METADATA.md)
 - [`STORAGE_CONTRACT.md`](../../modules/frtb-result-store/STORAGE_CONTRACT.md)
 

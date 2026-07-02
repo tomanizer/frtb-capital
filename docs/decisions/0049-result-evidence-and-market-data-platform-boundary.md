@@ -10,7 +10,7 @@ Proposed
 
 Issue #1072 adds first-class result-store contracts for time-series,
 shock-definition, scenario-vector, and surface-grid artifacts. Those contracts
-make the Capital Navigator more honest: the UI can discover RFET observation
+make the FRTB Navigator more honest: the UI can discover RFET observation
 timelines, PLAT vectors, SBM shock definitions, IMA scenario vectors, and
 volatility surfaces as persisted run evidence instead of faking them in the
 frontend.
@@ -34,7 +34,7 @@ The suite already has related boundaries:
 - [ADR 0045](0045-canonical-batch-pipeline-with-adapter-ingress.md) requires
   adapter ingress into package-owned regulatory batches, and forbids
   `frtb-common` from absorbing component-specific regulatory semantics.
-- The Capital Navigator metadata contract defines the new artifact endpoint
+- The FRTB Navigator metadata contract defines the new artifact endpoint
   families as a read model: the UI may display persisted metadata but must not
   generate shocks, interpolate surfaces, infer missing classifications, or
   calculate capital.
@@ -107,7 +107,7 @@ references to evidence artifacts for a committed run:
   when a dataset is absent or outside implemented scope.
 
 The result store may expose these artifacts through read-only APIs for the
-Capital Navigator. It may page, filter, serialize, catalogue, and return
+FRTB Navigator. It may page, filter, serialize, catalogue, and return
 availability status for committed artifacts.
 
 Package-owned deterministic regulatory shocks are allowed when they are direct
@@ -145,7 +145,7 @@ Ownership is explicit:
 | RRAO add-on evidence | `frtb-rrao` |
 | CVA sensitivity, counterparty, and surface references | `frtb-cva` |
 | Surface calibration, interpolation, and market-data lifecycle | external data platform |
-| Rendering, filtering, and inspection UX | Capital Navigator |
+| Rendering, filtering, and inspection UX | FRTB Navigator |
 
 `frtb-result-store` owns availability and retrieval. It must not become the
 place where RFET, PLAT, SBM, DRC, RRAO, or CVA regulatory classifications are
@@ -223,7 +223,7 @@ External market/scenario/reference-data platforms
     -> package adapters and typed regulatory batches
     -> capital kernels and frozen audit/result records
     -> frtb-result-store committed run bundle
-    -> Capital Navigator read-only inspection API
+    -> FRTB Navigator read-only inspection API
 ```
 
 The suite must keep these layers separate:
@@ -274,7 +274,7 @@ when the selected result implies that the user expects them.
 
 ### Rule 5: client-side UI does not own regulatory semantics
 
-The Capital Navigator may display stored metadata, status, source rows, and
+The FRTB Navigator may display stored metadata, status, source rows, and
 audit counters. It must not:
 
 - decide RFET pass/fail status from raw observation points;
@@ -353,7 +353,7 @@ external data platform, or a new ADR-backed integration boundary.
 
 **Positive:**
 
-- The Capital Navigator can inspect richer evidence without faking data or
+- The FRTB Navigator can inspect richer evidence without faking data or
   growing client-side regulatory logic.
 - Capital packages can carry audit references to the inputs they used while
   keeping kernels small, deterministic, and package-owned.
@@ -417,6 +417,6 @@ external data platform, or a new ADR-backed integration boundary.
   batch pipeline with adapter ingress.
 - [ADR 0050](0050-risk-factor-identity-and-package-projection-boundary.md): risk
   factor identity and package projection boundary.
-- [`docs/modules/frtb-result-store/CAPITAL_NAVIGATOR_METADATA_CONTRACT.md`](../modules/frtb-result-store/CAPITAL_NAVIGATOR_METADATA_CONTRACT.md):
-  Capital Navigator metadata read-model contract.
+- [`docs/modules/frtb-result-store/FRTB_NAVIGATOR_METADATA_CONTRACT.md`](../modules/frtb-result-store/FRTB_NAVIGATOR_METADATA_CONTRACT.md):
+  FRTB Navigator metadata read-model contract.
 - #1072: time-series, shocks, and surface metadata architecture.

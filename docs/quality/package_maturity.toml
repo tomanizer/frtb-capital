@@ -168,6 +168,20 @@ id = "attribution-unsupported-branches"
 path = "packages/frtb-ima/tests/test_attribution.py"
 
 [[packages]]
+package = "frtb-navigator"
+import_name = "frtb_navigator"
+path = "packages/frtb-navigator"
+module_docs = "docs/modules/frtb-navigator"
+maturity = "application_partial"
+component_type = "application"
+metadata_object = "frtb_navigator:PACKAGE_METADATA"
+notes = "Read-only Navigator application package; not a capital calculation component."
+
+[[packages.required_tests]]
+id = "backend-api"
+path = "packages/frtb-navigator/tests/test_navigator_backend.py"
+
+[[packages]]
 package = "frtb-orchestration"
 import_name = "frtb_orchestration"
 path = "packages/frtb-orchestration"
