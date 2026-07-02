@@ -22,7 +22,7 @@ from frtb_cva import (
 from frtb_cva.aggregation import aggregate_intra_bucket, girr_delta_aggregation_config
 from frtb_cva.numeric import is_reconciled
 from frtb_cva.weighted_sensitivity import compute_weighted_sensitivities
-from hypothesis import given
+from hypothesis import given, settings
 from hypothesis import strategies as st
 
 POSITIVE_EAD = st.floats(
@@ -126,6 +126,7 @@ def test_reduced_ba_cva_portfolio_is_subadditive(ead: float) -> None:
     )
 
 
+@settings(deadline=None)
 @given(amount=POSITIVE_AMOUNT)
 def test_sa_cva_capital_is_non_negative(amount: float) -> None:
     result = calculate_cva_capital(

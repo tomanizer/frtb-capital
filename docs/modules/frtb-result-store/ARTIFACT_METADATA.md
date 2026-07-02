@@ -183,14 +183,19 @@ The Navigator should:
 3. Load metadata catalogs.
 4. On selected row, load node lineage.
 5. Match lineage `source_id` values to metadata catalog `artifact_id` values.
-6. Render only the contextual metadata tabs linked to the selected row.
+6. Prefer linked artifacts for the selected row and show availability counts for
+   the broader artifact catalog.
+7. Render unavailable artifacts as explicit no-data or unsupported states.
 
 Catalog `artifact_id` values identify stored artifact refs, while detail routes
-usually use semantic partition ids such as `time_series_id`, `shock_id`,
-`scenario_vector_id`, or `surface_id`.
+may use artifact IDs or semantic partition ids such as `time_series_id`,
+`shock_id`, `scenario_vector_id`, or `surface_id`, depending on whether the
+caller is using the generic artifact-page API or a typed metadata endpoint.
 
-The Navigator must not display all metadata families globally for every row.
-The selected capital row determines which evidence is relevant.
+The Navigator may expose timeline, shock, scenario, surface, and no-data tabs as
+stable workbench categories, but selected-row lineage determines which artifacts
+are highlighted, preselected, or treated as contextual evidence. Browser code
+must not infer artifact semantics or fabricate rows for unlinked datasets.
 
 ## Current fixture examples
 

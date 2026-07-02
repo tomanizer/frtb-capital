@@ -88,6 +88,13 @@ All U.S. NPR 2.0 / Basel FRTB / EU CRR3 / PRA UK CRR content is proposed-rule or
   supplied IDs and provenance, orchestration composes resolved views, and
   Navigator consumes APIs without client-side regulatory classification. See
   [`docs/RISK_FACTOR_METADATA_OWNERSHIP.md`](docs/RISK_FACTOR_METADATA_OWNERSHIP.md).
+- Time-series, shock, scenario-vector, and surface metadata follows the same
+  evidence split: `frtb-common` owns stable IDs/coordinates, component packages
+  preserve supplied IDs/provenance, `frtb-result-store` owns persisted artifact
+  refs/pages/read APIs, `frtb-orchestration` composes already resolved evidence,
+  and Navigator renders backend/API payloads without client-side semantic
+  inference. See
+  [`docs/ARTIFACT_METADATA_OWNERSHIP.md`](docs/ARTIFACT_METADATA_OWNERSHIP.md).
 - Enterprise hierarchy follows the same package split. `frtb-common` owns
   stable `CalculationScope` primitives, component packages preserve supplied
   scope IDs, `frtb-result-store` owns hierarchy nodes/edges/mappings and

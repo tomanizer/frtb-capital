@@ -14,6 +14,10 @@ already-resolved FRTB capital results. It is not a capital calculation component
   `NO_DATA` or `UNSUPPORTED` states when payloads are unavailable.
 - Rendering, filtering, frontend caching, and inspection of already-resolved
   API/read-model payloads are in scope.
+- Time-series, shock, scenario-vector, and surface metadata boundaries are
+  governed by
+  [`../../docs/ARTIFACT_METADATA_OWNERSHIP.md`](../../docs/ARTIFACT_METADATA_OWNERSHIP.md);
+  Navigator renders backend/API payloads and no-data states only.
 
 ## Validation
 
