@@ -4,6 +4,7 @@ export type RunSummary = {
   calculation_date: string;
   profile_id: string;
   base_currency: string;
+  source: string;
   jurisdiction_family?: string | null;
   components: string[];
   prototype: boolean;
@@ -96,6 +97,8 @@ export type DimensionNode = {
 
 export type MetadataView = {
   run_id: string;
+  source: string;
+  data_state: string;
   dimensions: DimensionNode[];
   reporting_dates: string[];
   baseline_dates: string[];
@@ -143,6 +146,7 @@ export type GridRow = {
 
 export type GridView = {
   run_id: string;
+  source: string;
   framework: string;
   grouping: string;
   scenario: string;

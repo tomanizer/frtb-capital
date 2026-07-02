@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from functools import lru_cache
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Query
@@ -10,19 +9,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from tools.frtb_dashboard.backend.demo_runs import (
-    DEMO_RUN_ID,
-    DashboardRun,
-    build_demo_run,
-    grid_view,
-    ima_desk_view,
-    inspector_view,
-    list_demo_runs,
-    metadata_view,
-    node_detail,
-    run_overview,
-    sa_overview,
-)
+from tools.frtb_dashboard.backend.adapters import DashboardDataAdapter, normalize_source
+from tools.frtb_dashboard.backend.demo_adapter import DemoRunAdapter
+from tools.frtb_dashboard.backend.demo_runs import ima_desk_view, node_detail, sa_overview
 from tools.frtb_dashboard.backend.models import (
     GridView,
     ImaDeskView,
@@ -33,6 +22,7 @@ from tools.frtb_dashboard.backend.models import (
     RunSummary,
     SaOverviewView,
 )
+from tools.frtb_dashboard.backend.result_store_adapter import ResultStoreAdapter
 
 FRONTEND_DIST = Path(__file__).resolve().parents[1] / "frontend" / "dist"
 
@@ -53,54 +43,59 @@ app.add_middleware(
 )
 
 
-@lru_cache(maxsize=1)
-def _demo_run() -> DashboardRun:
-    return build_demo_run()
+_DEMO_ADAPTER = DemoRunAdapter()
+_ADAPTERS: dict[str, DashboardDataAdapter] = {
+    "demo": _DEMO_ADAPTER,
+    "result-store": ResultStoreAdapter(),
+}
 
 
-def _resolve_run(run_id: str) -> DashboardRun:
-    if run_id != DEMO_RUN_ID:
-        raise HTTPException(status_code=404, detail=f"Unknown run {run_id}")
-    return _demo_run()
+def _adapter(source: str | None) -> DashboardDataAdapter:
+    return _ADAPTERS[normalize_source(source)]
 
 
 @app.get("/api/health")
 def health() -> dict[str, str]:
-    return {"status": "ok", "mode": "demo", "app": "frtb-capital-navigator"}
+    return {"status": "ok", "mode": "multi-source", "app": "frtb-capital-navigator"}
 
 
 @app.get("/api/runs", response_model=list[RunSummary])
-def get_runs() -> list[RunSummary]:
-    return list_demo_runs()
+def get_runs(source: str = "demo") -> list[RunSummary]:
+    return _adapter(source).list_runs()
 
 
 @app.get("/api/runs/{run_id}", response_model=RunOverviewView)
 def get_run(
     run_id: str,
+    source: str = "demo",
     hierarchy_node_id: str = Query("toh", alias="hierarchyNodeId"),
 ) -> RunOverviewView:
     try:
-        return run_overview(_resolve_run(run_id), hierarchy_node_id=hierarchy_node_id)
+        return _adapter(source).run_overview(run_id, hierarchy_node_id=hierarchy_node_id)
     except KeyError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
 @app.get("/api/runs/{run_id}/metadata", response_model=MetadataView)
-def get_metadata(run_id: str) -> MetadataView:
-    return metadata_view(_resolve_run(run_id))
+def get_metadata(run_id: str, source: str = "demo") -> MetadataView:
+    try:
+        return _adapter(source).metadata(run_id)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
 @app.get("/api/runs/{run_id}/grid", response_model=GridView)
 def get_grid(
     run_id: str,
+    source: str = "demo",
     framework: str = Query("SA", pattern="^(SA|IMA|CVA|sa|ima|cva)$"),
     grouping: str | None = None,
     scenario: str = "Binding",
     hierarchy_node_id: str = Query("toh", alias="hierarchyNodeId"),
 ) -> GridView:
     try:
-        return grid_view(
-            _resolve_run(run_id),
+        return _adapter(source).grid(
+            run_id,
             framework=framework,
             grouping=grouping,
             scenario=scenario,
@@ -114,12 +109,13 @@ def get_grid(
 def get_inspector(
     run_id: str,
     row_id: str,
+    source: str = "demo",
     scenario: str = "Binding",
     hierarchy_node_id: str = Query("toh", alias="hierarchyNodeId"),
 ) -> InspectorView:
     try:
-        return inspector_view(
-            _resolve_run(run_id),
+        return _adapter(source).inspector(
+            run_id,
             row_id,
             scenario=scenario,
             hierarchy_node_id=hierarchy_node_id,
@@ -131,7 +127,7 @@ def get_inspector(
 @app.get("/api/runs/{run_id}/nodes/{node_id}", response_model=NodeDetailView)
 def get_node(run_id: str, node_id: str) -> NodeDetailView:
     try:
-        return node_detail(_resolve_run(run_id), node_id)
+        return node_detail(_DEMO_ADAPTER._resolve_run(run_id), node_id)
     except KeyError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
@@ -139,14 +135,14 @@ def get_node(run_id: str, node_id: str) -> NodeDetailView:
 @app.get("/api/runs/{run_id}/ima/desks/{desk_id}", response_model=ImaDeskView)
 def get_ima_desk(run_id: str, desk_id: str) -> ImaDeskView:
     try:
-        return ima_desk_view(_resolve_run(run_id), desk_id)
+        return ima_desk_view(_DEMO_ADAPTER._resolve_run(run_id), desk_id)
     except KeyError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
 @app.get("/api/runs/{run_id}/sa", response_model=SaOverviewView)
 def get_sa(run_id: str) -> SaOverviewView:
-    return sa_overview(_resolve_run(run_id))
+    return sa_overview(_DEMO_ADAPTER._resolve_run(run_id))
 
 
 if FRONTEND_DIST.exists():
