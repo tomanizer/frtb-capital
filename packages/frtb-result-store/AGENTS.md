@@ -29,6 +29,8 @@ The package has a first local DuckDB/Parquet backend:
   scenario vectors, and surfaces. Store resolved artifact IDs, partition keys,
   mapping versions, lineage, and explicit no-data/unsupported states; do not
   infer component regulatory semantics or fabricate missing artifact payloads.
+  See
+  [`../../docs/ARTIFACT_METADATA_OWNERSHIP.md`](../../docs/ARTIFACT_METADATA_OWNERSHIP.md).
 - Own enterprise hierarchy nodes, edges, effective-dated versions, source-row
   mappings, aggregate rollups, source-row drilldown, and read/API contracts.
   Component packages preserve `CalculationScope` IDs only; they must not

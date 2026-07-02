@@ -44,6 +44,8 @@ the persisted artifact payloads. Navigator and other viewers consume
 result-store metadata/detail endpoints and orchestration evidence read models,
 and must render absent fixtures as explicit `NO_DATA` or `UNSUPPORTED` states
 rather than fabricating UPL, CRIF, stress-vector, RFET, or volatility data.
+The full ownership matrix and validation contract are in
+[`ARTIFACT_METADATA_OWNERSHIP.md`](ARTIFACT_METADATA_OWNERSHIP.md).
 
 ## Dependency graph
 

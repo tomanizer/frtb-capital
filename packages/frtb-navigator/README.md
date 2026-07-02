@@ -50,8 +50,9 @@ For the result-store schema and endpoint guides, see
 ## FRTB Navigator v2 dashboard
 
 The v2 dashboard is a high-density, read-only viewer for synthetic FRTB capital
-run results across IMA, SA, and CVA. It uses a fixed four-zone layout: command
-ribbon, context bar, aggregate blotter, and audit inspector.
+run results across IMA, SA, and CVA. It uses a fixed workbench layout: command
+ribbon, context bar, hierarchy rail, aggregate blotter, audit inspector, and
+artifact evidence pane.
 
 The dashboard backend supports two read sources behind the same response models:
 
@@ -67,7 +68,7 @@ for the FRTB Navigator specification guide and companion contracts.
 
 ```bash
 # API, serving the built frontend when dist/ exists
-uv run frtb-navigator --port 8766
+uv run --package frtb-navigator --extra server frtb-navigator --port 8766
 
 # Frontend dev server
 cd packages/frtb-navigator/frontend && npm install && npm run dev
@@ -83,6 +84,8 @@ curl 'http://127.0.0.1:8766/api/runs?source=result-store'
 curl 'http://127.0.0.1:8766/api/runs/capital-navigator-2026-06-03-us-npr/metadata?source=result-store'
 curl 'http://127.0.0.1:8766/api/runs/capital-navigator-2026-06-03-us-npr/grid?source=result-store&framework=SA&scenario=Binding'
 curl 'http://127.0.0.1:8766/api/runs/capital-navigator-2026-06-03-us-npr/inspector?source=result-store&row_id=sbm'
+curl 'http://127.0.0.1:8766/api/runs/capital-navigator-2026-06-03-us-npr/artifacts?source=result-store&framework=SA&row_id=sbm'
+curl 'http://127.0.0.1:8766/api/runs/capital-navigator-2026-06-03-us-npr/artifacts/navigator-sbm-curvature-shock-up?source=result-store'
 ```
 
 ### v2 capabilities
@@ -98,9 +101,12 @@ curl 'http://127.0.0.1:8766/api/runs/capital-navigator-2026-06-03-us-npr/inspect
 - CVA no-data state when the selected run has no CVA payload.
 - Inspector linked to the selected aggregate row, showing attribution, source
   provenance, scenario/backtesting extras, and data-honesty diagnostics.
+- Artifact evidence pane linked to selected rows, showing timeline, shock,
+  scenario-vector, surface-grid, and explicit no-data/unsupported metadata
+  pages served through the backend.
 - Abortable frontend requests and small in-memory caches for run, blotter, and
-  inspector payloads keyed by source, run, framework, scenario, hierarchy node,
-  and row.
+  inspector/artifact payloads keyed by source, run, framework, scenario,
+  hierarchy node, selected row, and artifact ID.
 - Result-store source selection in the command ribbon. The result-store fixture
   exposes SA and IMA rows where persisted marts provide them and explicit
   no-data diagnostics for unavailable RFET, ES liquidity-horizon, UPL, CVA,
@@ -112,6 +118,9 @@ render those responses, but it must not invent hierarchy membership, roll up
 capital client-side, or silently substitute zero for missing scoped rows. The
 suite-wide ownership model is documented in
 [`docs/HIERARCHY_OWNERSHIP.md`](../../docs/HIERARCHY_OWNERSHIP.md).
+Time-series, shock, scenario-vector, and surface metadata ownership is
+documented in
+[`docs/ARTIFACT_METADATA_OWNERSHIP.md`](../../docs/ARTIFACT_METADATA_OWNERSHIP.md).
 
 ## Boundaries
 

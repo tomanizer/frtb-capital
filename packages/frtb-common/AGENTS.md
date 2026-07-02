@@ -21,6 +21,8 @@ before editing this package.
   calculation-context primitives.
 - Stable organisation identifier aliases and `CalculationScope` metadata for
   downstream hierarchy-aware rollups.
+- Stable time-series, shock, scenario-vector, and surface identifier/coordinate
+  primitives for downstream artifact evidence propagation.
 
 ## Rules
 
@@ -35,5 +37,8 @@ before editing this package.
 - Do not store hierarchy edges, traverse hierarchy graphs, or aggregate capital
   rows here. Enterprise hierarchy ownership is documented in
   [`../../docs/HIERARCHY_OWNERSHIP.md`](../../docs/HIERARCHY_OWNERSHIP.md).
+- Do not store artifact payloads, fetch market data, generate shocks, or
+  interpolate surfaces. Artifact metadata ownership is documented in
+  [`../../docs/ARTIFACT_METADATA_OWNERSHIP.md`](../../docs/ARTIFACT_METADATA_OWNERSHIP.md).
 - Do not import from capital component packages.
 - Use frozen dataclasses and enums for public data containers.
