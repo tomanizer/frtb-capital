@@ -1,4 +1,4 @@
-import type { GridView, ImaDeskView, InspectorView, MetadataView, NodeDetail, RunOverview, RunSummary, SaOverview } from "./types";
+import type { ArtifactDetailView, ArtifactSummaryView, GridView, ImaDeskView, InspectorView, MetadataView, NodeDetail, RunOverview, RunSummary, SaOverview } from "./types";
 
 async function request<T>(path: string, signal?: AbortSignal): Promise<T> {
   const response = await fetch(path, { signal });
@@ -25,6 +25,15 @@ export const getGrid = (source: string, runId: string, framework: string, scenar
 export const getInspector = (source: string, runId: string, rowId: string, scenario: string, hierarchyNodeId: string, signal?: AbortSignal) => {
   const params = new URLSearchParams({ source, row_id: rowId, scenario, hierarchyNodeId });
   return request<InspectorView>(`/api/runs/${encodeURIComponent(runId)}/inspector?${params.toString()}`, signal);
+};
+export const getArtifacts = (source: string, runId: string, framework: string, scenario: string, hierarchyNodeId: string, rowId: string | null, signal?: AbortSignal) => {
+  const params = new URLSearchParams({ source, framework, scenario, hierarchyNodeId });
+  if (rowId) params.set("row_id", rowId);
+  return request<ArtifactSummaryView>(`/api/runs/${encodeURIComponent(runId)}/artifacts?${params.toString()}`, signal);
+};
+export const getArtifactDetail = (source: string, runId: string, artifactId: string, signal?: AbortSignal) => {
+  const params = new URLSearchParams({ source, limit: "50" });
+  return request<ArtifactDetailView>(`/api/runs/${encodeURIComponent(runId)}/artifacts/${encodeURIComponent(artifactId)}?${params.toString()}`, signal);
 };
 export const getNode = (runId: string, nodeId: string, signal?: AbortSignal) =>
   request<NodeDetail>(`/api/runs/${runId}/nodes/${nodeId}`, signal);

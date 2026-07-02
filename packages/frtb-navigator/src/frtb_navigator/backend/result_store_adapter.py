@@ -6,13 +6,19 @@ import shutil
 import sys
 import tempfile
 from dataclasses import dataclass
+from datetime import date, datetime
 from functools import cached_property, lru_cache
 from pathlib import Path
 from typing import Any
 
-from frtb_result_store import DuckDbParquetResultStore
+from fastapi import HTTPException
+from frtb_result_store import ArtifactRef, ArtifactType, DuckDbParquetResultStore
+from frtb_result_store.api_artifacts import artifact_page_payload
 
 from frtb_navigator.backend.models import (
+    ArtifactCatalogRowView,
+    ArtifactDetailView,
+    ArtifactSummaryView,
     AttributionRowView,
     AuditRowView,
     CapitalNodeView,
@@ -43,6 +49,22 @@ _COMPONENT_LABELS = {
 }
 _SA_NODE_IDS = {"sa", "sbm", "drc", "rrao"}
 _IMA_NODE_IDS = {"ima"}
+_ARTIFACT_KIND_BY_TYPE = {
+    ArtifactType.TIME_SERIES.value: "timelines",
+    ArtifactType.SHOCK_DEFINITION.value: "shocks",
+    ArtifactType.SCENARIO_VECTOR_METADATA.value: "scenarios",
+    ArtifactType.SURFACE_GRID.value: "surfaces",
+}
+_ARTIFACT_LABELS = {
+    "rfet_observations": "RFET observations",
+    "rfet_extended_observations": "Extended RFET history",
+    "plat_upl": "UPL time series",
+    "stress_period_losses": "Stress-period losses",
+    "sbm_curvature_shock": "SBM curvature shock",
+    "ima_scenario_vector": "IMA scenario metadata",
+    "sbm_vega_surface": "USD swaption vol surface",
+    "cva_full_vol_surface": "CVA volatility surface",
+}
 
 
 @dataclass(frozen=True)
@@ -334,6 +356,137 @@ class ResultStoreAdapter:
             },
         )
 
+    def artifact_summary(
+        self,
+        run_id: str,
+        *,
+        framework: str = "SA",
+        scenario: str = "Binding",
+        hierarchy_node_id: str = _DEFAULT_NODE_ID,
+        row_id: str | None = None,
+    ) -> ArtifactSummaryView:
+        """Return result-store artifact evidence grouped for Navigator panes.
+
+        Parameters
+        ----------
+        run_id
+            Navigator or result-store run identifier.
+        framework
+            Requested framework view.
+        scenario
+            Scenario selector.
+        hierarchy_node_id
+            Requested hierarchy scope.
+        row_id
+            Optional selected aggregate row used for lineage highlighting.
+
+        Returns
+        -------
+        ArtifactSummaryView
+            Grouped artifact catalogue and status counts.
+        """
+
+        del hierarchy_node_id
+        store_run_id = self._store_run_id(run_id)
+        context = self._optional_row_context(store_run_id, row_id, scenario=scenario)
+        refs = tuple(
+            ref
+            for ref in self.store.artifact_refs(store_run_id)
+            if ArtifactType(ref.artifact_type).value in _ARTIFACT_KIND_BY_TYPE
+        )
+        catalog = [self._artifact_catalog_row(ref, context) for ref in refs]
+        grouped: dict[str, list[ArtifactCatalogRowView]] = {
+            "timelines": [],
+            "shocks": [],
+            "scenarios": [],
+            "surfaces": [],
+        }
+        no_data: list[ArtifactCatalogRowView] = []
+        for row in catalog:
+            if row.status != "AVAILABLE":
+                no_data.append(row)
+            kind = _ARTIFACT_KIND_BY_TYPE.get(row.artifact_type)
+            if kind is not None:
+                grouped[kind].append(row)
+        linked = [row.artifact_id for row in catalog if row.linked_to_selection]
+        return ArtifactSummaryView(
+            run_id=_DASHBOARD_RUN_ID,
+            source=self.source,
+            data_state=DATA_STATE,
+            framework=framework.upper(),
+            scenario=scenario,
+            hierarchy_node_id=_DEFAULT_NODE_ID,
+            selected_row_id=row_id,
+            status_counts=_artifact_status_counts(catalog),
+            timelines=grouped["timelines"],
+            shocks=grouped["shocks"],
+            scenarios=grouped["scenarios"],
+            surfaces=grouped["surfaces"],
+            no_data=no_data,
+            linked_artifact_ids=linked,
+        )
+
+    def artifact_detail(
+        self,
+        run_id: str,
+        artifact_id: str,
+        *,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> ArtifactDetailView:
+        """Return one bounded artifact page for Navigator rendering.
+
+        Parameters
+        ----------
+        run_id
+            Navigator or result-store run identifier.
+        artifact_id
+            Artifact identifier selected by the UI.
+        limit
+            Maximum number of rows to return.
+        offset
+            Zero-based row offset for paging.
+
+        Returns
+        -------
+        ArtifactDetailView
+            Artifact metadata and bounded page rows.
+        """
+
+        store_run_id = self._store_run_id(run_id)
+        ref = self._artifact_ref(store_run_id, artifact_id)
+        page = artifact_page_payload(
+            self.store,
+            ref,
+            columns=None,
+            filters=_default_artifact_filters(ref),
+            limit=limit,
+            offset=offset,
+            http_exception_type=HTTPException,
+            to_jsonable=_jsonable,
+        )
+        artifact = self._artifact_catalog_row(ref, None)
+        return ArtifactDetailView(
+            run_id=_DASHBOARD_RUN_ID,
+            source=self.source,
+            data_state=DATA_STATE,
+            artifact=artifact,
+            mode=str(page.get("mode", "")),
+            limit=int(page.get("limit", limit)),
+            offset=int(page.get("offset", offset)),
+            row_count=_int_or_none(page.get("row_count")),
+            filtered_row_count=_int_or_none(page.get("filtered_row_count")),
+            returned=int(page.get("returned", 0)),
+            next_offset=_int_or_none(page.get("next_offset")),
+            columns=[str(column) for column in page.get("columns", [])],
+            filters={str(key): str(value) for key, value in dict(page.get("filters", {})).items()},
+            rows=[
+                {str(key): _jsonable(value) for key, value in row.items()}
+                for row in page.get("rows", [])
+                if isinstance(row, dict)
+            ],
+        )
+
     def _summary_for_run(self, run: Any) -> RunSummary:
         components = sorted(self._component_amounts(run.run_id))
         return RunSummary(
@@ -347,6 +500,51 @@ class ResultStoreAdapter:
             components=components,
             input_hash=run.input_snapshot_id,
             prototype=False,
+        )
+
+    def _optional_row_context(
+        self,
+        store_run_id: str,
+        row_id: str | None,
+        *,
+        scenario: str,
+    ) -> _RowContext | None:
+        if not row_id:
+            return None
+        try:
+            return self._row_context(store_run_id, row_id, scenario=scenario)
+        except KeyError:
+            return None
+
+    def _artifact_ref(self, store_run_id: str, artifact_id: str) -> ArtifactRef:
+        for ref in self.store.artifact_refs(store_run_id):
+            if ref.artifact_id == artifact_id:
+                return ref
+        raise KeyError(f"Unknown artifact {artifact_id}")
+
+    def _artifact_catalog_row(
+        self,
+        ref: ArtifactRef,
+        context: _RowContext | None,
+    ) -> ArtifactCatalogRowView:
+        artifact_type = ArtifactType(ref.artifact_type).value
+        status = str(ref.metadata.get("artifact_status", "AVAILABLE"))
+        partitions = _partition_values(ref)
+        role = str(ref.metadata.get("navigator_role", ""))
+        lineage = _artifact_lineage(self.store, ref.run_id, ref.artifact_id)
+        return ArtifactCatalogRowView(
+            artifact_id=ref.artifact_id,
+            artifact_type=artifact_type,
+            component=_component(ref.component),
+            label=_artifact_label(ref, role, partitions),
+            role=role,
+            status=status,
+            status_reason=str(ref.metadata.get("status_reason", "")),
+            row_count=int(ref.row_count),
+            schema_id=_str_or_none(ref.metadata.get("schema_id")),
+            partition_values=partitions,
+            lineage=lineage,
+            linked_to_selection=_artifact_matches_context(ref, context, lineage),
         )
 
     def _run_by_id(self, store_run_id: str) -> Any:
@@ -715,6 +913,15 @@ def _float_or_none(value: Any) -> float | None:
         return None
 
 
+def _int_or_none(value: Any) -> int | None:
+    if value is None:
+        return None
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
 def _str_or_none(value: Any) -> str | None:
     return None if value is None or value == "" else str(value)
 
@@ -733,6 +940,98 @@ def _group_path(row: Any) -> list[str]:
 
 def _slug(value: str) -> str:
     return "".join(char.lower() if char.isalnum() else "-" for char in value).strip("-")
+
+
+def _partition_values(ref: ArtifactRef) -> dict[str, str]:
+    partitions = ref.metadata.get("partition_values")
+    if not isinstance(partitions, dict):
+        return {}
+    return {str(key): str(value) for key, value in partitions.items()}
+
+
+def _default_artifact_filters(ref: ArtifactRef) -> tuple[str, ...]:
+    partitions = _partition_values(ref)
+    return tuple(f"{key}={partitions[key]}" for key in ref.partition_keys if key in partitions)
+
+
+def _artifact_label(
+    ref: ArtifactRef,
+    role: str,
+    partitions: dict[str, str],
+) -> str:
+    base = _ARTIFACT_LABELS.get(role)
+    if base:
+        suffix = next(iter(partitions.values()), "")
+        return f"{base} ({suffix})" if suffix else base
+    artifact_type = ArtifactType(ref.artifact_type).value.replace("_", " ").title()
+    suffix = next(iter(partitions.values()), ref.artifact_id)
+    return f"{artifact_type} ({suffix})"
+
+
+def _artifact_lineage(
+    store: DuckDbParquetResultStore,
+    store_run_id: str,
+    artifact_id: str,
+) -> dict[str, str]:
+    for node in store.capital_tree_mart(store_run_id):
+        for lineage in store.lineage_for_result(store_run_id, node.node_id):
+            if lineage.source_type == "artifact" and lineage.source_id == artifact_id:
+                return {
+                    "result_id": lineage.result_id,
+                    "relationship": lineage.relationship,
+                    "source_type": lineage.source_type,
+                    "source_id": lineage.source_id,
+                }
+    return {}
+
+
+def _artifact_matches_context(
+    ref: ArtifactRef,
+    context: _RowContext | None,
+    lineage: dict[str, str],
+) -> bool:
+    if context is None:
+        return False
+    if lineage.get("result_id") == context.store_node_id:
+        return True
+    component = _component(ref.component)
+    if component in {context.row.component, context.row.framework}:
+        return True
+    rows = context.source_rows
+    if not rows:
+        return False
+    partitions = _partition_values(ref)
+    for source_row in rows:
+        if source_row.get("artifact_id") == ref.artifact_id:
+            return True
+        for key in ("risk_factor_id", "source_row_id", "mapping_version"):
+            if key in partitions and str(source_row.get(key)) == partitions[key]:
+                return True
+    return False
+
+
+def _artifact_status_counts(rows: list[ArtifactCatalogRowView]) -> dict[str, int]:
+    counts = {"AVAILABLE": 0, "NO_DATA": 0, "UNSUPPORTED": 0}
+    for row in rows:
+        counts.setdefault(row.status, 0)
+        counts[row.status] += 1
+    return counts
+
+
+def _jsonable(value: Any) -> Any:
+    if isinstance(value, datetime):
+        return value.isoformat()
+    if isinstance(value, date):
+        return value.isoformat()
+    if isinstance(value, dict):
+        return {str(key): _jsonable(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_jsonable(item) for item in value]
+    if hasattr(value, "value"):
+        return getattr(value, "value")
+    if hasattr(value, "__dict__"):
+        return _jsonable(value.__dict__)
+    return value
 
 
 def _dimension_value(row: Any, dimension: str, attr: str) -> str | None:

@@ -7,6 +7,8 @@ from typing import Protocol
 from fastapi import HTTPException
 
 from frtb_navigator.backend.models import (
+    ArtifactDetailView,
+    ArtifactSummaryView,
     GridView,
     InspectorView,
     MetadataView,
@@ -119,6 +121,63 @@ class DashboardDataAdapter(Protocol):
         -------
         InspectorView
             Attribution, source rows, diagnostics, and inspector tab metadata.
+        """
+
+    def artifact_summary(
+        self,
+        run_id: str,
+        *,
+        framework: str = "SA",
+        scenario: str = "Binding",
+        hierarchy_node_id: str = "toh",
+        row_id: str | None = None,
+    ) -> ArtifactSummaryView:
+        """Return artifact evidence rows grouped for Navigator display.
+
+        Parameters
+        ----------
+        run_id
+            Source-local run identifier.
+        framework
+            Requested framework view.
+        scenario
+            Scenario selector for scenario-sensitive rows.
+        hierarchy_node_id
+            Requested hierarchy scope.
+        row_id
+            Optional selected aggregate row used for lineage highlighting.
+
+        Returns
+        -------
+        ArtifactSummaryView
+            Grouped artifact catalogue and status counts.
+        """
+
+    def artifact_detail(
+        self,
+        run_id: str,
+        artifact_id: str,
+        *,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> ArtifactDetailView:
+        """Return one bounded artifact page through the adapter boundary.
+
+        Parameters
+        ----------
+        run_id
+            Source-local run identifier.
+        artifact_id
+            Artifact identifier selected by the Navigator UI.
+        limit
+            Maximum number of rows to return.
+        offset
+            Zero-based row offset for paging.
+
+        Returns
+        -------
+        ArtifactDetailView
+            Artifact metadata and bounded rows.
         """
 
 

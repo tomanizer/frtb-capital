@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, KeyboardEvent, ReactNode } from "react";
-import { formatMoney, getGrid, getInspector, getMetadata, getRun, listRuns } from "./api";
-import type { AttributionRow, AuditRow, Diagnostic, DimensionNode, GridColumn, GridRow, GridView, InspectorView, MetadataView, RunOverview, RunSummary } from "./types";
+import { formatMoney, getArtifactDetail, getArtifacts, getGrid, getInspector, getMetadata, getRun, listRuns } from "./api";
+import type { ArtifactCatalogRow, ArtifactDetailView, ArtifactSummaryView, AttributionRow, AuditRow, Diagnostic, DimensionNode, GridColumn, GridRow, GridView, InspectorView, MetadataView, RunOverview, RunSummary } from "./types";
 
 type Framework = "SA" | "IMA" | "CVA";
 type Scenario = "Binding" | "Base" | "High" | "Low";
@@ -13,6 +13,14 @@ const FRAMEWORKS: Framework[] = ["SA", "IMA", "CVA"];
 const SCENARIOS: Scenario[] = ["Binding", "Base", "High", "Low"];
 const INITIAL_EXPANDED = ["sa", "sa-sbm", "sa-drc", "sa-rrao", "ima", "ima-desk-rates-desk"];
 const DEFAULT_NODE_ID = "toh";
+const ARTIFACT_TABS = [
+  { key: "timelines", label: "Timeline" },
+  { key: "shocks", label: "Shock" },
+  { key: "scenarios", label: "Scenario" },
+  { key: "surfaces", label: "Surface" },
+  { key: "no_data", label: "No data" },
+] as const;
+type ArtifactTab = (typeof ARTIFACT_TABS)[number]["key"];
 
 function isAbort(error: unknown): boolean {
   return error instanceof DOMException && error.name === "AbortError";
@@ -86,12 +94,43 @@ function childrenByParent(rows: GridRow[]): Map<string, GridRow[]> {
   return map;
 }
 
+function artifactRows(summary: ArtifactSummaryView | null, tab: ArtifactTab): ArtifactCatalogRow[] {
+  if (!summary) return [];
+  return summary[tab] ?? [];
+}
+
+function allArtifactRows(summary: ArtifactSummaryView | null): ArtifactCatalogRow[] {
+  if (!summary) return [];
+  return [
+    ...summary.timelines,
+    ...summary.shocks,
+    ...summary.scenarios,
+    ...summary.surfaces,
+    ...summary.no_data,
+  ];
+}
+
+function preferredArtifact(summary: ArtifactSummaryView | null, tab: ArtifactTab): ArtifactCatalogRow | null {
+  const rows = artifactRows(summary, tab);
+  return rows.find((row) => row.linked_to_selection) ?? rows[0] ?? allArtifactRows(summary)[0] ?? null;
+}
+
+function displayValue(value: unknown): string {
+  if (value == null) return "—";
+  if (typeof value === "number") return Number.isInteger(value) ? String(value) : value.toFixed(4);
+  if (typeof value === "string") return value;
+  if (typeof value === "boolean") return value ? "true" : "false";
+  return JSON.stringify(value);
+}
+
 function App() {
   const cache = useCache();
   const [overview, setOverview] = useState<RunOverview | null>(null);
   const [metadata, setMetadata] = useState<MetadataView | null>(null);
   const [grid, setGrid] = useState<GridView | null>(null);
   const [inspector, setInspector] = useState<InspectorView | null>(null);
+  const [artifactSummary, setArtifactSummary] = useState<ArtifactSummaryView | null>(null);
+  const [artifactDetail, setArtifactDetail] = useState<ArtifactDetailView | null>(null);
   const [source, setSource] = useState<Source>("demo");
   const [runs, setRuns] = useState<RunSummary[]>([]);
   const [runId, setRunId] = useState<string>(RUN_ID);
@@ -102,6 +141,8 @@ function App() {
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set(INITIAL_EXPANDED));
   const [query, setQuery] = useState("");
   const [activeInspectorTab, setActiveInspectorTab] = useState("attribution");
+  const [activeArtifactTab, setActiveArtifactTab] = useState<ArtifactTab>("timelines");
+  const [selectedArtifactId, setSelectedArtifactId] = useState<string>("");
   const [loadingZone, setLoadingZone] = useState<string | null>("run");
   const [error, setError] = useState<string | null>(null);
 
@@ -256,6 +297,91 @@ function App() {
     };
   }, [cache, runId, scenario, selectedNodeId, selectedRowId, source]);
 
+  useEffect(() => {
+    if (!runId) return;
+    let active = true;
+    const controller = new AbortController();
+    const key = `artifacts:${source}:${runId}:${selectedNodeId}:${framework}:${scenario}:${selectedRowId}`;
+    const cachedSummary = cacheGet<ArtifactSummaryView>(cache.current, key);
+    if (cachedSummary) {
+      const preferred = preferredArtifact(cachedSummary, activeArtifactTab);
+      setArtifactSummary(cachedSummary);
+      setSelectedArtifactId((current) => allArtifactRows(cachedSummary).some((row) => row.artifact_id === current) ? current : preferred?.artifact_id ?? "");
+      setError(null);
+      setLoadingZone(null);
+      return () => {
+        active = false;
+        controller.abort();
+      };
+    }
+    setLoadingZone("artifacts");
+    getArtifacts(source, runId, framework, scenario, selectedNodeId, selectedRowId, controller.signal)
+      .then((payload) => {
+        if (!active) return;
+        const preferred = preferredArtifact(payload, activeArtifactTab);
+        cache.current.set(key, payload);
+        setArtifactSummary(payload);
+        setSelectedArtifactId(preferred?.artifact_id ?? "");
+        setError(null);
+        setLoadingZone(null);
+      })
+      .catch((fetchError: unknown) => {
+        if (!active) return;
+        if (!isAbort(fetchError)) {
+          setArtifactSummary(null);
+          setArtifactDetail(null);
+          setError(String(fetchError));
+          setLoadingZone(null);
+        }
+      });
+    return () => {
+      active = false;
+      controller.abort();
+    };
+  }, [activeArtifactTab, cache, framework, runId, scenario, selectedNodeId, selectedRowId, source]);
+
+  useEffect(() => {
+    if (!runId || !selectedArtifactId) {
+      setArtifactDetail(null);
+      return;
+    }
+    let active = true;
+    const controller = new AbortController();
+    const key = `artifact-detail:${source}:${runId}:${selectedArtifactId}`;
+    const cachedDetail = cacheGet<ArtifactDetailView>(cache.current, key);
+    if (cachedDetail) {
+      setArtifactDetail(cachedDetail);
+      setError(null);
+      setLoadingZone(null);
+      return () => {
+        active = false;
+        controller.abort();
+      };
+    }
+    setArtifactDetail(null);
+    setLoadingZone("artifact");
+    getArtifactDetail(source, runId, selectedArtifactId, controller.signal)
+      .then((payload) => {
+        if (!active) return;
+        cache.current.set(key, payload);
+        setArtifactDetail(payload);
+        setError(null);
+        setLoadingZone(null);
+      })
+      .catch((fetchError: unknown) => {
+        if (!active) return;
+        if (!isAbort(fetchError)) {
+          setArtifactDetail(null);
+          setError(String(fetchError));
+          setLoadingZone(null);
+        }
+      });
+    return () => {
+      active = false;
+      controller.abort();
+    };
+  }, [cache, runId, selectedArtifactId, source]);
+
   const childMap = useMemo(() => childrenByParent(grid?.rows ?? []), [grid]);
   const rows = useMemo(() => visibleRows(grid?.rows ?? [], expanded, query), [expanded, grid, query]);
   const selectedRow = rows.find((row) => row.row_id === selectedRowId) ?? null;
@@ -275,6 +401,15 @@ function App() {
     setMetadata(null);
     setGrid(null);
     setInspector(null);
+    setArtifactSummary(null);
+    setArtifactDetail(null);
+    setSelectedArtifactId("");
+  }
+
+  function selectArtifactTab(next: ArtifactTab) {
+    setActiveArtifactTab(next);
+    const preferred = preferredArtifact(artifactSummary, next);
+    if (preferred) setSelectedArtifactId(preferred.artifact_id);
   }
 
   function toggleExpanded(rowId: string) {
@@ -418,6 +553,26 @@ function App() {
           <InspectorTabs inspector={inspector} activeTab={activeInspectorTab} onTab={setActiveInspectorTab} />
           <InspectorBody inspector={inspector} activeTab={activeInspectorTab} currency={currency} />
         </section>
+        <section className="artifact-zone" aria-label="Artifact evidence">
+          <div className="zone-head">
+            <div>
+              <span className="eyebrow">Zone 5 / artifact evidence</span>
+              <strong>{artifactDetail?.artifact.label ?? "Metadata-backed views"}</strong>
+            </div>
+            <div className="zone-meta">
+              <span>{artifactSummary?.status_counts.AVAILABLE ?? 0} available</span>
+              <span>{artifactSummary?.linked_artifact_ids.length ?? 0} linked</span>
+            </div>
+          </div>
+          <ArtifactEvidencePanel
+            summary={artifactSummary}
+            detail={artifactDetail}
+            activeTab={activeArtifactTab}
+            selectedArtifactId={selectedArtifactId}
+            onTab={selectArtifactTab}
+            onArtifact={setSelectedArtifactId}
+          />
+        </section>
       </section>
     </main>
   );
@@ -478,6 +633,107 @@ function CommandRibbon({
         <span className="shortcut">⌘K search</span>
       </div>
     </header>
+  );
+}
+
+function ArtifactEvidencePanel({
+  summary,
+  detail,
+  activeTab,
+  selectedArtifactId,
+  onTab,
+  onArtifact,
+}: {
+  summary: ArtifactSummaryView | null;
+  detail: ArtifactDetailView | null;
+  activeTab: ArtifactTab;
+  selectedArtifactId: string;
+  onTab: (tab: ArtifactTab) => void;
+  onArtifact: (artifactId: string) => void;
+}) {
+  const rows = artifactRows(summary, activeTab);
+  if (!summary) return <div className="empty-state">Artifact metadata unavailable.</div>;
+  return (
+    <div className="artifact-panel">
+      <div className="tabs artifact-tabs" role="tablist">
+        {ARTIFACT_TABS.map((tab) => {
+          const count = artifactRows(summary, tab.key).length;
+          return (
+            <button key={tab.key} type="button" role="tab" className={activeTab === tab.key ? "active" : ""} onClick={() => onTab(tab.key)}>
+              {tab.label}<span>{count}</span>
+            </button>
+          );
+        })}
+      </div>
+      <div className="artifact-body">
+        <div className="artifact-list" aria-label="Artifact catalog">
+          {rows.length ? rows.map((row) => (
+            <button
+              key={row.artifact_id}
+              type="button"
+              className={`artifact-row ${selectedArtifactId === row.artifact_id ? "active" : ""} ${row.linked_to_selection ? "linked" : ""}`}
+              onClick={() => onArtifact(row.artifact_id)}
+            >
+              <span className={`state-chip artifact-status artifact-${row.status.toLowerCase()}`}>{row.status.replace("_", " ")}</span>
+              <b>{row.label}</b>
+              <small>{row.component} / {row.row_count} rows</small>
+            </button>
+          )) : <div className="empty-state">No artifacts in this category.</div>}
+        </div>
+        <ArtifactDetailPanel detail={detail} />
+      </div>
+    </div>
+  );
+}
+
+function ArtifactDetailPanel({ detail }: { detail: ArtifactDetailView | null }) {
+  if (!detail) return <div className="empty-state">Select artifact evidence.</div>;
+  const metadata = {
+    type: detail.artifact.artifact_type,
+    role: detail.artifact.role || "—",
+    schema: detail.artifact.schema_id || "—",
+    mode: detail.mode,
+    filters: Object.entries(detail.filters).map(([key, value]) => `${key}=${value}`).join(", ") || "none",
+    lineage: detail.artifact.lineage.result_id || "unlinked",
+  };
+  return (
+    <div className="artifact-detail">
+      <div className="artifact-meta-grid">
+        {Object.entries(metadata).map(([key, value]) => (
+          <div key={key}>
+            <span>{key}</span>
+            <b>{value}</b>
+          </div>
+        ))}
+      </div>
+      {detail.artifact.status !== "AVAILABLE" ? (
+        <div className="diagnostic diagnostic-info">
+          <b>{detail.artifact.status}</b>
+          <span>{detail.artifact.status_reason || "Artifact is unavailable."}</span>
+        </div>
+      ) : <ArtifactRowsTable columns={detail.columns} rows={detail.rows} />}
+    </div>
+  );
+}
+
+function ArtifactRowsTable({ columns, rows }: { columns: string[]; rows: Record<string, unknown>[] }) {
+  if (!rows.length) return <div className="empty-state">No rows returned for this artifact page.</div>;
+  const visibleColumns = columns.slice(0, 7);
+  return (
+    <div className="artifact-table-wrap">
+      <table className="inspector-table artifact-table">
+        <thead>
+          <tr>{visibleColumns.map((column) => <th key={column}>{column}</th>)}</tr>
+        </thead>
+        <tbody>
+          {rows.map((row, index) => (
+            <tr key={String(row.source_row_id ?? row.surface_point_id ?? row.scenario_id ?? index)}>
+              {visibleColumns.map((column) => <td key={column}>{displayValue(row[column])}</td>)}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }
 
