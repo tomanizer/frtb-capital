@@ -155,7 +155,8 @@ def _scope_covers_fallback_desk_ids(
     expected = tuple(sorted(fallback_desk_ids))
     if scope.level is CalculationScopeLevel.DESK:
         return expected == (scope.desk_id,)
-    covered = scope.metadata.get(_FALLBACK_DESK_IDS_METADATA_KEY)
+    metadata = scope.metadata or {}
+    covered = metadata.get(_FALLBACK_DESK_IDS_METADATA_KEY)
     if covered is None:
         return False
     actual = tuple(sorted(desk_id.strip() for desk_id in covered.split(",") if desk_id.strip()))
