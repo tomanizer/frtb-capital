@@ -136,6 +136,9 @@ def _subset_netting_sets(batch: CvaNettingSetBatch, indices: list[int]) -> CvaNe
         org_scopes=None
         if batch.org_scopes is None
         else tuple(batch.org_scopes[index] for index in indices),
+        exposure_time_series_ids=None
+        if batch.exposure_time_series_ids is None
+        else _take_object(batch.exposure_time_series_ids, indices),
     )
 
 

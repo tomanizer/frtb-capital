@@ -11,6 +11,7 @@ from frtb_cva.validation.common import (
     _require_text,
     _validate_effective_maturity,
     _validate_lineage,
+    _validate_optional_text,
     normalise_ead_amount,
 )
 
@@ -178,6 +179,11 @@ def _validate_netting_set(
             field="discount_factor_explicit",
             record_id=record_id,
         )
+    _validate_optional_text(
+        netting_set.exposure_time_series_id,
+        "exposure_time_series_id",
+        record_id,
+    )
     _validate_lineage(netting_set.lineage, record_id)
     validate_scope_metadata(netting_set.org_scope, field="org_scope")
 

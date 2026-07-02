@@ -32,6 +32,12 @@ Unsupported methods and risk classes fail closed with
 profile is also the runtime target for ECB shorthand; there is no separate ECB
 profile id.
 
+CVA consumes resolved numeric inputs plus supplied provenance identifiers. It
+preserves exposure time-series IDs and volatility surface/surface-point IDs in
+hashes and audit payloads when provided, but it does not fetch market-data
+artifacts, query `frtb-result-store`, interpolate volatility surfaces, infer
+missing volatilities, or price exposure histories.
+
 **Integration journey (Arrow -> capital -> attribution -> suite/store):**
 [`docs/PACKAGE_JOURNEY.md`](docs/PACKAGE_JOURNEY.md)
 

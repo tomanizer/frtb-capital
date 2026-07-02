@@ -300,6 +300,7 @@ class BaCvaStandAloneLine:
     citations: tuple[str, ...]
     uses_imm_ead: bool = False
     discount_factor_supplied: bool = True
+    exposure_time_series_id: str = ""
     org_scope: CalculationScope | None = None
 
 
@@ -397,6 +398,9 @@ class SaCvaWeightedSensitivity:
     weighted_net: float
     source_sensitivity_ids: tuple[str, ...]
     citations: tuple[str, ...]
+    volatility_surface_ids: tuple[str, ...] = ()
+    volatility_surface_point_ids: tuple[str, ...] = ()
+    shock_ids: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -411,6 +415,9 @@ class SaCvaBucketCapital:
     sensitivity_ids: tuple[str, ...]
     citations: tuple[str, ...]
     branch_metadata: tuple[tuple[str, str], ...] = ()
+    volatility_surface_ids: tuple[str, ...] = ()
+    volatility_surface_point_ids: tuple[str, ...] = ()
+    shock_ids: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)

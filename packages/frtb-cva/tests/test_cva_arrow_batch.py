@@ -650,6 +650,7 @@ def _netting_set_table(netting_sets: tuple[CvaNettingSet, ...]) -> pa.Table:
             "source_row_id": [item.source_row_id for item in netting_sets],
             "carved_out_to_ba_cva": [item.carved_out_to_ba_cva for item in netting_sets],
             "discount_factor_explicit": [item.discount_factor_explicit for item in netting_sets],
+            "exposure_time_series_id": [item.exposure_time_series_id for item in netting_sets],
             "lineage_source_system": [
                 "" if item.lineage is None else item.lineage.source_system for item in netting_sets
             ],
@@ -738,6 +739,11 @@ def _sensitivity_table(sensitivities: tuple[SaCvaSensitivity, ...]) -> pa.Table:
             "source_row_id": [item.source_row_id for item in sensitivities],
             "tenor": [item.tenor for item in sensitivities],
             "volatility_input": [item.volatility_input for item in sensitivities],
+            "volatility_surface_id": [item.volatility_surface_id for item in sensitivities],
+            "volatility_surface_point_id": [
+                item.volatility_surface_point_id for item in sensitivities
+            ],
+            "shock_id": [item.shock_id for item in sensitivities],
             "hedge_id": [item.hedge_id for item in sensitivities],
             "lineage_source_system": [
                 "" if item.lineage is None else item.lineage.source_system for item in sensitivities

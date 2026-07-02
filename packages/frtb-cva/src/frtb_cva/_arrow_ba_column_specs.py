@@ -90,6 +90,13 @@ CVA_NETTING_SET_ARROW_COLUMN_SPECS: tuple[ColumnSpec, ...] = (
         null_policy=NullPolicy.ALLOW,
     ),
     ColumnSpec(
+        "exposure_time_series_id",
+        aliases=("exposureTimeSeriesId", "exposure_time_series", "exposureScenarioRef"),
+        logical_type=TabularLogicalType.STRING,
+        required=False,
+        null_policy=NullPolicy.ALLOW,
+    ),
+    ColumnSpec(
         "lineage_source_system",
         aliases=("source_system", "sourceSystem"),
         logical_type=TabularLogicalType.STRING,

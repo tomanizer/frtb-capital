@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import math
 from collections import defaultdict
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 
 import numpy as np
@@ -142,6 +142,13 @@ def aggregate_intra_bucket(
             }
         )
     )
+    volatility_surface_ids = _unique_weighted_values(
+        item.volatility_surface_ids for item in weighted_sensitivities
+    )
+    volatility_surface_point_ids = _unique_weighted_values(
+        item.volatility_surface_point_ids for item in weighted_sensitivities
+    )
+    shock_ids = _unique_weighted_values(item.shock_ids for item in weighted_sensitivities)
     return SaCvaBucketCapital(
         bucket_id=bucket_id,
         risk_class=config.risk_class,
@@ -155,7 +162,14 @@ def aggregate_intra_bucket(
             ("variance_floored", str(variance_floored)),
             ("raw_variance", f"{raw_variance:.6e}"),
         ),
+        volatility_surface_ids=volatility_surface_ids,
+        volatility_surface_point_ids=volatility_surface_point_ids,
+        shock_ids=shock_ids,
     )
+
+
+def _unique_weighted_values(values: Iterable[tuple[str, ...]]) -> tuple[str, ...]:
+    return tuple(sorted({value for group in values for value in group}))
 
 
 def aggregate_inter_bucket(

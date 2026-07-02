@@ -103,6 +103,7 @@ def calculate_netting_set_standalone(
         citations=_unique_citations(rw_citation, alpha_citation, df_citation),
         uses_imm_ead=netting_set.uses_imm_ead,
         discount_factor_supplied=discount_factor_supplied,
+        exposure_time_series_id=netting_set.exposure_time_series_id,
         org_scope=netting_set.org_scope,
     )
 

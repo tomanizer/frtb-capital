@@ -42,6 +42,7 @@ from frtb_cva.sa_cva_reference_data import (
 from frtb_cva.validation import CvaInputError
 
 _WeightingFn = Callable[..., tuple[SaCvaWeightedSensitivity, ...]]
+_GroupedProvenance = dict[SaCvaRiskFactorKey, dict[str, list[str]]]
 
 
 @dataclass(frozen=True)
@@ -82,11 +83,13 @@ def _group_sensitivity_amounts(
     dict[SaCvaRiskFactorKey, float],
     dict[SaCvaRiskFactorKey, list[str]],
     dict[SaCvaRiskFactorKey, float | None],
+    _GroupedProvenance,
 ]:
     grouped_cva: dict[SaCvaRiskFactorKey, float] = defaultdict(float)
     grouped_hedge: dict[SaCvaRiskFactorKey, float] = defaultdict(float)
     grouped_ids: dict[SaCvaRiskFactorKey, list[str]] = defaultdict(list)
     grouped_volatility: dict[SaCvaRiskFactorKey, float | None] = {}
+    grouped_provenance: _GroupedProvenance = defaultdict(_empty_provenance_values)
     hedge_ids = (
         eligible_hedge_ids
         if eligible_hedge_ids is not None
@@ -106,12 +109,36 @@ def _group_sensitivity_amounts(
         if sensitivity.sensitivity_tag is SensitivityTag.CVA:
             grouped_cva[key] += sensitivity.amount
             grouped_ids[key].append(sensitivity.sensitivity_id)
+            _record_sensitivity_provenance(grouped_provenance, key, sensitivity)
         elif sensitivity.sensitivity_tag is SensitivityTag.HDG:
             if sensitivity.hedge_id not in hedge_ids:
                 continue
             grouped_hedge[key] += sensitivity.amount
             grouped_ids[key].append(sensitivity.sensitivity_id)
-    return grouped_cva, grouped_hedge, grouped_ids, grouped_volatility
+            _record_sensitivity_provenance(grouped_provenance, key, sensitivity)
+    return grouped_cva, grouped_hedge, grouped_ids, grouped_volatility, grouped_provenance
+
+
+def _empty_provenance_values() -> dict[str, list[str]]:
+    return {
+        "volatility_surface_ids": [],
+        "volatility_surface_point_ids": [],
+        "shock_ids": [],
+    }
+
+
+def _record_sensitivity_provenance(
+    grouped_provenance: _GroupedProvenance,
+    key: SaCvaRiskFactorKey,
+    sensitivity: SaCvaSensitivity,
+) -> None:
+    values = grouped_provenance[key]
+    if sensitivity.volatility_surface_id:
+        values["volatility_surface_ids"].append(sensitivity.volatility_surface_id)
+    if sensitivity.volatility_surface_point_id:
+        values["volatility_surface_point_ids"].append(sensitivity.volatility_surface_point_id)
+    if sensitivity.shock_id:
+        values["shock_ids"].append(sensitivity.shock_id)
 
 
 def _build_weighted_sensitivity(
@@ -122,11 +149,17 @@ def _build_weighted_sensitivity(
     risk_weight: float,
     citations: tuple[str, ...],
     grouped_ids: dict[SaCvaRiskFactorKey, list[str]],
+    grouped_provenance: _GroupedProvenance | None = None,
 ) -> SaCvaWeightedSensitivity:
     net_amount = gross_cva - gross_hedge
     weighted_cva = gross_cva * risk_weight
     weighted_hedge = gross_hedge * risk_weight
     weighted_net = net_amount * risk_weight
+    provenance = (
+        _empty_provenance_values()
+        if grouped_provenance is None
+        else grouped_provenance.get(key, _empty_provenance_values())
+    )
     return SaCvaWeightedSensitivity(
         risk_factor_key=key,
         gross_cva_amount=gross_cva,
@@ -138,7 +171,14 @@ def _build_weighted_sensitivity(
         weighted_net=weighted_net,
         source_sensitivity_ids=tuple(sorted(set(grouped_ids[key]))),
         citations=citations,
+        volatility_surface_ids=_unique_sorted(provenance["volatility_surface_ids"]),
+        volatility_surface_point_ids=_unique_sorted(provenance["volatility_surface_point_ids"]),
+        shock_ids=_unique_sorted(provenance["shock_ids"]),
     )
+
+
+def _unique_sorted(values: list[str]) -> tuple[str, ...]:
+    return tuple(sorted(set(values)))
 
 
 def compute_weighted_sensitivities(
@@ -186,7 +226,13 @@ def compute_weighted_sensitivities(
     risk_class = next(iter(risk_classes))
     risk_measure = next(iter(risk_measures))
 
-    grouped_cva, grouped_hedge, grouped_ids, grouped_volatility = _group_sensitivity_amounts(
+    (
+        grouped_cva,
+        grouped_hedge,
+        grouped_ids,
+        grouped_volatility,
+        grouped_provenance,
+    ) = _group_sensitivity_amounts(
         sensitivities,
         hedges=hedges,
         eligible_hedge_ids=eligible_hedge_ids,
@@ -207,6 +253,7 @@ def compute_weighted_sensitivities(
         grouped_hedge,
         grouped_ids,
         grouped_volatility,
+        grouped_provenance=grouped_provenance,
         risk_class=risk_class,
         risk_measure=risk_measure,
         reporting_currency=reporting_currency,
@@ -221,6 +268,7 @@ def weight_grouped_sa_cva_sensitivities(
     grouped_ids: dict[SaCvaRiskFactorKey, list[str]],
     grouped_volatility: dict[SaCvaRiskFactorKey, float | None],
     *,
+    grouped_provenance: _GroupedProvenance | None = None,
     risk_class: SaCvaRiskClass,
     risk_measure: SaCvaRiskMeasure,
     reporting_currency: str,
@@ -243,6 +291,7 @@ def weight_grouped_sa_cva_sensitivities(
             grouped_hedge,
             grouped_ids,
             grouped_volatility,
+            grouped_provenance,
             profile=profile,
         )
     if spec.requires_reporting_currency:
@@ -328,6 +377,7 @@ def _weight_girr_vega(
     grouped_hedge: dict[SaCvaRiskFactorKey, float],
     grouped_ids: dict[SaCvaRiskFactorKey, list[str]],
     grouped_volatility: dict[SaCvaRiskFactorKey, float | None],
+    grouped_provenance: _GroupedProvenance,
     *,
     profile: CvaRegulatoryProfile | str,
 ) -> tuple[SaCvaWeightedSensitivity, ...]:
@@ -349,6 +399,7 @@ def _weight_girr_vega(
                 risk_weight=risk_weight,
                 citations=(citation_id, profile_citation_id("basel_mar50_52", profile)),
                 grouped_ids=grouped_ids,
+                grouped_provenance=grouped_provenance,
             )
         )
     return tuple(weighted)
@@ -391,6 +442,7 @@ def _weight_fx_vega(
     grouped_hedge: dict[SaCvaRiskFactorKey, float],
     grouped_ids: dict[SaCvaRiskFactorKey, list[str]],
     grouped_volatility: dict[SaCvaRiskFactorKey, float | None],
+    grouped_provenance: _GroupedProvenance,
     *,
     profile: CvaRegulatoryProfile | str,
 ) -> tuple[SaCvaWeightedSensitivity, ...]:
@@ -406,6 +458,7 @@ def _weight_fx_vega(
                 risk_weight=risk_weight,
                 citations=(citation_id, profile_citation_id("basel_mar50_52", profile)),
                 grouped_ids=grouped_ids,
+                grouped_provenance=grouped_provenance,
             )
         )
     return tuple(weighted)
@@ -475,6 +528,7 @@ def _weight_rcs_vega(
     grouped_hedge: dict[SaCvaRiskFactorKey, float],
     grouped_ids: dict[SaCvaRiskFactorKey, list[str]],
     grouped_volatility: dict[SaCvaRiskFactorKey, float | None],
+    grouped_provenance: _GroupedProvenance,
     *,
     profile: CvaRegulatoryProfile | str,
 ) -> tuple[SaCvaWeightedSensitivity, ...]:
@@ -490,6 +544,7 @@ def _weight_rcs_vega(
                 risk_weight=risk_weight,
                 citations=(citation_id, profile_citation_id("basel_mar50_52", profile)),
                 grouped_ids=grouped_ids,
+                grouped_provenance=grouped_provenance,
             )
         )
     return tuple(weighted)
@@ -525,6 +580,7 @@ def _weight_equity_vega(
     grouped_hedge: dict[SaCvaRiskFactorKey, float],
     grouped_ids: dict[SaCvaRiskFactorKey, list[str]],
     grouped_volatility: dict[SaCvaRiskFactorKey, float | None],
+    grouped_provenance: _GroupedProvenance,
     *,
     profile: CvaRegulatoryProfile | str,
 ) -> tuple[SaCvaWeightedSensitivity, ...]:
@@ -549,6 +605,7 @@ def _weight_equity_vega(
                     profile_citation_id("basel_mar50_52", profile),
                 ),
                 grouped_ids=grouped_ids,
+                grouped_provenance=grouped_provenance,
             )
         )
     return tuple(weighted)
@@ -584,6 +641,7 @@ def _weight_commodity_vega(
     grouped_hedge: dict[SaCvaRiskFactorKey, float],
     grouped_ids: dict[SaCvaRiskFactorKey, list[str]],
     grouped_volatility: dict[SaCvaRiskFactorKey, float | None],
+    grouped_provenance: _GroupedProvenance,
     *,
     profile: CvaRegulatoryProfile | str,
 ) -> tuple[SaCvaWeightedSensitivity, ...]:
@@ -599,6 +657,7 @@ def _weight_commodity_vega(
                 risk_weight=risk_weight,
                 citations=(citation_id, profile_citation_id("basel_mar50_52", profile)),
                 grouped_ids=grouped_ids,
+                grouped_provenance=grouped_provenance,
             )
         )
     return tuple(weighted)

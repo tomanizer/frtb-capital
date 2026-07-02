@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+import math
 from typing import cast
+
+import numpy as np
 
 from frtb_cva._batch_contracts import CvaCounterpartyBatch, CvaNettingSetBatch
 from frtb_cva.ba_cva import _unique_citations
@@ -77,5 +80,20 @@ def _netting_set_line_from_batch(
         citations=_unique_citations(risk_weight_citation, alpha_citation, df_citation),
         uses_imm_ead=bool(netting_sets.uses_imm_eads[netting_index]),
         discount_factor_supplied=discount_factor_supplied,
+        exposure_time_series_id=_optional_text_at(
+            netting_sets.exposure_time_series_ids,
+            netting_index,
+        ),
         org_scope=scope_at(netting_sets.org_scopes, netting_index),
     )
+
+
+def _optional_text_at(values: object, index: int) -> str:
+    if values is None:
+        return ""
+    value = cast(object, values[index])  # type: ignore[index]
+    if value is None:
+        return ""
+    if isinstance(value, (float, np.floating)) and math.isnan(float(value)):
+        return ""
+    return str(value)

@@ -9,6 +9,7 @@ from frtb_cva import (
     BaCvaStandAloneLine,
     CreditQuality,
     CvaCalculationContext,
+    CvaInputError,
     CvaMethod,
     CvaNettingSet,
     CvaRegulatoryProfile,
@@ -145,3 +146,41 @@ def test_cva_time_series_and_surface_provenance_survives_payloads(
     )
     assert batch_payload["netting_sets"][0]["exposure_time_series_id"] == ("ts-cva-exposure-ns-1")
     assert batch_payload["sensitivities"][0]["shock_id"] == "shock-girr-vega-up"
+
+
+def test_cva_provenance_ids_reject_blank_row_values(
+    sovereign_counterparty,
+) -> None:
+    bad_netting_set = CvaNettingSet(
+        netting_set_id="ns-1",
+        counterparty_id=sovereign_counterparty.counterparty_id,
+        ead=1_000_000.0,
+        effective_maturity=2.5,
+        discount_factor=0.975,
+        currency="USD",
+        sign_convention="non_negative",
+        uses_imm_ead=False,
+        source_row_id="netting-row-1",
+        exposure_time_series_id=" ",
+    )
+    bad_sensitivity = SaCvaSensitivity(
+        sensitivity_id="sens-1",
+        risk_class=SaCvaRiskClass.GIRR,
+        risk_measure=SaCvaRiskMeasure.VEGA,
+        sensitivity_tag=SensitivityTag.CVA,
+        bucket_id="USD",
+        risk_factor_key="RATE",
+        amount=100.0,
+        amount_currency="USD",
+        sign_convention="positive_loss",
+        source_row_id="sens-row-1",
+        volatility_input=0.35,
+        volatility_surface_id=" ",
+    )
+
+    with pytest.raises(CvaInputError, match="exposure_time_series_id"):
+        build_cva_netting_set_batch_from_netting_sets(
+            (bad_netting_set,), counterparties=(sovereign_counterparty,)
+        )
+    with pytest.raises(CvaInputError, match="volatility_surface_id"):
+        build_sa_cva_sensitivity_batch_from_sensitivities((bad_sensitivity,))
