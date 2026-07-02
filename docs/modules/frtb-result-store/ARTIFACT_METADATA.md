@@ -1,7 +1,7 @@
 # Time-series, shock, scenario-vector, and surface metadata
 
 `frtb-result-store` persists run-scoped analytical metadata for completed FRTB
-runs. These artifacts let the Capital Navigator inspect evidence behind a
+runs. These artifacts let the FRTB Navigator inspect evidence behind a
 stored result without making the frontend, capital kernels, or result store own
 market-data lifecycle, shock generation, or surface interpolation.
 
@@ -194,7 +194,7 @@ The selected capital row determines which evidence is relevant.
 
 ## Current fixture examples
 
-The Capital Navigator fixture includes:
+The FRTB Navigator fixture includes:
 
 - `ts-rfet-usd-5y`: available RFET observation time series;
 - `ts-plat-upl`: no-data UPL time series;

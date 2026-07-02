@@ -1,8 +1,8 @@
-# Capital Navigator mode wireframes
+# FRTB Navigator mode wireframes
 
 Status: draft implementation contract for issue #1110.
 
-Audience: Capital Navigator frontend/backend implementers, result-store adapter
+Audience: FRTB Navigator frontend/backend implementers, result-store adapter
 authors, product reviewers, and market-risk stakeholders validating screen
 anatomy before implementation.
 

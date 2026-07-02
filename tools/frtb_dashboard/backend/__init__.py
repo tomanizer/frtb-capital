@@ -1,1 +1,1 @@
-"""Backend package for the FRTB Capital Navigator dashboard."""
+"""Compatibility backend namespace for :mod:`frtb_navigator.backend`."""

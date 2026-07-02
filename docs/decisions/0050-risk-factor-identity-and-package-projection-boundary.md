@@ -141,7 +141,7 @@ needs.
 | `frtb-rrao` | no general risk-factor projection required; add catalog linkage only for an explicit RRAO artifact or semantic profile |
 | `frtb-orchestration` | top-of-house propagation of component references without changing package interpretation |
 | `frtb-result-store` | storage, availability, referential checks, lineage, and read-only retrieval |
-| Capital Navigator | display, filtering, and drill-down only |
+| FRTB Navigator | display, filtering, and drill-down only |
 
 Package projections may be implemented as package-local dataclasses, Arrow
 adapter outputs, or result records. They must not require sibling imports
@@ -162,7 +162,7 @@ CVA risk class applies.
 
 ### 5. Navigator read model
 
-The Capital Navigator may use catalog labels, package projections, and lineage
+The FRTB Navigator may use catalog labels, package projections, and lineage
 links to display:
 
 - which risk factors are attached to a selected capital row;
@@ -362,7 +362,7 @@ and citations should be rejected or moved behind a new ADR-backed boundary.
 - Link IMA risk-factor master mapping outputs to the run-scoped catalog.
 - Add optional package-local references from SBM and CVA factor keys to
   `risk_factor_id` without changing their regulatory aggregation keys.
-- Update the Capital Navigator metadata contract to display risk-factor catalog
+- Update the FRTB Navigator metadata contract to display risk-factor catalog
   labels and package projections without client-side inference.
 
 ## References
@@ -379,6 +379,6 @@ and citations should be rejected or moved behind a new ADR-backed boundary.
   evidence and market data platform boundary.
 - [ADR 0051](0051-rfet-observation-and-vendor-mapping-evidence-boundary.md):
   RFET observation and vendor mapping evidence boundary.
-- [`docs/modules/frtb-result-store/CAPITAL_NAVIGATOR_METADATA_CONTRACT.md`](../modules/frtb-result-store/CAPITAL_NAVIGATOR_METADATA_CONTRACT.md):
-  Capital Navigator metadata read-model contract.
+- [`docs/modules/frtb-result-store/FRTB_NAVIGATOR_METADATA_CONTRACT.md`](../modules/frtb-result-store/FRTB_NAVIGATOR_METADATA_CONTRACT.md):
+  FRTB Navigator metadata read-model contract.
 - #1072: time-series, shocks, and surface metadata architecture.

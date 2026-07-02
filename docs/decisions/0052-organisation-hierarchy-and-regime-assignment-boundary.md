@@ -8,7 +8,7 @@ Proposed
 
 ## Context
 
-The Capital Navigator and result store need to support business rollups such as
+The FRTB Navigator and result store need to support business rollups such as
 top of house, legal entities, business divisions, desks, Volcker desks, and
 trading books. Different clients use different hierarchy shapes and labels:
 
@@ -229,7 +229,7 @@ not replace package profile controls or orchestration jurisdiction guards.
 | Package source dimensions such as `legal_entity` or `desk_id` | owning capital package input contracts |
 | Legal-entity/regime assignment evidence | result store as run-scoped evidence; external platform as source of record |
 | Package regulatory profile interpretation | owning package and orchestration guards |
-| Navigator hierarchy rendering and filtering | Capital Navigator |
+| Navigator hierarchy rendering and filtering | FRTB Navigator |
 
 ## Design rules
 

@@ -1,6 +1,6 @@
-# Capital Navigator metadata contract
+# FRTB Navigator metadata contract
 
-This contract defines how the Capital Navigator should consume time-series,
+This contract defines how the FRTB Navigator should consume time-series,
 shock, scenario-vector, and surface metadata from `frtb-result-store`.
 
 It is a read-model contract. The Navigator must not fetch raw object-store files
@@ -9,7 +9,7 @@ generate shocks, or calculate capital.
 
 ## Visual posture
 
-Use the existing approved Capital Navigator direction:
+Use the existing approved FRTB Navigator direction:
 
 - light high-density workbench;
 - fixed zero-scroll zones;
@@ -101,7 +101,7 @@ not a reconciliation failure.
 
 ## Fixture-backed examples
 
-The Capital Navigator fixture currently provides:
+The FRTB Navigator fixture currently provides:
 
 - `ts-rfet-usd-5y` as an available RFET observation time series;
 - `ts-plat-upl` as a no-data UPL time series;

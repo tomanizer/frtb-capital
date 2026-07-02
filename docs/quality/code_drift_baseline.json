@@ -18,10 +18,10 @@
       "path": "packages/frtb-cva/examples/cva_notebook_data.py"
     },
     "packages/frtb-cva/scripts/benchmark_cva_target_scale.py:run_benchmark": {
-      "end_line": 287,
+      "end_line": 289,
       "key": "packages/frtb-cva/scripts/benchmark_cva_target_scale.py:run_benchmark",
-      "line": 74,
-      "lines": 214,
+      "line": 75,
+      "lines": 215,
       "name": "run_benchmark",
       "path": "packages/frtb-cva/scripts/benchmark_cva_target_scale.py"
     },
@@ -34,9 +34,9 @@
       "path": "packages/frtb-cva/src/frtb_cva/attribution.py"
     },
     "packages/frtb-cva/src/frtb_cva/ba_cva.py:calculate_full_portfolio": {
-      "end_line": 487,
+      "end_line": 495,
       "key": "packages/frtb-cva/src/frtb_cva/ba_cva.py:calculate_full_portfolio",
-      "line": 299,
+      "line": 307,
       "lines": 189,
       "name": "calculate_full_portfolio",
       "path": "packages/frtb-cva/src/frtb_cva/ba_cva.py"
@@ -50,18 +50,18 @@
       "path": "packages/frtb-cva/src/frtb_cva/crif.py"
     },
     "packages/frtb-drc/src/frtb_drc/adapters/positions.py:build_drc_nonsec_batch_from_columns": {
-      "end_line": 328,
+      "end_line": 345,
       "key": "packages/frtb-drc/src/frtb_drc/adapters/positions.py:build_drc_nonsec_batch_from_columns",
-      "line": 139,
-      "lines": 190,
+      "line": 143,
+      "lines": 203,
       "name": "build_drc_nonsec_batch_from_columns",
       "path": "packages/frtb-drc/src/frtb_drc/adapters/positions.py"
     },
     "packages/frtb-drc/src/frtb_drc/adapters/positions.py:build_drc_nonsec_batch_from_positions": {
-      "end_line": 136,
+      "end_line": 140,
       "key": "packages/frtb-drc/src/frtb_drc/adapters/positions.py:build_drc_nonsec_batch_from_positions",
-      "line": 45,
-      "lines": 92,
+      "line": 48,
+      "lines": 93,
       "name": "build_drc_nonsec_batch_from_positions",
       "path": "packages/frtb-drc/src/frtb_drc/adapters/positions.py"
     },
@@ -74,42 +74,42 @@
       "path": "packages/frtb-drc/src/frtb_drc/attribution.py"
     },
     "packages/frtb-drc/src/frtb_drc/batch.py:calculate_drc_capital_from_batch": {
-      "end_line": 386,
+      "end_line": 397,
       "key": "packages/frtb-drc/src/frtb_drc/batch.py:calculate_drc_capital_from_batch",
-      "line": 171,
-      "lines": 216,
+      "line": 177,
+      "lines": 221,
       "name": "calculate_drc_capital_from_batch",
       "path": "packages/frtb-drc/src/frtb_drc/batch.py"
     },
     "packages/frtb-drc/src/frtb_drc/capital.py:calculate_bucket_drc": {
-      "end_line": 213,
+      "end_line": 219,
       "key": "packages/frtb-drc/src/frtb_drc/capital.py:calculate_bucket_drc",
-      "line": 123,
-      "lines": 91,
+      "line": 128,
+      "lines": 92,
       "name": "calculate_bucket_drc",
       "path": "packages/frtb-drc/src/frtb_drc/capital.py"
     },
     "packages/frtb-drc/src/frtb_drc/kernel/net_jtd.py:_net_group": {
-      "end_line": 488,
+      "end_line": 508,
       "key": "packages/frtb-drc/src/frtb_drc/kernel/net_jtd.py:_net_group",
-      "line": 380,
+      "line": 400,
       "lines": 109,
       "name": "_net_group",
       "path": "packages/frtb-drc/src/frtb_drc/kernel/net_jtd.py"
     },
     "packages/frtb-drc/src/frtb_drc/scaffold.py:calculate_drc_capital": {
-      "end_line": 212,
+      "end_line": 214,
       "key": "packages/frtb-drc/src/frtb_drc/scaffold.py:calculate_drc_capital",
-      "line": 64,
-      "lines": 149,
+      "line": 65,
+      "lines": 150,
       "name": "calculate_drc_capital",
       "path": "packages/frtb-drc/src/frtb_drc/scaffold.py"
     },
     "packages/frtb-ima/examples/run_demo.py:main": {
-      "end_line": 472,
+      "end_line": 495,
       "key": "packages/frtb-ima/examples/run_demo.py:main",
-      "line": 143,
-      "lines": 330,
+      "line": 164,
+      "lines": 332,
       "name": "main",
       "path": "packages/frtb-ima/examples/run_demo.py"
     },
@@ -122,9 +122,9 @@
       "path": "packages/frtb-ima/scripts/generate_fixture.py"
     },
     "packages/frtb-ima/src/frtb_ima/audit.py:render_capital_run_audit_report": {
-      "end_line": 424,
+      "end_line": 452,
       "key": "packages/frtb-ima/src/frtb_ima/audit.py:render_capital_run_audit_report",
-      "line": 280,
+      "line": 308,
       "lines": 145,
       "name": "render_capital_run_audit_report",
       "path": "packages/frtb-ima/src/frtb_ima/audit.py"
@@ -138,17 +138,17 @@
       "path": "packages/frtb-ima/src/frtb_ima/capital_run_fixture.py"
     },
     "packages/frtb-ima/src/frtb_ima/nmrf_method_selection.py:select_nmrf_method": {
-      "end_line": 610,
+      "end_line": 612,
       "key": "packages/frtb-ima/src/frtb_ima/nmrf_method_selection.py:select_nmrf_method",
-      "line": 500,
+      "line": 502,
       "lines": 111,
       "name": "select_nmrf_method",
       "path": "packages/frtb-ima/src/frtb_ima/nmrf_method_selection.py"
     },
     "packages/frtb-ima/src/frtb_ima/nmrf_stress_spec.py:build_nmrf_valuation_specs": {
-      "end_line": 533,
+      "end_line": 555,
       "key": "packages/frtb-ima/src/frtb_ima/nmrf_stress_spec.py:build_nmrf_valuation_specs",
-      "line": 438,
+      "line": 460,
       "lines": 96,
       "name": "build_nmrf_valuation_specs",
       "path": "packages/frtb-ima/src/frtb_ima/nmrf_stress_spec.py"
@@ -162,10 +162,10 @@
       "path": "packages/frtb-ima/src/frtb_ima/nmrf_valuation_run.py"
     },
     "packages/frtb-ima/src/frtb_ima/pla.py:pla_assessment_for_policy_with_diagnostics": {
-      "end_line": 639,
+      "end_line": 704,
       "key": "packages/frtb-ima/src/frtb_ima/pla.py:pla_assessment_for_policy_with_diagnostics",
-      "line": 516,
-      "lines": 124,
+      "line": 574,
+      "lines": 131,
       "name": "pla_assessment_for_policy_with_diagnostics",
       "path": "packages/frtb-ima/src/frtb_ima/pla.py"
     },
@@ -178,10 +178,10 @@
       "path": "packages/frtb-ima/src/frtb_ima/reduced_set.py"
     },
     "packages/frtb-ima/src/frtb_ima/rfet_evidence.py:assess_rfet_evidence": {
-      "end_line": 196,
+      "end_line": 206,
       "key": "packages/frtb-ima/src/frtb_ima/rfet_evidence.py:assess_rfet_evidence",
       "line": 63,
-      "lines": 134,
+      "lines": 144,
       "name": "assess_rfet_evidence",
       "path": "packages/frtb-ima/src/frtb_ima/rfet_evidence.py"
     },
@@ -194,12 +194,28 @@
       "path": "packages/frtb-ima/tests/test_arrow_batch.py"
     },
     "packages/frtb-ima/tests/test_stress_periods.py:test_selection_result_validates_candidate_mapping": {
-      "end_line": 677,
+      "end_line": 855,
       "key": "packages/frtb-ima/tests/test_stress_periods.py:test_selection_result_validates_candidate_mapping",
-      "line": 560,
+      "line": 738,
       "lines": 118,
       "name": "test_selection_result_validates_candidate_mapping",
       "path": "packages/frtb-ima/tests/test_stress_periods.py"
+    },
+    "packages/frtb-navigator/src/frtb_navigator/backend/demo_runs.py:_build_capital_tree": {
+      "end_line": 1545,
+      "key": "packages/frtb-navigator/src/frtb_navigator/backend/demo_runs.py:_build_capital_tree",
+      "line": 1419,
+      "lines": 127,
+      "name": "_build_capital_tree",
+      "path": "packages/frtb-navigator/src/frtb_navigator/backend/demo_runs.py"
+    },
+    "packages/frtb-navigator/src/frtb_navigator/backend/demo_runs.py:build_demo_run": {
+      "end_line": 465,
+      "key": "packages/frtb-navigator/src/frtb_navigator/backend/demo_runs.py:build_demo_run",
+      "line": 276,
+      "lines": 190,
+      "name": "build_demo_run",
+      "path": "packages/frtb-navigator/src/frtb_navigator/backend/demo_runs.py"
     },
     "packages/frtb-orchestration/src/frtb_orchestration/suite.py:calculate_suite_capital": {
       "end_line": 155,
@@ -234,26 +250,26 @@
       "path": "packages/frtb-result-store/src/frtb_result_store/capital_graph.py"
     },
     "packages/frtb-result-store/tests/fixtures/result_store_bundle.py:sample_bundle": {
-      "end_line": 262,
+      "end_line": 278,
       "key": "packages/frtb-result-store/tests/fixtures/result_store_bundle.py:sample_bundle",
-      "line": 144,
-      "lines": 119,
+      "line": 154,
+      "lines": 125,
       "name": "sample_bundle",
       "path": "packages/frtb-result-store/tests/fixtures/result_store_bundle.py"
     },
     "packages/frtb-rrao/scripts/benchmark_rrao_target_scale.py:run_benchmark": {
-      "end_line": 247,
+      "end_line": 256,
       "key": "packages/frtb-rrao/scripts/benchmark_rrao_target_scale.py:run_benchmark",
       "line": 130,
-      "lines": 118,
+      "lines": 127,
       "name": "run_benchmark",
       "path": "packages/frtb-rrao/scripts/benchmark_rrao_target_scale.py"
     },
     "packages/frtb-rrao/src/frtb_rrao/batch.py:build_rrao_batch_from_columns": {
-      "end_line": 529,
+      "end_line": 561,
       "key": "packages/frtb-rrao/src/frtb_rrao/batch.py:build_rrao_batch_from_columns",
-      "line": 164,
-      "lines": 366,
+      "line": 189,
+      "lines": 373,
       "name": "build_rrao_batch_from_columns",
       "path": "packages/frtb-rrao/src/frtb_rrao/batch.py"
     },
@@ -266,9 +282,9 @@
       "path": "packages/frtb-rrao/src/frtb_rrao/crif.py"
     },
     "packages/frtb-rrao/tests/test_rrao_arrow_batch.py:_arrow_table": {
-      "end_line": 891,
+      "end_line": 897,
       "key": "packages/frtb-rrao/tests/test_rrao_arrow_batch.py:_arrow_table",
-      "line": 776,
+      "line": 782,
       "lines": 116,
       "name": "_arrow_table",
       "path": "packages/frtb-rrao/tests/test_rrao_arrow_batch.py"
@@ -281,6 +297,14 @@
       "name": "test_us_npr_fixture_reconciles_to_independent_hand_calculation",
       "path": "packages/frtb-rrao/tests/test_rrao_external_comparator.py"
     },
+    "packages/frtb-sbm/src/frtb_sbm/adapters/sensitivities.py:build_sbm_batch_from_columns": {
+      "end_line": 183,
+      "key": "packages/frtb-sbm/src/frtb_sbm/adapters/sensitivities.py:build_sbm_batch_from_columns",
+      "line": 86,
+      "lines": 98,
+      "name": "build_sbm_batch_from_columns",
+      "path": "packages/frtb-sbm/src/frtb_sbm/adapters/sensitivities.py"
+    },
     "packages/frtb-sbm/src/frtb_sbm/attribution.py:_risk_class_contributions": {
       "end_line": 454,
       "key": "packages/frtb-sbm/src/frtb_sbm/attribution.py:_risk_class_contributions",
@@ -290,17 +314,17 @@
       "path": "packages/frtb-sbm/src/frtb_sbm/attribution.py"
     },
     "packages/frtb-sbm/src/frtb_sbm/capital.py:calculate_sbm_capital": {
-      "end_line": 268,
+      "end_line": 282,
       "key": "packages/frtb-sbm/src/frtb_sbm/capital.py:calculate_sbm_capital",
-      "line": 119,
-      "lines": 150,
+      "line": 129,
+      "lines": 154,
       "name": "calculate_sbm_capital",
       "path": "packages/frtb-sbm/src/frtb_sbm/capital.py"
     },
     "packages/frtb-sbm/src/frtb_sbm/curvature.py:_aggregate_curvature_factors": {
-      "end_line": 753,
+      "end_line": 765,
       "key": "packages/frtb-sbm/src/frtb_sbm/curvature.py:_aggregate_curvature_factors",
-      "line": 653,
+      "line": 665,
       "lines": 101,
       "name": "_aggregate_curvature_factors",
       "path": "packages/frtb-sbm/src/frtb_sbm/curvature.py"
@@ -314,10 +338,10 @@
       "path": "packages/frtb-sbm/src/frtb_sbm/risk_classes/csr_sec_nonctp.py"
     },
     "packages/frtb-sbm/src/frtb_sbm/risk_classes/vega.py:_aggregate_csr_sec_nonctp_vega_measure_capital": {
-      "end_line": 386,
+      "end_line": 397,
       "key": "packages/frtb-sbm/src/frtb_sbm/risk_classes/vega.py:_aggregate_csr_sec_nonctp_vega_measure_capital",
-      "line": 245,
-      "lines": 142,
+      "line": 247,
+      "lines": 151,
       "name": "_aggregate_csr_sec_nonctp_vega_measure_capital",
       "path": "packages/frtb-sbm/src/frtb_sbm/risk_classes/vega.py"
     },
@@ -338,10 +362,10 @@
       "path": "scripts/ci/check_module_coverage.py"
     },
     "tests/quality/test_benchmark_budgets.py:_write_suite_artifacts": {
-      "end_line": 336,
+      "end_line": 338,
       "key": "tests/quality/test_benchmark_budgets.py:_write_suite_artifacts",
       "line": 208,
-      "lines": 129,
+      "lines": 131,
       "name": "_write_suite_artifacts",
       "path": "tests/quality/test_benchmark_budgets.py"
     },
@@ -355,16 +379,16 @@
     }
   },
   "metrics": {
-    "drift_marker_matches": 31,
-    "duplicate_function_groups": 20,
-    "duplicate_function_instances": 35,
-    "large_function_count": 44,
-    "other_python_loc": 6333,
-    "python_files": 814,
-    "script_python_loc": 6575,
-    "source_python_loc": 70815,
-    "test_python_loc": 52056,
-    "total_python_loc": 135779
+    "drift_marker_matches": 34,
+    "duplicate_function_groups": 53,
+    "duplicate_function_instances": 87,
+    "large_function_count": 47,
+    "other_python_loc": 6365,
+    "python_files": 956,
+    "script_python_loc": 6600,
+    "source_python_loc": 88843,
+    "test_python_loc": 65796,
+    "total_python_loc": 167604
   },
   "oversized_files": {
     "packages/frtb-cva/examples/cva_notebook_data.py": {
@@ -374,7 +398,7 @@
     },
     "packages/frtb-cva/scripts/benchmark_cva_target_scale.py": {
       "limit": 600,
-      "lines": 601,
+      "lines": 603,
       "role": "other"
     },
     "packages/frtb-cva/src/frtb_cva/sa_cva_reference_data.py": {
@@ -389,7 +413,7 @@
     },
     "packages/frtb-cva/tests/test_cva_batch_calculations.py": {
       "limit": 800,
-      "lines": 952,
+      "lines": 976,
       "role": "test"
     },
     "packages/frtb-drc/scripts/generate_notebooks.py": {
@@ -404,7 +428,12 @@
     },
     "packages/frtb-drc/src/frtb_drc/batch.py": {
       "limit": 600,
-      "lines": 702,
+      "lines": 716,
+      "role": "source"
+    },
+    "packages/frtb-drc/src/frtb_drc/data_models.py": {
+      "limit": 600,
+      "lines": 613,
       "role": "source"
     },
     "packages/frtb-drc/src/frtb_drc/demo_data.py": {
@@ -414,32 +443,32 @@
     },
     "packages/frtb-drc/src/frtb_drc/kernel/ctp.py": {
       "limit": 600,
-      "lines": 792,
+      "lines": 838,
       "role": "source"
     },
     "packages/frtb-drc/src/frtb_drc/kernel/net_jtd.py": {
       "limit": 600,
-      "lines": 608,
+      "lines": 639,
       "role": "source"
     },
     "packages/frtb-drc/src/frtb_drc/kernel/securitisation.py": {
       "limit": 600,
-      "lines": 753,
+      "lines": 803,
       "role": "source"
     },
     "packages/frtb-drc/src/frtb_drc/reference_data.py": {
       "limit": 600,
-      "lines": 798,
+      "lines": 1012,
       "role": "source"
     },
     "packages/frtb-drc/tests/test_drc_arrow_batch.py": {
       "limit": 800,
-      "lines": 977,
+      "lines": 1238,
       "role": "test"
     },
     "packages/frtb-drc/tests/test_drc_securitisation.py": {
       "limit": 800,
-      "lines": 902,
+      "lines": 1089,
       "role": "test"
     },
     "packages/frtb-ima/scripts/generate_fixture.py": {
@@ -454,12 +483,12 @@
     },
     "packages/frtb-ima/src/frtb_ima/imcc.py": {
       "limit": 600,
-      "lines": 678,
+      "lines": 646,
       "role": "source"
     },
     "packages/frtb-ima/src/frtb_ima/nmrf_method_selection.py": {
       "limit": 600,
-      "lines": 667,
+      "lines": 670,
       "role": "source"
     },
     "packages/frtb-ima/src/frtb_ima/nmrf_valuation_run.py": {
@@ -469,27 +498,52 @@
     },
     "packages/frtb-ima/src/frtb_ima/pla.py": {
       "limit": 600,
-      "lines": 639,
+      "lines": 704,
       "role": "source"
     },
     "packages/frtb-ima/tests/test_stress_periods.py": {
       "limit": 800,
-      "lines": 835,
+      "lines": 1043,
       "role": "test"
+    },
+    "packages/frtb-navigator/src/frtb_navigator/backend/demo_runs.py": {
+      "limit": 600,
+      "lines": 1762,
+      "role": "source"
+    },
+    "packages/frtb-navigator/src/frtb_navigator/backend/result_store_adapter.py": {
+      "limit": 600,
+      "lines": 885,
+      "role": "source"
     },
     "packages/frtb-orchestration/tests/test_suite_capital.py": {
       "limit": 800,
       "lines": 1236,
       "role": "test"
     },
+    "packages/frtb-result-store/src/frtb_result_store/api.py": {
+      "limit": 600,
+      "lines": 879,
+      "role": "source"
+    },
+    "packages/frtb-result-store/src/frtb_result_store/artifacts.py": {
+      "limit": 600,
+      "lines": 617,
+      "role": "source"
+    },
     "packages/frtb-result-store/tests/test_duckdb_parquet_store.py": {
       "limit": 800,
-      "lines": 1105,
+      "lines": 1449,
+      "role": "test"
+    },
+    "packages/frtb-result-store/tests/test_result_store_api.py": {
+      "limit": 800,
+      "lines": 968,
       "role": "test"
     },
     "packages/frtb-result-store/tests/test_result_store_public_api.py": {
       "limit": 800,
-      "lines": 807,
+      "lines": 1257,
       "role": "test"
     },
     "packages/frtb-rrao/scripts/generate_fixture.py": {
@@ -499,7 +553,7 @@
     },
     "packages/frtb-rrao/src/frtb_rrao/batch.py": {
       "limit": 600,
-      "lines": 698,
+      "lines": 750,
       "role": "source"
     },
     "packages/frtb-rrao/src/frtb_rrao/crif.py": {
@@ -509,12 +563,12 @@
     },
     "packages/frtb-rrao/tests/test_rrao_arrow_batch.py": {
       "limit": 800,
-      "lines": 939,
+      "lines": 945,
       "role": "test"
     },
     "packages/frtb-sbm/src/frtb_sbm/adapters/arrow.py": {
       "limit": 600,
-      "lines": 742,
+      "lines": 747,
       "role": "source"
     },
     "packages/frtb-sbm/src/frtb_sbm/attribution.py": {
@@ -524,18 +578,28 @@
     },
     "packages/frtb-sbm/src/frtb_sbm/batch.py": {
       "limit": 600,
-      "lines": 734,
+      "lines": 826,
       "role": "source"
     },
     "packages/frtb-sbm/src/frtb_sbm/capital.py": {
       "limit": 600,
-      "lines": 708,
+      "lines": 826,
       "role": "source"
     },
     "packages/frtb-sbm/src/frtb_sbm/curvature.py": {
       "limit": 600,
-      "lines": 774,
+      "lines": 817,
       "role": "source"
+    },
+    "packages/frtb-sbm/src/frtb_sbm/vega_reference_data.py": {
+      "limit": 600,
+      "lines": 683,
+      "role": "source"
+    },
+    "packages/frtb-sbm/tests/test_sbm_reference_data.py": {
+      "limit": 800,
+      "lines": 849,
+      "role": "test"
     },
     "scripts/agent_worktree.py": {
       "limit": 500,
@@ -549,7 +613,7 @@
     },
     "scripts/ci/check_package_maturity.py": {
       "limit": 500,
-      "lines": 700,
+      "lines": 722,
       "role": "script"
     },
     "scripts/ci/check_simplification_drift.py": {

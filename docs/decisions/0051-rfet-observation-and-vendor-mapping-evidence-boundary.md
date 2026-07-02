@@ -187,7 +187,7 @@ The profile must also declare how source rows map to:
 
 ### 5. Navigator responsibilities
 
-The Capital Navigator may display:
+The FRTB Navigator may display:
 
 - RFET observation rows;
 - source identifiers and mapped risk-factor IDs;
@@ -355,7 +355,7 @@ new ADR.
 - Add fixture examples for `MAPPED`, `UNMAPPED`, `AMBIGUOUS`, `EXCLUDED`, and
   `REJECTED` RFET source rows.
 - Add result-store APIs or catalog fields for RFET mapping status counts.
-- Update the Capital Navigator metadata contract to show RFET mapping
+- Update the FRTB Navigator metadata contract to show RFET mapping
   diagnostics without client-side remediation.
 
 ## References
@@ -368,6 +368,6 @@ new ADR.
   evidence and market data platform boundary.
 - [ADR 0050](0050-risk-factor-identity-and-package-projection-boundary.md): risk
   factor identity and package projection boundary.
-- [`docs/modules/frtb-result-store/CAPITAL_NAVIGATOR_METADATA_CONTRACT.md`](../modules/frtb-result-store/CAPITAL_NAVIGATOR_METADATA_CONTRACT.md):
-  Capital Navigator metadata read-model contract.
+- [`docs/modules/frtb-result-store/FRTB_NAVIGATOR_METADATA_CONTRACT.md`](../modules/frtb-result-store/FRTB_NAVIGATOR_METADATA_CONTRACT.md):
+  FRTB Navigator metadata read-model contract.
 - #1072: time-series, shocks, and surface metadata architecture.
