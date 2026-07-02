@@ -132,6 +132,9 @@ def nested_lh_vectors_from_cube(
             name=(
                 f"{risk_class.value if risk_class is not None else 'ALL'}_{liquidity_horizon.name}"
             ),
+            source_scenario_cube_id=cube.artifact_id,
+            scenario_set_id=cube.scenario_set_id,
+            scenario_vector_ids=cube.scenario_vector_ids,
         )
 
     if LiquidityHorizon.LH10 not in vectors:

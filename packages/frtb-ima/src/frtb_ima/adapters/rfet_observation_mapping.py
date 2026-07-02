@@ -40,6 +40,7 @@ _OPTIONAL_STRING_FIELDS = (
     "data_pool_id",
     "vendor_audit_evidence_id",
     "source_row_id",
+    "observation_time_series_id",
 )
 _OPTIONAL_FIELDS = (*_OPTIONAL_STRING_FIELDS, "observation_timestamp", "verifiable")
 

@@ -12,6 +12,7 @@ Regulatory traceability:
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from datetime import date
 
 from frtb_ima.assembly.rfet import RFETEvidenceAssessment as RFETEvidenceAssessment
@@ -146,6 +147,7 @@ def assess_rfet_evidence(
     eligible_count = len(quantitative.eligible_dates)
     quantitative_pass = eligible_count >= required_observations.required
     status = _status_from_tests(qualitative.qualitative_pass, quantitative_pass)
+    observation_time_series_ids, source_row_ids = _rfet_evidence_lineage(evidence)
 
     return RFETEvidenceAssessment(
         risk_factor_name=risk_factor.name,
@@ -202,5 +204,24 @@ def assess_rfet_evidence(
             }
         ),
         new_issuance_policy_basis=_new_issuance_policy_basis(evidence.new_issuance),
+        observation_time_series_ids=observation_time_series_ids,
+        source_row_ids=source_row_ids,
         exclusions=quantitative.exclusions,
     )
+
+
+def _rfet_evidence_lineage(evidence: RFETEvidence) -> tuple[tuple[str, ...], tuple[str, ...]]:
+    return (
+        _unique_optional_text((evidence.observation_time_series_id,)),
+        _unique_optional_text(
+            observation.source_row_id
+            for observation in sorted(
+                evidence.observations,
+                key=lambda item: item.observation_date,
+            )
+        ),
+    )
+
+
+def _unique_optional_text(values: Iterable[str | None]) -> tuple[str, ...]:
+    return tuple(dict.fromkeys(value for value in values if isinstance(value, str) and value))

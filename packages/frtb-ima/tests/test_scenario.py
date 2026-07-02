@@ -44,8 +44,20 @@ def test_scenario_vector_metadata_alignment() -> None:
         metadata=metadata,
         risk_class=RiskClass.GIRR,
         liquidity_horizon=LiquidityHorizon.LH10,
+        source_scenario_cube_id="artifact:scenario-cube",
+        scenario_set_id="scenario-set:current",
+        scenario_vector_ids=("scenario-vector:0", "scenario-vector:1"),
     )
     assert vector.scenario_ids == ("scenario-00000", "scenario-00001")
+    assert vector.source_scenario_cube_id == "artifact:scenario-cube"
+    assert vector.scenario_set_id == "scenario-set:current"
+    assert vector.scenario_vector_ids == ("scenario-vector:0", "scenario-vector:1")
+
+    with pytest.raises(ValueError, match="scenario_vector_ids length"):
+        ScenarioVector(
+            values=np.array([1.0, 2.0]),
+            scenario_vector_ids=("scenario-vector:0",),
+        )
 
 
 def test_validate_unique_scenarios_detects_duplicates() -> None:

@@ -110,6 +110,7 @@ class RealPriceObservation:
     vendor_audit_evidence_id: str = ""
     risk_factor_id: str | None = None
     risk_factor_mapping_version: str | None = None
+    source_row_id: str = ""
 
     def __post_init__(self) -> None:
         if not self.risk_factor_name:

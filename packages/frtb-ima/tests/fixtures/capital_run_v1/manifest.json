@@ -16,13 +16,21 @@
       "sha256": "1f321c70d16bcc9978b3d4025520bfbdbafe4d0774022fe4d3b24b76c49cfcbd"
     },
     "rfet_observations.csv": {
-      "sha256": "ab87611be21065d2b05e9f1c143237de9289190ef9ab06eb1a79aaecd132770e"
+      "sha256": "ab87611be21065d2b05e9f1c143237de9289190ef9ab06eb1a79aaecd132770e",
+      "artifact_metadata": {
+        "time_series_id_prefix": "ts:ima:capital_run_v1:rfet"
+      }
     },
     "risk_factors.csv": {
       "sha256": "b7d6421158bcbb5ba80f4795daf5a0440041cf8a26e6b6377f2029274c786bbd"
     },
     "scenario_cube.npz": {
-      "sha256": "b9b4026711d2e079aa34ef020c0476ef20ab2076568a2faeeb427531abb1851e"
+      "sha256": "b9b4026711d2e079aa34ef020c0476ef20ab2076568a2faeeb427531abb1851e",
+      "artifact_metadata": {
+        "artifact_id": "artifact:ima:capital_run_v1:scenario_cube",
+        "scenario_set_id": "scenario-set:ima:capital_run_v1:current",
+        "scenario_vector_id_prefix": "scenario-vector:ima:capital_run_v1:current"
+      }
     },
     "scenario_metadata.csv": {
       "sha256": "ac374e54f9ae5caa08bdeceff8003ef7da171fea3b923b7e5ff7f34eb8e08e93"

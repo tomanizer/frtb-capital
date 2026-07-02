@@ -178,6 +178,7 @@ def test_rfet_observation_arrow_batch_assesses_without_row_materialization() -> 
             observations=batch.to_observations(),
             qualitative_pass=True,
             bucket_id="USD_RATES",
+            observation_time_series_id="ts:rfet:USD_SWAP_5Y",
         ),
         policy,
     )
@@ -186,6 +187,9 @@ def test_rfet_observation_arrow_batch_assesses_without_row_materialization() -> 
     assert batch.source_hash == handoff.source_hash
     assert batch.handoff_hash == normalized_arrow_table_hash(handoff)
     assert batch.input_hash == input_hash_for_rfet_observation_batch(batch)
+    assert batch.observation_time_series_ids.tolist() == ["ts:rfet:USD_SWAP_5Y"] * 25
+    assert batch_result.as_dict()["observation_time_series_ids"] == ["ts:rfet:USD_SWAP_5Y"]
+    assert batch_result.as_dict()["source_row_ids"][0] == "rfet-row-023"
     assert batch_result.as_dict() == row_result.as_dict()
 
 
@@ -472,6 +476,7 @@ def _rfet_observation_table() -> pa.Table:
                 ]
             ),
             "sourceRowId": [f"rfet-row-{index:03d}" for index in range(len(observation_dates))],
+            "observationTimeSeriesId": ["ts:rfet:USD_SWAP_5Y"] * len(observation_dates),
         }
     )
 

@@ -150,6 +150,7 @@ class RFETObservationBatch:
     data_pool_ids: StringArray
     vendor_audit_evidence_ids: StringArray
     source_row_ids: StringArray
+    observation_time_series_ids: StringArray
     source_hash: str | None = None
     handoff_hash: str | None = None
     input_hash: str = ""
@@ -180,6 +181,10 @@ class RFETObservationBatch:
             "vendor_audit_evidence_ids",
         )
         source_row_ids = _readonly_string_array(self.source_row_ids, "source_row_ids")
+        observation_time_series_ids = _readonly_string_array(
+            self.observation_time_series_ids,
+            "observation_time_series_ids",
+        )
         _validate_equal_lengths(
             "RFET observation batch",
             risk_factor_names,
@@ -195,6 +200,7 @@ class RFETObservationBatch:
             data_pool_ids,
             vendor_audit_evidence_ids,
             source_row_ids,
+            observation_time_series_ids,
         )
         if risk_factor_names.size == 0:
             raise ValueError("RFET observation batch must be non-empty")
@@ -218,6 +224,11 @@ class RFETObservationBatch:
         object.__setattr__(self, "data_pool_ids", data_pool_ids)
         object.__setattr__(self, "vendor_audit_evidence_ids", vendor_audit_evidence_ids)
         object.__setattr__(self, "source_row_ids", source_row_ids)
+        object.__setattr__(
+            self,
+            "observation_time_series_ids",
+            observation_time_series_ids,
+        )
         if not self.input_hash:
             object.__setattr__(self, "input_hash", input_hash_for_rfet_observation_batch(self))
 
@@ -287,6 +298,7 @@ def input_hash_for_rfet_observation_batch(batch: RFETObservationBatch) -> str:
         data_pool_ids=batch.data_pool_ids,
         vendor_audit_evidence_ids=batch.vendor_audit_evidence_ids,
         source_row_ids=batch.source_row_ids,
+        observation_time_series_ids=batch.observation_time_series_ids,
         source_hash=batch.source_hash,
         handoff_hash=batch.handoff_hash,
     )
@@ -336,4 +348,5 @@ def _observation_at(batch: RFETObservationBatch, index: int) -> RealPriceObserva
         verifiability_reason=str(batch.verifiability_reasons[index]),
         data_pool_id=str(batch.data_pool_ids[index]),
         vendor_audit_evidence_id=str(batch.vendor_audit_evidence_ids[index]),
+        source_row_id=str(batch.source_row_ids[index]),
     )
